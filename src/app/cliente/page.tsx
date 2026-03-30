@@ -1,0 +1,1 @@
+export default function ClientePage() { return <div>Client Receipt Upload & Purchases</div> }

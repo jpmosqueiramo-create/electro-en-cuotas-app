@@ -1,0 +1,1 @@
+export default function VendedorPage() { return <div>Seller Zone-Restricted Panel</div> }

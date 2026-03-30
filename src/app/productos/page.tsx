@@ -1,0 +1,1 @@
+export default function ProductosPage() { return <div>Product CRUD & Image Upload Support</div> }
