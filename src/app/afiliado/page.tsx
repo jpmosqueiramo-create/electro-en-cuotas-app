@@ -273,7 +273,7 @@ export default function AfiliadoPage() {
 
   const prodElegidoObj = productos.find(p => p.id === productoId);
 
-  if (authLoading || cargandoDatos) return <div className="min-h-screen bg-black text-yellow-500 p-8 text-center mt-20 font-bold">Cargando panel comercial...</div>;
+  if (authLoading || cargandoDatos) return <div className="min-h-screen bg-[#FAFAFA] text-yellow-500 p-8 text-center mt-20 font-bold">Cargando panel comercial...</div>;
   if (!user) return null;
 
   const hoyStr = new Date().toISOString().split("T")[0];
@@ -288,12 +288,12 @@ export default function AfiliadoPage() {
   });
 
   return (
-    <div className="min-h-screen bg-black text-yellow-500 p-8">
+    <div className="min-h-screen bg-[#FAFAFA] text-yellow-500 p-8">
       <div className="max-w-6xl mx-auto">
         <header className="flex justify-between items-center mb-8 border-b border-yellow-500/30 pb-6">
           <div>
             <img src="https://storage.googleapis.com/negocio-facil-page.firebasestorage.app/Logos/LOGO%20SIN%20NOMBRE%20-%20CUENTA%20HOGAR.png" alt="Electro en Cuotas Logo" className="h-10 w-auto object-contain" /> <h1 className="text-2xl font-bold text-yellow-400 mt-2">Portal del Afiliado</h1>
-            <p className="text-gray-400 text-sm mt-1">Usuario activo: {user.email}</p>
+            <p className="text-gray-500 text-sm mt-1">Usuario activo: {user.email}</p>
           </div>
           <div className="flex gap-3">
             <a href="/" className="text-sm border border-yellow-500/50 hover:bg-yellow-500 hover:text-black px-4 py-2 rounded transition-colors font-bold hidden sm:block">Catálogo</a>
@@ -307,13 +307,13 @@ export default function AfiliadoPage() {
         {promesasExigibles.length > 0 && (
            <div className="bg-red-900/30 border border-red-500/80 p-5 rounded-xl mb-6 flex flex-col gap-2 shadow-[0_0_30px_rgba(239,68,68,0.15)]">
               <h3 className="text-red-400 font-black text-lg flex items-center gap-2">🚨 ALERTA: Tienes Promesas de Pago Vencidas o para Hoy</h3>
-              <p className="text-sm text-gray-400 mb-2">Comunícate urgentemente con estos clientes, sus promesas han madurado y siguen en mora.</p>
+              <p className="text-sm text-gray-500 mb-2">Comunícate urgentemente con estos clientes, sus promesas han madurado y siguen en mora.</p>
               <div className="flex flex-wrap gap-3">
                  {promesasExigibles.map(sol => {
                     const lProm = sol.historialContactos.find((c:any) => c.promesaPago);
                     return (
-                       <div key={sol.id} onClick={() => { setActiveTab("clientes"); setExpandedCarteraId(sol.id); }} className="cursor-pointer bg-red-500/10 hover:bg-red-500/20 text-white px-4 py-2 rounded-lg border border-red-500/30 transition shadow-sm">
-                          <p className="text-sm font-bold text-white">{sol.datosPersonales?.nombreCompleto}</p>
+                       <div key={sol.id} onClick={() => { setActiveTab("clientes"); setExpandedCarteraId(sol.id); }} className="cursor-pointer bg-red-500/10 hover:bg-red-500/20 text-zinc-900 px-4 py-2 rounded-lg border border-red-500/30 transition shadow-sm">
+                          <p className="text-sm font-bold text-zinc-900">{sol.datosPersonales?.nombreCompleto}</p>
                           <p className="text-[10px] text-red-300 font-black uppercase tracking-widest mt-1">Acuerdo: {new Date(lProm.promesaPago + "T12:00:00").toLocaleDateString()}</p>
                        </div>
                     )
@@ -323,18 +323,18 @@ export default function AfiliadoPage() {
         )}
 
         {/* MENÚ DE SECCIONES (TABS) */}
-        <div className="flex flex-col sm:flex-row gap-2 mb-8 bg-zinc-900/80 p-2 rounded-xl border border-zinc-800 shadow-lg">
-           <button onClick={() => setActiveTab("carga")} className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all text-center ${activeTab === 'carga' ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-gray-400 hover:text-white hover:bg-zinc-800'}`}>
+        <div className="flex flex-col sm:flex-row gap-2 mb-8 bg-[#FAFAFA]/80 p-2 rounded-xl border border-gray-200 shadow-lg">
+           <button onClick={() => setActiveTab("carga")} className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all text-center ${activeTab === 'carga' ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-gray-500 hover:text-zinc-900 hover:bg-gray-100'}`}>
               1. Carga de Solicitudes
            </button>
-           <button onClick={() => setActiveTab("seguimiento")} className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all text-center ${activeTab === 'seguimiento' ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-gray-400 hover:text-white hover:bg-zinc-800'}`}>
+           <button onClick={() => setActiveTab("seguimiento")} className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all text-center ${activeTab === 'seguimiento' ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-gray-500 hover:text-zinc-900 hover:bg-gray-100'}`}>
               2. Seguimiento / Logística
            </button>
-           <button onClick={() => setActiveTab("clientes")} className={'flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all text-center ' + (activeTab === 'clientes' ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-gray-400 hover:text-white hover:bg-zinc-800')}>
+           <button onClick={() => setActiveTab("clientes")} className={'flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all text-center ' + (activeTab === 'clientes' ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-gray-500 hover:text-zinc-900 hover:bg-gray-100')}>
               3. Gestión Clientes
            </button>
-           <button onClick={() => setActiveTab("comisiones")} className={'flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all text-center flex items-center justify-center gap-2 ' + (activeTab === 'comisiones' ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-gray-400 hover:text-white hover:bg-zinc-800')}>
-              4. Comisiones {notificaciones.filter(n=>!n.leida).length > 0 && <span className="bg-red-500 text-white rounded-full px-2 py-0.5 text-[10px] animate-pulse">{notificaciones.filter(n=>!n.leida).length}</span>}
+           <button onClick={() => setActiveTab("comisiones")} className={'flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all text-center flex items-center justify-center gap-2 ' + (activeTab === 'comisiones' ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-gray-500 hover:text-zinc-900 hover:bg-gray-100')}>
+              4. Comisiones {notificaciones.filter(n=>!n.leida).length > 0 && <span className="bg-red-500 text-zinc-900 rounded-full px-2 py-0.5 text-[10px] animate-pulse">{notificaciones.filter(n=>!n.leida).length}</span>}
            </button>
         </div>
 
@@ -342,21 +342,21 @@ export default function AfiliadoPage() {
           
           {/* 1. SECCION: CARGA DE SOLICITUDES */}
           {activeTab === "carga" && (
-            <div className="bg-zinc-900 border border-yellow-500/20 rounded-xl p-6 md:p-10 shadow-xl max-w-4xl mx-auto animate-fade-in">
-            <h2 className="text-2xl font-bold text-white mb-2">Cargar Nueva Venta (Presencial)</h2>
+            <div className="bg-[#FAFAFA] border border-yellow-500/20 rounded-xl p-6 md:p-10 shadow-xl max-w-4xl mx-auto animate-fade-in">
+            <h2 className="text-2xl font-bold text-zinc-900 mb-2">Cargar Nueva Venta (Presencial)</h2>
             <p className="text-yellow-200/60 mb-8">Selecciona el producto del inventario activo y carga los documentos del cliente que tienes enfrente para pasarlo a evaluación crediticia de la mesa chica.</p>
             
             <form onSubmit={handleSubmit} className="space-y-8">
               
               {/* SELECTOR DE PRODUCTO Y CUOTAS */}
-              <div className="bg-black p-5 rounded-xl border border-yellow-500/30">
+              <div className="bg-white p-5 rounded-xl border border-yellow-500/30">
                 <div className="mb-5">
                   <label className="block text-sm font-bold text-yellow-400 mb-2">Seleccionar Producto del Catálogo</label>
                   <select 
                     required 
                     value={productoId} 
                     onChange={e => { setProductoId(e.target.value); setPlanElegido(null); }} 
-                    className="w-full bg-zinc-800 border border-gray-700 rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none font-semibold text-lg"
+                    className="w-full bg-gray-100 border border-gray-700 rounded-lg p-3 text-zinc-900 focus:border-yellow-500 focus:outline-none font-semibold text-lg"
                   >
                     <option value="" disabled>-- Haz clic para elegir del inventario --</option>
                     {productos.map(p => (
@@ -369,16 +369,16 @@ export default function AfiliadoPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div 
                       onClick={() => setPlanElegido("12")}
-                      className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col items-center justify-center transition-all \${planElegido === "12" ? "border-yellow-500 bg-yellow-500/10" : "border-zinc-700 hover:border-gray-500"}`}
+                      className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col items-center justify-center transition-all \${planElegido === "12" ? "border-yellow-500 bg-yellow-500/10" : "border-gray-300 hover:border-gray-500"}`}
                     >
-                      <span className="text-white font-bold">12 Cuotas Ex.</span>
+                      <span className="text-zinc-900 font-bold">12 Cuotas Ex.</span>
                       <span className="text-2xl font-black text-yellow-500">${prodElegidoObj.cuota12}</span>
                     </div>
                     <div 
                       onClick={() => setPlanElegido("8")}
-                      className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col items-center justify-center transition-all \${planElegido === "8" ? "border-yellow-600 bg-yellow-600/10" : "border-zinc-700 hover:border-gray-500"}`}
+                      className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col items-center justify-center transition-all \${planElegido === "8" ? "border-yellow-600 bg-yellow-600/10" : "border-gray-300 hover:border-gray-500"}`}
                     >
-                      <span className="text-white font-bold">8 Cuotas Dir.</span>
+                      <span className="text-zinc-900 font-bold">8 Cuotas Dir.</span>
                       <span className="text-2xl font-black text-yellow-600">${prodElegidoObj.cuota8}</span>
                     </div>
                   </div>
@@ -386,49 +386,49 @@ export default function AfiliadoPage() {
               </div>
 
               {/* DATOS DEL CLIENTE */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-black p-5 rounded-xl border border-zinc-800">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-5 rounded-xl border border-gray-200">
                 <div>
-                  <label className="block text-sm mb-2 text-gray-300 font-bold">Email de Contacto (del Cliente)</label>
-                  <input required value={clienteEmail} onChange={e=>setClienteEmail(e.target.value)} type="email" placeholder="cliente@correo.com" className="w-full bg-zinc-800 border border-gray-700 rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none" />
+                  <label className="block text-sm mb-2 text-gray-600 font-bold">Email de Contacto (del Cliente)</label>
+                  <input required value={clienteEmail} onChange={e=>setClienteEmail(e.target.value)} type="email" placeholder="cliente@correo.com" className="w-full bg-gray-100 border border-gray-700 rounded-lg p-3 text-zinc-900 focus:border-yellow-500 focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm mb-2 text-yellow-400 font-bold">Nombre Completo del Cliente</label>
-                  <input required value={nombreCompleto} onChange={e=>setNombreCompleto(e.target.value)} type="text" placeholder="Juan Perez" className="w-full bg-zinc-800 border border-gray-700 rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none" />
+                  <input required value={nombreCompleto} onChange={e=>setNombreCompleto(e.target.value)} type="text" placeholder="Juan Perez" className="w-full bg-gray-100 border border-gray-700 rounded-lg p-3 text-zinc-900 focus:border-yellow-500 focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm mb-2 text-yellow-400 font-bold">Número de DNI</label>
-                  <input required value={numeroDni} onChange={e=>setNumeroDni(e.target.value)} type="number" placeholder="Ej: 32444555" className="w-full bg-zinc-800 border border-gray-700 rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none" />
+                  <input required value={numeroDni} onChange={e=>setNumeroDni(e.target.value)} type="number" placeholder="Ej: 32444555" className="w-full bg-gray-100 border border-gray-700 rounded-lg p-3 text-zinc-900 focus:border-yellow-500 focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm mb-2 text-yellow-400 font-bold">Teléfono / Celular</label>
-                  <input required value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" placeholder="Ej: +54 9 11 1234-5678" className="w-full bg-zinc-800 border border-gray-700 rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none" />
+                  <input required value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" placeholder="Ej: +54 9 11 1234-5678" className="w-full bg-gray-100 border border-gray-700 rounded-lg p-3 text-zinc-900 focus:border-yellow-500 focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm mb-2 text-yellow-400 font-bold">Dirección</label>
-                  <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" placeholder="Ej: Av. San Martin 123" className="w-full bg-zinc-800 border border-gray-700 rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none" />
+                  <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" placeholder="Ej: Av. San Martin 123" className="w-full bg-gray-100 border border-gray-700 rounded-lg p-3 text-zinc-900 focus:border-yellow-500 focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm mb-2 text-yellow-400 font-bold">Localidad</label>
-                  <input required value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" placeholder="Ej: Córdoba" className="w-full bg-zinc-800 border border-gray-700 rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none" />
+                  <input required value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" placeholder="Ej: Córdoba" className="w-full bg-gray-100 border border-gray-700 rounded-lg p-3 text-zinc-900 focus:border-yellow-500 focus:outline-none" />
                 </div>
               </div>
 
               {/* ARCHIVOS */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-black p-5 rounded-xl border border-zinc-800">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-5 rounded-xl border border-gray-200">
                 <div>
-                  <label className="block text-sm mb-2 text-gray-300">Foto DNI - Frente (Cámara)</label>
+                  <label className="block text-sm mb-2 text-gray-600">Foto DNI - Frente (Cámara)</label>
                   <input required type="file" accept="image/*" onChange={e => {if (e.target.files) setDniFrente(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-yellow-500/20 file:font-semibold file:text-yellow-500 hover:file:bg-yellow-500/30" />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2 text-gray-300">Foto DNI - Dorso</label>
+                  <label className="block text-sm mb-2 text-gray-600">Foto DNI - Dorso</label>
                   <input required type="file" accept="image/*" onChange={e => {if (e.target.files) setDniDorso(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-yellow-500/20 file:font-semibold file:text-yellow-500 hover:file:bg-yellow-500/30" />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2 text-gray-300">Último Recibo de Sueldo</label>
+                  <label className="block text-sm mb-2 text-gray-600">Último Recibo de Sueldo</label>
                   <input required type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setReciboSueldo(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-yellow-500/20 file:font-semibold file:text-yellow-500 hover:file:bg-yellow-500/30" />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2 text-gray-300">Impuesto / Servicio Telefónico</label>
+                  <label className="block text-sm mb-2 text-gray-600">Impuesto / Servicio Telefónico</label>
                   <input required type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setServicio(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-yellow-500/20 file:font-semibold file:text-yellow-500 hover:file:bg-yellow-500/30" />
                 </div>
               </div>
@@ -444,48 +444,48 @@ export default function AfiliadoPage() {
           {/* 2. SECCION: SEGUIMIENTO Y LOGISTICA */}
           {activeTab === "seguimiento" && (
           <div className="flex flex-col gap-8 max-w-5xl mx-auto animate-fade-in">
-            <div className="bg-zinc-900 border border-yellow-500/20 p-6 rounded-xl shadow-lg">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">🚚 Módulo de Entregas</h2>
+            <div className="bg-[#FAFAFA] border border-yellow-500/20 p-6 rounded-xl shadow-lg">
+              <h2 className="text-xl font-bold text-zinc-900 mb-4 flex items-center gap-2">🚚 Módulo de Entregas</h2>
               
               {solicitudes.filter(s => s.estado === "APROBADO" && s.estadoEntrega !== "ENTREGADO" && s.estadoEntrega !== "ANULADO").length === 0 ? (
                 <p className="text-gray-500 text-sm italic">No tienes equipos pendientes de entrega.</p>
               ) : (
                 <div className="space-y-4">
                   {solicitudes.filter(s => s.estado === "APROBADO" && s.estadoEntrega !== "ENTREGADO" && s.estadoEntrega !== "ANULADO").map((sol: any) => (
-                     <div key={sol.id} className="bg-black border border-yellow-500/30 p-4 rounded-lg flex flex-col gap-2 relative">
+                     <div key={sol.id} className="bg-white border border-yellow-500/30 p-4 rounded-lg flex flex-col gap-2 relative">
                         <span className="absolute top-2 right-2 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span>
                         
                         <p className="text-sm font-bold text-yellow-500">{sol.productoDeseado}</p>
-                        <p className="text-xs text-gray-300">Cliente: <span className="text-white font-bold">{sol.datosPersonales?.nombreCompleto}</span></p>
-                        <p className="text-xs text-gray-300 mb-2">DNI: {sol.datosPersonales?.numeroDni}</p>
-                        <p className="text-xs text-gray-400 italic bg-zinc-900 p-2 rounded border border-zinc-800 break-words mb-2">Notas Admin: {sol.mensajeAdmin || 'Sin observaciones'}</p>
+                        <p className="text-xs text-gray-600">Cliente: <span className="text-zinc-900 font-bold">{sol.datosPersonales?.nombreCompleto}</span></p>
+                        <p className="text-xs text-gray-600 mb-2">DNI: {sol.datosPersonales?.numeroDni}</p>
+                        <p className="text-xs text-gray-500 italic bg-[#FAFAFA] p-2 rounded border border-gray-200 break-words mb-2">Notas Admin: {sol.mensajeAdmin || 'Sin observaciones'}</p>
                         
                         {entregaActiva === sol.id ? (
-                          <div className="bg-zinc-900 border border-yellow-500/50 p-4 rounded-lg mt-2 flex flex-col gap-3 shadow-md w-full relative z-10">
+                          <div className="bg-[#FAFAFA] border border-yellow-500/50 p-4 rounded-lg mt-2 flex flex-col gap-3 shadow-md w-full relative z-10">
                              <h4 className="text-yellow-500 font-bold text-xs uppercase text-center border-b border-yellow-500/20 pb-2">Confirmar Entrega</h4>
                              <div>
-                               <label className="block text-[10px] text-gray-400 mb-1">Nº de Serie del Producto (Oblig.)</label>
-                               <input type="text" value={nserie} onChange={e=>setNserie(e.target.value)} placeholder="Ej: SN-928374928" className="bg-black text-white px-3 py-2 rounded text-xs border border-zinc-700 w-full focus:border-yellow-500 outline-none" />
+                               <label className="block text-[10px] text-gray-500 mb-1">Nº de Serie del Producto (Oblig.)</label>
+                               <input type="text" value={nserie} onChange={e=>setNserie(e.target.value)} placeholder="Ej: SN-928374928" className="bg-white text-zinc-900 px-3 py-2 rounded text-xs border border-gray-300 w-full focus:border-yellow-500 outline-none" />
                              </div>
                              <div className="grid grid-cols-2 gap-3">
                                <div>
-                                 <label className="block text-[10px] text-gray-400 mb-1">Monto Cobrado ($)</label>
-                                 <input type="number" value={montoAbonado} onChange={e=>setMontoAbonado(e.target.value)} className="bg-black text-white px-3 py-2 rounded text-xs border border-zinc-700 w-full focus:border-yellow-500 outline-none font-bold" />
+                                 <label className="block text-[10px] text-gray-500 mb-1">Monto Cobrado ($)</label>
+                                 <input type="number" value={montoAbonado} onChange={e=>setMontoAbonado(e.target.value)} className="bg-white text-zinc-900 px-3 py-2 rounded text-xs border border-gray-300 w-full focus:border-yellow-500 outline-none font-bold" />
                                </div>
                                <div>
-                                 <label className="block text-[10px] text-gray-400 mb-1">Medio de Pago</label>
-                                 <select value={metodoPago} onChange={e=>setMetodoPago(e.target.value)} className="bg-black text-white px-3 py-2 rounded text-xs border border-zinc-700 w-full focus:border-yellow-500 outline-none font-bold">
+                                 <label className="block text-[10px] text-gray-500 mb-1">Medio de Pago</label>
+                                 <select value={metodoPago} onChange={e=>setMetodoPago(e.target.value)} className="bg-white text-zinc-900 px-3 py-2 rounded text-xs border border-gray-300 w-full focus:border-yellow-500 outline-none font-bold">
                                    <option value="Efectivo">💵 Efectivo</option>
                                    <option value="Transferencia">📱 Transferencia</option>
                                  </select>
                                </div>
                              </div>
                              <div>
-                               <label className="block text-[10px] text-gray-400 mb-1">Comentario Opcional</label>
-                               <input type="text" value={comentarioEntrega} onChange={e=>setComentarioEntrega(e.target.value)} placeholder="..." className="bg-black text-white px-3 py-2 rounded text-xs border border-zinc-700 w-full focus:border-yellow-500 outline-none" />
+                               <label className="block text-[10px] text-gray-500 mb-1">Comentario Opcional</label>
+                               <input type="text" value={comentarioEntrega} onChange={e=>setComentarioEntrega(e.target.value)} placeholder="..." className="bg-white text-zinc-900 px-3 py-2 rounded text-xs border border-gray-300 w-full focus:border-yellow-500 outline-none" />
                              </div>
                              <div className="flex gap-2 mt-2">
-                               <button onClick={() => setEntregaActiva(null)} className="flex-1 bg-zinc-800 text-gray-300 py-2 rounded text-xs font-bold hover:bg-zinc-700">Cancelar</button>
+                               <button onClick={() => setEntregaActiva(null)} className="flex-1 bg-gray-100 text-gray-600 py-2 rounded text-xs font-bold hover:bg-gray-200">Cancelar</button>
                                <button onClick={() => handleConfirmarEntrega(sol.id, "ENTREGADO")} className="flex-1 bg-yellow-500 text-black py-2 rounded text-xs font-bold hover:bg-yellow-400 shadow-md">✓ GUARDAR</button>
                              </div>
                           </div>
@@ -503,7 +503,7 @@ export default function AfiliadoPage() {
                                           setEntregaActiva(sol.id);
                                        } else { handleConfirmarEntrega(sol.id, val, true); }
                                     }}
-                                    className="bg-zinc-800 border border-gray-600 text-xs p-2 rounded text-white focus:border-yellow-500 outline-none w-full font-bold"
+                                    className="bg-gray-100 border border-gray-600 text-xs p-2 rounded text-zinc-900 focus:border-yellow-500 outline-none w-full font-bold"
                                  >
                                     <option value="PENDIENTE_ENTREGA">📦 Equipo pendiente de entrega</option>
                                     <option value="ENTREGADO">✅ Equipo Entregado al Cliente</option>
@@ -513,7 +513,7 @@ export default function AfiliadoPage() {
                             ) : (
                                <div className="bg-orange-500/10 border border-orange-500/30 p-2 rounded flex flex-col gap-1 mt-1">
                                  <p className="text-[10px] text-orange-400 font-black uppercase tracking-wider">⚠️ Entrega Bloqueada</p>
-                                 <p className="text-[10px] text-gray-400">Debes tener el producto en stock físico para entregarlo. Estado actual: <strong className="text-gray-300">{sol.estadoProducto || "A la espera..."}</strong></p>
+                                 <p className="text-[10px] text-gray-500">Debes tener el producto en stock físico para entregarlo. Estado actual: <strong className="text-gray-600">{sol.estadoProducto || "A la espera..."}</strong></p>
                                </div>
                             )}
                           </>
@@ -523,16 +523,16 @@ export default function AfiliadoPage() {
                               <h4 className="text-blue-400 font-bold text-xs uppercase text-center border-b border-blue-500/20 pb-2">📦 Confirmar Recepción Física</h4>
                               <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                  <label className="block text-[10px] text-gray-400 mb-1">Fecha de Ingreso</label>
-                                  <input type="date" value={fechaRecepcion} onChange={e=>setFechaRecepcion(e.target.value)} className="bg-black text-white px-3 py-2 rounded text-xs border border-zinc-700 w-full focus:border-blue-500 outline-none" />
+                                  <label className="block text-[10px] text-gray-500 mb-1">Fecha de Ingreso</label>
+                                  <input type="date" value={fechaRecepcion} onChange={e=>setFechaRecepcion(e.target.value)} className="bg-white text-zinc-900 px-3 py-2 rounded text-xs border border-gray-300 w-full focus:border-blue-500 outline-none" />
                                 </div>
                                 <div>
-                                  <label className="block text-[10px] text-gray-400 mb-1">Costo Flete ($)</label>
-                                  <input type="number" placeholder="Ej: 5000" value={costoComisionista} onChange={e=>setCostoComisionista(e.target.value)} className="bg-black text-white px-3 py-2 rounded text-xs border border-zinc-700 w-full focus:border-blue-500 outline-none font-bold text-blue-400" />
+                                  <label className="block text-[10px] text-gray-500 mb-1">Costo Flete ($)</label>
+                                  <input type="number" placeholder="Ej: 5000" value={costoComisionista} onChange={e=>setCostoComisionista(e.target.value)} className="bg-white text-zinc-900 px-3 py-2 rounded text-xs border border-gray-300 w-full focus:border-blue-500 outline-none font-bold text-blue-400" />
                                 </div>
                               </div>
                               <div className="flex gap-2 mt-2">
-                                <button onClick={() => setRecepcionActiva(null)} className="flex-1 bg-zinc-800 text-gray-300 py-2 rounded text-xs font-bold hover:bg-zinc-700">Cancelar</button>
+                                <button onClick={() => setRecepcionActiva(null)} className="flex-1 bg-gray-100 text-gray-600 py-2 rounded text-xs font-bold hover:bg-gray-200">Cancelar</button>
                                 <button onClick={async () => {
                                    try {
                                       const { doc, updateDoc } = await import("firebase/firestore");
@@ -577,14 +577,14 @@ export default function AfiliadoPage() {
 
             {/* HISTORIAL RECIENTE */}
           
-            <h2 className="text-xl font-bold text-white mb-6">Mis Solicitudes Cargadas</h2>
+            <h2 className="text-xl font-bold text-zinc-900 mb-6">Mis Solicitudes Cargadas</h2>
             {solicitudes.length === 0 ? (
               <p className="text-gray-500 text-sm">Aún no has gestionado ninguna venta.</p>
             ) : (
               <div className="space-y-4">
                 {solicitudes.slice(0, 10).map((sol) => (
-                  <div key={sol.id} className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl flex flex-col gap-2">
-                     <p className="text-sm font-bold text-white leading-tight">{sol.productoDeseado}</p>
+                  <div key={sol.id} className="bg-[#FAFAFA] border border-gray-200 p-4 rounded-xl flex flex-col gap-2">
+                     <p className="text-sm font-bold text-zinc-900 leading-tight">{sol.productoDeseado}</p>
 
                         {sol.estadoProducto === "En viaje" && (
                           <button 
@@ -612,7 +612,7 @@ export default function AfiliadoPage() {
                         )}
                      
                      <div className="flex justify-between items-center text-xs">
-                       <span className="text-gray-400">Cliente: {sol.datosPersonales?.nombreCompleto}</span>
+                       <span className="text-gray-500">Cliente: {sol.datosPersonales?.nombreCompleto}</span>
                        <span className={`px-2 py-1 rounded font-bold ${
                           sol.estado === 'APROBADO' ? 'bg-green-500/20 text-green-400' :
                           sol.estado === 'RECHAZADO' ? 'bg-red-500/20 text-red-500' :
@@ -620,8 +620,8 @@ export default function AfiliadoPage() {
                        }`}>{sol.estado}</span>
                      </div>
                      {sol.estadoEntrega === "ENTREGADO" && (
-                       <div className="mt-2 border-t border-zinc-800 pt-2 flex justify-between items-center text-xs">
-                         <span className="text-gray-400 font-bold">Estado del Adelanto:</span>
+                       <div className="mt-2 border-t border-gray-200 pt-2 flex justify-between items-center text-xs">
+                         <span className="text-gray-500 font-bold">Estado del Adelanto:</span>
                          {sol.estadoRendicion === "CONFIRMADO" ? (
                            <span className="bg-green-500/10 text-green-400 border border-green-500/30 px-2 py-1 rounded font-bold">✅ CONFIRMADO POR CAJA</span>
                          ) : sol.estadoRendicion === "PENDIENTE" ? (
@@ -632,7 +632,7 @@ export default function AfiliadoPage() {
                        </div>
                      )}
                      {sol.planElegido && (
-                       <span className="bg-zinc-800 text-yellow-500 w-fit px-2 py-1 rounded text-xs font-bold mt-1">
+                       <span className="bg-gray-100 text-yellow-500 w-fit px-2 py-1 rounded text-xs font-bold mt-1">
                           {sol.planElegido} Cuotas
                        </span>
                      )}
@@ -646,11 +646,11 @@ export default function AfiliadoPage() {
 
           {/* 4. SECCION: COMISIONES */}
           {activeTab === "comisiones" && (
-             <div className="bg-black border border-zinc-800 p-6 rounded-xl animate-fade-in max-w-6xl mx-auto">
-                <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3"><span className="bg-yellow-500/10 p-2 rounded-lg">💰</span> Mis Comisiones y Avisos</h2>
+             <div className="bg-white border border-gray-200 p-6 rounded-xl animate-fade-in max-w-6xl mx-auto">
+                <h2 className="text-2xl font-black text-zinc-900 mb-6 flex items-center gap-3"><span className="bg-yellow-500/10 p-2 rounded-lg">💰</span> Mis Comisiones y Avisos</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                   <div className="bg-zinc-900 border border-yellow-500/50 p-6 rounded-xl md:col-span-1 shadow-[0_0_15px_rgba(234,179,8,0.1)] text-center flex flex-col justify-center">
-                      <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest mb-2">Comisión Histórica Total</p>
+                   <div className="bg-[#FAFAFA] border border-yellow-500/50 p-6 rounded-xl md:col-span-1 shadow-[0_0_15px_rgba(234,179,8,0.1)] text-center flex flex-col justify-center">
+                      <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest mb-2">Comisión Histórica Total</p>
                       <p className="text-4xl font-black text-yellow-500">${solicitudes.reduce((acc, sol) => {
                          if (!sol.planPagos) return acc;
                          const sumaPagos = sol.planPagos.reduce((accCuota: number, cuota: any) => {
@@ -668,13 +668,13 @@ export default function AfiliadoPage() {
                            <p className="text-gray-500 text-sm">No tienes notificaciones de pago confirmadas aún.</p>
                        ) : (
                            notificaciones.map(n => (
-                               <div key={n.id} className={'p-4 rounded-xl border flex flex-col gap-1 ' + (!n.leida ? 'bg-zinc-800/80 border-yellow-500/50 relative' : 'bg-black border-zinc-800')}>
+                               <div key={n.id} className={'p-4 rounded-xl border flex flex-col gap-1 ' + (!n.leida ? 'bg-gray-100/80 border-yellow-500/50 relative' : 'bg-white border-gray-200')}>
                                    {!n.leida && <span className="absolute top-2 right-2 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span></span>}
-                                   <div className="flex justify-between items-center text-[10px] text-gray-400 mb-1">
+                                   <div className="flex justify-between items-center text-[10px] text-gray-500 mb-1">
                                        <span className="font-bold">{new Date(n.fecha).toLocaleString()}</span>
                                        {n.comisionAsociada && <span className="text-green-400 bg-green-500/10 px-2 py-0.5 rounded font-black border border-green-500/20">COMISIÓN: ${n.comisionAsociada.toLocaleString()}</span>}
                                    </div>
-                                   <p className={'text-sm ' + (!n.leida ? 'text-white font-bold' : 'text-gray-300')}>{n.mensaje}</p>
+                                   <p className={'text-sm ' + (!n.leida ? 'text-zinc-900 font-bold' : 'text-gray-600')}>{n.mensaje}</p>
                                    {!n.leida && (
                                        <button onClick={async () => {
                                            try {
@@ -693,8 +693,8 @@ export default function AfiliadoPage() {
 
             {/* 3. SECCION: GESTION DE CLIENTES ACTIVOS */}
             {activeTab === "clientes" && (
-            <div className="bg-black border border-zinc-800 p-6 rounded-xl animate-fade-in max-w-6xl mx-auto">
-              <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3"><span className="bg-yellow-500/10 p-2 rounded-lg">💰</span> Cartera Activa de Clientes</h2>
+            <div className="bg-white border border-gray-200 p-6 rounded-xl animate-fade-in max-w-6xl mx-auto">
+              <h2 className="text-2xl font-black text-zinc-900 mb-6 flex items-center gap-3"><span className="bg-yellow-500/10 p-2 rounded-lg">💰</span> Cartera Activa de Clientes</h2>
             {solicitudes.filter(s => s.estadoEntrega === "ENTREGADO").length === 0 ? (
                <p className="text-gray-500 text-sm">No tienes clientes con financiación activa asignados a ti.</p>
             ) : (
@@ -703,12 +703,12 @@ export default function AfiliadoPage() {
                     const est = calcularEstadoCuotas(sol.planPagos);
                     if (est.restantes === 0 && est.pagadas > 0) return null; // Hide finished ones optionally, but let's keep them if they are here. Wait, let's keep them for now. 
                     return (
-                      <div key={sol.id} className="bg-zinc-900 border border-yellow-500/10 p-6 rounded-2xl flex flex-col gap-3 relative shadow-xl overflow-hidden hover:border-yellow-500/30 transition-all">
+                      <div key={sol.id} className="bg-[#FAFAFA] border border-yellow-500/10 p-6 rounded-2xl flex flex-col gap-3 relative shadow-xl overflow-hidden hover:border-yellow-500/30 transition-all">
                          {est.atrasadas > 0 && <span className="absolute top-0 right-0 bg-red-600 text-[10px] text-white font-black px-4 py-1.5 rounded-bl-xl uppercase shadow-md animate-pulse tracking-widest text-shadow">🛑 MOROSO ({est.atrasadas})</span>}
                          
-                         <div className="flex flex-col border-b border-zinc-800 pb-3">
-                           <h3 className="text-xl font-black text-white mb-1">{sol.datosPersonales?.nombreCompleto || "Desconocido"}</h3>
-                           <p className="text-gray-400 text-xs flex items-center gap-2">📱 {sol.datosPersonales?.telefono} <span className="text-yellow-500/50">|</span> 📺 {sol.productoDeseado}</p>
+                         <div className="flex flex-col border-b border-gray-200 pb-3">
+                           <h3 className="text-xl font-black text-zinc-900 mb-1">{sol.datosPersonales?.nombreCompleto || "Desconocido"}</h3>
+                           <p className="text-gray-500 text-xs flex items-center gap-2">📱 {sol.datosPersonales?.telefono} <span className="text-yellow-500/50">|</span> 📺 {sol.productoDeseado}</p>
                          </div>
 
                          {/* RESUMEN DEUDA REDISEÑADO */}
@@ -721,7 +721,7 @@ export default function AfiliadoPage() {
                                 <p className="text-2xl font-black text-yellow-500">{est.restantes}</p>
                                 <p className="text-[9px] text-yellow-500/60 uppercase font-bold tracking-wider">Restantes</p>
                              </div>
-                             <div className={'p-2 rounded-xl flex flex-col justify-center items-center border ' + (est.atrasadas > 0 ? 'bg-red-500/10 border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'bg-zinc-900 border-zinc-800 shadow-inner')}>
+                             <div className={'p-2 rounded-xl flex flex-col justify-center items-center border ' + (est.atrasadas > 0 ? 'bg-red-500/10 border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'bg-[#FAFAFA] border-gray-200 shadow-inner')}>
                                 <p className={'text-2xl font-black ' + (est.atrasadas > 0 ? 'text-red-500' : 'text-gray-500')}>{est.atrasadas}</p>
                                 <p className={'text-[9px] uppercase font-bold tracking-wider ' + (est.atrasadas > 0 ? 'text-red-400' : 'text-gray-500')}>Vencidas</p>
                              </div>
@@ -732,12 +732,12 @@ export default function AfiliadoPage() {
                             </p>
                          )}
 
-                         <button onClick={() => setExpandedCarteraId(expandedCarteraId === sol.id ? null : sol.id)} className="w-full bg-zinc-800 text-white font-bold py-3 rounded-lg text-xs hover:bg-zinc-700 transition border border-zinc-700 mt-2 shadow-sm flex justify-center items-center gap-2">
+                         <button onClick={() => setExpandedCarteraId(expandedCarteraId === sol.id ? null : sol.id)} className="w-full bg-gray-100 text-zinc-900 font-bold py-3 rounded-lg text-xs hover:bg-gray-200 transition border border-gray-300 mt-2 shadow-sm flex justify-center items-center gap-2">
                             {expandedCarteraId === sol.id ? "Ocultar Panel de Gestión" : "Abrir Panel y Pagos 💳"}
                          </button>
 
                          {expandedCarteraId === sol.id && (
-                           <div className="mt-4 pt-4 border-t border-zinc-800 animate-fade-in flex flex-col gap-4">
+                           <div className="mt-4 pt-4 border-t border-gray-200 animate-fade-in flex flex-col gap-4">
                               
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                   {/* PAGOS REALIZADOS */}
@@ -748,10 +748,10 @@ export default function AfiliadoPage() {
                                      ) : (
                                         <div className="space-y-2">
                                            {sol.planPagos.filter((c: any) => c.estado === "PAGADO").slice(-3).map((cuota: any, idx: number) => (
-                                              <div key={idx} className="bg-black border border-green-500/30 p-2 rounded-lg flex justify-between items-center text-[10px]">
+                                              <div key={idx} className="bg-white border border-green-500/30 p-2 rounded-lg flex justify-between items-center text-[10px]">
                                                  <div className="flex flex-col">
-                                                    <span className="text-white font-bold text-[11px]">Cuota {cuota.numero} - ${cuota.montoRealmenteCobrado || cuota.montoAbonadoReal || cuota.montoAbonado || cuota.montoOriginal}</span>
-                                                    <span className="text-gray-400">Acordada orig: ${cuota.montoOriginal}</span>
+                                                    <span className="text-zinc-900 font-bold text-[11px]">Cuota {cuota.numero} - ${cuota.montoRealmenteCobrado || cuota.montoAbonadoReal || cuota.montoAbonado || cuota.montoOriginal}</span>
+                                                    <span className="text-gray-500">Acordada orig: ${cuota.montoOriginal}</span>
                                                  </div>
                                                  <div className="flex flex-col items-end">
                                                     <span className="text-green-400 font-black uppercase text-[9px] bg-green-500/20 px-2 py-0.5 rounded">Rendido</span>
@@ -769,12 +769,12 @@ export default function AfiliadoPage() {
                                      {!sol.planPagos ? <p className="text-[10px] text-red-500">Plan no regenerado.</p> : sol.planPagos.filter((c: any) => c.estado !== "PAGADO").slice(0, 3).map((cuota: any, idx: number) => {
                                           const isAtrasada = new Date(cuota.vencimiento) < new Date();
                                           return (
-                                            <div key={idx} className={'p-2 rounded-lg flex justify-between items-center text-[10px] mb-2 border ' + (isAtrasada ? 'bg-red-950/50 border-red-500/30' : 'bg-black border-zinc-800')}>
+                                            <div key={idx} className={'p-2 rounded-lg flex justify-between items-center text-[10px] mb-2 border ' + (isAtrasada ? 'bg-red-950/50 border-red-500/30' : 'bg-white border-gray-200')}>
                                                <div className="flex flex-col">
-                                                  <span className={'font-bold text-[11px] ' + (isAtrasada ? 'text-red-400' : 'text-gray-200')}>Cuota {cuota.numero} - ${cuota.montoOriginal}</span>
+                                                  <span className={'font-bold text-[11px] ' + (isAtrasada ? 'text-red-400' : 'text-gray-700')}>Cuota {cuota.numero} - ${cuota.montoOriginal}</span>
                                                   <span className="text-gray-500 mt-0.5">Venc: {new Date(cuota.vencimiento).toLocaleDateString()}</span>
                                                </div>
-                                               <span className={'px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider ' + (isAtrasada ? 'bg-red-500/20 text-red-500' : 'bg-zinc-800 text-gray-400')}>
+                                               <span className={'px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider ' + (isAtrasada ? 'bg-red-500/20 text-red-500' : 'bg-gray-100 text-gray-500')}>
                                                   {isAtrasada ? 'Expirada' : 'Pendiente'}
                                                </span>
                                             </div>
@@ -783,30 +783,30 @@ export default function AfiliadoPage() {
                                   </div>
                               </div>
 
-                              <div className="bg-zinc-950/50 p-4 rounded-xl border border-zinc-800 mt-2">
-                                 <h4 className="text-white font-bold text-xs mb-3 flex items-center gap-2"><span className="bg-zinc-800 p-1.5 rounded">📞</span> Historial Gst. Cobranza</h4>
+                              <div className="bg-[#FAFAFA]/50 p-4 rounded-xl border border-gray-200 mt-2">
+                                 <h4 className="text-zinc-900 font-bold text-xs mb-3 flex items-center gap-2"><span className="bg-gray-100 p-1.5 rounded">📞</span> Historial Gst. Cobranza</h4>
                                  {(!sol.historialContactos || sol.historialContactos.length === 0) ? (
                                      <p className="text-xs text-gray-500 italic py-2">Sin gestiones previas registradas.</p>
                                  ) : (
                                      <div className="space-y-3 max-h-40 overflow-y-auto mb-4 pr-2 custom-scrollbar">
                                         {sol.historialContactos.map((log: any) => (
-                                           <div key={log.id} className="bg-black p-3 text-xs rounded-lg border border-zinc-800 hover:border-zinc-700 transition-colors">
+                                           <div key={log.id} className="bg-white p-3 text-xs rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
                                                <div className="flex justify-between items-center mb-1">
-                                                 <span className="text-[10px] text-gray-400 font-bold">{new Date(log.fecha).toLocaleString()}</span>
-                                                 <span className="text-[9px] bg-zinc-800 text-gray-400 px-2 py-0.5 rounded uppercase">{log.usuario}</span>
+                                                 <span className="text-[10px] text-gray-500 font-bold">{new Date(log.fecha).toLocaleString()}</span>
+                                                 <span className="text-[9px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded uppercase">{log.usuario}</span>
                                                </div>
-                                               <p className="text-gray-300 mt-1">{log.nota}</p>
+                                               <p className="text-gray-600 mt-1">{log.nota}</p>
                                                {log.promesaPago && <p className="text-yellow-500 text-[10px] font-bold mt-2 bg-yellow-500/10 w-fit px-2 py-1 rounded">📅 Promesa al {new Date(log.promesaPago + "T12:00:00").toLocaleDateString()}</p>}
                                            </div>
                                         ))}
                                      </div>
                                  )}
 
-                                 <div className="mt-2 text-sm border-t border-zinc-800 pt-3">
-                                    <textarea value={nuevaNota} onChange={e=>setNuevaNota(e.target.value)} placeholder="Ej: Me comuniqué para un plan de pago... prometió ir mañana." className="w-full bg-zinc-900/80 text-white p-3 rounded-lg border border-zinc-700 outline-none focus:border-yellow-500 mb-3 h-20 min-h-[5rem] transition-colors resize-none" />
+                                 <div className="mt-2 text-sm border-t border-gray-200 pt-3">
+                                    <textarea value={nuevaNota} onChange={e=>setNuevaNota(e.target.value)} placeholder="Ej: Me comuniqué para un plan de pago... prometió ir mañana." className="w-full bg-[#FAFAFA]/80 text-zinc-900 p-3 rounded-lg border border-gray-300 outline-none focus:border-yellow-500 mb-3 h-20 min-h-[5rem] transition-colors resize-none" />
                                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-                                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Agendar Promesa P.:</label>
-                                       <input type="date" value={fechaPromesa} onChange={e=>setFechaPromesa(e.target.value)} className="bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-xs text-white flex-1 outline-none focus:border-yellow-500 transition-colors" />
+                                       <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Agendar Promesa P.:</label>
+                                       <input type="date" value={fechaPromesa} onChange={e=>setFechaPromesa(e.target.value)} className="bg-[#FAFAFA] border border-gray-300 rounded-lg p-2 text-xs text-zinc-900 flex-1 outline-none focus:border-yellow-500 transition-colors" />
                                     </div>
                                     <button onClick={() => handleAgregarNotaCartera(sol)} className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs py-3 rounded-lg uppercase tracking-wider shadow-md opacity-90 hover:opacity-100 transition-all">
                                        + Registrar Voluntad

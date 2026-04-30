@@ -63,9 +63,9 @@ export default function RedAfiliadosPage() {
               Quiero afiliarme hoy <ChevronDown className="w-5 h-5 group-hover:translate-y-1 transition-transform" />
             </a>
             
-            <Link href="/login-afiliado" className="flex items-center gap-2 bg-white text-zinc-900 border-2 border-gray-200 text-lg font-bold px-8 py-3.5 rounded-full hover:border-yellow-500 hover:text-yellow-600 hover:-translate-y-1 hover:shadow-lg active:scale-95 transition-all duration-300">
+            <a href="/login-afiliado" className="flex items-center gap-2 bg-white text-zinc-900 border-2 border-gray-200 text-lg font-bold px-8 py-3.5 rounded-full hover:border-yellow-500 hover:text-yellow-600 hover:-translate-y-1 hover:shadow-lg active:scale-95 transition-all duration-300">
               Ya soy afiliado, ingresar a mi panel
-            </Link>
+            </a>
           </div>
         </div>
       </section>

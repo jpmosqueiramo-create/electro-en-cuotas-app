@@ -96,9 +96,9 @@ export default function PublicCatalog() {
             <Link href="/nosotros" className="text-sm font-bold text-gray-700 hover:text-zinc-900 transition-colors px-3 py-2">
               ¿En qué te ayudamos?
             </Link>
-            <Link href="/red-afiliados" className="text-sm font-bold text-gray-700 hover:text-zinc-900 transition-colors px-3 py-2">
+            <a href="/red-afiliados" className="text-sm font-bold text-gray-700 hover:text-zinc-900 transition-colors px-3 py-2">
               Red de Afiliados
-            </Link>
+            </a>
             <Link href="/login" className="flex items-center gap-2 text-sm font-bold bg-black text-yellow-500 px-5 py-2.5 rounded-full hover:bg-yellow-500 hover:text-black hover:-translate-y-0.5 hover:shadow-lg active:scale-95 transition-all duration-300 font-black">
               <LogIn className="w-4 h-4" />
               <span>Portal de Clientes</span>
@@ -117,9 +117,9 @@ export default function PublicCatalog() {
             <Link href="/nosotros" onClick={() => setMobileMenuOpen(false)} className="text-lg font-bold text-gray-700 hover:text-zinc-900 transition-colors">
               ¿En qué te ayudamos?
             </Link>
-            <Link href="/red-afiliados" onClick={() => setMobileMenuOpen(false)} className="text-lg font-bold text-gray-700 hover:text-zinc-900 transition-colors">
+            <a href="/red-afiliados" onClick={() => setMobileMenuOpen(false)} className="text-lg font-bold text-gray-700 hover:text-zinc-900 transition-colors">
               Red de Afiliados
-            </Link>
+            </a>
             <div className="pt-4 border-t border-gray-200">
               <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 text-lg font-bold bg-black text-yellow-500 px-5 py-3 rounded-xl hover:bg-yellow-500 hover:text-black hover:shadow-lg active:scale-95 transition-all duration-300 font-black">
                 <LogIn className="w-5 h-5" /> Portal de Clientes
