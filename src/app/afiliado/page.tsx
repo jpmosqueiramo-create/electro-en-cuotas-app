@@ -651,7 +651,16 @@ export default function AfiliadoPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                    <div className="bg-zinc-900 border border-yellow-500/50 p-6 rounded-xl md:col-span-1 shadow-[0_0_15px_rgba(234,179,8,0.1)] text-center flex flex-col justify-center">
                       <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest mb-2">Comisión Histórica Total</p>
-                      <p className="text-4xl font-black text-yellow-500">${notificaciones.reduce((acc, curr) => acc + (curr.comisionAsociada || 0), 0).toLocaleString()}</p>
+                      <p className="text-4xl font-black text-yellow-500">${solicitudes.reduce((acc, sol) => {
+                         if (!sol.planPagos) return acc;
+                         const sumaPagos = sol.planPagos.reduce((accCuota: number, cuota: any) => {
+                           if (cuota.estado === "PAGADO") {
+                             return accCuota + Number(cuota.montoOriginal || 0);
+                           }
+                           return accCuota;
+                         }, 0);
+                         return acc + (sumaPagos * 0.15);
+                      }, 0).toLocaleString()}</p>
                       <p className="text-[9px] text-gray-500 mt-2">15% s/Transferencias Registradas</p>
                    </div>
                    <div className="md:col-span-2 space-y-3 max-h-96 overflow-y-auto custom-scrollbar pr-2">

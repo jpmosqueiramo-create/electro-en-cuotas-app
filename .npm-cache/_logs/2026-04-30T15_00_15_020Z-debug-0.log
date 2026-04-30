@@ -7,13 +7,13 @@
 6 silly config load:file:/usr/local/etc/npmrc
 7 verbose title npm run build
 8 verbose argv "run" "build"
-9 verbose logfile logs-max:10 dir:/Users/juanpablomosqueiramorales/.gemini/antigravity/brain/***/electro-en-cuotas-app/.npm-cache/_logs/2026-04-24T20_01_57_892Z-
-10 verbose logfile /Users/juanpablomosqueiramorales/.gemini/antigravity/brain/***/electro-en-cuotas-app/.npm-cache/_logs/2026-04-24T20_01_57_892Z-debug-0.log
+9 verbose logfile logs-max:10 dir:/Users/juanpablomosqueiramorales/.gemini/antigravity/brain/***/electro-en-cuotas-app/.npm-cache/_logs/2026-04-30T15_00_15_020Z-
+10 verbose logfile /Users/juanpablomosqueiramorales/.gemini/antigravity/brain/***/electro-en-cuotas-app/.npm-cache/_logs/2026-04-30T15_00_15_020Z-debug-0.log
 11 silly logfile start cleaning logs, removing 1 files
 12 silly logfile done cleaning log files
 13 verbose cwd /Users/juanpablomosqueiramorales/.gemini/antigravity/brain/***/electro-en-cuotas-app
 14 verbose os Darwin 25.4.0
 15 verbose node v24.11.1
 16 verbose npm  v11.6.2
-17 verbose exit 0
-18 info ok
+17 verbose exit 1
+18 verbose code 1

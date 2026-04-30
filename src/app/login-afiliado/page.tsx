@@ -22,13 +22,11 @@ export default function LoginPage() {
       if (user.email === "jpmosqueiramo@gmail.com") {
         router.push("/admin");
       } else {
-        // En lugar de depender del checkbox actual, revisamos si ya tenía un rol guardado
-        const savedRole = typeof window !== "undefined" ? localStorage.getItem("userRole") : null;
-        if (savedRole === "afiliado") {
-          router.push("/afiliado");
-        } else {
-          router.push("/cliente");
+        // Si ya está logueado y entra a esta URL, forzamos el rol a afiliado
+        if (typeof window !== "undefined") {
+          localStorage.setItem("userRole", "afiliado");
         }
+        router.push("/afiliado");
       }
     }
   }, [user, loading, router]);
@@ -55,7 +53,7 @@ export default function LoginPage() {
         auth.languageCode = "es";
         await sendEmailVerification(userCredential.user);
         
-        alert("¡Cuenta creada exitosamente! Por favor, debes revisar tu correo electrónico (incluyendo SPAM) y hacer clic en el enlace para validar tu cuenta antes de solicitar un crédito.");
+        alert("¡Cuenta creada exitosamente! Por favor, debes revisar tu correo electrónico (incluyendo SPAM) y hacer clic en el enlace para validar tu cuenta para activar tu panel de comisiones.");
       }
     } catch (err: any) {
       console.error(err);
@@ -84,7 +82,7 @@ export default function LoginPage() {
         
         <div className="text-center mb-8">
           <h1 className="text-3xl font-black text-yellow-500 mb-2">Portal de Afiliados</h1>
-          <p className="text-gray-500">{isLogin ? "Accede a tu cuenta" : "Únete y solicita tu crédito hoy"}</p>
+          <p className="text-gray-500">{isLogin ? "Accede a tu cuenta" : "Únete al equipo de ventas hoy"}</p>
         </div>
 
         {error && (
@@ -131,7 +129,7 @@ export default function LoginPage() {
 
         <div className="mt-8 text-center border-t border-yellow-500/10 pt-6">
           <p className="text-sm text-gray-600">
-            {isLogin ? "¿Eres un cliente nuevo?" : "¿Ya tienes una cuenta validada?"}
+            {isLogin ? "¿Eres un afiliado nuevo?" : "¿Ya tienes una cuenta validada?"}
           </p>
           <button 
             onClick={() => { setIsLogin(!isLogin); setError(""); }} 

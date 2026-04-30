@@ -22,13 +22,11 @@ export default function LoginPage() {
       if (user.email === "jpmosqueiramo@gmail.com") {
         router.push("/admin");
       } else {
-        // En lugar de depender del checkbox actual, revisamos si ya tenía un rol guardado
-        const savedRole = typeof window !== "undefined" ? localStorage.getItem("userRole") : null;
-        if (savedRole === "afiliado") {
-          router.push("/afiliado");
-        } else {
-          router.push("/cliente");
+        // Si ya está logueado y entra a esta URL, forzamos el rol a cliente
+        if (typeof window !== "undefined") {
+          localStorage.setItem("userRole", "cliente");
         }
+        router.push("/cliente");
       }
     }
   }, [user, loading, router]);
