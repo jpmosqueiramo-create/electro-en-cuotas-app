@@ -1,80 +1,145 @@
 "use client";
 
-import { useState } from "react";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { app } from "@/lib/firebase";
+import { useAuth } from "@/components/AuthProvider";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { app } from "@/lib/firebase";
 
 export default function LoginPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const router = useRouter();
+  const [cargando, setCargando] = useState(false);
+  
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    try {
-      if (typeof window === "undefined") return;
-      
-      const auth = getAuth(app);
-      await signInWithEmailAndPassword(auth, email, password);
-      
-      if (email.toLowerCase() === "jpmosqueiramo@gmail.com") {
+  useEffect(() => {
+    if (user && !loading) {
+      if (user.email === "jpmosqueiramo@gmail.com") {
         router.push("/admin");
       } else {
-        router.push("/");
+        // En lugar de depender del checkbox actual, revisamos si ya tenía un rol guardado
+        const savedRole = typeof window !== "undefined" ? localStorage.getItem("userRole") : null;
+        if (savedRole === "afiliado") {
+          router.push("/afiliado");
+        } else {
+          router.push("/cliente");
+        }
+      }
+    }
+  }, [user, loading, router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setCargando(true);
+    const auth = getAuth(app);
+
+    try {
+      if (isLogin) {
+        // Modo Ingresar
+        await signInWithEmailAndPassword(auth, email, password);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("userRole", "cliente");
+        }
+        // Force immediate routing to avoid useEffect race conditions
+        router.push("/cliente");
+           return;
+      } else {
+        // Modo Registro
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        auth.languageCode = "es";
+        await sendEmailVerification(userCredential.user);
+        
+        alert("¡Cuenta creada exitosamente! Por favor, debes revisar tu correo electrónico (incluyendo SPAM) y hacer clic en el enlace para validar tu cuenta antes de solicitar un crédito.");
       }
     } catch (err: any) {
-      setError("Error al iniciar sesión. Verifica tus credenciales.");
+      console.error(err);
+      if (err.code === "auth/invalid-credential" || err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
+        setError("Las credenciales son incorrectas.");
+      } else if (err.code === "auth/email-already-in-use") {
+        setError("Este correo ya está registrado. Intenta iniciar sesión.");
+      } else if (err.code === "auth/weak-password") {
+        setError("La contraseña debe tener al menos 6 caracteres.");
+      } else {
+        setError("Error de sistema: " + err.message);
+      }
+    } finally {
+      // Cargando(false) se maneja a veces después del redirect, pero limpiar el catch es útil.
+      if (!user) setCargando(false);
     }
   };
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-black">
-      <div className="w-full max-w-md p-8 space-y-8 bg-zinc-900 rounded-xl border border-yellow-500/20 shadow-[0_0_15px_rgba(234,179,8,0.1)]">
-        <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-yellow-500">
-            Ingreso a la Plataforma
-          </h2>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
-          <div className="space-y-4 rounded-md shadow-sm">
-            <div>
-              <label className="sr-only">Email</label>
-              <input
-                type="email"
-                required
-                className="relative block w-full appearance-none rounded-md border border-gray-700 bg-zinc-800 px-3 py-2 text-white placeholder-gray-500 focus:z-10 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500 sm:text-sm"
-                placeholder="Correo electrónico"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="sr-only">Contraseña</label>
-              <input
-                type="password"
-                required
-                className="relative block w-full appearance-none rounded-md border border-gray-700 bg-zinc-800 px-3 py-2 text-white placeholder-gray-500 focus:z-10 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500 sm:text-sm"
-                placeholder="Contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          </div>
+  if (loading) return <div className="min-h-screen bg-[#FAFAFA] text-yellow-500 flex items-center justify-center">Cargando...</div>;
 
-          {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+  return (
+    <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-4"> 
+ <a href="/" className="absolute top-8 left-6 md:left-12 text-zinc-500 hover:text-yellow-500 flex items-center gap-2 text-sm font-bold transition-colors z-50">← Volver al Catálogo</a>
+
+      <div className="bg-white border border-yellow-500/30 p-8 rounded-lg w-full max-w-md shadow-[0_0_20px_rgba(234,179,8,0.2)]">
+        
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-black text-yellow-500 mb-2">Portal de Clientes</h1>
+          <p className="text-gray-500">{isLogin ? "Accede a tu cuenta" : "Únete y solicita tu crédito hoy"}</p>
+        </div>
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500 text-red-500 p-3 rounded mb-6 text-sm text-center">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm mb-1 text-zinc-700 font-bold">Correo Electrónico</label>
+            <input 
+              type="email" 
+              required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 focus:border-yellow-500 rounded p-3 text-zinc-900 focus:outline-none"
+              placeholder="tu@correo.com"
+            />
+          </div>
 
           <div>
-            <button
-              type="submit"
-              className="group relative flex w-full justify-center rounded-md border border-transparent bg-yellow-500 py-2 px-4 text-sm font-medium text-black hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-black"
-            >
-              Entrar
-            </button>
+            <label className="block text-sm mb-1 text-zinc-700 font-bold">Contraseña</label>
+            <input 
+              type="password" 
+              required
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 focus:border-yellow-500 rounded p-3 text-zinc-900 focus:outline-none"
+              placeholder="••••••••"
+            />
           </div>
+
+          
+
+          <button 
+            type="submit" 
+            disabled={cargando}
+            className="w-full bg-yellow-500 text-black py-3 rounded-lg font-bold hover:bg-yellow-400 transition-colors disabled:opacity-50 mt-4"
+          >
+            {cargando ? "Autenticando..." : (isLogin ? "Ingresar" : "Registrarme Ahora")}
+          </button>
         </form>
+
+        <div className="mt-8 text-center border-t border-yellow-500/10 pt-6">
+          <p className="text-sm text-gray-600">
+            {isLogin ? "¿Eres un cliente nuevo?" : "¿Ya tienes una cuenta validada?"}
+          </p>
+          <button 
+            onClick={() => { setIsLogin(!isLogin); setError(""); }} 
+            className="text-yellow-500 font-bold hover:underline mt-2 text-sm"
+          >
+            {isLogin ? "Crear una cuenta gratis" : "Iniciar Sesión"}
+          </button>
+        </div>
       </div>
     </div>
   );

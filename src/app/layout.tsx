@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Electro en Cuotas",
-  description: "Plataforma de ventas MVP",
+  title: "Cuenta Hogar SRL | Servicios de Gestión y Financiación",
+  description: "Lo que te haga falta, te lo llevamos y financiamos.",
 };
 
 export default function RootLayout({
@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body
-        className={geistSans.variable + " " + geistMono.variable + " antialiased bg-black text-white"}
+        className={geistSans.variable + " " + geistMono.variable + " antialiased bg-[#FAFAFA] text-zinc-900"}
       >
         <AuthProvider>
           {children}
