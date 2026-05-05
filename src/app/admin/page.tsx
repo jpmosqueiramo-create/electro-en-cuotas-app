@@ -37,7 +37,7 @@ export default function AdminPage() {
     <AdminProtectedRoute>
       <div className="min-h-screen bg-[#FAFAFA] text-yellow-500 p-8">
         <div className="max-w-7xl mx-auto">
-          <header className="flex justify-between items-center mb-12 border-b border-yellow-500/30 pb-4">
+          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-12 border-b border-yellow-500/30 pb-4">
           <div className="flex items-center gap-4">
   <img src="https://storage.googleapis.com/negocio-facil-page.firebasestorage.app/Logos/LOGO%20SIN%20NOMBRE%20-%20CUENTA%20HOGAR.png" alt="Cuenta Hogar Logo" className="h-12 w-auto object-contain" />
   <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600">Centro de Monitoreo Root</h1>

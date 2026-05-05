@@ -290,7 +290,7 @@ export default function AfiliadoPage() {
   return (
     <div className="min-h-screen bg-[#FAFAFA] text-yellow-500 p-8">
       <div className="max-w-6xl mx-auto">
-        <header className="flex justify-between items-center mb-8 border-b border-yellow-500/30 pb-6">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 border-b border-yellow-500/30 pb-6">
           <div>
             <img src="https://storage.googleapis.com/negocio-facil-page.firebasestorage.app/Logos/LOGO%20SIN%20NOMBRE%20-%20CUENTA%20HOGAR.png" alt="Electro en Cuotas Logo" className="h-10 w-auto object-contain" /> <h1 className="text-2xl font-bold text-yellow-400 mt-2">Portal del Afiliado</h1>
             <p className="text-gray-500 text-sm mt-1">Usuario activo: {user.email}</p>
@@ -467,7 +467,7 @@ export default function AfiliadoPage() {
                                <label className="block text-[10px] text-gray-500 mb-1">Nº de Serie del Producto (Oblig.)</label>
                                <input type="text" value={nserie} onChange={e=>setNserie(e.target.value)} placeholder="Ej: SN-928374928" className="bg-white text-zinc-900 px-3 py-2 rounded text-xs border border-gray-300 w-full focus:border-yellow-500 outline-none" />
                              </div>
-                             <div className="grid grid-cols-2 gap-3">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                <div>
                                  <label className="block text-[10px] text-gray-500 mb-1">Monto Cobrado ($)</label>
                                  <input type="number" value={montoAbonado} onChange={e=>setMontoAbonado(e.target.value)} className="bg-white text-zinc-900 px-3 py-2 rounded text-xs border border-gray-300 w-full focus:border-yellow-500 outline-none font-bold" />
@@ -521,7 +521,7 @@ export default function AfiliadoPage() {
                         {recepcionActiva === sol.id ? (
                            <div className="bg-blue-900/20 border border-blue-500/50 p-4 rounded-lg mt-2 flex flex-col gap-3 shadow-md w-full relative z-10">
                               <h4 className="text-blue-400 font-bold text-xs uppercase text-center border-b border-blue-500/20 pb-2">📦 Confirmar Recepción Física</h4>
-                              <div className="grid grid-cols-2 gap-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                   <label className="block text-[10px] text-gray-500 mb-1">Fecha de Ingreso</label>
                                   <input type="date" value={fechaRecepcion} onChange={e=>setFechaRecepcion(e.target.value)} className="bg-white text-zinc-900 px-3 py-2 rounded text-xs border border-gray-300 w-full focus:border-blue-500 outline-none" />
@@ -611,7 +611,7 @@ export default function AfiliadoPage() {
                           </button>
                         )}
                      
-                     <div className="flex justify-between items-center text-xs">
+                     <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1 sm:gap-0">
                        <span className="text-gray-500">Cliente: {sol.datosPersonales?.nombreCompleto}</span>
                        <span className={`px-2 py-1 rounded font-bold ${
                           sol.estado === 'APROBADO' ? 'bg-green-500/20 text-green-400' :

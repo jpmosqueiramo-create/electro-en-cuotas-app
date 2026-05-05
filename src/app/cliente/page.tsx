@@ -207,7 +207,7 @@ export default function ClientePage() {
   };
 
   if (loading || cargandoDatos) {
-    return <div className="min-h-screen bg-[#FAFAFA] text-yellow-500 p-8 text-center mt-20">Cargando tu perfil...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-white to-yellow-50 text-amber-600 font-bold text-xl animate-pulse">Cargando tu perfil premium...</div>;
   }
 
   if (!user) return null;
@@ -215,8 +215,8 @@ export default function ClientePage() {
   // VERIFICACIÓN ESTRICTA DE CORREO: Bloquear UI si no verificó el mail (excepto admin jpmosqueira)
   if (!user.emailVerified && user.email !== "jpmosqueiramo@gmail.com") {
     return (
-      <div className="min-h-screen bg-[#FAFAFA] text-yellow-500 p-8 flex flex-col items-center justify-center">
-        <div className="bg-[#FAFAFA] border border-yellow-500/30 p-10 rounded-lg text-center max-w-lg shadow-[0_0_20px_rgba(234,179,8,0.2)]">
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-yellow-50 p-8 flex flex-col items-center justify-center">
+        <div className="bg-white/80 backdrop-blur-xl border border-white p-10 rounded-3xl text-center max-w-lg shadow-2xl shadow-amber-500/10 transition-all duration-500">
           <div className="text-6xl mb-6">📬</div>
           <h1 className="text-3xl font-black text-zinc-900 mb-4">Verifica tu correo electrónico</h1>
           <p className="text-yellow-200/80 mb-6">
@@ -229,12 +229,12 @@ export default function ClientePage() {
           <button 
             disabled={correoEnviado}
             onClick={handleReenviarCorreo}
-            className="w-full bg-yellow-500 text-black py-4 rounded-lg font-bold hover:bg-yellow-400 transition-colors disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black py-4 rounded-xl font-black hover:from-amber-500 hover:to-yellow-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-300 disabled:opacity-50"
           >
             {correoEnviado ? "✅ Correo Reenviado. Revisa tu buzón." : "No me llegó, reenviar correo de validación"}
           </button>
 
-          <button onClick={() => window.location.reload()} className="w-full bg-transparent border border-yellow-500/50 text-yellow-500 py-3 mt-4 rounded-lg font-bold hover:bg-yellow-500/10 transition-colors">
+          <button onClick={() => window.location.reload()} className="w-full bg-transparent border-2 border-amber-400 text-amber-600 py-3 mt-4 rounded-xl font-bold hover:bg-amber-50 transition-all duration-300">
             Ya lo validé, recargar página
           </button>
           
@@ -247,18 +247,19 @@ export default function ClientePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-yellow-500 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50/80 via-zinc-50 to-orange-50/50 text-zinc-800 p-4 sm:p-8 selection:bg-amber-200">
       <div className="max-w-4xl mx-auto">
-        <header className="flex justify-between items-center mb-8 border-b border-yellow-500/30 pb-4">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 bg-white/60 backdrop-blur-md p-4 sm:p-6 rounded-2xl border border-white shadow-sm">
           <div>
-            <img src="https://storage.googleapis.com/negocio-facil-page.firebasestorage.app/Logos/LOGO%20SIN%20NOMBRE%20-%20CUENTA%20HOGAR.png" alt="Cuenta Hogar Logo" className="h-10 w-auto object-contain" /> <h1 className="text-2xl font-bold text-yellow-400 mt-2">Portal de Créditos</h1>
-            <p className="text-gray-500 text-sm mt-1">{user.email}</p>
+            <img src="https://storage.googleapis.com/negocio-facil-page.firebasestorage.app/Logos/LOGO%20SIN%20NOMBRE%20-%20CUENTA%20HOGAR.png" alt="Cuenta Hogar Logo" className="h-10 w-auto object-contain" />
+            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-yellow-600 mt-2 tracking-tight">Portal de Créditos</h1>
+            <p className="text-zinc-500 text-sm mt-1 font-medium">{user.email}</p>
           </div>
           <div className="flex gap-3">
-            <a href="/" className="text-sm border border-yellow-500/50 hover:bg-yellow-500 hover:text-black px-4 py-2 rounded transition-colors hidden sm:block">
+            <a href="/" className="text-sm border-2 border-amber-200 text-amber-700 hover:bg-amber-100 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 hidden sm:block hover:-translate-y-0.5">
               Volver al Catálogo
             </a>
-            <button onClick={() => { import("firebase/auth").then(({getAuth, signOut}) => signOut(getAuth())); router.push("/login"); }} className="text-sm border border-red-500/50 text-red-500 hover:bg-red-900/50 px-4 py-2 rounded transition-colors font-bold">
+            <button onClick={() => { import("firebase/auth").then(({getAuth, signOut}) => signOut(getAuth())); router.push("/login"); }} className="text-sm bg-red-50 text-red-600 hover:bg-red-100 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 hover:-translate-y-0.5 border border-red-200">
               Cerrar Sesión
             </button>
           </div>
@@ -269,11 +270,11 @@ export default function ClientePage() {
           
           <button 
             onClick={abrirFormDatos}
-            className="bg-[#FAFAFA] border border-yellow-500/30 p-4 rounded-lg flex items-center gap-4 hover:border-yellow-500 hover:-translate-y-1 active:scale-95 transition-all shadow-md"
+            className="bg-white/80 backdrop-blur-md border border-white p-5 rounded-2xl flex items-center gap-4 hover:border-amber-300 hover:-translate-y-1 hover:shadow-xl active:scale-95 transition-all duration-300 shadow-sm group"
           >
              <div className="text-4xl">📝</div>
              <div className="text-left">
-               <h3 className="font-bold text-yellow-400 text-lg">Actualizar mis Datos</h3>
+               <h3 className="font-bold text-amber-600 text-lg group-hover:text-amber-500 transition-colors">Actualizar mis Datos</h3>
                <p className="text-sm text-gray-500">Avisar si cambiaste de número o de domicilio.</p>
              </div>
           </button>
@@ -281,25 +282,25 @@ export default function ClientePage() {
 
         
         {mostrarFormDatos && (
-          <div className="bg-[#FAFAFA] border border-yellow-500/20 rounded-lg p-6 lg:p-10 mb-8 relative shadow-md">
+          <div className="bg-white/80 backdrop-blur-xl border border-white rounded-3xl p-6 lg:p-10 mb-8 relative shadow-xl shadow-amber-900/5 animate-fade-in">
             <button onClick={() => setMostrarFormDatos(false)} className="absolute top-6 right-6 text-gray-500 hover:text-zinc-900 font-bold text-sm">✕ Cancelar</button>
             <h2 className="text-2xl mb-2 font-bold text-zinc-900">Actualizar Mis Datos</h2>
             <p className="text-gray-500 mb-6">Mantené tu teléfono y domicilio al día para facilitar las entregas y cobranzas.</p>
             <form onSubmit={handleActualizarDatos} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm mb-2 text-zinc-700 font-semibold">Teléfono / Celular</label>
-                <input required value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" className="w-full bg-white border border-gray-300 rounded p-3 text-zinc-900 focus:border-yellow-500 focus:outline-none" />
+                <input required value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" className="w-full bg-white/50 border border-amber-100 rounded-xl p-3.5 text-zinc-900 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white outline-none transition-all" />
               </div>
               <div>
                 <label className="block text-sm mb-2 text-zinc-700 font-semibold">Dirección</label>
-                <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" className="w-full bg-white border border-gray-300 rounded p-3 text-zinc-900 focus:border-yellow-500 focus:outline-none" />
+                <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" className="w-full bg-white/50 border border-amber-100 rounded-xl p-3.5 text-zinc-900 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white outline-none transition-all" />
               </div>
               <div>
                 <label className="block text-sm mb-2 text-zinc-700 font-semibold">Localidad</label>
-                <input required value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" className="w-full bg-white border border-gray-300 rounded p-3 text-zinc-900 focus:border-yellow-500 focus:outline-none" />
+                <input required value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" className="w-full bg-white/50 border border-amber-100 rounded-xl p-3.5 text-zinc-900 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white outline-none transition-all" />
               </div>
               <div className="md:col-span-2">
-                <button disabled={subiendo} type="submit" className="w-full bg-yellow-500 text-black py-4 rounded-lg font-bold text-lg hover:bg-yellow-400 transition-colors shadow-md disabled:opacity-50">
+                <button disabled={subiendo} type="submit" className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black py-4 rounded-xl font-black text-lg hover:from-amber-500 hover:to-yellow-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:transform-none">
                   {subiendo ? "Guardando..." : "Guardar Nuevos Datos"}
                 </button>
               </div>
@@ -309,7 +310,7 @@ export default function ClientePage() {
 
         {solicitudes.length > 0 && !mostrarFormulario && !mostrarFormDatos && (
           <div className="mb-6 flex justify-end">
-            <button onClick={() => setMostrarFormulario(true)} className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-2 px-6 rounded shadow-md transition-colors">
+            <button onClick={() => setMostrarFormulario(true)} className="bg-gradient-to-r from-zinc-800 to-zinc-900 hover:from-zinc-700 hover:to-zinc-800 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                + Solicitar un nuevo crédito
             </button>
           </div>
@@ -319,10 +320,10 @@ export default function ClientePage() {
           <div className="space-y-6">
             <h2 className="text-2xl font-semibold mb-4 text-zinc-900">Tus Solicitudes Actuales</h2>
             {solicitudes.map(sol => (
-              <div key={sol.id} className="bg-[#FAFAFA] border border-yellow-500/30 rounded-lg p-6">
+              <div key={sol.id} className="bg-white/90 backdrop-blur-xl border border-white rounded-3xl p-6 shadow-xl shadow-amber-900/5 animate-fade-in">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-xl font-bold text-yellow-400 mb-1">{(sol as any).planElegido ? ((sol as any).planElegido + " Cuotas x $" + (sol as any).montoCuota) : "Crédito"} : {sol.productoDeseado}</h3>
+                    <h3 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-yellow-500 mb-1 tracking-tight">{(sol as any).planElegido ? ((sol as any).planElegido + " Cuotas x $" + (sol as any).montoCuota) : "Crédito"} : {sol.productoDeseado}</h3>
                     <p className="text-sm text-gray-500 mt-1">Enviado el {sol.fechaCreacion?.toDate().toLocaleDateString()}</p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-sm font-bold \${
@@ -337,7 +338,7 @@ export default function ClientePage() {
                 
                 
                 {(sol as any).estadoEntrega === "ENTREGADO" && (
-                  <div className="mt-5 p-4 bg-gray-100/50 border border-gray-300 rounded-lg">
+                  <div className="mt-5 p-4 bg-zinc-50/80 border border-zinc-200/60 rounded-2xl">
                     <h4 className="text-sm font-bold text-gray-600 mb-2">🏷️ Anticipo de Entrega</h4>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                        <span className="text-xl font-black text-zinc-900">${(sol as any).montoAbonado || "0"} <span className="text-xs text-gray-500 uppercase font-normal ml-1">({(sol as any).metodoPago || "Efectivo"})</span></span>
@@ -352,15 +353,18 @@ export default function ClientePage() {
                 
                 {(sol as any).estadoEntrega === "ENTREGADO" && (sol as any).planPagos && (
                   <div className="mt-6 pt-6 border-t border-yellow-500/20">
-                    <h4 className="text-xl font-bold text-yellow-400 mb-4 flex items-center gap-2">💳 Mi Planilla de Pagos</h4>
+                    <h4 className="text-2xl font-black text-zinc-800 mb-4 flex items-center gap-2">💳 Mi Planilla de Pagos</h4>
                     <p className="text-gray-500 text-sm mb-6">Aquí puedes subir y reportar las transferencias o recibos mensuales de tus cuotas.</p>
                     <div className="space-y-4">
-                      {(sol as any).planPagos.map((cuota: any, idx: number) => (
-                        <div key={idx} className="bg-white border border-yellow-500/20 p-4 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md">
+                      {(sol as any).planPagos.map((cuota: any, idx: number) => {
+                        const isEligibleToPay = !(sol as any).planPagos.slice(0, idx).some((c:any) => c.estado === "PENDIENTE");
+                        return (
+                        <div key={idx} className="bg-white border border-amber-100/60 p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm hover:shadow-md hover:border-amber-300/50 transition-all duration-300 group">
                           <div>
-                            <p className="font-bold text-zinc-900 text-lg">Cuota {cuota.numero} de {(sol as any).planElegido}</p>
+                            <p className="font-black text-zinc-800 text-xl tracking-tight">Cuota {cuota.numero} de {(sol as any).planElegido || ((sol as any).planPagos.length)}</p>
                             <p className="text-gray-500 text-sm">Vencimiento: {new Date(cuota.vencimiento).toLocaleDateString()}</p>
-                            <p className="text-yellow-500 font-extrabold text-xl">${cuota.montoOriginal}</p>
+                            <p className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-yellow-600 font-black text-2xl mt-1">${cuota.montoOriginal}</p>
+                            {cuota.notaAcumulacion && <p className="text-xs text-orange-500 font-bold mt-1 bg-orange-500/10 px-2 py-0.5 rounded w-fit">{cuota.notaAcumulacion}</p>}
                           </div>
                           
                           <div className="text-right flex flex-col justify-center">
@@ -372,45 +376,87 @@ export default function ClientePage() {
                             )}
                             
                             {cuota.estado === "EN_REVISION" && (
-                              <div className="flex flex-col items-end gap-2 bg-blue-900/20 p-3 rounded border border-blue-500/30">
-                                <span className="text-blue-400 font-bold text-sm flex items-center gap-1">⌛ Auditando pago...</span>
+                              <div className="flex flex-col items-end gap-2 bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-inner">
+                                <span className="text-blue-600 font-bold text-sm flex items-center gap-1">⌛ Auditando pago...</span>
                                 <p className="text-[10px] text-gray-500 max-w-xs text-right">El administrador de Cuenta Hogar está revisando el recibo que subiste en la cuenta bancaria.</p>
                               </div>
                             )}
                             
                             {cuota.estado === "PENDIENTE" && (
-                              <div className="flex flex-col items-end gap-3 bg-[#FAFAFA] border border-gray-200 p-4 rounded">
-                                <span className="bg-orange-500/20 text-orange-400 border border-orange-500/50 px-3 py-1 rounded font-bold text-xs uppercase tracking-widest self-end">PENDIENTE</span>
-                                <input type="file" id={`comprobante_${sol.id}_${idx}`} accept="image/*,application/pdf" className="text-[11px] w-full max-w-xs text-gray-500 file:bg-yellow-500 file:text-black file:border-0 file:rounded file:px-3 file:py-1.5 file:font-bold hover:file:bg-yellow-400 file:cursor-pointer outline-none" />
-                                <button 
-                                  onClick={async () => {
-                                    const el = document.getElementById(`comprobante_${sol.id}_${idx}`) as HTMLInputElement;
-                                    if(!el.files || el.files.length === 0) return alert("Selecciona el comprobante/foto primero desde tu dispositivo.");
-                                    
-                                    const btn = document.getElementById(`btn_${sol.id}_${idx}`) as HTMLButtonElement;
-                                    btn.innerText = "Enviando...";
-                                    btn.disabled = true;
+                              <div className="flex flex-col items-end gap-3 bg-zinc-50/80 border border-zinc-200 p-5 rounded-2xl">
+                                <span className="bg-orange-100 text-orange-700 border border-orange-200 px-3 py-1 rounded-full font-bold text-xs uppercase tracking-wider self-end shadow-sm">PENDIENTE</span>
+                                {isEligibleToPay ? (
+                                  <>
+                                    <div className="w-full max-w-xs mb-1 text-left">
+                                      <label className="text-[10px] font-bold text-gray-500 uppercase">Monto pagado ($):</label>
+                                      <input type="number" id={`monto_${sol.id}_${idx}`} defaultValue={cuota.montoOriginal} min="1" className="w-full text-sm font-bold bg-white text-zinc-900 border border-amber-200 rounded-lg px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all shadow-inner" />
+                                    </div>
+                                    <input type="file" id={`comprobante_${sol.id}_${idx}`} accept="image/*,application/pdf" className="text-[11px] w-full max-w-xs text-gray-500 file:bg-yellow-500 file:text-black file:border-0 file:rounded-lg file:px-4 file:py-2 file:font-bold hover:file:bg-amber-400 file:transition-colors file:shadow-sm file:cursor-pointer outline-none" />
+                                    <button 
+                                      onClick={async () => {
+                                        const el = document.getElementById(`comprobante_${sol.id}_${idx}`) as HTMLInputElement;
+                                        if(!el.files || el.files.length === 0) return alert("Selecciona el comprobante/foto primero desde tu dispositivo.");
+                                        const montoInput = document.getElementById(`monto_${sol.id}_${idx}`) as HTMLInputElement;
+                                        const montoReportado = Number(montoInput.value) || 0;
+                                        if (montoReportado <= 0) return alert("Ingresa el monto válido del pago.");
 
-                                    try {
-                                      const url = await handleSubirArchivo(el.files[0], `cuota_${cuota.numero}_${sol.id}`);
-                                      const newPlan = [...(sol as any).planPagos];
-                                      newPlan[idx].comprobanteUrl = url;
-                                      newPlan[idx].estado = "EN_REVISION";
-                                      await updateDoc(doc(db, "solicitudes", sol.id), { planPagos: newPlan });
-                                      alert("Comprobante enviado exitosamente. Aguardando validación de la administración.");
-                                      fetchSolicitudes();
-                                    } catch(e) { alert("Error de conexión al subir. Chequea tu internet."); btn.innerText="Reportar Pago"; btn.disabled=false; }
-                                  }}
-                                  id={`btn_${sol.id}_${idx}`}
-                                  className="w-full bg-yellow-500 text-black px-4 py-2.5 rounded font-black text-sm hover:bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.3)] transition"
-                                >
-                                  📨 Reportar Pago
-                                </button>
+                                        const btn = document.getElementById(`btn_${sol.id}_${idx}`) as HTMLButtonElement;
+                                        btn.innerText = "Enviando...";
+                                        btn.disabled = true;
+
+                                        try {
+                                          const url = await handleSubirArchivo(el.files[0], `cuota_${cuota.numero}_${sol.id}`);
+                                          const newPlan = [...(sol as any).planPagos];
+                                          const diferencia = cuota.montoOriginal - montoReportado;
+                                          
+                                          if (diferencia > 0) {
+                                              newPlan[idx].montoOriginal = montoReportado;
+                                              if (idx + 1 < newPlan.length) {
+                                                  newPlan[idx + 1].montoOriginal += diferencia;
+                                                  newPlan[idx + 1].notaAcumulacion = `+ $${diferencia} adeudado de cuota ${cuota.numero}`;
+                                              } else {
+                                                  const vencOriginal = new Date(cuota.vencimiento);
+                                                  vencOriginal.setMonth(vencOriginal.getMonth() + 1);
+                                                  newPlan.push({
+                                                      numero: cuota.numero + 1,
+                                                      montoOriginal: diferencia,
+                                                      montoAbonado: 0,
+                                                      estado: "PENDIENTE",
+                                                      vencimiento: vencOriginal.toISOString(),
+                                                      fechaPago: null,
+                                                      metodoPago: null,
+                                                      comprobanteUrl: null,
+                                                      notaAcumulacion: `Saldo pendiente de la cuota ${cuota.numero}`
+                                                  });
+                                              }
+                                          } else if (diferencia < 0) {
+                                              alert("Estás reportando un pago mayor al de la cuota. Se registrará este monto para la cuota actual.");
+                                              newPlan[idx].montoOriginal = montoReportado;
+                                          }
+
+                                          newPlan[idx].comprobanteUrl = url;
+                                          newPlan[idx].estado = "EN_REVISION";
+                                          await updateDoc(doc(db, "solicitudes", sol.id), { planPagos: newPlan });
+                                          alert("Comprobante enviado exitosamente. Aguardando validación de la administración.");
+                                          fetchSolicitudes();
+                                        } catch(e) { alert("Error de conexión al subir. Chequea tu internet."); btn.innerText="📨 Reportar Pago"; btn.disabled=false; }
+                                      }}
+                                      id={`btn_${sol.id}_${idx}`}
+                                      className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black px-4 py-3 rounded-xl font-black text-sm hover:from-amber-500 hover:to-yellow-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+                                    >
+                                      📨 Reportar Pago
+                                    </button>
+                                  </>
+                                ) : (
+                                  <div className="w-full text-center bg-gray-100 p-3 rounded text-xs text-gray-500 border border-gray-300">
+                                    <p>Debes reportar y abonar las cuotas anteriores antes de poder pagar esta.</p>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
                         </div>
-                      ))}
+                      )})}
                     </div>
                   </div>
                 )}
@@ -433,7 +479,7 @@ export default function ClientePage() {
             ))}
           </div>
         ) : (
-          <div className="bg-[#FAFAFA] border border-yellow-500/20 rounded-lg p-6 lg:p-10 relative">
+          <div className="bg-white/80 backdrop-blur-xl border border-white rounded-3xl p-6 lg:p-10 relative shadow-xl shadow-amber-900/5">
             {solicitudes.length > 0 && (
                <button onClick={() => setMostrarFormulario(false)} className="absolute top-6 right-6 text-gray-500 hover:text-zinc-900 font-bold text-sm">
                  ✕ Cancelar
@@ -443,53 +489,53 @@ export default function ClientePage() {
             <p className="text-yellow-200/60 mb-8">Completa el formulario biográfico y adjunta la documentación para que evaluemos tu perfil crediticio.</p>
             
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-4 rounded-lg border border-yellow-500/10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white shadow-sm">
                 <div>
-                  <label className="block text-sm mb-2 text-yellow-400 font-semibold">Nombre Completo</label>
-                  <input required value={nombreCompleto} onChange={e=>setNombreCompleto(e.target.value)} type="text" placeholder="Juan Perez" className="w-full bg-gray-100 border border-gray-700 rounded p-3 text-zinc-900 focus:border-yellow-500 focus:outline-none" />
+                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Nombre Completo</label>
+                  <input required value={nombreCompleto} onChange={e=>setNombreCompleto(e.target.value)} type="text" placeholder="Juan Perez" className="w-full bg-zinc-50/50 border border-amber-200 rounded-xl p-3.5 text-zinc-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:bg-white outline-none transition-all" />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2 text-yellow-400 font-semibold">Número de DNI</label>
-                  <input required value={numeroDni} onChange={e=>setNumeroDni(e.target.value)} type="number" placeholder="Ej: 32444555" className="w-full bg-gray-100 border border-gray-700 rounded p-3 text-zinc-900 focus:border-yellow-500 focus:outline-none" />
+                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Número de DNI</label>
+                  <input required value={numeroDni} onChange={e=>setNumeroDni(e.target.value)} type="number" placeholder="Ej: 32444555" className="w-full bg-zinc-50/50 border border-amber-200 rounded-xl p-3.5 text-zinc-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:bg-white outline-none transition-all" />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2 text-yellow-400 font-semibold">Teléfono / Celular</label>
-                  <input required value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" placeholder="Ej: +54 9 11 1234-5678" className="w-full bg-gray-100 border border-gray-700 rounded p-3 text-zinc-900 focus:border-yellow-500 focus:outline-none" />
+                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Teléfono / Celular</label>
+                  <input required value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" placeholder="Ej: +54 9 11 1234-5678" className="w-full bg-zinc-50/50 border border-amber-200 rounded-xl p-3.5 text-zinc-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:bg-white outline-none transition-all" />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2 text-yellow-400 font-semibold">Dirección</label>
-                  <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" placeholder="Ej: Av. San Martin 123" className="w-full bg-gray-100 border border-gray-700 rounded p-3 text-zinc-900 focus:border-yellow-500 focus:outline-none" />
+                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Dirección</label>
+                  <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" placeholder="Ej: Av. San Martin 123" className="w-full bg-zinc-50/50 border border-amber-200 rounded-xl p-3.5 text-zinc-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:bg-white outline-none transition-all" />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2 text-yellow-400 font-semibold">Localidad</label>
-                  <input required value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" placeholder="Ej: Córdoba Capital" className="w-full bg-gray-100 border border-gray-700 rounded p-3 text-zinc-900 focus:border-yellow-500 focus:outline-none" />
+                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Localidad</label>
+                  <input required value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" placeholder="Ej: Córdoba Capital" className="w-full bg-zinc-50/50 border border-amber-200 rounded-xl p-3.5 text-zinc-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:bg-white outline-none transition-all" />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2 text-yellow-400 font-semibold">¿Qué producto deseas financiar?</label>
-                  <input required value={producto} onChange={e=>setProducto(e.target.value)} type="text" placeholder="Ej: Heladera Samsung 400L" className="w-full bg-gray-100 border border-yellow-500/50 rounded p-3 text-zinc-900 focus:border-yellow-500 focus:outline-none" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-4 rounded-lg border border-yellow-500/10">
-                <div>
-                  <label className="block text-sm mb-2 text-yellow-200">Foto DNI - Frente</label>
-                  <input required type="file" accept="image/*" onChange={e => {if (e.target.files) setDniFrente(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-yellow-500/20 file:text-yellow-500 hover:file:bg-yellow-500/30" />
-                </div>
-                <div>
-                  <label className="block text-sm mb-2 text-yellow-200">Foto DNI - Dorso</label>
-                  <input required type="file" accept="image/*" onChange={e => {if (e.target.files) setDniDorso(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-yellow-500/20 file:text-yellow-500 hover:file:bg-yellow-500/30" />
-                </div>
-                <div>
-                  <label className="block text-sm mb-2 text-yellow-200">Último Recibo de Sueldo</label>
-                  <input required type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setReciboSueldo(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-yellow-500/20 file:text-yellow-500 hover:file:bg-yellow-500/30" />
-                </div>
-                <div>
-                  <label className="block text-sm mb-2 text-yellow-200">Impuesto o Servicio (Verificar Domicilio)</label>
-                  <input required type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setServicio(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-yellow-500/20 file:text-yellow-500 hover:file:bg-yellow-500/30" />
+                  <label className="block text-sm mb-2 text-zinc-700 font-bold">¿Qué producto deseas financiar?</label>
+                  <input required value={producto} onChange={e=>setProducto(e.target.value)} type="text" placeholder="Ej: Heladera Samsung 400L" className="w-full bg-amber-50/50 border border-amber-300 rounded-xl p-3.5 text-zinc-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 focus:bg-white outline-none transition-all" />
                 </div>
               </div>
 
-              <button disabled={subiendo} type="submit" className="w-full bg-yellow-500 text-black py-4 rounded-lg font-bold text-lg hover:bg-yellow-400 transition-colors shadow-[0_0_15px_rgba(234,179,8,0.4)] disabled:opacity-50 disabled:shadow-none mt-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white shadow-sm">
+                <div>
+                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Foto DNI - Frente</label>
+                  <input required type="file" accept="image/*" onChange={e => {if (e.target.files) setDniFrente(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 file:transition-colors file:font-bold" />
+                </div>
+                <div>
+                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Foto DNI - Dorso</label>
+                  <input required type="file" accept="image/*" onChange={e => {if (e.target.files) setDniDorso(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 file:transition-colors file:font-bold" />
+                </div>
+                <div>
+                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Último Recibo de Sueldo</label>
+                  <input required type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setReciboSueldo(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 file:transition-colors file:font-bold" />
+                </div>
+                <div>
+                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Impuesto o Servicio (Verificar Domicilio)</label>
+                  <input required type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setServicio(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 file:transition-colors file:font-bold" />
+                </div>
+              </div>
+
+              <button disabled={subiendo} type="submit" className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black py-4 rounded-xl font-black text-lg hover:from-amber-500 hover:to-yellow-600 hover:-translate-y-1 hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:transform-none mt-8">
                 {subiendo ? "Subiendo archivos, por favor no cierres la ventana..." : "Enviar Solicitud de Crédito"}
               </button>
             </form>
