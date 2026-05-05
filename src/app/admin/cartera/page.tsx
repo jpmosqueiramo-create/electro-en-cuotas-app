@@ -410,7 +410,10 @@ export default function CarteraPage() {
                               mensaje: '¡Excelente! Se registró el pago de ' + (curSol.datosPersonales?.nombreCompleto || 'un cliente') + ' por $' + montoFijo + '. Ya podés ver en la plataforma la comisión asociada.',
                               fecha: new Date().toISOString(),
                               leida: false,
-                              comisionAsociada: montoFijo * 0.15
+                              comisionAsociada: montoFijo * 0.15,
+                              estadoPago: "PENDIENTE",
+                              cuotaAsociada: cuotaActual.numero || idxCuota + 1,
+                              clienteNombre: curSol.datosPersonales?.nombreCompleto || 'Desconocido'
                            });
                         }
                         alert("¡Cuota liquidada exitosamente!");

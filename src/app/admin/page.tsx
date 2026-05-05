@@ -98,6 +98,14 @@ export default function AdminPage() {
                 📈 Abrir Panel de Cartera
               </Link>
             </div>
+
+            <div className="p-6 bg-[#FAFAFA] border border-yellow-500/20 rounded-lg flex flex-col">
+              <h2 className="text-2xl mb-4 font-semibold text-zinc-900">Comisiones Afiliados</h2>
+              <p className="text-yellow-200/60 mb-6">Visualiza las comisiones acumuladas por cada vendedor y registra el pago (liquidación) de las mismas.</p>
+              <Link href="/admin/comisiones" className="mt-auto bg-amber-600 text-white font-bold text-center px-4 py-3 rounded w-full transition-colors hover:bg-amber-500 shadow-[0_0_15px_rgba(217,119,6,0.4)]">
+                💰 Liquidar Comisiones
+              </Link>
+            </div>
           </div>
         </div>
       </div>

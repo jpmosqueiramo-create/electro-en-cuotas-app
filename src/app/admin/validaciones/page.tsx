@@ -571,7 +571,10 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                       mensaje: '¡Excelente! Se aprobó el recibo de ' + (sol.datosPersonales?.nombreCompleto || 'cliente') + ' por $' + cuota.montoOriginal + '. Ya tenés la comisión ganada.',
                                                       fecha: new Date().toISOString(),
                                                       leida: false,
-                                                      comisionAsociada: cuota.montoOriginal * 0.15
+                                                      comisionAsociada: cuota.montoOriginal * 0.15,
+                                                      estadoPago: "PENDIENTE",
+                                                      cuotaAsociada: cuota.numero || idx + 1,
+                                                      clienteNombre: sol.datosPersonales?.nombreCompleto || 'Desconocido'
                                                    });
                                                 }
                                                 await fetchSolicitudes();

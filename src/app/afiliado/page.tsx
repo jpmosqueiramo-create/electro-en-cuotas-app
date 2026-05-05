@@ -671,8 +671,15 @@ export default function AfiliadoPage() {
                                <div key={n.id} className={'p-4 rounded-xl border flex flex-col gap-1 ' + (!n.leida ? 'bg-gray-100/80 border-yellow-500/50 relative' : 'bg-white border-gray-200')}>
                                    {!n.leida && <span className="absolute top-2 right-2 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span></span>}
                                    <div className="flex justify-between items-center text-[10px] text-gray-500 mb-1">
-                                       <span className="font-bold">{new Date(n.fecha).toLocaleString()}</span>
-                                       {n.comisionAsociada && <span className="text-green-400 bg-green-500/10 px-2 py-0.5 rounded font-black border border-green-500/20">COMISIÓN: ${n.comisionAsociada.toLocaleString()}</span>}
+                                       <div className="flex items-center gap-2">
+                                          <span className="font-bold">{new Date(n.fecha).toLocaleString()}</span>
+                                          {n.comisionAsociada && (
+                                             n.estadoPago === "PAGADA" 
+                                               ? <span className="bg-green-500 text-white px-2 py-0.5 rounded font-black text-[9px] uppercase">COBRADA</span>
+                                               : <span className="bg-red-500 text-white px-2 py-0.5 rounded font-black text-[9px] uppercase animate-pulse">PENDIENTE DE PAGO</span>
+                                          )}
+                                       </div>
+                                       {n.comisionAsociada && <span className="text-green-600 bg-green-500/10 px-2 py-0.5 rounded font-black border border-green-500/30">COMISIÓN: ${n.comisionAsociada.toLocaleString()}</span>}
                                    </div>
                                    <p className={'text-sm ' + (!n.leida ? 'text-zinc-900 font-bold' : 'text-gray-600')}>{n.mensaje}</p>
                                    {!n.leida && (
