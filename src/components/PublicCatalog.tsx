@@ -195,6 +195,45 @@ export default function PublicCatalog() {
         </div>
       </section>
 
+      {/* 2.5 LOCALIDADES DE COBERTURA */}
+      <section className="py-20 border-t border-zinc-850 bg-zinc-950/40 overflow-hidden relative">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
+          <div>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 text-xs font-black uppercase tracking-wider mb-6">
+              📍 Zonas de Cobertura
+            </span>
+            <h2 className="text-3xl md:text-5xl font-black text-white leading-tight mb-6">
+              ¿En qué localidades estamos?
+            </h2>
+            <p className="text-zinc-400 text-lg mb-8 max-w-lg leading-relaxed">
+              Llegamos a tu puerta con financiación directa. Ofrecemos cobertura y entrega a sola firma en las siguientes ciudades:
+            </p>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {["Lincoln", "Chivilcoy", "Los Toldos", "O´Brien", "Zavalia"].map((ciudad, idx) => (
+                <div key={idx} className="bg-zinc-900 border border-zinc-850 rounded-2xl p-4 flex items-center gap-3 hover:border-yellow-500/50 hover:bg-zinc-900/80 transition-all duration-300 shadow-lg">
+                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse" />
+                  <span className="font-bold text-white text-sm md:text-base">{ciudad}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-center lg:justify-end relative">
+            <div className="relative w-full max-w-[400px] aspect-square flex items-center justify-center group">
+              {/* Círculo luminoso de fondo */}
+              <div className="absolute inset-0 bg-yellow-500/5 blur-3xl rounded-full group-hover:bg-yellow-500/10 transition-colors duration-500" />
+              
+              <img 
+                src="/mapa_bsas.png" 
+                alt="Mapa de Cobertura Provincia de Buenos Aires" 
+                className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_15px_rgba(234,179,8,0.3)] hover:scale-105 transition-transform duration-500 ease-out" 
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* 3. CÓMO FUNCIONAMOS */}
       <section className="py-20 border-t border-zinc-850 max-w-7xl mx-auto px-6">
         <h2 className="text-3xl md:text-4xl font-black text-center mb-16 text-white">¿Cómo Funcionamos?</h2>
