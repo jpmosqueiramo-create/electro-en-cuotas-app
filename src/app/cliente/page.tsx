@@ -2,10 +2,11 @@
 
 import { useAuth } from "@/components/AuthProvider";
 import { db, storage } from "@/lib/firebase";
-import { addDoc, collection, getDocs, query, where, Timestamp, updateDoc, doc } from "firebase/firestore";
+import { addDoc, collection, getDocs, query, where, Timestamp, updateDoc, doc, getDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAuth, sendEmailVerification } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Solicitud = {
@@ -14,6 +15,13 @@ type Solicitud = {
   mensajeAdmin?: string;
   fechaCreacion: any;
   productoDeseado: string;
+  planElegido?: string;
+  montoCuota?: number;
+  planPagos?: any[];
+  estadoEntrega?: string;
+  montoAbonado?: number;
+  metodoPago?: string;
+  estadoRendicion?: string;
 };
 
 export default function ClientePage() {
@@ -33,12 +41,35 @@ export default function ClientePage() {
   const [telefono, setTelefono] = useState("");
   const [direccion, setDireccion] = useState("");
   const [localidad, setLocalidad] = useState("");
+  const [email, setEmail] = useState("");
+  const [antiguedadLaboral, setAntiguedadLaboral] = useState("");
   
   // Archivos
   const [producto, setProducto] = useState("");
   const [productoId, setProductoId] = useState("");
   const [planElegido, setPlanElegido] = useState("");
   const [montoCuota, setMontoCuota] = useState(0);
+  const [productoObj, setProductoObj] = useState<any>(null);
+
+  useEffect(() => {
+    if (productoId && productoId !== "sin-id") {
+      const fetchProd = async () => {
+        try {
+          const d = await getDoc(doc(db, "productos", productoId));
+          if (d.exists()) {
+            const pData = d.data();
+            setProductoObj({ id: d.id, ...pData });
+            const plan = planElegido || "12";
+            setPlanElegido(plan);
+            setMontoCuota(plan === "8" ? pData.cuota8 : pData.cuota12);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      };
+      fetchProd();
+    }
+  }, [productoId]);
   const [dniFrente, setDniFrente] = useState<File | null>(null);
   const [dniDorso, setDniDorso] = useState<File | null>(null);
   const [reciboSueldo, setReciboSueldo] = useState<File | null>(null);
@@ -68,8 +99,21 @@ export default function ClientePage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
+    if (!loading) {
+      if (!user) {
+        router.push("/login");
+      } else if (user.email !== "jpmosqueiramo@gmail.com") {
+        try {
+          const role = localStorage.getItem("userRole");
+          if (role === "afiliado") {
+            router.push("/login?error=unauthorized_role");
+          } else if (!role) {
+            localStorage.setItem("userRole", "cliente");
+          }
+        } catch (e) {
+          console.error("LocalStorage error:", e);
+        }
+      }
     }
   }, [user, loading, router]);
 
@@ -89,7 +133,12 @@ export default function ClientePage() {
   };
 
   useEffect(() => {
-    if (user) fetchSolicitudes();
+    if (user) {
+      fetchSolicitudes();
+      if (user.email && !email) {
+        setEmail(user.email);
+      }
+    }
   }, [user]);
 
   const handleReenviarCorreo = async () => {
@@ -111,7 +160,7 @@ export default function ClientePage() {
 
   const handleSubirArchivo = async (archivo: File, tipo: string) => {
     if (!user) return "";
-    const storageRef = ref(storage, `comprobantes/\${user.uid}/\${Date.now()}_\${tipo}_\${archivo.name}`);
+    const storageRef = ref(storage, `comprobantes/${user.uid}/${Date.now()}_${tipo}_${archivo.name}`);
     await uploadBytes(storageRef, archivo);
     return await getDownloadURL(storageRef);
   };
@@ -173,14 +222,34 @@ export default function ClientePage() {
         handleSubirArchivo(servicio, "servicio")
       ]);
 
+      let tna = 0;
+      let mora = 0;
+      let precioContado = 0;
+      if (productoId && productoId !== "sin-id") {
+        try {
+          const prodSnap = await getDoc(doc(db, "productos", productoId));
+          if (prodSnap.exists()) {
+            const prodData = prodSnap.data();
+            tna = prodData.tasaInteresTna || 0;
+            mora = prodData.tasaMora || 0;
+            precioContado = prodData.precioContado || 0;
+          }
+        } catch (e) {
+          console.error("Error al obtener tasas del producto:", e);
+        }
+      }
+
       await addDoc(collection(db, "solicitudes"), {
         clienteId: user.uid,
         clienteEmail: user.email,
-        datosPersonales: { nombreCompleto, numeroDni, telefono, direccion, localidad },
+        datosPersonales: { nombreCompleto, numeroDni, telefono, direccion, localidad, email, antiguedadLaboral },
         productoDeseado: producto,
         productoId: productoId || "sin-id",
         planElegido: planElegido || "no-indicado",
         montoCuota: montoCuota || 0,
+        precioContado: precioContado,
+        tasaInteresTna: tna,
+        tasaMora: mora,
         documentos: {
           dniFrente: urlFrente,
           dniDorso: urlDorso,
@@ -216,10 +285,10 @@ export default function ClientePage() {
   if (!user.emailVerified && user.email !== "jpmosqueiramo@gmail.com") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-yellow-50 p-8 flex flex-col items-center justify-center">
-        <div className="bg-white/80 backdrop-blur-xl border border-white p-10 rounded-3xl text-center max-w-lg shadow-2xl shadow-amber-500/10 transition-all duration-500">
+        <div className="bg-zinc-900/80 backdrop-blur-xl border border-white p-10 rounded-3xl text-center max-w-lg shadow-2xl shadow-amber-500/10 transition-all duration-500">
           <div className="text-6xl mb-6">📬</div>
-          <h1 className="text-3xl font-black text-zinc-900 mb-4">Verifica tu correo electrónico</h1>
-          <p className="text-yellow-200/80 mb-6">
+          <h1 className="text-3xl font-black text-white mb-4">Verifica tu correo electrónico</h1>
+          <p className="text-zinc-700 mb-6">
             Por estrictos motivos de seguridad y análisis de crédito, antes de poder cargar tus recibos debes comprobar que <strong>{user.email}</strong> es válido haciéndole clic al enlace que te acabamos de enviar a tu casilla.
           </p>
           <p className="text-red-400 font-bold mb-8 italic">
@@ -229,12 +298,12 @@ export default function ClientePage() {
           <button 
             disabled={correoEnviado}
             onClick={handleReenviarCorreo}
-            className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black py-4 rounded-xl font-black hover:from-amber-500 hover:to-yellow-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black py-4 rounded-xl font-black hover:from-amber-500 hover:to-yellow-600 hover:-translate-y-1 hover:shadow-2xl shadow-black/60 transition-all duration-300 disabled:opacity-50"
           >
             {correoEnviado ? "✅ Correo Reenviado. Revisa tu buzón." : "No me llegó, reenviar correo de validación"}
           </button>
 
-          <button onClick={() => window.location.reload()} className="w-full bg-transparent border-2 border-amber-400 text-amber-600 py-3 mt-4 rounded-xl font-bold hover:bg-amber-50 transition-all duration-300">
+          <button onClick={() => window.location.reload()} className="w-full bg-transparent border-2 border-yellow-500 text-yellow-400 py-3 mt-4 rounded-xl font-bold hover:bg-yellow-500/10 transition-all duration-300">
             Ya lo validé, recargar página
           </button>
           
@@ -247,60 +316,62 @@ export default function ClientePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50/80 via-zinc-50 to-orange-50/50 text-zinc-800 p-4 sm:p-8 selection:bg-amber-200">
-      <div className="max-w-4xl mx-auto">
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 bg-white/60 backdrop-blur-md p-4 sm:p-6 rounded-2xl border border-white shadow-sm">
-          <div>
-            <img src="https://storage.googleapis.com/negocio-facil-page.firebasestorage.app/Logos/LOGO%20SIN%20NOMBRE%20-%20CUENTA%20HOGAR.png" alt="Cuenta Hogar Logo" className="h-10 w-auto object-contain" />
-            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-yellow-600 mt-2 tracking-tight">Portal de Créditos</h1>
-            <p className="text-zinc-500 text-sm mt-1 font-medium">{user.email}</p>
+    <div className="bg-zinc-950 text-zinc-100 p-4 sm:p-8 selection:bg-yellow-500/30 min-h-screen">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-zinc-900/40 backdrop-blur-md p-6 rounded-3xl border border-zinc-800/80 shadow-2xl">
+          <div className="flex items-center gap-4">
+            <img src="https://storage.googleapis.com/negocio-facil-page.firebasestorage.app/Logos/LOGO%20SIN%20NOMBRE%20-%20CUENTA%20HOGAR.png" alt="Cuenta Hogar Logo" className="h-12 w-auto object-contain" />
+            <div>
+              <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-500 tracking-tight">Portal de Créditos</h1>
+              <p className="text-zinc-500 text-xs mt-0.5 font-bold font-mono">{user.email}</p>
+            </div>
           </div>
-          <div className="flex gap-3">
-            <a href="/" className="text-sm border-2 border-amber-200 text-amber-700 hover:bg-amber-100 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 hidden sm:block hover:-translate-y-0.5">
-              Volver al Catálogo
-            </a>
-            <button onClick={() => { import("firebase/auth").then(({getAuth, signOut}) => signOut(getAuth())); router.push("/login"); }} className="text-sm bg-red-50 text-red-600 hover:bg-red-100 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 hover:-translate-y-0.5 border border-red-200">
+          <div className="flex gap-3 w-full sm:w-auto">
+            <Link href="/" className="flex-1 sm:flex-initial text-center text-xs bg-zinc-950 border border-zinc-800 text-zinc-300 hover:text-white hover:border-zinc-700 px-5 py-3 rounded-xl font-bold transition-all duration-300 hover:-translate-y-0.5 shadow-md">
+              🛒 Catálogo
+            </Link>
+            <button onClick={() => { import("firebase/auth").then(({getAuth, signOut}) => signOut(getAuth())); router.push("/login"); }} className="flex-1 sm:flex-initial text-xs bg-red-950/20 border border-red-900/50 text-red-400 hover:bg-red-900/20 px-5 py-3 rounded-xl font-bold transition-all duration-300 hover:-translate-y-0.5 shadow-md">
               Cerrar Sesión
             </button>
           </div>
         </header>
 
         {/* Centro de Asistencia */}
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-          
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button 
             onClick={abrirFormDatos}
-            className="bg-white/80 backdrop-blur-md border border-white p-5 rounded-2xl flex items-center gap-4 hover:border-amber-300 hover:-translate-y-1 hover:shadow-xl active:scale-95 transition-all duration-300 shadow-sm group"
+            className="bg-zinc-900/30 backdrop-blur-md border border-zinc-850 p-6 rounded-3xl flex items-center gap-4 hover:border-yellow-500/40 hover:-translate-y-1 hover:shadow-2xl hover:shadow-yellow-500/5 active:scale-95 transition-all duration-300 group text-left"
           >
-             <div className="text-4xl">📝</div>
-             <div className="text-left">
-               <h3 className="font-bold text-amber-600 text-lg group-hover:text-amber-500 transition-colors">Actualizar mis Datos</h3>
-               <p className="text-sm text-gray-500">Avisar si cambiaste de número o de domicilio.</p>
+             <div className="text-4xl p-3 bg-zinc-900 rounded-2xl border border-zinc-800">📝</div>
+             <div>
+               <h3 className="font-black text-yellow-400 text-base group-hover:text-yellow-300 transition-colors">Actualizar mis Datos</h3>
+               <p className="text-xs text-zinc-400 mt-1">Avisar si cambiaste de número o de domicilio.</p>
              </div>
           </button>
         </div>
 
-        
         {mostrarFormDatos && (
-          <div className="bg-white/80 backdrop-blur-xl border border-white rounded-3xl p-6 lg:p-10 mb-8 relative shadow-xl shadow-amber-900/5 animate-fade-in">
-            <button onClick={() => setMostrarFormDatos(false)} className="absolute top-6 right-6 text-gray-500 hover:text-zinc-900 font-bold text-sm">✕ Cancelar</button>
-            <h2 className="text-2xl mb-2 font-bold text-zinc-900">Actualizar Mis Datos</h2>
-            <p className="text-gray-500 mb-6">Mantené tu teléfono y domicilio al día para facilitar las entregas y cobranzas.</p>
-            <form onSubmit={handleActualizarDatos} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 rounded-3xl p-6 lg:p-10 relative shadow-2xl animate-fade-in space-y-6">
+            <button onClick={() => setMostrarFormDatos(false)} className="absolute top-6 right-6 text-zinc-500 hover:text-white font-bold text-sm transition-colors">✕ Cancelar</button>
+            <div>
+              <h2 className="text-xl font-black text-white">Actualizar Mis Datos Personal</h2>
+              <p className="text-xs text-zinc-500 mt-1">Mantené tu teléfono y domicilio al día para facilitar las entregas y cobranzas.</p>
+            </div>
+            <form onSubmit={handleActualizarDatos} className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
               <div>
-                <label className="block text-sm mb-2 text-zinc-700 font-semibold">Teléfono / Celular</label>
-                <input required value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" className="w-full bg-white/50 border border-amber-100 rounded-xl p-3.5 text-zinc-900 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white outline-none transition-all" />
+                <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wide">Teléfono / Celular</label>
+                <input required value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/20 outline-none transition-all text-sm font-bold" />
               </div>
               <div>
-                <label className="block text-sm mb-2 text-zinc-700 font-semibold">Dirección</label>
-                <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" className="w-full bg-white/50 border border-amber-100 rounded-xl p-3.5 text-zinc-900 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white outline-none transition-all" />
+                <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wide">Dirección</label>
+                <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/20 outline-none transition-all text-sm font-bold" />
               </div>
               <div>
-                <label className="block text-sm mb-2 text-zinc-700 font-semibold">Localidad</label>
-                <input required value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" className="w-full bg-white/50 border border-amber-100 rounded-xl p-3.5 text-zinc-900 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:bg-white outline-none transition-all" />
+                <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wide">Localidad</label>
+                <input required value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/20 outline-none transition-all text-sm font-bold" />
               </div>
-              <div className="md:col-span-2">
-                <button disabled={subiendo} type="submit" className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black py-4 rounded-xl font-black text-lg hover:from-amber-500 hover:to-yellow-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:transform-none">
+              <div className="md:col-span-2 pt-2">
+                <button disabled={subiendo} type="submit" className="w-full bg-yellow-500 text-black py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-yellow-400 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:transform-none">
                   {subiendo ? "Guardando..." : "Guardar Nuevos Datos"}
                 </button>
               </div>
@@ -309,89 +380,95 @@ export default function ClientePage() {
         )}
 
         {solicitudes.length > 0 && !mostrarFormulario && !mostrarFormDatos && (
-          <div className="mb-6 flex justify-end">
-            <button onClick={() => setMostrarFormulario(true)} className="bg-gradient-to-r from-zinc-800 to-zinc-900 hover:from-zinc-700 hover:to-zinc-800 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+          <div className="flex justify-end">
+            <button onClick={() => setMostrarFormulario(true)} className="bg-yellow-500 text-black hover:bg-yellow-400 font-bold py-3.5 px-8 rounded-xl shadow-lg transition-all duration-300 hover:-translate-y-0.5 text-xs uppercase tracking-wider font-black">
                + Solicitar un nuevo crédito
-            </button>
+             </button>
           </div>
         )}
 
         {(solicitudes.length > 0 && !mostrarFormulario && !mostrarFormDatos) ? (
           <div className="space-y-6">
-            <h2 className="text-2xl font-semibold mb-4 text-zinc-900">Tus Solicitudes Actuales</h2>
+            <h2 className="text-lg font-black uppercase tracking-wider text-zinc-400">Mis Solicitudes Activas</h2>
             {solicitudes.map(sol => (
-              <div key={sol.id} className="bg-white/90 backdrop-blur-xl border border-white rounded-3xl p-6 shadow-xl shadow-amber-900/5 animate-fade-in">
-                <div className="flex justify-between items-start mb-4">
+              <div key={sol.id} className="bg-zinc-900/30 backdrop-blur-xl border border-zinc-850 rounded-3xl p-6 md:p-8 shadow-xl space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-zinc-800 pb-4">
                   <div>
-                    <h3 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-yellow-500 mb-1 tracking-tight">{(sol as any).planElegido ? ((sol as any).planElegido + " Cuotas x $" + (sol as any).montoCuota) : "Crédito"} : {sol.productoDeseado}</h3>
-                    <p className="text-sm text-gray-500 mt-1">Enviado el {sol.fechaCreacion?.toDate().toLocaleDateString()}</p>
+                    <h3 className="text-lg font-black text-white">{sol.productoDeseado}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-zinc-500">Enviado el {sol.fechaCreacion?.toDate().toLocaleDateString("es-AR")}</span>
+                      {sol.planElegido && (
+                        <span className="text-[10px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-2 py-0.5 rounded font-bold">{sol.planElegido} Cuotas x $ {sol.montoCuota}</span>
+                      )}
+                    </div>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-bold \${
-                    sol.estado === "PENDIENTE" ? "bg-blue-500/20 text-blue-400 border border-blue-500/50" :
-                    sol.estado === "APROBADO" ? "bg-green-500/20 text-green-400 border border-green-500/50" :
-                    sol.estado === "RECHAZADO" ? "bg-red-500/20 text-red-400 border border-red-500/50" :
-                    "bg-orange-500/20 text-orange-400 border border-orange-500/50"
+                  <span className={`px-4 py-1.5 rounded-full text-xs font-black tracking-wider uppercase ${
+                    sol.estado === "PENDIENTE" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
+                    sol.estado === "APROBADO" ? "bg-green-500/10 text-green-400 border border-green-500/20" :
+                    sol.estado === "RECHAZADO" ? "bg-red-500/10 text-red-400 border border-red-500/20" :
+                    "bg-orange-500/10 text-orange-400 border border-orange-500/20"
                   }`}>
                     {sol.estado}
                   </span>
                 </div>
                 
-                
                 {(sol as any).estadoEntrega === "ENTREGADO" && (
-                  <div className="mt-5 p-4 bg-zinc-50/80 border border-zinc-200/60 rounded-2xl">
-                    <h4 className="text-sm font-bold text-gray-600 mb-2">🏷️ Anticipo de Entrega</h4>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                       <span className="text-xl font-black text-zinc-900">${(sol as any).montoAbonado || "0"} <span className="text-xs text-gray-500 uppercase font-normal ml-1">({(sol as any).metodoPago || "Efectivo"})</span></span>
+                  <div className="p-5 bg-zinc-950 border border-zinc-850 rounded-2xl space-y-3">
+                    <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">🏷️ Entrega y Anticipo</h4>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                       <span className="text-lg font-black text-white">$ {(sol as any).montoAbonado || "0"} <span className="text-xs text-zinc-500 uppercase font-normal ml-1">({(sol as any).metodoPago || "Efectivo"})</span></span>
                        {(sol as any).estadoRendicion === "CONFIRMADO" ? (
-                          <span className="bg-green-500/20 text-green-400 border border-green-500/50 px-3 py-1 rounded-full text-xs font-bold w-fit mt-2 sm:mt-0">✅ PAGO CONFIRMADO POR CENTRAL</span>
+                          <span className="bg-green-500/10 text-green-400 border border-green-500/20 px-3 py-1.5 rounded-xl text-xs font-bold w-fit">✅ PAGO CONFIRMADO POR CENTRAL</span>
                        ) : (
-                          <span className="bg-yellow-500/20 text-yellow-500 border border-yellow-500/50 px-3 py-1 rounded-full text-xs font-bold w-fit mt-2 sm:mt-0">⌛ AUDITANDO COBRO CON AFILIADO</span>
+                          <span className="bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-3 py-1.5 rounded-xl text-xs font-bold w-fit">⌛ AUDITANDO COBRO CON AFILIADO</span>
                        )}
                     </div>
                   </div>
                 )}
                 
                 {(sol as any).estadoEntrega === "ENTREGADO" && (sol as any).planPagos && (
-                  <div className="mt-6 pt-6 border-t border-yellow-500/20">
-                    <h4 className="text-2xl font-black text-zinc-800 mb-4 flex items-center gap-2">💳 Mi Planilla de Pagos</h4>
-                    <p className="text-gray-500 text-sm mb-6">Aquí puedes subir y reportar las transferencias o recibos mensuales de tus cuotas.</p>
-                    <div className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="border-t border-zinc-850 pt-4">
+                      <h4 className="text-md font-black text-zinc-300 flex items-center gap-2">💳 Mi Planilla de Pagos</h4>
+                      <p className="text-xs text-zinc-500 mt-1">Aquí puedes subir y reportar las transferencias o recibos mensuales de tus cuotas.</p>
+                    </div>
+                    <div className="space-y-3">
                       {(sol as any).planPagos.map((cuota: any, idx: number) => {
                         const isEligibleToPay = !(sol as any).planPagos.slice(0, idx).some((c:any) => c.estado === "PENDIENTE");
                         return (
-                        <div key={idx} className="bg-white border border-amber-100/60 p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm hover:shadow-md hover:border-amber-300/50 transition-all duration-300 group">
-                          <div>
-                            <p className="font-black text-zinc-800 text-xl tracking-tight">Cuota {cuota.numero} de {(sol as any).planElegido || ((sol as any).planPagos.length)}</p>
-                            <p className="text-gray-500 text-sm">Vencimiento: {new Date(cuota.vencimiento).toLocaleDateString()}</p>
-                            <p className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-yellow-600 font-black text-2xl mt-1">${cuota.montoOriginal}</p>
-                            {cuota.notaAcumulacion && <p className="text-xs text-orange-500 font-bold mt-1 bg-orange-500/10 px-2 py-0.5 rounded w-fit">{cuota.notaAcumulacion}</p>}
+                        <div key={idx} className="bg-zinc-950 border border-zinc-850 p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-zinc-800 transition-colors">
+                          <div className="space-y-1">
+                            <p className="font-black text-zinc-200 text-base">Cuota {cuota.numero} de {(sol as any).planElegido || ((sol as any).planPagos.length)}</p>
+                            <p className="text-zinc-500 text-xs font-bold">Vencimiento: {new Date(cuota.vencimiento).toLocaleDateString("es-AR")}</p>
+                            <p className="text-yellow-400 font-mono font-black text-lg">$ {cuota.montoOriginal}</p>
+                            {cuota.notaAcumulacion && <p className="text-xs text-orange-400 font-bold mt-1 bg-orange-950/30 border border-orange-900/30 px-2.5 py-1 rounded w-fit">{cuota.notaAcumulacion}</p>}
                           </div>
                           
-                          <div className="text-right flex flex-col justify-center">
+                          <div className="text-right">
                             {cuota.estado === "PAGADO" && (
                               <div className="flex flex-col items-end gap-2">
-                                <span className="bg-green-500/20 text-green-400 border border-green-500/50 px-4 py-2 rounded-full font-bold text-sm w-fit self-end">✅ VERIFICADO Y PAGADO</span>
-                                {cuota.comprobanteUrl && <a href={cuota.comprobanteUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 transition-colors underline font-bold whitespace-nowrap">📄 Ver Recibo Enviado</a>}
+                                <span className="bg-green-500/10 text-green-400 border border-green-500/20 px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider w-fit">✅ VERIFICADO Y PAGADO</span>
+                                {cuota.comprobanteUrl && <a href={cuota.comprobanteUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 transition-colors underline font-bold">📄 Ver Recibo Enviado</a>}
                               </div>
                             )}
                             
                             {cuota.estado === "EN_REVISION" && (
-                              <div className="flex flex-col items-end gap-2 bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-inner">
-                                <span className="text-blue-600 font-bold text-sm flex items-center gap-1">⌛ Auditando pago...</span>
-                                <p className="text-[10px] text-gray-500 max-w-xs text-right">El administrador de Cuenta Hogar está revisando el recibo que subiste en la cuenta bancaria.</p>
+                              <div className="flex flex-col items-end gap-1.5 bg-blue-950/15 p-4 rounded-xl border border-blue-900/30">
+                                <span className="text-blue-400 font-black text-xs uppercase tracking-wider flex items-center gap-1">⌛ Auditando pago...</span>
+                                <p className="text-[10px] text-zinc-500 max-w-xs text-right">El administrador de Cuenta Hogar está revisando el recibo en la cuenta bancaria.</p>
                               </div>
                             )}
                             
                             {cuota.estado === "PENDIENTE" && (
-                              <div className="flex flex-col items-end gap-3 bg-zinc-50/80 border border-zinc-200 p-5 rounded-2xl">
-                                <span className="bg-orange-100 text-orange-700 border border-orange-200 px-3 py-1 rounded-full font-bold text-xs uppercase tracking-wider self-end shadow-sm">PENDIENTE</span>
+                              <div className="flex flex-col items-end gap-3 bg-zinc-900/30 border border-zinc-850 p-4 rounded-2xl">
+                                <span className="bg-orange-500/10 text-orange-400 border border-orange-500/20 px-3 py-1 rounded-full font-bold text-xs uppercase tracking-wider">PENDIENTE</span>
                                 {isEligibleToPay ? (
                                   <>
                                     <div className="w-full max-w-xs mb-1 text-left">
-                                      <label className="text-[10px] font-bold text-gray-500 uppercase">Monto pagado ($):</label>
-                                      <input type="number" id={`monto_${sol.id}_${idx}`} defaultValue={cuota.montoOriginal} min="1" className="w-full text-sm font-bold bg-white text-zinc-900 border border-amber-200 rounded-lg px-3 py-2 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all shadow-inner" />
+                                      <label className="text-[10px] font-bold text-zinc-500 uppercase">Monto pagado ($):</label>
+                                      <input type="number" id={`monto_${sol.id}_${idx}`} defaultValue={cuota.montoOriginal} min="1" className="w-full text-xs font-bold bg-zinc-950 text-zinc-100 border border-zinc-800 rounded-lg px-3 py-2 focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/20 outline-none transition-all" />
                                     </div>
-                                    <input type="file" id={`comprobante_${sol.id}_${idx}`} accept="image/*,application/pdf" className="text-[11px] w-full max-w-xs text-gray-500 file:bg-yellow-500 file:text-black file:border-0 file:rounded-lg file:px-4 file:py-2 file:font-bold hover:file:bg-amber-400 file:transition-colors file:shadow-sm file:cursor-pointer outline-none" />
+                                    <input type="file" id={`comprobante_${sol.id}_${idx}`} accept="image/*,application/pdf" className="text-[10px] w-full max-w-xs text-zinc-400 file:bg-yellow-500 file:text-black file:border-0 file:rounded-lg file:px-3 file:py-1.5 file:font-bold hover:file:bg-yellow-400 file:transition-colors file:cursor-pointer outline-none" />
                                     <button 
                                       onClick={async () => {
                                         const el = document.getElementById(`comprobante_${sol.id}_${idx}`) as HTMLInputElement;
@@ -442,13 +519,13 @@ export default function ClientePage() {
                                         } catch(e) { alert("Error de conexión al subir. Chequea tu internet."); btn.innerText="📨 Reportar Pago"; btn.disabled=false; }
                                       }}
                                       id={`btn_${sol.id}_${idx}`}
-                                      className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black px-4 py-3 rounded-xl font-black text-sm hover:from-amber-500 hover:to-yellow-600 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+                                      className="w-full bg-yellow-500 text-black px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider hover:bg-yellow-400 hover:-translate-y-0.5 transition-all shadow-md"
                                     >
                                       📨 Reportar Pago
                                     </button>
                                   </>
                                 ) : (
-                                  <div className="w-full text-center bg-gray-100 p-3 rounded text-xs text-gray-500 border border-gray-300">
+                                  <div className="w-full text-center bg-zinc-900 p-3 rounded text-[10px] text-zinc-500 border border-zinc-800/80">
                                     <p>Debes reportar y abonar las cuotas anteriores antes de poder pagar esta.</p>
                                   </div>
                                 )}
@@ -462,80 +539,115 @@ export default function ClientePage() {
                 )}
 
                 {sol.estado === "REQUIERE_INFO" && (
-                  <div className="mt-4 p-4 bg-orange-500/10 border border-orange-500/50 rounded text-orange-200">
-                    <p className="font-bold flex items-center mb-2">⚠️ Acción Requerida por el Administrador:</p>
-                    <p className="mb-4">{sol.mensajeAdmin || "Por favor, vuelve a subir tus archivos."}</p>
-                    <button className="bg-orange-500 text-black px-4 py-2 rounded font-bold hover:bg-orange-400 text-sm">Actualizar Documentación</button>
+                  <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl text-orange-300 text-xs">
+                    <p className="font-bold flex items-center gap-1.5 mb-1 text-sm">⚠️ Acción Requerida por el Administrador:</p>
+                    <p className="mb-3 font-semibold">{sol.mensajeAdmin || "Por favor, vuelve a subir tus archivos."}</p>
+                    <button className="bg-orange-500 text-black px-4 py-2 rounded-lg font-black hover:bg-orange-400 text-xs uppercase tracking-wide">Actualizar Documentación</button>
                   </div>
                 )}
                 
                 {sol.estado === "RECHAZADO" && (
-                  <div className="mt-4 p-4 bg-red-500/10 border border-red-500/50 rounded text-red-200">
-                    <p className="font-bold mb-1">Motivo de rechazo:</p>
-                    <p>{sol.mensajeAdmin || "No cumples con los requisitos crediticios actuales."}</p>
+                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-xs">
+                    <p className="font-bold mb-1 text-sm">Motivo de rechazo:</p>
+                    <p className="font-semibold">{sol.mensajeAdmin || "No cumples con los requisitos crediticios actuales."}</p>
                   </div>
                 )}
               </div>
             ))}
           </div>
         ) : (
-          <div className="bg-white/80 backdrop-blur-xl border border-white rounded-3xl p-6 lg:p-10 relative shadow-xl shadow-amber-900/5">
+          <div className="bg-zinc-900/30 backdrop-blur-xl border border-zinc-850 rounded-3xl p-6 lg:p-10 relative shadow-2xl">
             {solicitudes.length > 0 && (
-               <button onClick={() => setMostrarFormulario(false)} className="absolute top-6 right-6 text-gray-500 hover:text-zinc-900 font-bold text-sm">
+               <button onClick={() => setMostrarFormulario(false)} className="absolute top-6 right-6 text-zinc-500 hover:text-white font-bold text-sm transition-colors">
                  ✕ Cancelar
                </button>
             )}
-            <h2 className="text-2xl mb-2 font-bold text-zinc-900">Solicitar Nuevo Crédito</h2>
-            <p className="text-yellow-200/60 mb-8">Completa el formulario biográfico y adjunta la documentación para que evaluemos tu perfil crediticio.</p>
+            <div>
+              <h2 className="text-xl font-black text-white">Solicitar Nuevo Crédito</h2>
+              <p className="text-xs text-zinc-500 mt-1">Completa el formulario biográfico y adjunta la documentación para que evaluemos tu perfil crediticio.</p>
+            </div>
             
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white shadow-sm">
+            <form onSubmit={handleSubmit} className="space-y-6 pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-zinc-900/40 backdrop-blur-sm p-6 rounded-3xl border border-zinc-800/80 shadow-sm">
                 <div>
-                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Nombre Completo</label>
-                  <input required value={nombreCompleto} onChange={e=>setNombreCompleto(e.target.value)} type="text" placeholder="Juan Perez" className="w-full bg-zinc-50/50 border border-amber-200 rounded-xl p-3.5 text-zinc-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:bg-white outline-none transition-all" />
+                  <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wide">Nombre Completo</label>
+                  <input required value={nombreCompleto} onChange={e=>setNombreCompleto(e.target.value)} type="text" placeholder="Juan Perez" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/20 outline-none transition-all text-sm font-bold" />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Número de DNI</label>
-                  <input required value={numeroDni} onChange={e=>setNumeroDni(e.target.value)} type="number" placeholder="Ej: 32444555" className="w-full bg-zinc-50/50 border border-amber-200 rounded-xl p-3.5 text-zinc-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:bg-white outline-none transition-all" />
+                  <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wide">Número de DNI</label>
+                  <input required value={numeroDni} onChange={e=>setNumeroDni(e.target.value)} type="number" placeholder="Ej: 32444555" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/20 outline-none transition-all text-sm font-bold" />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Teléfono / Celular</label>
-                  <input required value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" placeholder="Ej: +54 9 11 1234-5678" className="w-full bg-zinc-50/50 border border-amber-200 rounded-xl p-3.5 text-zinc-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:bg-white outline-none transition-all" />
+                  <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wide">Teléfono / Celular</label>
+                  <input required value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" placeholder="Ej: +54 9 11 1234-5678" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/20 outline-none transition-all text-sm font-bold" />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Dirección</label>
-                  <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" placeholder="Ej: Av. San Martin 123" className="w-full bg-zinc-50/50 border border-amber-200 rounded-xl p-3.5 text-zinc-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:bg-white outline-none transition-all" />
+                  <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wide">Dirección</label>
+                  <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" placeholder="Ej: Av. San Martin 123" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/20 outline-none transition-all text-sm font-bold" />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Localidad</label>
-                  <input required value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" placeholder="Ej: Córdoba Capital" className="w-full bg-zinc-50/50 border border-amber-200 rounded-xl p-3.5 text-zinc-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:bg-white outline-none transition-all" />
+                  <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wide">Localidad</label>
+                  <input required value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" placeholder="Ej: Córdoba Capital" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/20 outline-none transition-all text-sm font-bold" />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2 text-zinc-700 font-bold">¿Qué producto deseas financiar?</label>
-                  <input required value={producto} onChange={e=>setProducto(e.target.value)} type="text" placeholder="Ej: Heladera Samsung 400L" className="w-full bg-amber-50/50 border border-amber-300 rounded-xl p-3.5 text-zinc-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 focus:bg-white outline-none transition-all" />
+                  <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wide">Correo Electrónico (Obligatorio)</label>
+                  <input required value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="Ej: juanperez@gmail.com" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/20 outline-none transition-all text-sm font-bold" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wide">Antigüedad Laboral (Fecha de Ingreso)</label>
+                  <input required value={antiguedadLaboral} onChange={e=>setAntiguedadLaboral(e.target.value)} type="date" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/20 outline-none transition-all text-sm font-bold" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wide">¿Qué producto deseas financiar?</label>
+                  <input required value={producto} onChange={e=>setProducto(e.target.value)} type="text" placeholder="Ej: Heladera Samsung 400L" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/20 outline-none transition-all text-sm font-bold" />
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wide">Plan de Financiación</label>
+                  <select 
+                    value={planElegido || "12"} 
+                    onChange={e => {
+                      const selPlan = e.target.value;
+                      setPlanElegido(selPlan);
+                      if (productoObj) {
+                        setMontoCuota(selPlan === "8" ? productoObj.cuota8 : productoObj.cuota12);
+                      }
+                    }}
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white outline-none focus:border-yellow-500 transition-colors text-sm font-bold"
+                  >
+                    <option value="12">Financiación en 12 Cuotas</option>
+                    <option value="8">Financiación en 8 Cuotas</option>
+                  </select>
+                </div>
+
+                {montoCuota > 0 && (
+                  <div className="md:col-span-2 bg-yellow-500/5 border border-yellow-500/10 p-5 rounded-2xl flex justify-between items-center">
+                    <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Valor de la cuota elegida:</span>
+                    <span className="text-lg font-black text-yellow-400 font-mono">$ {montoCuota} / mes</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-zinc-900/40 backdrop-blur-sm p-6 rounded-3xl border border-zinc-800/80 shadow-sm">
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wide">Foto DNI - Frente</label>
+                  <input required type="file" accept="image/*" onChange={e => {if (e.target.files) setDniFrente(e.target.files[0])}} className="w-full text-xs text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-zinc-950 file:border file:border-zinc-800 file:text-zinc-300 hover:file:text-white file:transition-colors file:font-bold file:cursor-pointer" />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wide">Foto DNI - Dorso</label>
+                  <input required type="file" accept="image/*" onChange={e => {if (e.target.files) setDniDorso(e.target.files[0])}} className="w-full text-xs text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-zinc-950 file:border file:border-zinc-800 file:text-zinc-300 hover:file:text-white file:transition-colors file:font-bold file:cursor-pointer" />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wide">Último Recibo de Sueldo</label>
+                  <input required type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setReciboSueldo(e.target.files[0])}} className="w-full text-xs text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-zinc-950 file:border file:border-zinc-800 file:text-zinc-300 hover:file:text-white file:transition-colors file:font-bold file:cursor-pointer" />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-zinc-400 mb-2 uppercase tracking-wide">Impuesto o Servicio (Verificar Domicilio)</label>
+                  <input required type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setServicio(e.target.files[0])}} className="w-full text-xs text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-zinc-950 file:border file:border-zinc-800 file:text-zinc-300 hover:file:text-white file:transition-colors file:font-bold file:cursor-pointer" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-white shadow-sm">
-                <div>
-                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Foto DNI - Frente</label>
-                  <input required type="file" accept="image/*" onChange={e => {if (e.target.files) setDniFrente(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 file:transition-colors file:font-bold" />
-                </div>
-                <div>
-                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Foto DNI - Dorso</label>
-                  <input required type="file" accept="image/*" onChange={e => {if (e.target.files) setDniDorso(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 file:transition-colors file:font-bold" />
-                </div>
-                <div>
-                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Último Recibo de Sueldo</label>
-                  <input required type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setReciboSueldo(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 file:transition-colors file:font-bold" />
-                </div>
-                <div>
-                  <label className="block text-sm mb-2 text-zinc-700 font-bold">Impuesto o Servicio (Verificar Domicilio)</label>
-                  <input required type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setServicio(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 file:transition-colors file:font-bold" />
-                </div>
-              </div>
-
-              <button disabled={subiendo} type="submit" className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black py-4 rounded-xl font-black text-lg hover:from-amber-500 hover:to-yellow-600 hover:-translate-y-1 hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:transform-none mt-8">
+              <button disabled={subiendo} type="submit" className="w-full bg-yellow-500 text-black py-4 rounded-xl font-black text-sm uppercase tracking-wider hover:bg-yellow-400 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:transform-none mt-8">
                 {subiendo ? "Subiendo archivos, por favor no cierres la ventana..." : "Enviar Solicitud de Crédito"}
               </button>
             </form>

@@ -15,7 +15,7 @@ export function AdminProtectedRoute({ children }: { children: React.ReactNode })
   }, [user, isAdmin, loading, router]);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-black text-yellow-500">Verificando credenciales...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-black text-yellow-400">Verificando credenciales...</div>;
   }
 
   if (!isAdmin) {

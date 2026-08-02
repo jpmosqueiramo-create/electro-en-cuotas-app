@@ -14,7 +14,7 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Link href="/login" className="flex items-center gap-2 text-sm font-bold bg-white/5 border border-white/20 text-white px-5 py-2.5 rounded-full hover:bg-white hover:text-[#002B5B] transition-all">
+          <Link href="/login" className="flex items-center gap-2 text-sm font-bold bg-zinc-900/5 border border-white/20 text-white px-5 py-2.5 rounded-full hover:bg-zinc-900 hover:text-[#002B5B] transition-all">
             <LogIn className="w-4 h-4" />
             <span>Portal de Clientes</span>
           </Link>

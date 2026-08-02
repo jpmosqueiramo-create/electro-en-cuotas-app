@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #002B5B;
-  --foreground: #ffffff;
+  --background: #09090b;
+  --foreground: #f4f4f5;
   --accent-gold: #FFD700;
-  --deep-blue: #001F3F;
+  --deep-blue: #09090b;
 }
 
 @theme inline {
@@ -17,8 +17,37 @@
 }
 
 body {
-  background: linear-gradient(to bottom, #002B5B, #001C3D);
-  color: #ffffff;
+  background-color: #09090b;
+  color: #f4f4f5;
   font-family: Arial, Helvetica, sans-serif;
   min-height: 100vh;
+}
+
+.bg-yellow-textured {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #fef08a 0%, #eab308 50%, #ca8a04 100%);
+  transition: all 0.3s ease;
+  border: none;
+}
+.bg-yellow-textured::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.05) 0px,
+    rgba(0, 0, 0, 0.05) 2px,
+    transparent 2px,
+    transparent 8px
+  );
+  pointer-events: none;
+}
+.bg-yellow-textured:hover:not(:disabled) {
+  background: linear-gradient(135deg, #fef08a 0%, #facc15 50%, #eab308 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px -5px rgba(234, 179, 8, 0.4);
+}
+.bg-yellow-textured:active:not(:disabled) {
+  transform: scale(0.98);
 }

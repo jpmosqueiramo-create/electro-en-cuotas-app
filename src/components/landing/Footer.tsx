@@ -5,7 +5,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
         <div className="flex flex-col items-center md:items-start">
           <div className="flex items-center gap-2 mb-4 opacity-70">
-            <div className="bg-white text-[#002B5B] font-black px-1.5 py-0.5 rounded text-sm">CH</div>
+            <div className="bg-zinc-900 text-[#002B5B] font-black px-1.5 py-0.5 rounded text-sm">CH</div>
             <span className="text-lg font-bold tracking-tight text-white">
               CUENTA <span className="text-accent-gold">HOGAR</span>
             </span>

@@ -15,7 +15,7 @@ export default function AffiliatesCta() {
             Buscamos vecinos proactivos que quieran ayudar a otros a cumplir sus sueños. Sumate como Asesor Independiente y crezcamos juntos.
           </p>
         </div>
-        <Link href="/afiliado" className="inline-flex items-center gap-3 bg-white text-[#001F3F] px-8 py-4 rounded-full font-black hover:bg-accent-gold transition-all">
+        <Link href="/afiliado" className="inline-flex items-center gap-3 bg-zinc-900 text-[#001F3F] px-8 py-4 rounded-full font-black hover:bg-accent-gold transition-all">
           Quiero ser Asesor <ArrowRight className="w-5 h-5" />
         </Link>
       </div>

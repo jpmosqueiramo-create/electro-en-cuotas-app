@@ -5,6 +5,7 @@ import { db } from "@/lib/firebase";
 import { collection, doc, getDocs, query, updateDoc, deleteDoc, where, addDoc } from "firebase/firestore";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 
 export default function CarteraPage() {
   const { user } = useAuth();
@@ -148,28 +149,29 @@ export default function CarteraPage() {
   });
 
   return (
-    <div className="min-h-screen bg-black text-white p-8">
+    <AdminProtectedRoute>
+      <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-7xl mx-auto">
-        <header className="flex justify-between items-center mb-8 border-b border-yellow-500/30 pb-4">
+        <header className="flex justify-between items-center mb-8 border-b border-zinc-800 pb-4">
           <div>
-             <h1 className="text-3xl font-black text-yellow-500">Gestión de Cartera Activa</h1>
-             <p className="text-gray-400 text-sm mt-1">Seguimiento de cuotas, cobranzas y promesas de pago.</p>
+             <h1 className="text-3xl font-black text-yellow-400">Gestión de Cartera Activa</h1>
+             <p className="text-zinc-400 text-sm mt-1">Seguimiento de cuotas, cobranzas y promesas de pago.</p>
           </div>
-          <Link href="/admin" className="text-gray-400 border border-gray-700 px-4 py-2 rounded hover:text-white transition font-bold">← Volver al Panel</Link>
+          <Link href="/admin" className="text-zinc-400 border border-gray-700 px-4 py-2 rounded hover:text-white transition font-bold">← Volver al Panel</Link>
         </header>
 
         {promesasExigibles.length > 0 && !loading && (
            <div className="bg-red-900/30 border border-red-500/80 p-5 rounded-xl mb-8 flex flex-col gap-2 shadow-[0_0_30px_rgba(239,68,68,0.15)]">
               <h3 className="text-red-400 font-black text-lg flex items-center gap-2">⚠️ ATENCIÓN: Promesas de Pago Pendientes para Hoy</h3>
-              <p className="text-sm text-gray-400 mb-2">Los siguientes clientes tienen promesas pactadas para hoy o días anteriores pero el sistema detecta que continúan con morosidad activa.</p>
+              <p className="text-sm text-zinc-400 mb-2">Los siguientes clientes tienen promesas pactadas para hoy o días anteriores pero el sistema detecta que continúan con morosidad activa.</p>
               <div className="flex flex-wrap gap-3">
                  {promesasExigibles.map(sol => {
                     const lProm = sol.historialContactos.find((c:any) => c.promesaPago);
                     return (
-                       <div key={sol.id} onClick={() => setExpandedId(sol.id)} className="cursor-pointer bg-red-500/10 hover:bg-red-500/20 text-white px-4 py-2 rounded-lg border border-red-500/30 transition shadow-sm">
+                       <div key={sol.id} onClick={() => setExpandedId(sol.id)} className="cursor-pointer bg-red-500/5 hover:bg-red-500/20 text-white px-4 py-2 rounded-lg border border-red-500/10 transition shadow-sm">
                           <p className="text-sm font-bold">{sol.datosPersonales?.nombreCompleto}</p>
-                          <p className="text-[10px] text-red-300">Pactó: {new Date(lProm.promesaPago + "T12:00:00").toLocaleDateString()} ⭐</p>
-                          <p className="text-[10px] text-gray-400">📲 {sol.datosPersonales?.telefono}</p>
+                          <p className="text-[10px] text-red-400">Pactó: {new Date(lProm.promesaPago + "T12:00:00").toLocaleDateString()} ⭐</p>
+                          <p className="text-[10px] text-zinc-400">📲 {sol.datosPersonales?.telefono}</p>
                        </div>
                     )
                  })}
@@ -178,45 +180,45 @@ export default function CarteraPage() {
         )}
 
         {loading ? (
-          <p className="text-center text-gray-400 font-bold mt-20">Cargando base de cartera...</p>
+          <p className="text-center text-zinc-400 font-bold mt-20">Cargando base de cartera...</p>
         ) : solicitudes.length === 0 ? (
-          <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-xl text-center shadow-lg max-w-xl mx-auto mt-12">
+          <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-xl text-center shadow-2xl shadow-black/60 max-w-xl mx-auto mt-12">
             <h2 className="text-xl font-bold text-white mb-2">Cartera Vacía</h2>
-            <p className="text-gray-400">No hay ventas entregadas actualmente activas en seguimiento.</p>
+            <p className="text-zinc-400">No hay ventas entregadas actualmente activas en seguimiento.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
             {solicitudes.map(sol => {
               const est = calcularEstadoCuotas(sol.planPagos);
               return (
-                <div key={sol.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-xl relative flex flex-col">
+                <div key={sol.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl shadow-black/80 relative flex flex-col">
                   {est.atrasadas > 0 && <div className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl shadow-md uppercase animate-pulse">MOROSO ({est.atrasadas})</div>}
                   {est.restantes === 0 && est.pagadas > 0 && <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl shadow-md uppercase">FINALIZADO</div>}
                   
                   <div className="mb-4 border-b border-zinc-800 pb-4 mt-6">
                      {/* BOTON DE BORRAR */}
-                     <button onClick={() => setModalBorrar(sol.id)} className="absolute top-2 left-2 z-10 text-red-500 hover:text-white bg-red-500/10 hover:bg-red-600 rounded p-1.5 transition-colors border border-red-500/30" title="Eliminar Cliente de la Base de Datos">
+                     <button onClick={() => setModalBorrar(sol.id)} className="absolute top-2 left-2 z-10 text-red-500 hover:text-white bg-red-500/5 hover:bg-red-600 rounded p-1.5 transition-colors border border-red-500/10" title="Eliminar Cliente de la Base de Datos">
                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                      </button>
                      
                      <h3 className="text-xl font-black text-white mb-1">{sol.datosPersonales?.nombreCompleto || "Desconocido"}</h3>
-                     <p className="text-gray-400 text-sm flex gap-2"><span className="text-yellow-500 font-bold">📲 {sol.datosPersonales?.telefono}</span> <span className="text-zinc-500">|</span> <span className="text-gray-400">{sol.datosPersonales?.numeroDni}</span></p>
-                     <p className="text-gray-500 text-xs mt-1">Afiliado asignado: {sol.afiliadoEmail}</p>
+                     <p className="text-zinc-400 text-sm flex gap-2"><span className="text-yellow-400 font-bold">📲 {sol.datosPersonales?.telefono}</span> <span className="text-zinc-500">|</span> <span className="text-zinc-400">{sol.datosPersonales?.numeroDni}</span></p>
+                     <p className="text-zinc-500 text-xs mt-1">Afiliado asignado: {sol.afiliadoEmail}</p>
                      <p className="text-blue-400 font-bold text-sm mt-3">Equipo: {sol.productoDeseado}</p>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 text-center mb-6">
                      <div className="bg-black border border-zinc-800 p-2 rounded">
-                       <p className="text-2xl font-black text-green-500">{est.pagadas}</p>
-                       <p className="text-[10px] text-gray-500 uppercase">Pagadas</p>
+                       <p className="text-2xl font-black text-green-400">{est.pagadas}</p>
+                       <p className="text-[10px] text-zinc-500 uppercase">Pagadas</p>
                      </div>
                      <div className="bg-black border border-zinc-800 p-2 rounded">
-                       <p className="text-2xl font-black text-yellow-500">{est.restantes}</p>
-                       <p className="text-[10px] text-gray-500 uppercase">Restantes</p>
+                       <p className="text-2xl font-black text-yellow-400">{est.restantes}</p>
+                       <p className="text-[10px] text-zinc-500 uppercase">Restantes</p>
                      </div>
-                     <div className={`p-2 rounded border ${est.atrasadas > 0 ? 'bg-red-500/10 border-red-500/30' : 'bg-black border-zinc-800'}`}>
-                       <p className={`text-2xl font-black ${est.atrasadas > 0 ? 'text-red-500' : 'text-gray-500'}`}>{est.atrasadas}</p>
-                       <p className="text-[10px] text-gray-500 uppercase">Vencidas</p>
+                     <div className={`p-2 rounded border ${est.atrasadas > 0 ? 'bg-red-500/5 border-red-500/10' : 'bg-black border-zinc-800'}`}>
+                       <p className={`text-2xl font-black ${est.atrasadas > 0 ? 'text-red-500' : 'text-zinc-500'}`}>{est.atrasadas}</p>
+                       <p className="text-[10px] text-zinc-500 uppercase">Vencidas</p>
                      </div>
                   </div>
 
@@ -234,10 +236,10 @@ export default function CarteraPage() {
                      <div className="mt-6 pt-6 border-t border-zinc-800 animate-fade-in space-y-8">
                         
                         {/* SECCION NUEVA: PLANILLA DE CUOTAS CLARA ABSOLUTA */}
-                        <div className="bg-black rounded-lg border border-yellow-500/20 p-4 shadow-inner overflow-hidden">
-                           <h4 className="text-yellow-500 font-bold text-sm mb-4 border-b border-yellow-500/20 pb-2"> Plan de Cuotas del Producto </h4>
+                        <div className="bg-black rounded-lg border border-zinc-800 p-4 shadow-inner overflow-hidden">
+                           <h4 className="text-yellow-400 font-bold text-sm mb-4 border-b border-zinc-800 pb-2"> Plan de Cuotas del Producto </h4>
                            {!sol.planPagos || sol.planPagos.length === 0 ? (
-                               <div className="flex flex-col items-center gap-3 py-4 bg-red-900/10 border border-red-500/30 rounded-lg">
+                               <div className="flex flex-col items-center gap-3 py-4 bg-red-900/10 border border-red-500/10 rounded-lg">
                                   <p className="text-red-400 text-xs text-center font-bold">⚠️ Esta venta es antigua y no tiene vector de cuotas.</p>
                                   <button onClick={() => generarPlanRetroactivo(sol)} className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded text-xs font-bold w-fit shadow-md transition-all uppercase tracking-wider">
                                      Generar Vector de {sol.planElegido || '?'} Cuotas Automáticamente
@@ -248,10 +250,10 @@ export default function CarteraPage() {
                                   {sol.planPagos.map((cuota: any, idx: number) => {
                                       const isAtrasada = cuota.estado !== "PAGADO" && new Date(cuota.vencimiento) < new Date();
                                       return (
-                                        <div key={idx} className={`p-3 rounded border flex flex-col md:flex-row md:items-center justify-between gap-3 text-sm ${cuota.estado === 'PAGADO' ? 'bg-green-900/10 border-green-500/30' : cuota.estado === 'EN_REVISION' ? 'bg-blue-900/20 border-blue-500/50' : isAtrasada ? 'bg-red-900/20 border-red-500/30' : 'bg-zinc-900 border-zinc-700/50'}`}>
+                                        <div key={idx} className={`p-3 rounded border flex flex-col md:flex-row md:items-center justify-between gap-3 text-sm ${cuota.estado === 'PAGADO' ? 'bg-green-900/10 border-green-500/10' : cuota.estado === 'EN_REVISION' ? 'bg-blue-900/20 border-blue-500/50' : isAtrasada ? 'bg-red-900/20 border-red-500/10' : 'bg-zinc-900 border-zinc-700/50'}`}>
                                             <div>
                                                <p className="font-bold text-white">Cuota {cuota.numero} <span className="text-yellow-400 ml-2">${cuota.montoOriginal}</span></p>
-                                               <p className="text-xs text-gray-400">Vence: {new Date(cuota.vencimiento).toLocaleDateString()}</p>
+                                               <p className="text-xs text-zinc-400">Vence: {new Date(cuota.vencimiento).toLocaleDateString()}</p>
                                             </div>
                                             <div className="flex flex-col md:items-end gap-1">
                                                <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider w-fit ${cuota.estado === 'PAGADO' ? 'bg-green-500/20 text-green-400' : cuota.estado === 'EN_REVISION' ? 'bg-blue-500 text-white animate-pulse' : isAtrasada ? 'bg-red-500/20 text-red-500' : 'bg-orange-500/20 text-orange-400'}`}>
@@ -279,21 +281,21 @@ export default function CarteraPage() {
 
                         {/* SECCION: BITACORA */}
                         <div>
-                            <h4 className="text-white font-bold text-sm mb-3 border-b border-zinc-800 pb-1 flex justify-between">Historial de Contactos <span className="text-[10px] text-gray-500 font-normal mt-1">(Bitácora)</span></h4>
+                            <h4 className="text-white font-bold text-sm mb-3 border-b border-zinc-800 pb-1 flex justify-between">Historial de Contactos <span className="text-[10px] text-zinc-500 font-normal mt-1">(Bitácora)</span></h4>
                             {(!sol.historialContactos || sol.historialContactos.length === 0) ? (
-                               <p className="text-xs text-gray-500 italic text-center py-4">No hay contactos registrados aún.</p>
+                               <p className="text-xs text-zinc-500 italic text-center py-4">No hay contactos registrados aún.</p>
                             ) : (
                                <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar mb-4">
                                   {sol.historialContactos.map((log: any) => (
                                      <div key={log.id} className="bg-zinc-800/50 p-3 rounded border border-zinc-700/50">
                                         <div className="flex justify-between items-start mb-1">
-                                           <span className="text-[10px] text-gray-400 font-bold">{new Date(log.fecha).toLocaleString()}</span>
-                                           <span className="text-[9px] bg-black px-2 py-0.5 rounded text-gray-500">{log.usuario}</span>
+                                           <span className="text-[10px] text-zinc-400 font-bold">{new Date(log.fecha).toLocaleString()}</span>
+                                           <span className="text-[9px] bg-black px-2 py-0.5 rounded text-zinc-500">{log.usuario}</span>
                                         </div>
                                         <p className="text-sm text-gray-200">{log.nota}</p>
                                         {log.promesaPago && (
-                                           <div className="mt-2 bg-yellow-500/10 border border-yellow-500/30 p-1.5 rounded flex items-center gap-2">
-                                              <span className="text-yellow-500 text-[10px] font-bold">📅 PROMESA D/PAGO:</span>
+                                           <div className="mt-2 bg-yellow-500/5 border border-zinc-800 p-1.5 rounded flex items-center gap-2">
+                                              <span className="text-yellow-400 text-[10px] font-bold">📅 PROMESA D/PAGO:</span>
                                               <span className="text-yellow-400 text-[11px] font-bold">{new Date(log.promesaPago + "T12:00:00").toLocaleDateString()}</span>
                                            </div>
                                         )}
@@ -302,11 +304,11 @@ export default function CarteraPage() {
                                </div>
                             )}
 
-                            <div className="bg-black p-4 rounded-lg border border-yellow-500/10">
-                               <h5 className="text-[10px] text-yellow-500 font-bold uppercase tracking-widest mb-2">Registrar una nueva gestión telefónica/whatsapp</h5>
+                            <div className="bg-black p-4 rounded-lg border border-zinc-850">
+                               <h5 className="text-[10px] text-yellow-400 font-bold uppercase tracking-widest mb-2">Registrar una nueva gestión telefónica/whatsapp</h5>
                                <textarea value={nuevaNota} onChange={e=>setNuevaNota(e.target.value)} placeholder="Ej: Llamé y dijo que cancela en RapiPago mañana a las 18hs..." className="w-full bg-zinc-900 text-white p-3 rounded border border-zinc-700 text-xs outline-none focus:border-yellow-500 h-20 min-h-[4rem] mb-3 transition-colors" />
                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
-                                  <label className="text-[11px] font-bold text-gray-400 whitespace-nowrap">Agendar Promesa P.:</label>
+                                  <label className="text-[11px] font-bold text-zinc-400 whitespace-nowrap">Agendar Promesa P.:</label>
                                   <input type="date" value={fechaPromesa} onChange={e=>setFechaPromesa(e.target.value)} className="w-full sm:w-auto bg-zinc-900 text-white p-2 rounded border border-zinc-700 text-xs outline-none focus:border-yellow-500" />
                                </div>
                                <button onClick={() => handleAgregarNota(sol)} className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs py-3 rounded uppercase tracking-wider transition-colors shadow-md">
@@ -330,14 +332,14 @@ export default function CarteraPage() {
       {modalConfirmacion && (
          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <div className="bg-zinc-900 border border-yellow-500/50 rounded-2xl p-8 max-w-sm w-full shadow-2xl flex flex-col items-center animate-fade-in text-center">
-               <div className="bg-green-500/10 w-20 h-20 rounded-full flex items-center justify-center mb-6 border border-green-500/30">
-                  <span className="text-green-500 text-4xl font-black">✓</span>
+               <div className="bg-green-500/5 w-20 h-20 rounded-full flex items-center justify-center mb-6 border border-green-500/10">
+                  <span className="text-green-400 text-4xl font-black">✓</span>
                </div>
                <h3 className="text-2xl font-black text-white mb-3">Liquidar Cuota</h3>
-               <p className="text-gray-400 text-sm mb-4 leading-relaxed">¿Estás completamente seguro de que el importe de esta cuota impactó en tu cuenta bancaria y deseas marcarla como cerrada permanentemente?</p>
+               <p className="text-zinc-400 text-sm mb-4 leading-relaxed">¿Estás completamente seguro de que el importe de esta cuota impactó en tu cuenta bancaria y deseas marcarla como cerrada permanentemente?</p>
                
                <div className="w-full text-left mb-6 bg-black p-4 rounded-lg border border-zinc-800">
-                  <label className="text-xs text-yellow-500 font-bold uppercase mb-2 block">Monto Realmente Pagado ($)</label>
+                  <label className="text-xs text-yellow-400 font-bold uppercase mb-2 block">Monto Realmente Pagado ($)</label>
                   <input 
                      type="number" 
                      value={montoIngresado} 
@@ -345,10 +347,10 @@ export default function CarteraPage() {
                      className="w-full bg-zinc-900 border border-zinc-700 text-white p-3 rounded-lg focus:border-yellow-500 outline-none transition-colors font-bold text-lg"
                      min="0"
                   />
-                  <p className="text-[10px] text-gray-500 mt-2">Si el pago es parcial, el saldo restante se sumará automáticamente a la próxima cuota o creará una nueva.</p>
+                  <p className="text-[10px] text-zinc-500 mt-2">Si el pago es parcial, el saldo restante se sumará automáticamente a la próxima cuota o creará una nueva.</p>
                </div>
                <div className="w-full text-left mb-6 bg-black p-4 rounded-lg border border-zinc-800">
-                  <label className="text-xs text-yellow-500 font-bold uppercase mb-2 block">Método de Pago</label>
+                  <label className="text-xs text-yellow-400 font-bold uppercase mb-2 block">Método de Pago</label>
                   <select value={metodoPagoCuota} onChange={e=>setMetodoPagoCuota(e.target.value)} className="w-full bg-zinc-900 border border-zinc-700 text-white p-3 rounded-lg focus:border-yellow-500 outline-none font-bold">
                      <option value="Efectivo">Efectivo 💵</option>
                      <option value="Transferencia">Transferencia Bancaria 🏦</option>
@@ -430,11 +432,11 @@ export default function CarteraPage() {
       {modalBorrar && (
          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
             <div className="bg-black border border-red-500/50 rounded-2xl p-8 max-w-sm w-full shadow-[0_0_50px_rgba(239,68,68,0.3)] flex flex-col items-center animate-fade-in text-center">
-               <div className="bg-red-500/10 w-20 h-20 rounded-full flex items-center justify-center mb-6 border border-red-500/30">
+               <div className="bg-red-500/5 w-20 h-20 rounded-full flex items-center justify-center mb-6 border border-red-500/10">
                   <span className="text-red-500 text-4xl font-black">!</span>
                </div>
                <h3 className="text-2xl font-black text-white mb-3">Eliminar Cartera</h3>
-               <p className="text-gray-400 text-sm mb-6 leading-relaxed">Estás a punto de <strong className="text-red-400">borrar a este cliente y toda su historia de la faz de la tierra</strong>. Esto es I-R-R-E-V-E-R-S-I-B-L-E. ¿Estás absolutamente seguro?</p>
+               <p className="text-zinc-400 text-sm mb-6 leading-relaxed">Estás a punto de <strong className="text-red-400">borrar a este cliente y toda su historia de la faz de la tierra</strong>. Esto es I-R-R-E-V-E-R-S-I-B-L-E. ¿Estás absolutamente seguro?</p>
                <div className="w-full flex gap-3">
                   <button onClick={() => setModalBorrar(null)} className="flex-1 bg-zinc-800 text-gray-300 py-3.5 rounded-xl font-bold hover:bg-zinc-700 transition">Cancelar</button>
                   <button onClick={async () => {
@@ -444,7 +446,7 @@ export default function CarteraPage() {
                         setModalBorrar(null);
                         fetchData();
                      } catch(e) { alert("Error al borrar."); }
-                  }} className="flex-1 bg-red-600 text-white py-3.5 rounded-xl font-bold hover:bg-red-500 transition shadow-lg">Purgar Base</button>
+                  }} className="flex-1 bg-red-600 text-white py-3.5 rounded-xl font-bold hover:bg-red-500 transition shadow-2xl shadow-black/60">Purgar Base</button>
                </div>
             </div>
          </div>
@@ -459,5 +461,6 @@ export default function CarteraPage() {
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
       `}} />
     </div>
+    </AdminProtectedRoute>
   );
 }

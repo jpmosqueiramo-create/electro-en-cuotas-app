@@ -21,11 +21,11 @@ export default function ServiceModel() {
   ];
 
   return (
-    <section className="py-24 bg-white text-[#002B5B]">
+    <section className="py-24 bg-zinc-900 text-[#002B5B]">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-black tracking-tight mb-4">Nuestro Modelo de Mandato</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">Nosotros nos encargamos del trámite y el respaldo técnico, vos de disfrutarlo.</p>
+          <p className="text-lg text-zinc-400 max-w-2xl mx-auto">Nosotros nos encargamos del trámite y el respaldo técnico, vos de disfrutarlo.</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
@@ -35,7 +35,7 @@ export default function ServiceModel() {
                 {step.icon}
               </div>
               <h3 className="text-xl font-bold mb-3">{step.title}</h3>
-              <p className="text-gray-600 leading-relaxed">{step.desc}</p>
+              <p className="text-zinc-400 leading-relaxed">{step.desc}</p>
             </div>
           ))}
         </div>

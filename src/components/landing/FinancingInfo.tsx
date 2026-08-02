@@ -14,7 +14,7 @@ export default function FinancingInfo() {
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         <div>
           <h2 className="text-4xl font-black mb-6">Nuestra Financiación</h2>
-          <p className="text-lg text-gray-600 mb-8">
+          <p className="text-lg text-zinc-400 mb-8">
             Entendemos el valor de tu palabra. Por eso, diseñamos un sistema de crédito que no depende de bancos, sino de la confianza mutua.
           </p>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -32,8 +32,8 @@ export default function FinancingInfo() {
           <p className="text-blue-100/70 mb-8">
             En los pueblos del interior, sabemos que el trato cercano es lo que importa. No sos un número de cliente, sos un vecino.
           </p>
-          <div className="p-6 bg-white/5 border border-white/10 rounded-2xl">
-            <p className="italic font-light">"Hacemos posible que accedas a lo mejor, pagando como vos podés."</p>
+          <div className="p-6 bg-zinc-900/5 border border-white/10 rounded-2xl">
+            <p className="italic font-light">&quot;Hacemos posible que accedas a lo mejor, pagando como vos podés.&quot;</p>
           </div>
         </div>
       </div>

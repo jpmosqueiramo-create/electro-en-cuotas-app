@@ -1,98 +1,364 @@
 import { jsPDF } from "jspdf";
 
-export const generarContrato = (solicitud: any) => {
+export interface DatosContrato {
+  nroContrato: string;
+  nombreComprador: string;
+  dni: string;
+  domicilio: string;
+  email: string;
+  whatsapp: string;
+  producto: string;
+  nserie: string;
+  precioContado: string;
+  factorFinanciado: string;
+  totalFinanciado: string;
+  cuotas: string;
+  importeCuota: string;
+  primeraCuota: string;
+  tnaComp: string;
+  tnaPun: string;
+  cftEa: string;
+  lugarFecha: string;
+  cuotasPlan: Array<{
+    numero: number;
+    vencimiento: string;
+    montoOriginal: number;
+    observacion?: string;
+  }>;
+}
+
+export const formatARS = (amount: string | number): string => {
+  if (amount === undefined || amount === null || amount === "") return "$ 0";
+  
+  if (typeof amount === "number") {
+    const rounded = Math.round(amount);
+    return `$ ${rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+  }
+  
+  let clean = amount.replace(/[\$\s]/g, "");
+  
+  if (clean.includes(",") && clean.indexOf(",") > clean.indexOf(".")) {
+    clean = clean.split(",")[0];
+  } else if (clean.includes(".") && clean.indexOf(".") > clean.indexOf(",")) {
+    clean = clean.split(".")[0];
+  }
+  
+  const finalDigits = clean.replace(/[^0-9-]/g, "");
+  const numericVal = parseInt(finalDigits, 10);
+  if (isNaN(numericVal)) return "$ 0";
+  
+  return `$ ${numericVal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+};
+
+const drawFormBox = (doc: jsPDF, label: string, value: string, x: number, y: number, w: number, h: number) => {
+  // Draw background box in light blue
+  doc.setFillColor(219, 234, 254);
+  doc.rect(x, y, w, h, "F");
+  // Draw border in gray/light blue
+  doc.setDrawColor(191, 219, 254);
+  doc.setLineWidth(0.3);
+  doc.rect(x, y, w, h, "S");
+  // Draw label
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(label, x + 2, y + 3.5);
+  // Draw value
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(15, 23, 42);
+  doc.text(value || "", x + 2, y + 8.5);
+};
+
+export const generarContratoModelo = (datos: DatosContrato) => {
   const doc = new jsPDF();
-  const nombre = solicitud.datosPersonales?.nombreCompleto || "Cliente";
-  const dni = solicitud.datosPersonales?.numeroDni || "S/D";
-  const domicilio = `${solicitud.datosPersonales?.direccion || ""}, ${solicitud.datosPersonales?.localidad || ""}`;
-  const producto = solicitud.productoDeseado || "S/D";
-  const plan = solicitud.planElegido || "0";
-  const cuota = solicitud.montoCuota || 0;
-  const total = plan * cuota;
-  const fecha = new Date().toLocaleDateString("es-AR");
+  const nombre = datos.nombreComprador || "Cliente";
+  
+  // Page 1
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("CONTRATO DE COMPRAVENTA EN CUOTAS CON RESERVA DE DOMINIO", 15, 15);
+  
+  doc.setFontSize(7.5);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(71, 85, 105);
+  doc.text("Y CONSENTIMIENTO DE BLOQUEO REMOTO — ELECTRO EN CUOTAS — Juan Pablo Mosqueira Morales (CUIT 20-30137724-0) — MONEDA: ARS", 15, 20);
+  
+  drawFormBox(doc, "N° de contrato / legajo:", datos.nroContrato, 135, 25, 60, 11);
+  
+  doc.setFontSize(9.5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("Datos del Contrato", 15, 41);
+  
+  // Row 1
+  drawFormBox(doc, "Comprador/a (Nombre y Apellido):", datos.nombreComprador, 15, 45, 180, 11);
+  // Row 2
+  drawFormBox(doc, "DNI:", datos.dni, 15, 59, 60, 11);
+  drawFormBox(doc, "Domicilio (PBA):", datos.domicilio, 78, 59, 117, 11);
+  // Row 3
+  drawFormBox(doc, "Email:", datos.email, 15, 73, 95, 11);
+  drawFormBox(doc, "WhatsApp:", datos.whatsapp, 113, 73, 82, 11);
+  // Row 4
+  drawFormBox(doc, "Producto/Bien (tipo y Marca/Modelo):", datos.producto, 15, 87, 180, 11);
+  // Row 5
+  drawFormBox(doc, "Identificación (IMEI / N° de serie):", datos.nserie, 15, 101, 180, 11);
+  // Row 6
+  drawFormBox(doc, "Precio de contado ($):", formatARS(datos.precioContado), 15, 115, 90, 11);
+  drawFormBox(doc, "Factor financiado:", datos.factorFinanciado, 108, 115, 87, 11);
+  // Row 7
+  drawFormBox(doc, "Total financiado ($):", formatARS(datos.totalFinanciado), 15, 129, 90, 11);
+  drawFormBox(doc, "Cuotas (n):", datos.cuotas, 108, 129, 87, 11);
+  // Row 8
+  drawFormBox(doc, "Importe por cuota ($):", formatARS(datos.importeCuota), 15, 143, 90, 11);
+  drawFormBox(doc, "1ª cuota:", datos.primeraCuota, 108, 143, 87, 11);
+  // Row 9
+  drawFormBox(doc, "TNA comp. (%):", datos.tnaComp, 15, 157, 58, 11);
+  drawFormBox(doc, "TNA pun. (%):", datos.tnaPun, 76, 157, 58, 11);
+  drawFormBox(doc, "CFT EA (%):", datos.cftEa, 137, 157, 58, 11);
+  // Row 10
+  drawFormBox(doc, "Lugar y fecha de firma/entrega:", datos.lugarFecha, 15, 171, 180, 11);
 
-  doc.setFontSize(18);
+  let y = 190;
   doc.setFont("helvetica", "bold");
-  doc.text("CONTRATO DE COMPRAVENTA EN CUOTAS", 105, 20, { align: "center" });
-  
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "normal");
-  
-  let y = 40;
-  doc.text(`En el día de la fecha ${fecha}, se celebra el presente contrato entre ELECTRO EN CUOTAS`, 20, y); y+=7;
-  doc.text(`(en adelante "EL AFILIADO") y el Sr/a. ${nombre}, DNI ${dni},`, 20, y); y+=7;
-  doc.text(`con domicilio en ${domicilio} (en adelante "EL COMPRADOR").`, 20, y); y+=15;
-  
-  doc.setFont("helvetica", "bold");
-  doc.text("1. OBJETO DEL CONTRATO:", 20, y); y+=7;
-  doc.setFont("helvetica", "normal");
-  doc.text(`EL AFILIADO entrega a EL COMPRADOR, quien acepta de conformidad, un(a) ${producto}.`, 20, y); y+=15;
-  
-  doc.setFont("helvetica", "bold");
-  doc.text("2. PRECIO Y FORMA DE PAGO:", 20, y); y+=7;
-  doc.setFont("helvetica", "normal");
-  doc.text(`El precio total financiado de la venta es de $${total}.`, 20, y); y+=7;
-  doc.text(`El mismo será abonado en ${plan} cuotas mensuales, iguales y consecutivas de $${cuota}.`, 20, y); y+=15;
-  
-  doc.setFont("helvetica", "bold");
-  doc.text("3. CONDICIONES GENERALES:", 20, y); y+=7;
-  doc.setFont("helvetica", "normal");
-  const legales = doc.splitTextToSize(`La falta de pago de una cuota a su vencimiento producirá la mora automática sin necesidad de interpelación alguna, devengando un interés punitorio diario sujeto a las condiciones vigentes al momento del atraso. EL COMPRADOR suscribe en garantía un pagaré por el total de la deuda.`, 170);
-  doc.text(legales, 20, y); y += (legales.length * 7) + 20;
+  doc.setFontSize(9.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Cláusulas", 15, y); y += 5;
 
-  doc.text("_____________________________________", 20, y);
-  doc.text("_____________________________________", 120, y); y+=7;
-  doc.text("Firma de EL AFILIADO", 30, y);
-  doc.text("Firma de EL COMPRADOR", 130, y); y+=7;
-  doc.text(`Aclaración: _________________________`, 120, y);
+  const printClausula = (label: string, text: string) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(15, 23, 42);
+    const labelLines = doc.splitTextToSize(label, 180);
+    labelLines.forEach((line: string) => {
+      if (y > 275) {
+        doc.addPage();
+        y = 25;
+      }
+      doc.text(line, 15, y);
+      y += 4;
+    });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(51, 65, 85);
+    const textLines = doc.splitTextToSize(text, 180);
+    textLines.forEach((line: string) => {
+      if (y > 275) {
+        doc.addPage();
+        y = 25;
+      }
+      doc.text(line, 15, y);
+      y += 3.8;
+    });
+    y += 3;
+  };
+
+  printClausula(
+    "1) Objeto – Identificación del bien.",
+    "El Vendedor entrega al Comprador el/los bien(es) mueble(s) individualizado(s) en los datos del contrato —incluyendo, según corresponda, teléfonos celulares, electrodomésticos y/o dispositivos electrónicos— en correcto funcionamiento."
+  );
+  printClausula(
+    "2) Precio, financiación, cronograma y pagaré.",
+    `El Comprador reconoce el precio de contado indicado y el total financiado. El pago se realizará en ${datos.cuotas} cuotas conforme el Cronograma de Vencimientos (Anexo I), aceptando expresamente sus fechas e importes. Para documentar y garantizar el saldo, el Comprador suscribe un pagaré por el monto total, con vencimiento único (día fijo) indicado en dicho título. Los pagos parciales efectuados se imputarán a cuenta del total adeudado y, cancelada íntegramente la obligación, el pagaré será devuelto/cancelado. A los efectos operativos, el pago podrá efectuarse en el lugar de pago (domicilio del Deudor en PBA) y/o mediante transferencia/depósito a la cuenta informada por el Vendedor, lo que se considerará pago válido.`
+  );
+  printClausula(
+    "3) Mora y vencimiento anticipado.",
+    "La falta de pago de una cuota por más de cuarenta y cinco (45) días, o el incumplimiento de tres (3) cuotas, faculta al Vendedor a declarar el vencimiento anticipado del saldo impago y a exigir su pago inmediato, con más intereses."
+  );
+  printClausula(
+    "4) Reserva de dominio.",
+    "Hasta el pago total, la propiedad del bien queda reservada a favor del Vendedor, quedando el Comprador como poseedor. Si se resuelve la compraventa por mora, el Comprador se obliga a entregar voluntariamente el bien dentro de cinco (5) días hábiles de intimado. De no mediar entrega voluntaria, la restitución forzosa del bien sólo procederá mediante orden judicial. Se prohíbe toda forma de autotutela."
+  );
+  printClausula(
+    "5) Bloqueo remoto por software (consentimiento y preaviso).",
+    "El Comprador autoriza la instalación y uso de un mecanismo de gestión/seguridad que permita el bloqueo temporal y reversible de funcionalidades del bien cuando ello sea técnicamente posible —sin borrar datos y manteniendo llamadas de emergencia cuando aplique— exclusivamente ante mora superior a 45 días y previa notificación fehaciente con una antelación mínima de 72 horas a los domicilios constituidos. Regularizada la situación, el Vendedor desactivará el bloqueo de inmediato."
+  );
+  printClausula(
+    "6) Datos personales.",
+    "El Comprador presta consentimiento libre, expreso e informado para el tratamiento mínimo y proporcional de los datos estrictamente necesarios para la gestión del crédito y eventual activación técnica del bloqueo (p. ej., IMEI/número de serie, estado de pago, últimos contactos), conforme Ley 25.326. Podrá ejercer derechos de acceso, rectificación y supresión en la casilla del Vendedor. No se recaba geolocalización sin consentimiento adicional."
+  );
+  printClausula(
+    "7) Conservación y prohibiciones.",
+    "El Comprador debe conservar el bien, no modificar ni ocultar IMEI/número de serie (si aplica), ni enajenarlo antes del pago total sin autorización escrita del Vendedor."
+  );
+  printClausula(
+    "8) Comunicaciones y domicilios.",
+    "El Comprador constituye domicilio físico y electrónico (email/WhatsApp). Las notificaciones cursadas a dichos domicilios se tendrán por fehacientes."
+  );
+  printClausula(
+    "9) Cesión.",
+    "El Vendedor podrá ceder/endosar el crédito y el pagaré, notificándolo por los medios del punto 8."
+  );
+  printClausula(
+    "10) Garantía legal.",
+    "El bien nuevo goza de garantía legal de seis (6) meses —tres (3) si usado—, sin perjuicio de garantías comerciales adicionales que se entreguen por escrito."
+  );
+  printClausula(
+    "11) Identificación y reporte de robo/hurto.",
+    "El Vendedor no reportará el bien como robado/hurtado por mora. Cualquier gestión de bloqueo por identificadores (IMEI/serie) será la que corresponda por normativa y únicamente para los supuestos previstos para ello."
+  );
+  printClausula(
+    "12) Jurisdicción y ley aplicable.",
+    "Se aplican las leyes de la República Argentina y resultará competente el fuero del domicilio del consumidor, o el que corresponda por normativa vigente."
+  );
+
+  // Signatures
+  if (y > 230) {
+    doc.addPage();
+    y = 25;
+  }
+  y += 10;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Firmas", 15, y); y += 15;
   
+  doc.setDrawColor(148, 163, 184);
+  doc.line(15, y, 90, y);
+  doc.line(115, y, 190, y); y += 5;
+  
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text("Vendedor:", 15, y);
+  doc.text("Comprador/a:", 115, y); y += 15;
+
+  const aclaracion = doc.splitTextToSize("Aclaración: Modelo referencial. Revise y adecúe con su asesoría legal. El retiro físico del bien sólo por entrega voluntaria o mediante orden judicial. El bloqueo remoto se aplica con consentimiento expreso y preaviso.", 180);
+  doc.text(aclaracion, 15, y);
+
+  // Page 3: Anexo I
+  doc.addPage();
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text(`ANEXO I — CRONOGRAMA DE VENCIMIENTOS (${datos.cuotas} CUOTAS)`, 15, 15);
+  
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Completar las ${datos.cuotas} cuotas en forma continua. Moneda: ARS.`, 15, 20);
+  
+  drawFormBox(doc, "N° de contrato / legajo:", datos.nroContrato, 135, 25, 60, 11);
+  
+  // Table headers
+  let rowY = 42;
+  doc.setFillColor(219, 234, 254);
+  doc.rect(15, rowY, 180, 8, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text("N°", 17, rowY + 5.5);
+  doc.text("Fecha vencimiento (dd/mm/aaaa)", 27, rowY + 5.5);
+  doc.text("Importe ($)", 92, rowY + 5.5);
+  doc.text("Observación", 142, rowY + 5.5);
+  
+  // Table border line
+  doc.setDrawColor(191, 219, 254);
+  doc.rect(15, rowY, 180, 8, "S");
+  rowY += 8;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(51, 65, 85);
+  
+  if (datos.cuotasPlan && datos.cuotasPlan.length > 0) {
+    datos.cuotasPlan.forEach((c) => {
+      doc.setFillColor(c.numero % 2 === 0 ? 248 : 255, c.numero % 2 === 0 ? 250 : 255, c.numero % 2 === 0 ? 252 : 255);
+      doc.rect(15, rowY, 180, 8, "F");
+      
+      doc.setDrawColor(228, 228, 231);
+      doc.rect(15, rowY, 180, 8, "S");
+      
+      doc.text(String(c.numero).padStart(2, '0'), 17, rowY + 5.5);
+      
+      const formattedDate = c.vencimiento ? (c.vencimiento.includes("T") ? new Date(c.vencimiento).toLocaleDateString("es-AR") : c.vencimiento) : "";
+      doc.text(formattedDate, 27, rowY + 5.5);
+      doc.text(formatARS(c.montoOriginal), 92, rowY + 5.5);
+      doc.text(c.observacion || "Cuota mensual ordinaria", 142, rowY + 5.5);
+      rowY += 8;
+    });
+  } else {
+    const cantCuotas = Number(datos.cuotas) || 12;
+    for (let i = 1; i <= cantCuotas; i++) {
+      doc.setDrawColor(228, 228, 231);
+      doc.rect(15, rowY, 180, 8, "S");
+      doc.text(String(i).padStart(2, '0'), 17, rowY + 5.5);
+      doc.text("____ / ____ / ________", 27, rowY + 5.5);
+      doc.text(formatARS(datos.importeCuota), 92, rowY + 5.5);
+      doc.text("Cuota mensual ordinaria", 142, rowY + 5.5);
+      rowY += 8;
+    }
+  }
+  
+  rowY += 10;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text("El Comprador declara haber leído y aceptado el cronograma precedente (Anexo I).", 15, rowY); rowY += 12;
+  
+  doc.setDrawColor(148, 163, 184);
+  doc.line(15, rowY, 115, rowY); rowY += 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(71, 85, 105);
+  doc.text("Firma/Iniciales Comprador (Anexo I):", 15, rowY); rowY += 10;
+  
+  doc.text(`Aclaración y DNI (Anexo I): __________________________________________________`, 15, rowY);
+  
+  // Footer page numbers on all pages
+  const pageCount = (doc as any).internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Página ${i} de ${pageCount}`, 105, 290, { align: "center" });
+  }
+
   doc.save(`Contrato_${nombre.replace(/\s/g,"_")}.pdf`);
 };
 
-export const generarPagare = (solicitud: any) => {
+export const generarPagareModelo = (datos: DatosContrato) => {
   const doc = new jsPDF();
-  const nombre = solicitud.datosPersonales?.nombreCompleto || "Cliente";
-  const dni = solicitud.datosPersonales?.numeroDni || "S/D";
-  const domicilio = `${solicitud.datosPersonales?.direccion || ""}, ${solicitud.datosPersonales?.localidad || ""}`;
-  const producto = solicitud.productoDeseado || "S/D";
-  const plan = solicitud.planElegido || "0";
-  const cuota = solicitud.montoCuota || 0;
-  const total = plan * cuota;
-  const fecha = new Date().toLocaleDateString("es-AR");
-
+  const nombre = datos.nombreComprador || "Cliente";
+  
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
   doc.text("PAGARE A LA VISTA SIN PROTESTO", 105, 20, { align: "center" });
   
   doc.setFontSize(14);
-  doc.text(`POR $ ${total}`, 160, 40);
+  doc.text(`POR ${formatARS(datos.totalFinanciado)}`, 155, 35);
   
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   
-  let y = 60;
-  doc.text(`Lugar y fecha de emisión: ____________________, ${fecha}`, 20, y); y+=15;
+  let y = 55;
+  doc.text(`Lugar y fecha de emisión: ____________________, ${new Date().toLocaleDateString("es-AR")}`, 15, y); y+=12;
   
-  doc.text(`Por este PAGARE me/nos comprometemos incondicionalmente a pagar a la orden de`, 20, y); y+=7;
+  doc.text(`Por este PAGARE me/nos comprometemos incondicionalmente a pagar a la orden de`, 15, y); y+=6;
   doc.setFont("helvetica", "bold");
-  doc.text(`ELECTRO EN CUOTAS`, 20, y); y+=7;
+  doc.text("ELECTRO EN CUOTAS (Juan Pablo Mosqueira Morales)", 15, y); y+=6;
   doc.setFont("helvetica", "normal");
-  doc.text(`la cantidad de PESOS: $${total} (Son ${plan} cuotas de $${cuota}).`, 20, y); y+=15;
+  doc.text(`la cantidad de PESOS (ARS): ${formatARS(datos.totalFinanciado)} (Son ${datos.cuotas} cuotas de ${formatARS(datos.importeCuota)}).`, 15, y); y+=12;
   
-  doc.text(`Por igual valor recibido en electrodomésticos (${producto}) a mi entera satisfacción.`, 20, y); y+=15;
+  doc.text(`Por igual valor recibido en electrodomésticos (${datos.producto}) a mi entera satisfacción.`, 15, y); y+=12;
   
-  doc.text(`La falta de pago a su presentación producirá la mora automática. Operada la mora, la deuda`, 20, y); y+=7;
-  doc.text(`devengará en concepto de interés punitorio la tasa activa máxima vigente en el Banco Nación.`, 20, y); y+=25;
+  const punitorio = datos.tnaPun ? `${datos.tnaPun}% diario` : "la tasa del 0.5% diario";
+  doc.text(`La falta de pago a su presentación producirá la mora automática. Operada la mora, la deuda`, 15, y); y+=6;
+  doc.text(`devengará en concepto de interés punitorio la tasa del ${punitorio}.`, 15, y); y+=20;
   
   doc.setFont("helvetica", "bold");
-  doc.text("DATOS DEL LIBRADOR / DEUDOR:", 20, y); y+=7;
+  doc.text("DATOS DEL LIBRADOR / DEUDOR:", 15, y); y+=6;
   doc.setFont("helvetica", "normal");
-  doc.text(`Nombre y Apellido: ${nombre}`, 20, y); y+=7;
-  doc.text(`Documento de Identidad (DNI): ${dni}`, 20, y); y+=7;
-  doc.text(`Domicilio: ${domicilio}`, 20, y); y+=7;
-  doc.text(`Teléfono: ${solicitud.datosPersonales?.telefono || ""}`, 20, y); y+=25;
+  doc.text(`Nombre y Apellido: ${datos.nombreComprador}`, 15, y); y+=6;
+  doc.text(`Documento de Identidad (DNI): ${datos.dni}`, 15, y); y+=6;
+  doc.text(`Domicilio: ${datos.domicilio}`, 15, y); y+=6;
+  doc.text(`Teléfono / WhatsApp: ${datos.whatsapp}`, 15, y); y+=20;
   
-  doc.text("Firma: __________________________________________________", 20, y); y+=7;
-  doc.text("Aclaración manuscrita: _____________________________________", 20, y);
+  doc.text("Firma: __________________________________________________", 15, y); y+=10;
+  doc.text("Aclaración manuscrita: _____________________________________", 15, y);
   
   doc.save(`Pagare_${nombre.replace(/\s/g,"_")}.pdf`);
 };

@@ -10,7 +10,7 @@ export default function Hero() {
           <ShieldCheck className="w-4 h-4" /> Tu palabra vale, tu confianza suma
         </div>
         
-        <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-tight mb-6">
+        <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-tight mb-6 text-white">
           Cuenta Hogar:<br />
           <span className="text-accent-gold">
             Tu palabra vale, tu tecnología llega.
@@ -21,7 +21,7 @@ export default function Hero() {
           Gestionamos la compra de lo que necesitás, te lo financiamos a sola firma y te lo llevamos a la puerta de tu casa. Sin bancos, con la seriedad de siempre.
         </p>
         
-        <Link href="/abrir-cuenta" className="group flex items-center gap-2 bg-accent-gold text-[#002B5B] text-lg font-extrabold px-10 py-5 rounded-full hover:bg-white transition-all hover:scale-105 shadow-[0_0_30px_rgba(255,215,0,0.2)]">
+        <Link href="/abrir-cuenta" className="group flex items-center gap-2 bg-accent-gold text-[#002B5B] text-lg font-extrabold px-10 py-5 rounded-full hover:bg-zinc-900 transition-all hover:scale-105 shadow-[0_0_30px_rgba(255,215,0,0.2)]">
           Abrí tu Cuenta de Confianza <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
         </Link>
       </div>
