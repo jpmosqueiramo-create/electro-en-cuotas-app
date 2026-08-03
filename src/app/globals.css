@@ -23,31 +23,25 @@ body {
   min-height: 100vh;
 }
 
+/* Premium 3D Yellow Button (formerly textured) */
 .bg-yellow-textured {
   position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, #fef08a 0%, #eab308 50%, #ca8a04 100%);
-  transition: all 0.3s ease;
-  border: none;
+  background: linear-gradient(180deg, #fef08a 0%, #eab308 100%) !important;
+  border: 1px solid #ca8a04 !important;
+  border-bottom: 4px solid #a16207 !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+  transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-width 0.15s ease, box-shadow 0.15s ease !important;
 }
-.bg-yellow-textured::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    45deg,
-    rgba(0, 0, 0, 0.05) 0px,
-    rgba(0, 0, 0, 0.05) 2px,
-    transparent 2px,
-    transparent 8px
-  );
-  pointer-events: none;
-}
+
 .bg-yellow-textured:hover:not(:disabled) {
-  background: linear-gradient(135deg, #fef08a 0%, #facc15 50%, #eab308 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 10px 25px -5px rgba(234, 179, 8, 0.4);
+  background: linear-gradient(180deg, #fef08a 0%, #facc15 100%) !important;
+  transform: translateY(-2px) !important;
+  border-bottom-width: 6px !important;
+  box-shadow: 0 6px 20px rgba(234, 179, 8, 0.4) !important;
 }
+
 .bg-yellow-textured:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: translateY(2px) !important;
+  border-bottom-width: 1px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
 }
