@@ -484,7 +484,7 @@ function ProductCard({ p, formatPrice }: { p: Producto; formatPrice: (price: num
     <div className="group bg-zinc-900/40 hover:bg-zinc-900/80 border border-zinc-850 hover:border-yellow-500/50 rounded-3xl overflow-hidden transition-all duration-300 flex flex-col shadow-2xl shadow-black/60 relative">
       
       {/* Imagen del Producto */}
-      <div className="relative aspect-square bg-zinc-950/60 p-6 flex flex-col items-center justify-center overflow-hidden border-b border-zinc-850 group/img">
+      <div className="relative aspect-square bg-white p-6 flex flex-col items-center justify-center overflow-hidden border-b border-zinc-850 group/img">
         {images.length > 0 ? (
           <img 
             src={images[activeIdx]} 
