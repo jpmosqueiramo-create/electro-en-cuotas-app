@@ -133,6 +133,9 @@ export default function PublicCatalog() {
 
           {/* Desktop Menu */}
           <div className="hidden lg:flex items-center gap-4">
+            <a href="#catalogo" className="text-sm font-bold text-zinc-300 hover:text-white transition-colors px-3 py-2">
+              Planes para vos
+            </a>
             <Link href="/nosotros" className="text-sm font-bold text-zinc-300 hover:text-white transition-colors px-3 py-2">
               ¿En qué te ayudamos?
             </Link>
@@ -154,6 +157,9 @@ export default function PublicCatalog() {
         {/* Mobile Dropdown */}
         {mobileMenuOpen && (
           <div className="lg:hidden absolute top-20 left-0 w-full bg-zinc-900 border-b border-zinc-850 p-6 flex flex-col gap-4 shadow-2xl shadow-black/80">
+            <a href="#catalogo" onClick={() => setMobileMenuOpen(false)} className="text-lg font-bold text-zinc-300 hover:text-white transition-colors">
+              Planes para vos
+            </a>
             <Link href="/nosotros" onClick={() => setMobileMenuOpen(false)} className="text-lg font-bold text-zinc-300 hover:text-white transition-colors">
               ¿En qué te ayudamos?
             </Link>
