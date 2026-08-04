@@ -106,48 +106,28 @@ export default function AdminValidacionesPage() {
     return Math.round(contado * factor);
   };
 
-  const handleTnaChange = (newTnaVal: string) => {
-    setBudgetTna(newTnaVal);
+  const handleManualCalcularCuota = () => {
     const contado = Number(budgetContado) || 0;
-    const cuotas = Number(budgetCuotas) || 12;
-    const tna = Number(newTnaVal) || 0;
-    if (contado > 0 && cuotas > 0) {
-      const cuota = calcularCuotaDesdeTna(contado, tna, cuotas);
-      setBudgetCuotaValor(cuota > 0 ? String(cuota) : "");
-    }
-  };
-
-  const handleContadoChange = (newContadoVal: string) => {
-    setBudgetContado(newContadoVal);
-    const contado = Number(newContadoVal) || 0;
     const cuotas = Number(budgetCuotas) || 12;
     const tna = Number(budgetTna) || 0;
-    if (contado > 0 && cuotas > 0) {
-      const cuota = calcularCuotaDesdeTna(contado, tna, cuotas);
-      setBudgetCuotaValor(cuota > 0 ? String(cuota) : "");
+    if (contado <= 0) {
+      alert("Debes ingresar un Monto Referencia Contado válido.");
+      return;
     }
+    const cuota = calcularCuotaDesdeTna(contado, tna, cuotas);
+    setBudgetCuotaValor(cuota > 0 ? String(cuota) : "");
   };
 
-  const handleCuotasChange = (newCuotasVal: string) => {
-    setBudgetCuotas(newCuotasVal);
-    const contado = Number(budgetContado) || 0;
-    const cuotas = Number(newCuotasVal) || 12;
-    const tna = Number(budgetTna) || 0;
-    if (contado > 0 && cuotas > 0) {
-      const cuota = calcularCuotaDesdeTna(contado, tna, cuotas);
-      setBudgetCuotaValor(cuota > 0 ? String(cuota) : "");
-    }
-  };
-
-  const handleCuotaValorChange = (newCuotaVal: string) => {
-    setBudgetCuotaValor(newCuotaVal);
+  const handleManualCalcularTna = () => {
     const contado = Number(budgetContado) || 0;
     const cuotas = Number(budgetCuotas) || 12;
-    const cuota = Number(newCuotaVal) || 0;
-    if (contado > 0 && cuotas > 0 && cuota > 0) {
-      const calculatedTna = calcularTnaDesdeCuota(contado, cuota, cuotas);
-      setBudgetTna(calculatedTna > 0 ? String(calculatedTna) : "0");
+    const cuota = Number(budgetCuotaValor) || 0;
+    if (contado <= 0 || cuota <= 0) {
+      alert("Debes ingresar Monto Contado y Valor de la Cuota para calcular la TNA.");
+      return;
     }
+    const calculatedTna = calcularTnaDesdeCuota(contado, cuota, cuotas);
+    setBudgetTna(calculatedTna > 0 ? String(calculatedTna) : "0");
   };
 
   const handleAgregarItemAlBorrador = () => {
@@ -966,15 +946,15 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                       </div>
                                       <div>
                                         <label className="block text-[10px] text-zinc-500 font-bold mb-1">Monto Referencia Contado ($)</label>
-                                        <input type="number" value={budgetContado} onChange={e=>handleContadoChange(e.target.value)} placeholder="Opcional" className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-mono" />
+                                        <input type="number" value={budgetContado} onChange={e=>setBudgetContado(e.target.value)} placeholder="Opcional" className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-mono" />
                                       </div>
                                       <div>
                                         <label className="block text-[10px] text-zinc-500 font-bold mb-1">Valor de la Cuota ($)</label>
-                                        <input type="number" value={budgetCuotaValor} onChange={e=>handleCuotaValorChange(e.target.value)} placeholder="Ej: 18000" className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-bold font-mono" />
+                                        <input type="number" value={budgetCuotaValor} onChange={e=>setBudgetCuotaValor(e.target.value)} placeholder="Ej: 18000" className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-bold font-mono" />
                                       </div>
                                       <div>
                                         <label className="block text-[10px] text-zinc-500 font-bold mb-1">Cantidad de Cuotas</label>
-                                        <select value={budgetCuotas} onChange={e=>handleCuotasChange(e.target.value)} className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500">
+                                        <select value={budgetCuotas} onChange={e=>setBudgetCuotas(e.target.value)} className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500">
                                           <option value="12">12 Cuotas</option>
                                           <option value="8">8 Cuotas</option>
                                           <option value="6">6 Cuotas</option>
@@ -983,7 +963,25 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                       </div>
                                       <div>
                                         <label className="block text-[10px] text-zinc-500 font-bold mb-1">TNA Interés (%)</label>
-                                        <input type="number" value={budgetTna} onChange={e=>handleTnaChange(e.target.value)} className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-mono" />
+                                        <input type="number" value={budgetTna} onChange={e=>setBudgetTna(e.target.value)} className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-mono" />
+                                      </div>
+                                      
+                                      {/* BOTONES DE CALCULO MANUAL */}
+                                      <div className="col-span-2 grid grid-cols-2 gap-2 mt-1">
+                                        <button
+                                          type="button"
+                                          onClick={handleManualCalcularCuota}
+                                          className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-1.5 px-3 rounded text-[10px] uppercase tracking-wider transition-all shadow-md active:scale-95 text-center flex items-center justify-center gap-1.5 font-sans"
+                                        >
+                                          🧮 Calcular Cuota
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={handleManualCalcularTna}
+                                          className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold py-1.5 px-3 rounded text-[10px] uppercase tracking-wider transition-all border border-zinc-700 active:scale-95 text-center flex items-center justify-center gap-1.5 font-sans"
+                                        >
+                                          🧮 Calcular TNA
+                                        </button>
                                       </div>
                                       
                                       {/* NUEVOS CAMPOS EXCLUSIVOS USO INTERNO */}
