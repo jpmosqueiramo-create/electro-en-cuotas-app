@@ -255,7 +255,7 @@ function SolicitarForm() {
                 <Upload className="w-8 h-8 text-yellow-400 mx-auto mb-3" />
                 <label className="block text-sm text-white mb-2 font-bold cursor-pointer">
                   Subí una foto de tu comprobante de ingresos (Recibo de sueldo, Monotributo, etc.)
-                  <input required type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setComprobante(e.target.files[0])}} className="hidden" />
+                  <input type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setComprobante(e.target.files[0])}} className="hidden" />
                 </label>
                 <span className="text-xs text-zinc-400">{comprobante ? comprobante.name : "Ningún archivo seleccionado"}</span>
               </div>
