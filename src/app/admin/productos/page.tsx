@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { db, storage } from "@/lib/firebase";
-import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, getDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { generarRemitoMultiProducto } from "@/lib/pdfGenerator";
 
 type UnidadStock = {
   id: string;
@@ -72,6 +73,139 @@ export default function AdminProductosPage() {
   const [stockProducto, setStockProducto] = useState<Producto | null>(null);
   const [nuevaUnidadLocalidad, setNuevaUnidadLocalidad] = useState("Buenos Aires");
   const [nuevaUnidadNserie, setNuevaUnidadNserie] = useState("");
+
+  // Internal Transfer States
+  const [mostrarTrasladoModal, setMostrarTrasladoModal] = useState(false);
+  const [trasladoOrigen, setTrasladoOrigen] = useState("Buenos Aires");
+  const [trasladoDestino, setTrasladoDestino] = useState("Lincoln");
+  const [trasladoComentario, setTrasladoComentario] = useState("");
+  // type LineaTraslado = { id: string; productoId: string; cantidad: number; selectedUnitIds: string[]; nseries: string[]; isManual: boolean; manualNombre: string; manualSerialsText: string; }
+  const [trasladoLineas, setTrasladoLineas] = useState<any[]>([
+    { id: "row_" + Date.now(), productoId: "", cantidad: 1, selectedUnitIds: [], nseries: [], isManual: false, manualNombre: "", manualSerialsText: "" }
+  ]);
+
+  const handleAgregarLineaTraslado = (isManual: boolean) => {
+    setTrasladoLineas(prev => [
+      ...prev,
+      {
+        id: "row_" + Date.now() + "_" + Math.random(),
+        productoId: "",
+        cantidad: 1,
+        selectedUnitIds: [],
+        nseries: [],
+        isManual,
+        manualNombre: "",
+        manualSerialsText: ""
+      }
+    ]);
+  };
+
+  const handleQuitarLineaTraslado = (id: string) => {
+    setTrasladoLineas(prev => prev.filter(l => l.id !== id));
+  };
+
+  const handleUpdateLineaTraslado = (id: string, updates: any) => {
+    setTrasladoLineas(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
+  };
+
+  const handleToggleSeleccionUnidadStock = (lineId: string, unit: UnidadStock) => {
+    const line = trasladoLineas.find(l => l.id === lineId);
+    if (!line) return;
+    
+    let updatedUnitIds = [...(line.selectedUnitIds || [])];
+    let updatedNseries = [...(line.nseries || [])];
+
+    if (updatedUnitIds.includes(unit.id)) {
+      updatedUnitIds = updatedUnitIds.filter(id => id !== unit.id);
+      updatedNseries = updatedNseries.filter(s => s !== unit.nserie);
+    } else {
+      updatedUnitIds.push(unit.id);
+      if (unit.nserie) {
+        updatedNseries.push(unit.nserie);
+      }
+    }
+
+    handleUpdateLineaTraslado(lineId, {
+      selectedUnitIds: updatedUnitIds,
+      nseries: updatedNseries,
+      cantidad: Math.max(1, updatedUnitIds.length)
+    });
+  };
+
+  const handleGenerarTrasladoYActualizarDb = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (trasladoOrigen === trasladoDestino) {
+      return alert("El origen y destino no pueden ser iguales.");
+    }
+    
+    const linesToProcess = trasladoLineas.filter(l => (l.isManual && l.manualNombre.trim()) || (!l.isManual && l.productoId));
+    if (linesToProcess.length === 0) {
+      return alert("Debes cargar al menos una línea válida con producto.");
+    }
+
+    try {
+      const lineasRemitoFormatted = [];
+
+      for (const line of linesToProcess) {
+        if (line.isManual) {
+          const manualSerials = line.manualSerialsText ? line.manualSerialsText.split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+          lineasRemitoFormatted.push({
+            productoNombre: line.manualNombre.trim(),
+            cantidad: Number(line.cantidad) || 1,
+            nseries: manualSerials
+          });
+        } else {
+          const prodObj = productos.find(p => p.id === line.productoId);
+          if (!prodObj) continue;
+
+          lineasRemitoFormatted.push({
+            productoNombre: prodObj.nombre,
+            cantidad: line.cantidad,
+            nseries: line.nseries || []
+          });
+
+          // Actualizar ubicación en la base de datos para las unidades físicas seleccionadas
+          if (line.selectedUnitIds && line.selectedUnitIds.length > 0) {
+            const prodRef = doc(db, "productos", line.productoId);
+            const snap = await getDoc(prodRef);
+            if (snap.exists()) {
+              const pData = snap.data();
+              const updatedStock = (pData.stock || []).map((u: any) => {
+                if (line.selectedUnitIds.includes(u.id)) {
+                  return { ...u, localidad: trasladoDestino };
+                }
+                return u;
+              });
+              await updateDoc(prodRef, { stock: updatedStock });
+            }
+          }
+        }
+      }
+
+      // Generar PDF
+      const datosRemito = {
+        nroRemito: `T-${Date.now().toString().substring(7)}`,
+        fecha: new Date().toLocaleDateString("es-AR"),
+        origen: trasladoOrigen,
+        destino: trasladoDestino,
+        lineas: lineasRemitoFormatted,
+        comentario: trasladoComentario.trim()
+      };
+
+      generarRemitoMultiProducto(datosRemito);
+
+      alert("¡Remito de traslado generado exitosamente! Se han actualizado las ubicaciones de stock en la base de datos.");
+      setMostrarTrasladoModal(false);
+      setTrasladoComentario("");
+      setTrasladoLineas([
+        { id: "row_" + Date.now(), productoId: "", cantidad: 1, selectedUnitIds: [], nseries: [], isManual: false, manualNombre: "", manualSerialsText: "" }
+      ]);
+      await fetchProductos();
+    } catch (err) {
+      console.error(err);
+      alert("Error al procesar el traslado de mercadería.");
+    }
+  };
 
   const handleAgregarUnidadStock = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -409,7 +543,15 @@ export default function AdminProductosPage() {
             </div>
 
             <div className="lg:col-span-8 bg-zinc-950 border border-zinc-800 rounded-lg p-6">
-              <h2 className="text-xl mb-6 font-semibold border-b border-zinc-800 pb-2">Inventario General ({productos.length})</h2>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-zinc-800 pb-3 mb-6 gap-3">
+                <h2 className="text-xl font-semibold">Inventario General ({productos.length})</h2>
+                <button
+                  onClick={() => setMostrarTrasladoModal(true)}
+                  className="bg-yellow-500 hover:bg-yellow-400 text-black px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2"
+                >
+                  🚚 Nuevo Remito de Traslado
+                </button>
+              </div>
               {productos.length === 0 ? (
                 <p className="text-yellow-200/50 italic">No hay productos en tu base de datos todavía.</p>
               ) : (
@@ -523,6 +665,248 @@ export default function AdminProductosPage() {
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* MODAL REMITO DE TRASLADO INTERNO MULTIPRODUCTO */}
+      {mostrarTrasladoModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-4xl p-6 md:p-8 max-h-[90vh] overflow-y-auto space-y-6 custom-scrollbar shadow-2xl">
+            
+            <div className="flex justify-between items-center border-b border-zinc-800 pb-4">
+              <div>
+                <h2 className="text-xl font-black text-yellow-400">Generar Remito de Traslado Interno</h2>
+                <p className="text-xs text-zinc-500">Mover stock entre sucursales y nutrir puntos de venta</p>
+              </div>
+              <button 
+                onClick={() => setMostrarTrasladoModal(false)} 
+                className="text-zinc-400 hover:text-white font-black text-sm"
+              >
+                ✕ Cerrar
+              </button>
+            </div>
+
+            <form onSubmit={handleGenerarTrasladoYActualizarDb} className="space-y-6">
+              
+              {/* Origen y Destino */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-950 p-4 rounded-xl border border-zinc-850">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-400 mb-1">Localidad de Origen (Despacho)</label>
+                  <select 
+                    value={trasladoOrigen} 
+                    onChange={e => {
+                      setTrasladoOrigen(e.target.value);
+                      // Clear line selections since origin changed
+                      setTrasladoLineas(prev => prev.map(l => ({ ...l, selectedUnitIds: [], nseries: [], cantidad: 1 })));
+                    }}
+                    className="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none"
+                  >
+                    {LOCALIDADES_STOCK.map(loc => (
+                      <option key={loc} value={loc}>{loc}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-400 mb-1">Localidad de Destino (Recepción)</label>
+                  <select 
+                    value={trasladoDestino} 
+                    onChange={e => setTrasladoDestino(e.target.value)} 
+                    className="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none"
+                  >
+                    {LOCALIDADES_STOCK.map(loc => (
+                      <option key={loc} value={loc}>{loc}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Listado de Productos */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
+                  <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest">Productos a Enviar</h3>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleAgregarLineaTraslado(false)}
+                      className="bg-zinc-950 hover:bg-zinc-850 text-yellow-400 border border-zinc-800 hover:border-yellow-500 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors"
+                    >
+                      + Catálogo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAgregarLineaTraslado(true)}
+                      className="bg-zinc-950 hover:bg-zinc-850 text-blue-400 border border-zinc-800 hover:border-blue-500 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors"
+                    >
+                      + Producto Manual
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                  {trasladoLineas.map((line, idx) => {
+                    const matchedProd = productos.find(p => p.id === line.productoId);
+                    // Filter available units at chosen origin
+                    const availableUnits = matchedProd ? (matchedProd.stock || []).filter((u: any) => u.localidad === trasladoOrigen && u.estado === "Disponible") : [];
+
+                    return (
+                      <div key={line.id} className="bg-zinc-950 p-4 rounded-xl border border-zinc-850 space-y-3 relative">
+                        <button
+                          type="button"
+                          onClick={() => handleQuitarLineaTraslado(line.id)}
+                          className="absolute right-3 top-3 text-red-500 hover:text-red-400 text-xs font-bold"
+                        >
+                          Remover Fila
+                        </button>
+
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-[9px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded font-black uppercase">
+                            Ítem #{idx + 1}
+                          </span>
+                          <span className={`text-[9px] px-2 py-0.5 rounded font-black uppercase ${line.isManual ? 'bg-blue-900/30 text-blue-400 border border-blue-900/40' : 'bg-yellow-900/30 text-yellow-400 border border-yellow-900/40'}`}>
+                            {line.isManual ? "Manual" : "Catálogo"}
+                          </span>
+                        </div>
+
+                        {line.isManual ? (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div className="md:col-span-2">
+                              <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Nombre del Producto / Insumo</label>
+                              <input 
+                                type="text"
+                                required
+                                value={line.manualNombre}
+                                onChange={e => handleUpdateLineaTraslado(line.id, { manualNombre: e.target.value })}
+                                placeholder="Ej: Fundas protectoras, cables, etc."
+                                className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-blue-500 font-bold"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Cantidad</label>
+                              <input 
+                                type="number"
+                                min={1}
+                                required
+                                value={line.cantidad}
+                                onChange={e => handleUpdateLineaTraslado(line.id, { cantidad: Math.max(1, Number(e.target.value)) })}
+                                className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-blue-500 font-bold font-mono"
+                              />
+                            </div>
+                            <div className="md:col-span-3">
+                              <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Números de Serie / IMEIs (Opcional, separados por comas)</label>
+                              <input 
+                                type="text"
+                                value={line.manualSerialsText}
+                                onChange={e => handleUpdateLineaTraslado(line.id, { manualSerialsText: e.target.value })}
+                                placeholder="Ej: SN-9284201, SN-9284202"
+                                className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-zinc-300 outline-none focus:border-blue-500 font-mono"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div className="md:col-span-2">
+                                <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Seleccionar Producto del Catálogo</label>
+                                <select 
+                                  value={line.productoId}
+                                  onChange={e => {
+                                    handleUpdateLineaTraslado(line.id, {
+                                      productoId: e.target.value,
+                                      selectedUnitIds: [],
+                                      nseries: [],
+                                      cantidad: 1
+                                    });
+                                  }}
+                                  className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-yellow-500 font-bold"
+                                >
+                                  <option value="">-- Seleccionar --</option>
+                                  {productos.map(p => (
+                                    <option key={p.id} value={p.id}>{p.nombre}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Cantidad a Trasladar</label>
+                                <div className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-zinc-400 font-black font-mono">
+                                  {line.selectedUnitIds?.length || 0} unidades
+                                </div>
+                              </div>
+                            </div>
+
+                            {line.productoId && (
+                              <div className="bg-zinc-900 border border-zinc-850 p-3 rounded-lg space-y-2">
+                                <p className="text-[10px] text-zinc-400 font-bold border-b border-zinc-800 pb-1">
+                                  Unidades disponibles en {trasladoOrigen} ({availableUnits.length}):
+                                </p>
+                                {availableUnits.length === 0 ? (
+                                  <p className="text-xs text-red-400 italic">No hay stock disponible en el origen seleccionado para este producto.</p>
+                                ) : (
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-[100px] overflow-y-auto custom-scrollbar">
+                                    {availableUnits.map((u: any) => {
+                                      const isChecked = line.selectedUnitIds?.includes(u.id);
+                                      return (
+                                        <label 
+                                          key={u.id} 
+                                          className={`flex items-center gap-2 p-1.5 rounded border transition-colors cursor-pointer text-xs ${
+                                            isChecked 
+                                              ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-400' 
+                                              : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                                          }`}
+                                        >
+                                          <input 
+                                            type="checkbox"
+                                            checked={isChecked}
+                                            onChange={() => handleToggleSeleccionUnidadStock(line.id, u)}
+                                            className="accent-yellow-500"
+                                          />
+                                          <span className="font-mono text-[10px] truncate">
+                                            {u.nserie ? `Serie: ${u.nserie}` : "Sin N° Serie"}
+                                          </span>
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Observaciones */}
+              <div>
+                <label className="block text-xs font-bold text-zinc-400 mb-1">Observaciones / Comentario</label>
+                <textarea 
+                  value={trasladoComentario} 
+                  onChange={e => setTrasladoComentario(e.target.value)} 
+                  placeholder="Ej: Traslado interno para reabastecer stock de sucursal por alta demanda." 
+                  className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs focus:border-yellow-500 outline-none" 
+                  rows={2}
+                />
+              </div>
+
+              <div className="flex gap-3 pt-3 border-t border-zinc-800">
+                <button 
+                  type="button" 
+                  onClick={() => setMostrarTrasladoModal(false)}
+                  className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-3 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black py-3 rounded-lg font-black text-xs uppercase tracking-wider transition-colors shadow-lg"
+                >
+                  🚚 Generar Remito y Procesar Traslado
+                </button>
+              </div>
+
+            </form>
           </div>
         </div>
       )}

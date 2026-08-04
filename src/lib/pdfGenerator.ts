@@ -463,3 +463,109 @@ export const generarRemitoModelo = (datos: DatosRemito) => {
 
   doc.save(`Remito_${datos.nroRemito}_${nombre.replace(/\s/g,"_")}.pdf`);
 };
+
+export interface LineaRemitoMulti {
+  productoNombre: string;
+  cantidad: number;
+  nseries: string[]; // list of serial/IMEI
+}
+
+export interface DatosRemitoMulti {
+  nroRemito: string;
+  fecha: string;
+  origen: string;
+  destino: string;
+  lineas: LineaRemitoMulti[];
+  comentario?: string;
+}
+
+export const generarRemitoMultiProducto = (datos: DatosRemitoMulti) => {
+  const doc = new jsPDF();
+
+  // Header Box
+  doc.setFillColor(244, 244, 245);
+  doc.rect(15, 15, 180, 20, "F");
+  doc.setDrawColor(234, 179, 8); // Yellow/gold
+  doc.setLineWidth(0.5);
+  doc.rect(15, 15, 180, 20, "S");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(234, 179, 8);
+  doc.text("REMITO DE TRASLADO INTERNO DE STOCK", 20, 23);
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
+  doc.text("CUENTA HOGAR / REABASTECIMIENTO DE LOCALIDADES", 20, 29);
+
+  // General info
+  drawFormBox(doc, "Remito N°:", datos.nroRemito, 15, 40, 90, 11);
+  drawFormBox(doc, "Fecha Emisión:", datos.fecha, 105, 40, 90, 11);
+  drawFormBox(doc, "Origen (Despacho):", datos.origen, 15, 54, 90, 11);
+  drawFormBox(doc, "Destino (Punto de Venta):", datos.destino, 105, 54, 90, 11);
+
+  // Table header
+  let y = 75;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(255, 255, 255);
+  doc.setFillColor(15, 23, 42); // Dark slate
+  doc.rect(15, y, 180, 7, "F");
+  doc.text("Producto / Modelo", 18, y + 5);
+  doc.text("Cant.", 120, y + 5);
+  doc.text("Números de Serie / IMEI", 135, y + 5);
+
+  y += 7;
+  doc.setTextColor(15, 23, 42);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+
+  datos.lineas.forEach((linea) => {
+    // List serial numbers
+    const seriesText = linea.nseries.length > 0 ? linea.nseries.join(", ") : "N/A";
+    
+    // We split serial text to fit if it's too long
+    const splitSeries = doc.splitTextToSize(seriesText, 55);
+    const rowHeight = Math.max(8, splitSeries.length * 4.5 + 2);
+
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.2);
+    doc.rect(15, y, 180, rowHeight, "S");
+    
+    doc.setFont("helvetica", "bold");
+    doc.text(linea.productoNombre, 18, y + 5);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(linea.cantidad), 120, y + 5);
+    
+    let sy = y + 5;
+    splitSeries.forEach((txt: string) => {
+      doc.text(txt, 135, sy);
+      sy += 4.5;
+    });
+    
+    y += rowHeight;
+  });
+
+  y += 10;
+  if (datos.comentario) {
+    doc.setFont("helvetica", "bold");
+    doc.text("Observaciones:", 15, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(datos.comentario, 40, y);
+    y += 15;
+  }
+
+  // Signatures
+  y += 20;
+  doc.setDrawColor(148, 163, 184);
+  doc.setLineWidth(0.3);
+  doc.line(15, y, 90, y);
+  doc.line(120, y, 195, y);
+  
+  y += 5;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.text("Despachado por (Firma y Aclaración)", 15, y);
+  doc.text("Recibido por (Firma y Aclaración)", 120, y);
+
+  doc.save(`Remito_Traslado_${datos.nroRemito}.pdf`);
+};
