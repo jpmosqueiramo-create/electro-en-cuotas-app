@@ -593,47 +593,65 @@ export interface DatosPresupuestoPdf {
 export const generarPdfPresupuesto = (datos: DatosPresupuestoPdf) => {
   const doc = new jsPDF();
 
-  // Header Box
+  // Header Box with logo inclusion
   doc.setFillColor(15, 23, 42); // Dark slate background matching premium aesthetics
-  doc.rect(15, 15, 180, 22, "F");
+  doc.rect(15, 15, 180, 26, "F");
   
+  // Draw modern yellow/gold Circle Logo Badge (representing Electro en Cuotas)
+  doc.setFillColor(234, 179, 8); // Gold/yellow
+  doc.circle(26, 28, 6, "F");
+  
+  // Letter "E" inside the circle
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.setTextColor(234, 179, 8); // Gold/yellow
-  doc.text("PRESUPUESTO A MEDIDA DE COMPRA FINANCIADA", 20, 23);
-  doc.setFontSize(8.5);
-  doc.setTextColor(156, 163, 175); // Light gray
-  doc.text("CUENTA HOGAR — TU PLAN A TU MEDIDA", 20, 30);
+  doc.setFontSize(11);
+  doc.setTextColor(15, 23, 42); // Dark slate
+  doc.text("E", 24.5, 31.8);
   
-  // Right side: Doc Number and Date
-  doc.setFontSize(8.5);
+  // Brand name and Subtitle
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(234, 179, 8); // Gold/yellow
+  doc.text("ELECTRO EN CUOTAS", 36, 24);
+  
+  doc.setFontSize(10);
+  doc.setTextColor(255, 255, 255); // White
+  doc.text("PRESUPUESTO A MEDIDA DE COMPRA FINANCIADA", 36, 30);
+  
+  doc.setFontSize(8);
+  doc.setTextColor(156, 163, 175); // Light gray
+  doc.text("CUENTA HOGAR — TU PLAN A TU MEDIDA", 36, 36);
+  
+  // Right side: Doc Number and Date (Right Aligned)
+  doc.setFontSize(8);
   doc.setTextColor(255, 255, 255);
-  doc.text(`Presupuesto N°: ${datos.nroPresupuesto}`, 130, 23);
-  doc.text(`Fecha Emisión: ${datos.fecha}`, 130, 30);
+  doc.text(`Presupuesto N°: ${datos.nroPresupuesto}`, 190, 24, { align: "right" });
+  doc.text(`Fecha Emisión: ${datos.fecha}`, 190, 30, { align: "right" });
 
   // Customer info section
   doc.setTextColor(15, 23, 42);
   doc.setFontSize(9.5);
   doc.setFont("helvetica", "bold");
-  doc.text("Detalles del Cliente", 15, 45);
+  doc.text("Detalles del Cliente", 15, 48);
 
-  drawFormBox(doc, "Cliente (Nombre y Apellido):", datos.clienteNombre, 15, 49, 110, 11);
-  drawFormBox(doc, "DNI:", datos.clienteDni, 130, 49, 65, 11);
+  drawFormBox(doc, "Cliente (Nombre y Apellido):", datos.clienteNombre, 15, 52, 110, 11);
+  drawFormBox(doc, "DNI:", datos.clienteDni, 130, 52, 65, 11);
   
-  drawFormBox(doc, "WhatsApp de Contacto:", datos.clienteWhatsapp, 15, 63, 110, 11);
-  drawFormBox(doc, "Localidad:", datos.clienteLocalidad, 130, 63, 65, 11);
+  drawFormBox(doc, "WhatsApp de Contacto:", datos.clienteWhatsapp, 15, 66, 110, 11);
+  drawFormBox(doc, "Localidad:", datos.clienteLocalidad, 130, 66, 65, 11);
 
   // Table header
-  let y = 85;
+  let y = 88;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(255, 255, 255);
   doc.setFillColor(30, 41, 59); // Slate 800
   doc.rect(15, y, 180, 7, "F");
+  
+  // Table columns text alignment
   doc.text("Producto / Modelo Propuesto", 18, y + 5);
-  doc.text("Cuotas", 110, y + 5);
-  doc.text("Valor Cuota", 130, y + 5);
-  doc.text("Total Financiado", 160, y + 5);
+  doc.text("Cuotas", 120, y + 5, { align: "right" });
+  doc.text("Valor Cuota", 155, y + 5, { align: "right" });
+  doc.text("Total Financiado", 190, y + 5, { align: "right" });
 
   y += 7;
   doc.setTextColor(15, 23, 42);
@@ -652,18 +670,28 @@ export const generarPdfPresupuesto = (datos: DatosPresupuestoPdf) => {
     doc.setLineWidth(0.2);
     doc.rect(15, y, 180, 8, "S");
 
+    // Word-wrap long product names inside the product column
+    const splitProd = doc.splitTextToSize(item.producto, 85);
+    let tempY = y + 5;
+    if (splitProd.length > 1) {
+      tempY = y + 3.5;
+    }
     doc.setFont("helvetica", "bold");
-    doc.text(item.producto, 18, y + 5);
+    splitProd.forEach((line: string, idx: number) => {
+      if (idx < 2) {
+        doc.text(line, 18, tempY + (idx * 3.5));
+      }
+    });
     
     doc.setFont("helvetica", "normal");
-    doc.text(`${item.cuotas} cuotas`, 110, y + 5);
-    doc.text(formatARS(item.valorCuota), 130, y + 5);
-    doc.text(formatARS(totalFinanciado), 160, y + 5);
+    doc.text(`${item.cuotas} cuotas`, 120, y + 5, { align: "right" });
+    doc.text(formatARS(item.valorCuota), 155, y + 5, { align: "right" });
+    doc.text(formatARS(totalFinanciado), 190, y + 5, { align: "right" });
 
     y += 8;
   });
 
-  // Summary Row
+  // Summary Row with Right Alignment
   doc.setFillColor(248, 250, 252);
   doc.rect(15, y, 180, 8, "F");
   doc.setDrawColor(203, 213, 225);
@@ -672,10 +700,16 @@ export const generarPdfPresupuesto = (datos: DatosPresupuestoPdf) => {
   
   doc.setFont("helvetica", "bold");
   doc.text("TOTAL PRESUPUESTO COMBINADO", 18, y + 5);
-  doc.text(formatARS(totalCombinedCuotaMensual) + " / mes", 130, y + 5);
-  doc.text(formatARS(totalCombinedFinanciado), 160, y + 5);
+  doc.text(formatARS(totalCombinedCuotaMensual) + " / mes", 155, y + 5, { align: "right" });
+  doc.text(formatARS(totalCombinedFinanciado), 190, y + 5, { align: "right" });
 
   y += 15;
+
+  // Defensive Check for Pagination safety
+  if (y > 245) {
+    doc.addPage();
+    y = 25;
+  }
 
   // Notes
   if (datos.notas) {
@@ -686,10 +720,20 @@ export const generarPdfPresupuesto = (datos: DatosPresupuestoPdf) => {
     doc.setFont("helvetica", "normal");
     const splitNotas = doc.splitTextToSize(datos.notas, 175);
     splitNotas.forEach((line: string) => {
+      if (y > 275) {
+        doc.addPage();
+        y = 25;
+      }
       doc.text(line, 15, y);
       y += 4.5;
     });
     y += 5;
+  }
+
+  // Defensive Check before footnotes
+  if (y > 260) {
+    doc.addPage();
+    y = 25;
   }
 
   // Legal and validation footnotes
@@ -700,7 +744,7 @@ export const generarPdfPresupuesto = (datos: DatosPresupuestoPdf) => {
   y += 4;
   doc.text("Este presupuesto tiene una validez de 7 días corridos a partir de la fecha de emisión.", 15, y);
 
-  y += 12;
+  y += 10;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
