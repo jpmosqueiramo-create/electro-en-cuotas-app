@@ -6,11 +6,13 @@ import { ChevronRight, ArrowLeft, Upload } from "lucide-react";
 import { db, storage } from "@/lib/firebase";
 import { doc, getDoc, addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { useAuth } from "@/components/AuthProvider";
 
 function SolicitarForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const productoId = searchParams.get("id");
+  const { user } = useAuth();
 
   const [productoData, setProductoData] = useState<any>(null);
   const [activeSolImage, setActiveSolImage] = useState<string>("");
@@ -50,21 +52,26 @@ function SolicitarForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!comprobante) {
+    if (user && !comprobante) {
       alert("Por favor adjunta una foto de tu comprobante de ingresos.");
       return;
     }
 
     const btn = e.currentTarget.querySelector('button[type="submit"]') as HTMLButtonElement;
     const oldText = btn.innerText;
-    btn.innerText = "Subiendo comprobante...";
+    btn.innerText = "Registrando solicitud...";
     btn.disabled = true;
 
     try {
-      // Subir el archivo de ingresos a Firebase Storage
-      const storageRef = ref(storage, `comprobantes/cuenta_solicitudes/${Date.now()}_${comprobante.name}`);
-      await uploadBytes(storageRef, comprobante);
-      const comprobanteUrlReal = await getDownloadURL(storageRef);
+      let comprobanteUrlReal = "Pendiente envío WhatsApp";
+      
+      if (user && comprobante) {
+        btn.innerText = "Subiendo comprobante...";
+        // Subir el archivo de ingresos a Firebase Storage
+        const storageRef = ref(storage, `comprobantes/cuenta_solicitudes/${Date.now()}_${comprobante.name}`);
+        await uploadBytes(storageRef, comprobante);
+        comprobanteUrlReal = await getDownloadURL(storageRef);
+      }
 
       const planCuotas = planElegido === "8" ? (productoData?.cuota8 || 0) : (productoData?.cuota12 || 0);
 
@@ -100,12 +107,16 @@ function SolicitarForm() {
         comprobanteURL: comprobanteUrlReal 
       });
 
-      alert("¡Solicitud registrada con éxito! Te derivaremos a WhatsApp para continuar el contacto.");
+      if (!user) {
+        alert("¡Solicitud registrada con éxito! Nos pondremos en contacto para pedirte información adicional o documentación respaldatoria. Te derivaremos a WhatsApp para continuar el contacto.");
+      } else {
+        alert("¡Solicitud registrada con éxito! Te derivaremos a WhatsApp para continuar el contacto.");
+      }
       const textMsg = `Hola, acabo de llenar el formulario de Apertura de Cuenta. Elegí el plan de ${planElegido} cuotas para el producto ${productoData?.nombre || 'A definir'}. Mi DNI es ${numeroDni}`;
       window.location.href = `https://wa.me/5491125659686?text=${encodeURIComponent(textMsg)}`;
     } catch (err: any) {
       console.error("Error al procesar solicitud:", err);
-      alert("Error de conexión al subir comprobante. Chequea tu internet e intenta nuevamente.");
+      alert("Error de conexión al procesar la solicitud. Chequea tu internet e intenta nuevamente.");
       btn.innerText = oldText;
       btn.disabled = false;
     }
@@ -250,15 +261,22 @@ function SolicitarForm() {
                 </div>
               </div>
 
-              {/* ARCHIVO */}
-              <div className="md:col-span-2 border border-dashed border-zinc-800 p-6 rounded-2xl bg-zinc-800/40 text-center hover:bg-zinc-900 transition-colors">
-                <Upload className="w-8 h-8 text-yellow-400 mx-auto mb-3" />
-                <label className="block text-sm text-white mb-2 font-bold cursor-pointer">
-                  Subí una foto de tu comprobante de ingresos (Recibo de sueldo, Monotributo, etc.)
-                  <input type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setComprobante(e.target.files[0])}} className="hidden" />
-                </label>
-                <span className="text-xs text-zinc-400">{comprobante ? comprobante.name : "Ningún archivo seleccionado"}</span>
-              </div>
+              {/* ARCHIVO (Solo si está logueado) */}
+              {user ? (
+                <div className="md:col-span-2 border border-dashed border-zinc-800 p-6 rounded-2xl bg-zinc-800/40 text-center hover:bg-zinc-900 transition-colors">
+                  <Upload className="w-8 h-8 text-yellow-400 mx-auto mb-3" />
+                  <label className="block text-sm text-white mb-2 font-bold cursor-pointer">
+                    Subí una foto de tu comprobante de ingresos (Recibo de sueldo, Monotributo, etc.)
+                    <input type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setComprobante(e.target.files[0])}} className="hidden" />
+                  </label>
+                  <span className="text-xs text-zinc-400">{comprobante ? comprobante.name : "Ningún archivo seleccionado"}</span>
+                </div>
+              ) : (
+                <div className="md:col-span-2 bg-yellow-500/5 border border-yellow-500/20 p-4 rounded-xl text-yellow-400 text-xs flex flex-col gap-1">
+                  <span className="font-bold">💡 Documentación pendiente:</span>
+                  <p className="text-zinc-400">Como no iniciaste sesión, no es necesario subir comprobantes ahora. Te los pediremos más adelante para validar tu identidad y scoring.</p>
+                </div>
+              )}
 
             </div>
           </div>
