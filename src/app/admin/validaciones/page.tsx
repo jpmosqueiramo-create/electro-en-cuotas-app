@@ -602,8 +602,27 @@ export default function AdminValidacionesPage() {
   };
 
   const handleActualizarEstadoApertura = async (id: string, nuevoEstado: string) => {
+    let motivoRechazo = "";
+    if (nuevoEstado === "Rechazado") {
+      const motivo = prompt("Por favor, ingresa el motivo del rechazo de esta solicitud de apertura:");
+      if (motivo === null) {
+        // User clicked cancel, abort
+        alert("Actualización cancelada.");
+        return;
+      }
+      if (!motivo.trim()) {
+        alert("Debes indicar un motivo de rechazo.");
+        return;
+      }
+      motivoRechazo = motivo.trim();
+    }
+
     try {
-      await updateDoc(doc(db, "solicitudes_cuenta", id), { estado: nuevoEstado });
+      const updateData: any = { estado: nuevoEstado };
+      if (nuevoEstado === "Rechazado") {
+        updateData.motivoRechazo = motivoRechazo;
+      }
+      await updateDoc(doc(db, "solicitudes_cuenta", id), updateData);
       alert("Estado de la solicitud de apertura actualizado.");
       await fetchAperturas();
     } catch (e) {
@@ -769,6 +788,9 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
     if (estadoToSave === "REQUIERE_INFO" && !mensajeToSave.trim()) {
       return alert("¡Debes escribir un mensaje explicando qué información falta para poder requerirla!");
     }
+    if (estadoToSave === "RECHAZADO" && !mensajeToSave.trim()) {
+      return alert("¡Debes escribir un motivo de rechazo en el mensaje al usuario para registrar el dictamen!");
+    }
 
     setGuardandoId(sol.id);
     try {
@@ -922,6 +944,12 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                         </div>
                         {isExpanded && (
                           <div className="p-6 border-t border-zinc-900 bg-zinc-900/20 space-y-6">
+                            {req.estado === "Rechazado" && (
+                              <div className="bg-red-950/30 border border-red-500/30 p-4 rounded-xl text-red-400 text-xs flex flex-col gap-1 w-full">
+                                <span className="font-black text-red-500 uppercase tracking-widest text-[10px]">❌ Solicitud de Apertura Rechazada</span>
+                                <p className="font-mono text-zinc-300">{req.motivoRechazo || "No se especificó un motivo."}</p>
+                              </div>
+                            )}
                             {req.tipo === "contacto_rapido" ? (
                               // RENDER SECCIÓN ESPECIAL CONTACTO RÁPIDO / PRESUPUESTOS A MEDIDA
                               <div className="space-y-6">
@@ -1320,6 +1348,12 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                         {/* CARD BODY */}
                         {isExpanded && (
                           <div className="p-4 md:p-6 border-t border-zinc-800 bg-zinc-900/40">
+                            {req.estado === "RECHAZADO" && (
+                              <div className="mb-6 bg-red-950/30 border border-red-500/30 p-4 rounded-xl text-red-400 text-xs flex flex-col gap-1 w-full">
+                                <span className="font-black text-red-500 uppercase tracking-widest text-[10px]">❌ Solicitud de Producto Rechazada</span>
+                                <p className="font-mono text-zinc-300">{req.mensajeAdmin || "No se especificó un motivo."}</p>
+                              </div>
+                            )}
                             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                               
                               {/* COLUMNA 1 */}
