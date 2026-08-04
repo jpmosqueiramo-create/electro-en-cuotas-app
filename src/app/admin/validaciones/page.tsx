@@ -75,6 +75,7 @@ export default function AdminValidacionesPage() {
   const [budgetLinkProveedor, setBudgetLinkProveedor] = useState("");
   const [budgetCostoProveedor, setBudgetCostoProveedor] = useState("");
   const [draftItems, setDraftItems] = useState<any[]>([]);
+  const [editandoPresupuestoId, setEditandoPresupuestoId] = useState<string | null>(null);
 
   const calcularTnaDesdeCuota = (contado: number, cuota: number, n: number): number => {
     if (contado <= 0 || cuota <= 0 || n <= 0) return 0;
@@ -172,26 +173,78 @@ export default function AdminValidacionesPage() {
     setBudgetCostoProveedor("");
     setBudgetProveedor("");
     setBudgetLinkProveedor("");
+    setBudgetCuotaValor("");
   };
 
   const handleQuitarItemDelBorrador = (itemId: string) => {
     setDraftItems(draftItems.filter(item => item.id !== itemId));
   };
 
+  const handleCargarPresupuestoParaEditar = (sol: any, pres: any) => {
+    setEditandoPresupuestoId(pres.id);
+    setDraftItems(pres.items || []);
+    setBudgetTna(String(pres.tna || 60));
+    setBudgetMora(String(pres.mora || 0.5));
+    setBudgetNotas(pres.notas || "");
+    // Clear product specific inputs
+    setBudgetProd("");
+    setBudgetContado("");
+    setBudgetCuotaValor("");
+    setBudgetCostoProveedor("");
+    setBudgetProveedor("");
+    setBudgetLinkProveedor("");
+    
+    alert(`Cargado presupuesto ${pres.id.replace("pres_", "").substring(0, 8).toUpperCase()} para edición. Modifica los ítems y guarda.`);
+  };
+
+  const handleCancelarEdicionPresupuesto = () => {
+    setEditandoPresupuestoId(null);
+    setDraftItems([]);
+    setBudgetTna("60");
+    setBudgetMora("0.5");
+    setBudgetNotas("");
+    setBudgetProd("");
+    setBudgetContado("");
+    setBudgetCuotaValor("");
+    setBudgetCostoProveedor("");
+    setBudgetProveedor("");
+    setBudgetLinkProveedor("");
+  };
+
   const handleEnviarPresupuesto = async (sol: any) => {
     if (draftItems.length === 0) return alert("Debes agregar al menos un producto al presupuesto.");
 
-    const nuevoPresupuesto = {
-      id: "pres_" + Date.now(),
-      items: draftItems,
-      tna: Number(budgetTna) || 60,
-      mora: Number(budgetMora) || 0.5,
-      notas: budgetNotas.trim(),
-      fecha: new Date().toISOString(),
-      estado: "Enviado"
-    };
+    let updatedPresupuestos = [];
+    if (editandoPresupuestoId) {
+      // Update existing budget
+      updatedPresupuestos = (sol.presupuestos || []).map((p: any) => {
+        if (p.id === editandoPresupuestoId) {
+          return {
+            ...p,
+            items: draftItems,
+            tna: Number(budgetTna) || 60,
+            mora: Number(budgetMora) || 0.5,
+            notas: budgetNotas.trim(),
+            fecha: new Date().toISOString(),
+            estado: "Enviado" // reset status
+          };
+        }
+        return p;
+      });
+    } else {
+      // Add new budget
+      const nuevoPresupuesto = {
+        id: "pres_" + Date.now(),
+        items: draftItems,
+        tna: Number(budgetTna) || 60,
+        mora: Number(budgetMora) || 0.5,
+        notas: budgetNotas.trim(),
+        fecha: new Date().toISOString(),
+        estado: "Enviado"
+      };
+      updatedPresupuestos = [...(sol.presupuestos || []), nuevoPresupuesto];
+    }
 
-    const updatedPresupuestos = [...(sol.presupuestos || []), nuevoPresupuesto];
     try {
       await updateDoc(doc(db, "solicitudes_cuenta", sol.id), {
         presupuestos: updatedPresupuestos
@@ -207,13 +260,13 @@ export default function AdminValidacionesPage() {
       const wame = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
       window.open(wame, "_blank");
 
-      alert("Presupuesto guardado e invitación de WhatsApp generada.");
+      alert(editandoPresupuestoId ? "Presupuesto actualizado e invitación de WhatsApp generada." : "Presupuesto guardado e invitación de WhatsApp generada.");
       
       // Reset form and draft
+      setEditandoPresupuestoId(null);
       setDraftItems([]);
       setBudgetProd("");
       setBudgetContado("");
-      setBudgetCuotas("12");
       setBudgetCuotaValor("");
       setBudgetNotas("");
       setBudgetProveedor("");
@@ -903,7 +956,9 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                                   {/* Formulario para cargar nuevo presupuesto */}
                                   <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-900 space-y-3">
-                                    <h4 className="text-sm font-black text-yellow-400 uppercase tracking-wider border-b border-zinc-900 pb-2">Armar Presupuesto Combinado</h4>
+                                    <h4 className="text-sm font-black text-yellow-400 uppercase tracking-wider border-b border-zinc-900 pb-2">
+                                      {editandoPresupuestoId ? `Editar Presupuesto (${editandoPresupuestoId.replace("pres_", "").substring(0, 8).toUpperCase()})` : "Armar Presupuesto Combinado"}
+                                    </h4>
                                     <div className="grid grid-cols-2 gap-3">
                                       <div className="col-span-2">
                                         <label className="block text-[10px] text-zinc-500 font-bold mb-1">Producto Propuesto</label>
@@ -986,15 +1041,25 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                               onClick={() => handleEnviarPresupuesto(req)}
                                               className="bg-yellow-500 hover:bg-yellow-400 text-black py-2 rounded font-black text-[10px] uppercase tracking-wider transition-colors"
                                             >
-                                              💾 Guardar y Enviar
+                                              {editandoPresupuestoId ? "💾 Guardar Cambios" : "💾 Guardar y Enviar"}
                                             </button>
-                                            <button 
-                                              type="button" 
-                                              onClick={() => handleDescargarPdfPresupuestoBorrador(req)}
-                                              className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2 rounded font-black text-[10px] uppercase tracking-wider transition-colors border border-zinc-700"
-                                            >
-                                              📄 Descargar PDF
-                                            </button>
+                                            {editandoPresupuestoId ? (
+                                              <button 
+                                                type="button" 
+                                                onClick={handleCancelarEdicionPresupuesto}
+                                                className="bg-red-950/40 hover:bg-red-900/60 text-red-400 py-2 rounded font-black text-[10px] uppercase tracking-wider transition-colors border border-red-900/30"
+                                              >
+                                                ✕ Cancelar Edición
+                                              </button>
+                                            ) : (
+                                              <button 
+                                                type="button" 
+                                                onClick={() => handleDescargarPdfPresupuestoBorrador(req)}
+                                                className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2 rounded font-black text-[10px] uppercase tracking-wider transition-colors border border-zinc-700"
+                                              >
+                                                📄 Descargar PDF
+                                              </button>
+                                            )}
                                           </div>
                                         </div>
                                       )}
@@ -1095,6 +1160,12 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                   className="bg-transparent hover:bg-red-950/20 text-red-500 hover:text-red-400 font-bold px-3 py-1.5 rounded text-xs transition-colors border border-transparent hover:border-red-900/30"
                                                 >
                                                   ✕ Rechazar
+                                                </button>
+                                                <button 
+                                                  onClick={() => handleCargarPresupuestoParaEditar(req, p)} 
+                                                  className="bg-blue-650 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded text-xs transition-colors"
+                                                >
+                                                  ✏️ Editar
                                                 </button>
                                               </>
                                             )}
