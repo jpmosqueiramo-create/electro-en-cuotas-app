@@ -2,8 +2,8 @@
 
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, updateDoc, deleteDoc, doc, query, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
-import { generarContratoModelo, generarPagareModelo } from "@/lib/pdfGenerator";
+import { collection, getDocs, getDoc, updateDoc, deleteDoc, doc, query, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
+import { generarContratoModelo, generarPagareModelo, generarRemitoModelo } from "@/lib/pdfGenerator";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, Search, Filter, AlertCircle, CheckCircle2, Truck, DollarSign, Archive, UserPlus } from "lucide-react";
@@ -62,6 +62,55 @@ export default function AdminValidacionesPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [aperturas, setAperturas] = useState<any[]>([]);
   const [contratoAEditar, setContratoAEditar] = useState<any | null>(null);
+
+  // Stock states for delivery confirmation
+  const [productos, setProductos] = useState<any[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<string>("");
+  const [selectedProductStock, setSelectedProductStock] = useState<any | null>(null);
+  const [selectedStockUnitId, setSelectedStockUnitId] = useState<string>("");
+
+  const fetchProductos = async () => {
+    try {
+      const snap = await getDocs(collection(db, "productos"));
+      const results: any[] = [];
+      snap.forEach(d => results.push({ id: d.id, ...d.data() }));
+      setProductos(results);
+    } catch (e) {
+      console.error("Error cargando productos para stock", e);
+    }
+  };
+
+  const handleOpenEntregaModal = (sol: any) => {
+    setNserie("");
+    setMontoAbonado(sol.montoCuota?.toString() || "");
+    setMetodoPago("Efectivo");
+    setComentarioEntrega("");
+    setEntregaActiva(sol.id);
+
+    // Try to auto-match product from inventory
+    const searchName = (sol.productoDeseado || "").toLowerCase();
+    const matched = productos.find((p: any) => 
+      p.nombre.toLowerCase().includes(searchName) || 
+      searchName.includes(p.nombre.toLowerCase())
+    );
+
+    if (matched) {
+      setSelectedProductId(matched.id);
+      setSelectedProductStock(matched);
+      // Pre-select first available stock unit if any
+      const available = (matched.stock || []).filter((u: any) => u.estado === "Disponible");
+      if (available.length > 0) {
+        setSelectedStockUnitId(available[0].id);
+        setNserie(available[0].nserie || "");
+      } else {
+        setSelectedStockUnitId("manual");
+      }
+    } else {
+      setSelectedProductId("");
+      setSelectedProductStock(null);
+      setSelectedStockUnitId("manual");
+    }
+  };
 
   const handleOpenContratoEditor = (sol: any) => {
     let planCuotasList = [];
@@ -307,6 +356,7 @@ export default function AdminValidacionesPage() {
   useEffect(() => {
     fetchSolicitudes();
     fetchAperturas();
+    fetchProductos();
   }, []);
 
   
@@ -318,7 +368,7 @@ export default function AdminValidacionesPage() {
     } catch (e) { console.error(e); }
   };
 
-  const handleConfirmarEntregaAdmin = async (id: string, nuevoEstado: string, esDirecto: boolean = false) => {
+  const handleConfirmarEntregaAdmin = async (id: string, nuevoEstado: string, esDirecto: boolean = false, selectedProdId: string = "", selectedUnitId: string = "") => {
     try {
       const dataToUpdate: any = { estadoEntrega: nuevoEstado };
       if (nuevoEstado === "ENTREGADO" && !esDirecto) {
@@ -333,6 +383,23 @@ export default function AdminValidacionesPage() {
            dataToUpdate.estadoRendicion = "CONFIRMADO";
            dataToUpdate.fechaRendicionReal = new Date().toISOString().split('T')[0];
            dataToUpdate.historialRendicion = "Auditoría Automática Administrador Central";
+        }
+
+        // Update product stock if a specific unit was selected
+        if (selectedProdId && selectedUnitId && selectedUnitId !== "manual") {
+          const prodRef = doc(db, "productos", selectedProdId);
+          const prodSnap = await getDoc(prodRef);
+          if (prodSnap.exists()) {
+            const pData = prodSnap.data();
+            const updatedStock = (pData.stock || []).map((u: any) => {
+              if (u.id === selectedUnitId) {
+                return { ...u, estado: "Vendido" };
+              }
+              return u;
+            });
+            await updateDoc(prodRef, { stock: updatedStock });
+            await fetchProductos();
+          }
         }
         
         const solObj = solicitudes.find((s: any) => s.id === id);
@@ -1000,10 +1067,91 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                       {entregaActiva === sol.id ? (
                                         <div className="bg-zinc-900 border border-blue-500 p-4 rounded-xl flex flex-col gap-3 shadow-2xl">
                                            <h4 className="text-blue-400 font-bold text-xs uppercase text-center border-b border-blue-900 pb-2 mb-1">Confirmar Cierre y Adelanto</h4>
+                                           
+                                           {/* Selector de Producto de Inventario */}
                                            <div>
-                                             <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Nº de Serie del Producto (Obligatorio)</label>
+                                             <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Producto en Catálogo</label>
+                                             <select 
+                                               value={selectedProductId}
+                                               onChange={(e) => {
+                                                 const pId = e.target.value;
+                                                 setSelectedProductId(pId);
+                                                 const prodObj = productos.find(p => p.id === pId);
+                                                 setSelectedProductStock(prodObj || null);
+                                                 setSelectedStockUnitId("manual");
+                                                 setNserie("");
+                                               }}
+                                               className="bg-zinc-950 text-zinc-100 px-3 py-2 rounded-lg text-xs border border-zinc-800 w-full focus:border-blue-500 outline-none"
+                                             >
+                                               <option value="">-- No vincular a catálogo --</option>
+                                               {productos.map(p => (
+                                                 <option key={p.id} value={p.id}>{p.nombre}</option>
+                                               ))}
+                                             </select>
+                                           </div>
+
+                                           {/* Selector de Unidad de Stock */}
+                                           {selectedProductStock && (
+                                             <div>
+                                               <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Unidad de Stock Disponible</label>
+                                               <select 
+                                                 value={selectedStockUnitId}
+                                                 onChange={(e) => {
+                                                   const unitId = e.target.value;
+                                                   setSelectedStockUnitId(unitId);
+                                                   if (unitId === "manual") {
+                                                     setNserie("");
+                                                   } else {
+                                                     const unit = (selectedProductStock?.stock || []).find((u: any) => u.id === unitId);
+                                                     setNserie(unit?.nserie || "");
+                                                   }
+                                                 }}
+                                                 className="bg-zinc-950 text-zinc-100 px-3 py-2 rounded-lg text-xs border border-zinc-800 w-full focus:border-blue-500 outline-none"
+                                               >
+                                                 <option value="manual">Cargar manualmente (Sin stock / Otro)</option>
+                                                 {(selectedProductStock.stock || []).filter((u: any) => u.estado === "Disponible").map((u: any) => (
+                                                   <option key={u.id} value={u.id}>
+                                                     [{u.localidad}] - {u.nserie ? `IMEI/Serie: ${u.nserie}` : "Sin número registrado"}
+                                                   </option>
+                                                 ))}
+                                               </select>
+                                             </div>
+                                           )}
+
+                                           <div>
+                                             <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Nº de Serie / IMEI del Producto</label>
                                              <input type="text" value={nserie} onChange={e=>setNserie(e.target.value)} placeholder="Ej: SN-12345" className="bg-zinc-950 text-zinc-100 px-3 py-2.5 rounded-lg text-sm border border-zinc-800 w-full focus:border-blue-500 outline-none font-mono" />
                                            </div>
+
+                                           {/* Botón de Generación de Remito */}
+                                           {selectedStockUnitId && selectedStockUnitId !== "manual" && (
+                                             <button
+                                               type="button"
+                                               onClick={() => {
+                                                 const unit = (selectedProductStock?.stock || []).find((u: any) => u.id === selectedStockUnitId);
+                                                 if (!unit) return;
+                                                 
+                                                 const rDatos = {
+                                                   nroRemito: `R-${sol.id.substring(0, 6).toUpperCase()}`,
+                                                   fecha: new Date().toLocaleDateString("es-AR"),
+                                                   clienteNombre: sol.datosPersonales?.nombreCompleto || "",
+                                                   clienteDni: sol.datosPersonales?.numeroDni || "",
+                                                   clienteDireccion: `${sol.datosPersonales?.direccion || ''}, ${sol.datosPersonales?.localidad || ''}`,
+                                                   clienteTelefono: sol.datosPersonales?.telefono || "",
+                                                   productoNombre: selectedProductStock.nombre,
+                                                   nserie: nserie || unit.nserie || "",
+                                                   origen: unit.localidad,
+                                                   destino: sol.datosPersonales?.localidad || "Lincoln",
+                                                   afiliadoEmail: sol.afiliadoEmail || ""
+                                                 };
+                                                 generarRemitoModelo(rDatos);
+                                               }}
+                                               className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 shadow-md"
+                                             >
+                                               📄 Generar Remito de Envío (PDF)
+                                             </button>
+                                           )}
+
                                            <div className="grid grid-cols-2 gap-3">
                                              <div>
                                                <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Adelanto Abonado ($)</label>
@@ -1023,7 +1171,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                            </div>
                                            <div className="flex gap-2 mt-3">
                                              <button onClick={() => setEntregaActiva(null)} className="flex-1 bg-zinc-800/80 text-zinc-400 py-2.5 rounded-lg text-xs font-bold hover:bg-gray-200 transition">Cancelar</button>
-                                             <button onClick={() => handleConfirmarEntregaAdmin(sol.id, "ENTREGADO")} className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-xs font-black hover:bg-blue-500 transition shadow-2xl shadow-black/60">✓ GUARDAR CIERRE</button>
+                                             <button onClick={() => handleConfirmarEntregaAdmin(sol.id, "ENTREGADO", false, selectedProductId, selectedStockUnitId)} className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-xs font-black hover:bg-blue-500 transition shadow-2xl shadow-black/60">✓ GUARDAR CIERRE</button>
                                            </div>
                                         </div>
                                       ) : (
@@ -1032,8 +1180,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                            onChange={e => {
                                               const val = e.target.value;
                                               if (val === "ENTREGADO") {
-                                                 setNserie(""); setMontoAbonado(sol.montoCuota?.toString() || ""); setMetodoPago("Efectivo"); setComentarioEntrega("");
-                                                 setEntregaActiva(sol.id);
+                                                 handleOpenEntregaModal(sol);
                                               } else {
                                                  handleConfirmarEntregaAdmin(sol.id, val, true);
                                               }

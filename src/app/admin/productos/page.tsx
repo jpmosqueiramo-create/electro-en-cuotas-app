@@ -6,6 +6,14 @@ import { db, storage } from "@/lib/firebase";
 import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+type UnidadStock = {
+  id: string;
+  localidad: string;
+  nserie: string;
+  estado: "Disponible" | "Reservado" | "Vendido" | "En Tránsito";
+  fechaIngreso: string;
+};
+
 type Producto = {
   id: string;
   nombre: string;
@@ -20,7 +28,17 @@ type Producto = {
   descripcion: string;
   imagenUrl: string;
   imagenUrls?: string[];
+  stock?: UnidadStock[];
 };
+
+const LOCALIDADES_STOCK = [
+  "Buenos Aires",
+  "Lincoln",
+  "Chivilcoy",
+  "Los Toldos",
+  "O'Brien",
+  "Zavalia"
+];
 
 export default function AdminProductosPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -49,6 +67,59 @@ export default function AdminProductosPage() {
   const [existingImagenUrls, setExistingImagenUrls] = useState<string[]>([]);
   const [imagenes, setImagenes] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Stock management states
+  const [stockProducto, setStockProducto] = useState<Producto | null>(null);
+  const [nuevaUnidadLocalidad, setNuevaUnidadLocalidad] = useState("Buenos Aires");
+  const [nuevaUnidadNserie, setNuevaUnidadNserie] = useState("");
+
+  const handleAgregarUnidadStock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stockProducto) return;
+    
+    const nuevaUnidad: UnidadStock = {
+      id: "unit_" + Date.now(),
+      localidad: nuevaUnidadLocalidad,
+      nserie: nuevaUnidadNserie.trim(),
+      estado: "Disponible",
+      fechaIngreso: new Date().toISOString()
+    };
+
+    const updatedStock = [...(stockProducto.stock || []), nuevaUnidad];
+    try {
+      await updateDoc(doc(db, "productos", stockProducto.id), {
+        stock: updatedStock
+      });
+      
+      const updatedProduct = { ...stockProducto, stock: updatedStock };
+      setStockProducto(updatedProduct);
+      setProductos(prev => prev.map(p => p.id === stockProducto.id ? updatedProduct : p));
+      setNuevaUnidadNserie("");
+      alert("Unidad de stock agregada exitosamente.");
+    } catch (err) {
+      console.error(err);
+      alert("Error al agregar unidad de stock.");
+    }
+  };
+
+  const handleQuitarUnidadStock = async (unitId: string) => {
+    if (!stockProducto || !confirm("¿Seguro que deseas remover esta unidad del stock?")) return;
+    
+    const updatedStock = (stockProducto.stock || []).filter(u => u.id !== unitId);
+    try {
+      await updateDoc(doc(db, "productos", stockProducto.id), {
+        stock: updatedStock
+      });
+      
+      const updatedProduct = { ...stockProducto, stock: updatedStock };
+      setStockProducto(updatedProduct);
+      setProductos(prev => prev.map(p => p.id === stockProducto.id ? updatedProduct : p));
+      alert("Unidad removida del stock.");
+    } catch (err) {
+      console.error(err);
+      alert("Error al remover unidad de stock.");
+    }
+  };
 
   const fetchProductos = async () => {
     const querySnapshot = await getDocs(collection(db, "productos"));
@@ -350,6 +421,7 @@ export default function AdminProductosPage() {
                       editandoId={editandoId}
                       handleEditar={handleEditar}
                       handleEliminar={handleEliminar}
+                      handleOpenStockManager={setStockProducto}
                     />
                   ))}
                 </div>
@@ -358,6 +430,102 @@ export default function AdminProductosPage() {
           </div>
         </div>
       </div>
+
+      {/* MODAL GESTOR DE STOCK */}
+      {stockProducto && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto space-y-6 custom-scrollbar shadow-2xl">
+            
+            <div className="flex justify-between items-center border-b border-zinc-800 pb-4">
+              <div>
+                <h2 className="text-xl font-black text-yellow-400">Control de Inventario por Localidades</h2>
+                <p className="text-xs text-zinc-500">{stockProducto.nombre}</p>
+              </div>
+              <button onClick={() => setStockProducto(null)} className="text-zinc-400 hover:text-white font-black text-sm">
+                ✕ Cerrar
+              </button>
+            </div>
+
+            {/* Formulario de carga de unidad */}
+            <form onSubmit={handleAgregarUnidadStock} className="bg-zinc-950 border border-zinc-850 p-4 rounded-xl space-y-4">
+              <h3 className="text-xs font-black text-yellow-400 uppercase tracking-widest border-b border-zinc-850 pb-2">Ingresar Nueva Unidad Física</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-400 mb-1">Localidad del Stock</label>
+                  <select 
+                    value={nuevaUnidadLocalidad} 
+                    onChange={e => setNuevaUnidadLocalidad(e.target.value)} 
+                    className="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none"
+                  >
+                    {LOCALIDADES_STOCK.map(loc => (
+                      <option key={loc} value={loc}>{loc}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-400 mb-1">N° de Serie / IMEI (Opcional)</label>
+                  <input 
+                    type="text" 
+                    value={nuevaUnidadNserie} 
+                    onChange={e => setNuevaUnidadNserie(e.target.value)} 
+                    placeholder="Ej: SN-492849204" 
+                    className="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none font-mono" 
+                  />
+                </div>
+              </div>
+              <button 
+                type="submit" 
+                className="w-full bg-yellow-500 hover:bg-yellow-400 text-black py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors shadow-lg"
+              >
+                + Agregar Unidad a Stock
+              </button>
+            </form>
+
+            {/* Listado de unidades actuales */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest border-b border-zinc-800 pb-2">Legajos de Unidades Registradas</h3>
+              <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                {(stockProducto.stock || []).length === 0 ? (
+                  <p className="text-xs text-zinc-500 italic text-center py-6">No hay unidades cargadas en stock para este producto.</p>
+                ) : (
+                  (stockProducto.stock || []).map((u: UnidadStock) => (
+                    <div key={u.id} className="flex justify-between items-center bg-zinc-950 p-3 rounded-lg border border-zinc-850">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] bg-zinc-900 text-yellow-400 px-2 py-0.5 rounded font-black border border-zinc-800">
+                            {u.localidad}
+                          </span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                            u.estado === "Disponible" ? "bg-green-500/10 text-green-400 border border-green-500/20" :
+                            u.estado === "Vendido" ? "bg-red-500/10 text-red-400 border-red-500/20" :
+                            "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                          }`}>
+                            {u.estado}
+                          </span>
+                        </div>
+                        {u.nserie && (
+                          <p className="text-xs text-zinc-400 font-mono">IMEI/Serie: {u.nserie}</p>
+                        )}
+                        <p className="text-[9px] text-zinc-500">Ingreso: {new Date(u.fechaIngreso).toLocaleString("es-AR")}</p>
+                      </div>
+                      {u.estado === "Disponible" && (
+                        <button 
+                          type="button" 
+                          onClick={() => handleQuitarUnidadStock(u.id)} 
+                          className="text-xs text-red-500 hover:text-red-400 font-bold px-3 py-1 rounded hover:bg-red-950/20 border border-transparent hover:border-red-900/30 transition-all"
+                        >
+                          🗑️ Remover
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
     </AdminProtectedRoute>
   );
 }
@@ -366,12 +534,14 @@ function AdminProductCard({
   p, 
   editandoId, 
   handleEditar, 
-  handleEliminar 
+  handleEliminar,
+  handleOpenStockManager
 }: { 
   p: Producto; 
   editandoId: string | null; 
   handleEditar: (p: Producto) => void; 
   handleEliminar: (id: string) => void; 
+  handleOpenStockManager: (p: Producto) => void; 
 }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const images = p.imagenUrls && p.imagenUrls.length > 0 ? p.imagenUrls : (p.imagenUrl ? [p.imagenUrl] : []);
@@ -442,6 +612,24 @@ function AdminProductCard({
           <p className="text-zinc-400 line-clamp-1">Provee: <span className="text-yellow-100">{p.proveedor || "No indicado"}</span></p>
         </div>
 
+        {/* Resumen de Stock por Localidad */}
+        <div className="bg-zinc-950 border border-zinc-850 p-3 rounded-lg mb-3 text-xs flex flex-col gap-1">
+          <p className="text-zinc-500 font-bold uppercase mb-1 border-b border-zinc-850 pb-1">Stock Disponible</p>
+          {LOCALIDADES_STOCK.map(loc => {
+            const count = (p.stock || []).filter(u => u.localidad === loc && u.estado === "Disponible").length;
+            if (count === 0) return null;
+            return (
+              <p key={loc} className="text-zinc-300 flex justify-between">
+                <span>{loc}:</span>
+                <span className="font-bold text-yellow-400 font-mono">{count} u.</span>
+              </p>
+            );
+          })}
+          {(!p.stock || p.stock.filter(u => u.estado === "Disponible").length === 0) && (
+            <p className="text-zinc-600 italic">Sin unidades disponibles</p>
+          )}
+        </div>
+
         {/* Datos Publicos Cuotas */}
         <div className="bg-zinc-900 border border-zinc-850 p-3 rounded-lg mb-5 text-xs">
           <p className="text-yellow-400 font-bold uppercase mb-1 border-b border-zinc-850 pb-1">Público</p>
@@ -449,6 +637,13 @@ function AdminProductCard({
           <p className="text-yellow-400 font-bold text-sm mb-1">12 x ${p.cuota12}</p>
           <p className="text-yellow-400 font-bold text-sm">8 x ${p.cuota8}</p>
         </div>
+
+        <button 
+          onClick={() => handleOpenStockManager(p)}
+          className="w-full text-xs bg-zinc-950 border border-zinc-850 hover:border-yellow-500 text-yellow-400 py-2 rounded-lg font-black uppercase tracking-widest transition-all mb-3 flex items-center justify-center gap-2"
+        >
+          📦 Gestionar Stock
+        </button>
         
         <div className="mt-auto flex gap-2 w-full">
           <button onClick={() => handleEditar(p)} className="flex-1 text-sm bg-zinc-800/80 text-blue-400 border border-zinc-800 hover:bg-gray-200 hover:text-blue-300 hover:border-blue-500 py-2.5 rounded-lg text-center transition-all font-bold tracking-widest uppercase">

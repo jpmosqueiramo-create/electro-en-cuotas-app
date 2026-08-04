@@ -362,3 +362,104 @@ export const generarPagareModelo = (datos: DatosContrato) => {
   
   doc.save(`Pagare_${nombre.replace(/\s/g,"_")}.pdf`);
 };
+
+export interface DatosRemito {
+  nroRemito: string;
+  fecha: string;
+  clienteNombre: string;
+  clienteDni: string;
+  clienteDireccion: string;
+  clienteTelefono: string;
+  productoNombre: string;
+  nserie: string;
+  origen: string;
+  destino: string;
+  afiliadoEmail?: string;
+}
+
+export const generarRemitoModelo = (datos: DatosRemito) => {
+  const doc = new jsPDF();
+  const nombre = datos.clienteNombre || "Cliente";
+
+  // Box title
+  doc.setFillColor(244, 244, 245);
+  doc.rect(15, 15, 180, 20, "F");
+  doc.setDrawColor(234, 179, 8); // Yellow/gold border
+  doc.setLineWidth(0.5);
+  doc.rect(15, 15, 180, 20, "S");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(234, 179, 8);
+  doc.text("REMITO DE TRASLADO / ENTREGA DE MERCADERÍA", 20, 23);
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
+  doc.text("CUENTA HOGAR / ELECTRO EN CUOTAS", 20, 29);
+
+  // Remito numbers & date
+  drawFormBox(doc, "Remito N°:", datos.nroRemito, 15, 40, 90, 11);
+  drawFormBox(doc, "Fecha Emisión:", datos.fecha, 105, 40, 90, 11);
+
+  // Origen and Destino
+  drawFormBox(doc, "Origen de Stock (Despacho):", datos.origen, 15, 54, 90, 11);
+  drawFormBox(doc, "Destino (Localidad del Cliente):", datos.destino, 105, 54, 90, 11);
+
+  // Destinatario
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Datos del Destinatario (Cliente)", 15, 75);
+
+  drawFormBox(doc, "Señor/a (Nombre y Apellido):", datos.clienteNombre, 15, 79, 180, 11);
+  drawFormBox(doc, "DNI:", datos.clienteDni, 15, 93, 60, 11);
+  drawFormBox(doc, "Teléfono / WhatsApp:", datos.clienteTelefono, 78, 93, 117, 11);
+  drawFormBox(doc, "Dirección de Entrega:", datos.clienteDireccion, 15, 107, 180, 11);
+
+  // Product Detail
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Detalle del Producto a Entregar", 15, 128);
+
+  drawFormBox(doc, "Producto / Modelo:", datos.productoNombre, 15, 132, 120, 11);
+  drawFormBox(doc, "IMEI / N° Serie:", datos.nserie || "Sin IMEI/Serie registrado", 138, 132, 57, 11);
+
+  // Legalese info
+  let y = 155;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text("El presente documento certifica el traslado y entrega del producto detallado.", 15, y); y += 5;
+  doc.text("La mercadería viaja por cuenta y orden de la empresa para ser entregada al cliente.", 15, y); y += 12;
+
+  if (datos.afiliadoEmail) {
+    doc.setFont("helvetica", "bold");
+    doc.text(`Vendedor/Afiliado asignado: ${datos.afiliadoEmail}`, 15, y); y += 15;
+  }
+
+  // Signatures
+  y += 20;
+  doc.setDrawColor(148, 163, 184);
+  doc.setLineWidth(0.3);
+  doc.line(15, y, 90, y);
+  doc.line(120, y, 195, y);
+  
+  y += 5;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.text("Firma Despachante (Central)", 15, y);
+  doc.text("Firma de Conformidad Cliente", 120, y);
+
+  y += 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text("Aclaración: ________________________", 15, y);
+  doc.text("Aclaración: ________________________", 120, y);
+  
+  y += 5;
+  doc.text("DNI/Legajo: ________________________", 15, y);
+  doc.text("DNI: ________________________", 120, y);
+
+  doc.save(`Remito_${datos.nroRemito}_${nombre.replace(/\s/g,"_")}.pdf`);
+};
