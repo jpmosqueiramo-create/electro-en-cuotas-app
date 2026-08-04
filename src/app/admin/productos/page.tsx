@@ -57,11 +57,32 @@ export default function AdminProductosPage() {
   const [proveedor, setProveedor] = useState("");
 
   const calcularCuota = (principal: number, tnaPct: number, meses: number) => {
-    if (!principal || !tnaPct || !meses) return 0;
+    if (!principal || !meses) return 0;
+    if (!tnaPct) return Math.round(principal / meses);
     const r = (tnaPct / 100) / 12; // tasa mensual
-    if (r === 0) return principal / meses;
     const cuota = (principal * r * Math.pow(1 + r, meses)) / (Math.pow(1 + r, meses) - 1);
     return Math.round(cuota);
+  };
+
+  const calcularTnaDesdeCuota = (contado: number, cuota: number, n: number): number => {
+    if (contado <= 0 || cuota <= 0 || n <= 0) return 0;
+    if (cuota * n <= contado) return 0; // No interest or negative rate
+    
+    let low = 0;
+    let high = 5.0; // Up to 500% monthly rate
+    let r = 0;
+    for (let i = 0; i < 100; i++) {
+      r = (low + high) / 2;
+      const factor = r === 0 ? 1 / n : (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      const calcCuota = contado * factor;
+      if (calcCuota > cuota) {
+        high = r;
+      } else {
+        low = r;
+      }
+    }
+    const tna = r * 12 * 100;
+    return Math.round(tna * 10) / 10; // Round to 1 decimal place
   };
   
   const [descripcion, setDescripcion] = useState("");
@@ -413,33 +434,33 @@ export default function AdminProductosPage() {
                      <input value={costoProducto} onChange={e=>setCostoProducto(e.target.value)} type="number" placeholder="Ej: 80000" className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
                    </div>
                    <div>
-                     <label className="block text-xs mb-1 text-zinc-500">Precio Venta (Contado / Efectivo)</label>
-                     <input value={precioContado} onChange={e=> {
-                       setPrecioContado(e.target.value);
-                       const pVal = Number(e.target.value) || 0;
-                       const tnaVal = Number(tasaInteresTna) || 0;
-                       if (pVal && tnaVal) {
-                         const c12 = calcularCuota(pVal, tnaVal, 12);
-                         const c8 = calcularCuota(pVal, tnaVal, 8);
-                         setCuota12(c12.toString());
-                         setCuota8(c8.toString());
-                       }
-                     }} type="number" placeholder="Ej: 110000" className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
-                   </div>
-                   <div>
-                     <label className="block text-xs mb-1 text-zinc-500">TNA - Tasa Nominal Anual (%)</label>
-                     <input value={tasaInteresTna} onChange={e=> {
-                       setTasaInteresTna(e.target.value);
-                       const tnaVal = Number(e.target.value) || 0;
-                       const pVal = Number(precioContado) || 0;
-                       if (pVal && tnaVal) {
-                         const c12 = calcularCuota(pVal, tnaVal, 12);
-                         const c8 = calcularCuota(pVal, tnaVal, 8);
-                         setCuota12(c12.toString());
-                         setCuota8(c8.toString());
-                       }
-                     }} type="number" placeholder="Ej: 60" className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
-                   </div>
+                      <label className="block text-xs mb-1 text-zinc-500">Precio Venta (Contado / Efectivo)</label>
+                      <input value={precioContado} onChange={e=> {
+                        setPrecioContado(e.target.value);
+                        const pVal = Number(e.target.value) || 0;
+                        const tnaVal = Number(tasaInteresTna) || 0;
+                        if (pVal) {
+                          const c12 = calcularCuota(pVal, tnaVal, 12);
+                          const c8 = calcularCuota(pVal, tnaVal, 8);
+                          setCuota12(c12 > 0 ? c12.toString() : "");
+                          setCuota8(c8 > 0 ? c8.toString() : "");
+                        }
+                      }} type="number" placeholder="Ej: 110000" className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-xs mb-1 text-zinc-500">TNA - Tasa Nominal Anual (%)</label>
+                      <input value={tasaInteresTna} onChange={e=> {
+                        setTasaInteresTna(e.target.value);
+                        const tnaVal = Number(e.target.value) || 0;
+                        const pVal = Number(precioContado) || 0;
+                        if (pVal) {
+                          const c12 = calcularCuota(pVal, tnaVal, 12);
+                          const c8 = calcularCuota(pVal, tnaVal, 8);
+                          setCuota12(c12 > 0 ? c12.toString() : "");
+                          setCuota8(c8 > 0 ? c8.toString() : "");
+                        }
+                      }} type="number" placeholder="Ej: 60" className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
+                    </div>
                    <div>
                      <label className="block text-xs mb-1 text-zinc-500">Tasa de Mora Diaria (%)</label>
                      <input value={tasaMora} onChange={e=>setTasaMora(e.target.value)} type="number" placeholder="Ej: 0.5" className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" step="0.01" />
@@ -457,14 +478,34 @@ export default function AdminProductosPage() {
                      <label className="block text-xs mb-1 text-zinc-500">Precio Lista (Para mostrar tachado)</label>
                      <input value={precioAnterior} onChange={e=>setPrecioAnterior(e.target.value)} type="number" placeholder="Ej: 150000" className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
                    </div>
-                   <div>
-                     <label className="block text-sm font-bold mb-1 text-yellow-400">Valor Cuota (12 Meses)</label>
-                     <input required value={cuota12} onChange={e=>setCuota12(e.target.value)} type="number" placeholder="Ej: 12500" className="w-full bg-zinc-800/80 border border-yellow-500/50 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
-                   </div>
-                   <div>
-                     <label className="block text-sm font-bold mb-1 text-yellow-400">Valor Cuota (8 Meses)</label>
-                     <input required value={cuota8} onChange={e=>setCuota8(e.target.value)} type="number" placeholder="Ej: 18000" className="w-full bg-zinc-800/80 border border-zinc-800 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
-                   </div>
+                    <div>
+                      <label className="block text-sm font-bold mb-1 text-yellow-400">Valor Cuota (12 Meses)</label>
+                      <input required value={cuota12} onChange={e=> {
+                        setCuota12(e.target.value);
+                        const c12Val = Number(e.target.value) || 0;
+                        const pVal = Number(precioContado) || 0;
+                        if (pVal > 0 && c12Val > 0) {
+                          const calculatedTna = calcularTnaDesdeCuota(pVal, c12Val, 12);
+                          setTasaInteresTna(calculatedTna > 0 ? calculatedTna.toString() : "0");
+                          const c8 = calcularCuota(pVal, calculatedTna, 8);
+                          setCuota8(c8 > 0 ? c8.toString() : "");
+                        }
+                      }} type="number" placeholder="Ej: 12500" className="w-full bg-zinc-800/80 border border-yellow-500/50 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold mb-1 text-yellow-400">Valor Cuota (8 Meses)</label>
+                      <input required value={cuota8} onChange={e=> {
+                        setCuota8(e.target.value);
+                        const c8Val = Number(e.target.value) || 0;
+                        const pVal = Number(precioContado) || 0;
+                        if (pVal > 0 && c8Val > 0) {
+                          const calculatedTna = calcularTnaDesdeCuota(pVal, c8Val, 8);
+                          setTasaInteresTna(calculatedTna > 0 ? calculatedTna.toString() : "0");
+                          const c12 = calcularCuota(pVal, calculatedTna, 12);
+                          setCuota12(c12 > 0 ? c12.toString() : "");
+                        }
+                      }} type="number" placeholder="Ej: 18000" className="w-full bg-zinc-800/80 border border-zinc-800 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
+                    </div>
                 </div>
 
                 <div>

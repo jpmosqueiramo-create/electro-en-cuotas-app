@@ -73,7 +73,81 @@ export default function AdminValidacionesPage() {
   const [budgetNotas, setBudgetNotas] = useState("");
   const [budgetProveedor, setBudgetProveedor] = useState("");
   const [budgetLinkProveedor, setBudgetLinkProveedor] = useState("");
+  const [budgetCostoProveedor, setBudgetCostoProveedor] = useState("");
   const [draftItems, setDraftItems] = useState<any[]>([]);
+
+  const calcularTnaDesdeCuota = (contado: number, cuota: number, n: number): number => {
+    if (contado <= 0 || cuota <= 0 || n <= 0) return 0;
+    if (cuota * n <= contado) return 0; // No interest
+    
+    let low = 0;
+    let high = 5.0; // Up to 500% monthly rate
+    let r = 0;
+    for (let i = 0; i < 100; i++) {
+      r = (low + high) / 2;
+      const factor = r === 0 ? 1 / n : (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      const calcCuota = contado * factor;
+      if (calcCuota > cuota) {
+        high = r;
+      } else {
+        low = r;
+      }
+    }
+    const tna = r * 12 * 100;
+    return Math.round(tna * 10) / 10; // Round to 1 decimal place
+  };
+
+  const calcularCuotaDesdeTna = (contado: number, tna: number, n: number): number => {
+    if (contado <= 0 || n <= 0) return 0;
+    if (tna <= 0) return Math.round(contado / n);
+    const r = tna / 1200;
+    const factor = (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    return Math.round(contado * factor);
+  };
+
+  const handleTnaChange = (newTnaVal: string) => {
+    setBudgetTna(newTnaVal);
+    const contado = Number(budgetContado) || 0;
+    const cuotas = Number(budgetCuotas) || 12;
+    const tna = Number(newTnaVal) || 0;
+    if (contado > 0 && cuotas > 0) {
+      const cuota = calcularCuotaDesdeTna(contado, tna, cuotas);
+      setBudgetCuotaValor(cuota > 0 ? String(cuota) : "");
+    }
+  };
+
+  const handleContadoChange = (newContadoVal: string) => {
+    setBudgetContado(newContadoVal);
+    const contado = Number(newContadoVal) || 0;
+    const cuotas = Number(budgetCuotas) || 12;
+    const tna = Number(budgetTna) || 0;
+    if (contado > 0 && cuotas > 0) {
+      const cuota = calcularCuotaDesdeTna(contado, tna, cuotas);
+      setBudgetCuotaValor(cuota > 0 ? String(cuota) : "");
+    }
+  };
+
+  const handleCuotasChange = (newCuotasVal: string) => {
+    setBudgetCuotas(newCuotasVal);
+    const contado = Number(budgetContado) || 0;
+    const cuotas = Number(newCuotasVal) || 12;
+    const tna = Number(budgetTna) || 0;
+    if (contado > 0 && cuotas > 0) {
+      const cuota = calcularCuotaDesdeTna(contado, tna, cuotas);
+      setBudgetCuotaValor(cuota > 0 ? String(cuota) : "");
+    }
+  };
+
+  const handleCuotaValorChange = (newCuotaVal: string) => {
+    setBudgetCuotaValor(newCuotaVal);
+    const contado = Number(budgetContado) || 0;
+    const cuotas = Number(budgetCuotas) || 12;
+    const cuota = Number(newCuotaVal) || 0;
+    if (contado > 0 && cuotas > 0 && cuota > 0) {
+      const calculatedTna = calcularTnaDesdeCuota(contado, cuota, cuotas);
+      setBudgetTna(calculatedTna > 0 ? String(calculatedTna) : "0");
+    }
+  };
 
   const handleAgregarItemAlBorrador = () => {
     if (!budgetProd.trim()) return alert("Debes ingresar el producto propuesto.");
@@ -85,6 +159,7 @@ export default function AdminValidacionesPage() {
       contado: Number(budgetContado) || 0,
       cuotas: Number(budgetCuotas) || 12,
       valorCuota: Number(budgetCuotaValor),
+      costoProveedor: Number(budgetCostoProveedor) || 0,
       proveedor: budgetProveedor.trim() || null,
       linkProveedor: budgetLinkProveedor.trim() || null
     };
@@ -94,6 +169,7 @@ export default function AdminValidacionesPage() {
     // Reset product specific fields
     setBudgetProd("");
     setBudgetContado("");
+    setBudgetCostoProveedor("");
     setBudgetProveedor("");
     setBudgetLinkProveedor("");
   };
@@ -835,15 +911,15 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                       </div>
                                       <div>
                                         <label className="block text-[10px] text-zinc-500 font-bold mb-1">Monto Referencia Contado ($)</label>
-                                        <input type="number" value={budgetContado} onChange={e=>setBudgetContado(e.target.value)} placeholder="Opcional" className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-mono" />
+                                        <input type="number" value={budgetContado} onChange={e=>handleContadoChange(e.target.value)} placeholder="Opcional" className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-mono" />
                                       </div>
                                       <div>
                                         <label className="block text-[10px] text-zinc-500 font-bold mb-1">Valor de la Cuota ($)</label>
-                                        <input type="number" value={budgetCuotaValor} onChange={e=>setBudgetCuotaValor(e.target.value)} placeholder="Ej: 18000" className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-bold font-mono" />
+                                        <input type="number" value={budgetCuotaValor} onChange={e=>handleCuotaValorChange(e.target.value)} placeholder="Ej: 18000" className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-bold font-mono" />
                                       </div>
                                       <div>
                                         <label className="block text-[10px] text-zinc-500 font-bold mb-1">Cantidad de Cuotas</label>
-                                        <select value={budgetCuotas} onChange={e=>setBudgetCuotas(e.target.value)} className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500">
+                                        <select value={budgetCuotas} onChange={e=>handleCuotasChange(e.target.value)} className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500">
                                           <option value="12">12 Cuotas</option>
                                           <option value="8">8 Cuotas</option>
                                           <option value="6">6 Cuotas</option>
@@ -852,15 +928,19 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                       </div>
                                       <div>
                                         <label className="block text-[10px] text-zinc-500 font-bold mb-1">TNA Interés (%)</label>
-                                        <input type="number" value={budgetTna} onChange={e=>setBudgetTna(e.target.value)} className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-zinc-400 w-full outline-none focus:border-yellow-500 font-mono" />
+                                        <input type="number" value={budgetTna} onChange={e=>handleTnaChange(e.target.value)} className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-mono" />
                                       </div>
                                       
                                       {/* NUEVOS CAMPOS EXCLUSIVOS USO INTERNO */}
                                       <div>
+                                        <label className="block text-[10px] text-amber-500 font-bold mb-1">🔒 Costo Proveedor ($)</label>
+                                        <input type="number" value={budgetCostoProveedor} onChange={e=>setBudgetCostoProveedor(e.target.value)} placeholder="Ej: 80000" className="bg-zinc-900 border border-amber-950/40 p-2 rounded text-xs text-white w-full outline-none focus:border-amber-500 font-mono" />
+                                      </div>
+                                      <div>
                                         <label className="block text-[10px] text-amber-500 font-bold mb-1">🔒 Proveedor (Uso Interno)</label>
                                         <input type="text" value={budgetProveedor} onChange={e=>setBudgetProveedor(e.target.value)} placeholder="Ej: Distribuidora BA" className="bg-zinc-900 border border-amber-950/40 p-2 rounded text-xs text-white w-full outline-none focus:border-amber-500" />
                                       </div>
-                                      <div>
+                                      <div className="col-span-2">
                                         <label className="block text-[10px] text-amber-500 font-bold mb-1">🔒 Link Proveedor (Uso Interno)</label>
                                         <input type="text" value={budgetLinkProveedor} onChange={e=>setBudgetLinkProveedor(e.target.value)} placeholder="Ej: mercadolibre.com.ar/..." className="bg-zinc-900 border border-amber-950/40 p-2 rounded text-xs text-white w-full outline-none focus:border-amber-500" />
                                       </div>
@@ -885,8 +965,8 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                               <div className="flex-1">
                                                 <p className="text-xs text-white font-bold">{item.producto}</p>
                                                 <p className="text-[10px] text-zinc-400">{item.cuotas} cuotas de ${item.valorCuota}</p>
-                                                {(item.proveedor || item.linkProveedor) && (
-                                                  <p className="text-[9px] text-amber-500 italic mt-0.5">🔒 Prov: {item.proveedor || "S/D"}</p>
+                                                {(item.proveedor || item.costoProveedor) && (
+                                                  <p className="text-[9px] text-amber-500 italic mt-0.5">🔒 Prov: {item.proveedor || "S/D"} (Costo: ${item.costoProveedor || 0})</p>
                                                 )}
                                               </div>
                                               <button type="button" onClick={() => handleQuitarItemDelBorrador(item.id)} className="text-red-500 hover:text-red-400 p-1">
@@ -951,9 +1031,10 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                     {item.contado > 0 && ` (Ref. Contado: $${item.contado})`}
                                                     
                                                     {/* INTERNAL USE FIELDS */}
-                                                    {(item.proveedor || item.linkProveedor) && (
+                                                    {(item.proveedor || item.costoProveedor || item.linkProveedor) && (
                                                       <div className="text-[10px] text-amber-400/80 mt-0.5 bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10 inline-block block">
                                                         🔒 Uso Interno: {item.proveedor ? `Prov: ${item.proveedor}` : "Prov: S/D"}
+                                                        {item.costoProveedor > 0 && ` (Costo: $${item.costoProveedor})`}
                                                         {item.linkProveedor && (
                                                           <>
                                                             {" | "}
@@ -966,6 +1047,13 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                     )}
                                                   </div>
                                                 ))}
+                                                
+                                                {/* SUM OF SUPPLIER COST */}
+                                                {p.items.some((it: any) => it.costoProveedor > 0) && (
+                                                  <div className="text-[10px] text-amber-400 font-bold mt-2">
+                                                    🔒 Costo Proveedor Total: ${p.items.reduce((sum: number, it: any) => sum + (it.costoProveedor || 0), 0)}
+                                                  </div>
+                                                )}
                                               </div>
                                             ) : (
                                               // Fallback for old single budgets
