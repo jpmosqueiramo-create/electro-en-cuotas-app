@@ -569,3 +569,142 @@ export const generarRemitoMultiProducto = (datos: DatosRemitoMulti) => {
 
   doc.save(`Remito_Traslado_${datos.nroRemito}.pdf`);
 };
+
+export interface ElementoPresupuesto {
+  producto: string;
+  contado: number;
+  cuotas: number;
+  valorCuota: number;
+  proveedor?: string;
+  linkProveedor?: string;
+}
+
+export interface DatosPresupuestoPdf {
+  nroPresupuesto: string;
+  fecha: string;
+  clienteNombre: string;
+  clienteDni: string;
+  clienteWhatsapp: string;
+  clienteLocalidad: string;
+  items: ElementoPresupuesto[];
+  notas?: string;
+}
+
+export const generarPdfPresupuesto = (datos: DatosPresupuestoPdf) => {
+  const doc = new jsPDF();
+
+  // Header Box
+  doc.setFillColor(15, 23, 42); // Dark slate background matching premium aesthetics
+  doc.rect(15, 15, 180, 22, "F");
+  
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(234, 179, 8); // Gold/yellow
+  doc.text("PRESUPUESTO A MEDIDA DE COMPRA FINANCIADA", 20, 23);
+  doc.setFontSize(8.5);
+  doc.setTextColor(156, 163, 175); // Light gray
+  doc.text("CUENTA HOGAR — TU PLAN A TU MEDIDA", 20, 30);
+  
+  // Right side: Doc Number and Date
+  doc.setFontSize(8.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`Presupuesto N°: ${datos.nroPresupuesto}`, 130, 23);
+  doc.text(`Fecha Emisión: ${datos.fecha}`, 130, 30);
+
+  // Customer info section
+  doc.setTextColor(15, 23, 42);
+  doc.setFontSize(9.5);
+  doc.setFont("helvetica", "bold");
+  doc.text("Detalles del Cliente", 15, 45);
+
+  drawFormBox(doc, "Cliente (Nombre y Apellido):", datos.clienteNombre, 15, 49, 110, 11);
+  drawFormBox(doc, "DNI:", datos.clienteDni, 130, 49, 65, 11);
+  
+  drawFormBox(doc, "WhatsApp de Contacto:", datos.clienteWhatsapp, 15, 63, 110, 11);
+  drawFormBox(doc, "Localidad:", datos.clienteLocalidad, 130, 63, 65, 11);
+
+  // Table header
+  let y = 85;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(255, 255, 255);
+  doc.setFillColor(30, 41, 59); // Slate 800
+  doc.rect(15, y, 180, 7, "F");
+  doc.text("Producto / Modelo Propuesto", 18, y + 5);
+  doc.text("Cuotas", 110, y + 5);
+  doc.text("Valor Cuota", 130, y + 5);
+  doc.text("Total Financiado", 160, y + 5);
+
+  y += 7;
+  doc.setTextColor(15, 23, 42);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+
+  let totalCombinedFinanciado = 0;
+  let totalCombinedCuotaMensual = 0;
+
+  datos.items.forEach((item) => {
+    const totalFinanciado = item.cuotas * item.valorCuota;
+    totalCombinedFinanciado += totalFinanciado;
+    totalCombinedCuotaMensual += item.valorCuota;
+
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.2);
+    doc.rect(15, y, 180, 8, "S");
+
+    doc.setFont("helvetica", "bold");
+    doc.text(item.producto, 18, y + 5);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`${item.cuotas} cuotas`, 110, y + 5);
+    doc.text(formatARS(item.valorCuota), 130, y + 5);
+    doc.text(formatARS(totalFinanciado), 160, y + 5);
+
+    y += 8;
+  });
+
+  // Summary Row
+  doc.setFillColor(248, 250, 252);
+  doc.rect(15, y, 180, 8, "F");
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.3);
+  doc.rect(15, y, 180, 8, "S");
+  
+  doc.setFont("helvetica", "bold");
+  doc.text("TOTAL PRESUPUESTO COMBINADO", 18, y + 5);
+  doc.text(formatARS(totalCombinedCuotaMensual) + " / mes", 130, y + 5);
+  doc.text(formatARS(totalCombinedFinanciado), 160, y + 5);
+
+  y += 15;
+
+  // Notes
+  if (datos.notas) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.text("Detalles Adicionales y Notas del Plan:", 15, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    const splitNotas = doc.splitTextToSize(datos.notas, 175);
+    splitNotas.forEach((line: string) => {
+      doc.text(line, 15, y);
+      y += 4.5;
+    });
+    y += 5;
+  }
+
+  // Legal and validation footnotes
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text("Nota: Los precios y cuotas indicadas en este presupuesto están sujetos a la aprobación del legajo de scoring crediticio.", 15, y);
+  y += 4;
+  doc.text("Este presupuesto tiene una validez de 7 días corridos a partir de la fecha de emisión.", 15, y);
+
+  y += 12;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Gracias por elegir a Cuenta Hogar. Si estás de acuerdo con esta propuesta, avisanos para iniciar tu trámite.", 15, y);
+
+  doc.save(`Presupuesto_${datos.nroPresupuesto}_${datos.clienteNombre.replace(/\s/g,"_")}.pdf`);
+};

@@ -3,7 +3,7 @@
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, getDoc, updateDoc, deleteDoc, doc, query, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
-import { generarContratoModelo, generarPagareModelo, generarRemitoModelo } from "@/lib/pdfGenerator";
+import { generarContratoModelo, generarPagareModelo, generarRemitoModelo, generarPdfPresupuesto } from "@/lib/pdfGenerator";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, Search, Filter, AlertCircle, CheckCircle2, Truck, DollarSign, Archive, UserPlus } from "lucide-react";
@@ -63,6 +63,169 @@ export default function AdminValidacionesPage() {
   const [aperturas, setAperturas] = useState<any[]>([]);
   const [contratoAEditar, setContratoAEditar] = useState<any | null>(null);
 
+  // States for custom budget drafting for quick contact special requests
+  const [budgetProd, setBudgetProd] = useState("");
+  const [budgetContado, setBudgetContado] = useState("");
+  const [budgetCuotas, setBudgetCuotas] = useState("12");
+  const [budgetCuotaValor, setBudgetCuotaValor] = useState("");
+  const [budgetTna, setBudgetTna] = useState("60");
+  const [budgetMora, setBudgetMora] = useState("0.5");
+  const [budgetNotas, setBudgetNotas] = useState("");
+  const [budgetProveedor, setBudgetProveedor] = useState("");
+  const [budgetLinkProveedor, setBudgetLinkProveedor] = useState("");
+  const [draftItems, setDraftItems] = useState<any[]>([]);
+
+  const handleAgregarItemAlBorrador = () => {
+    if (!budgetProd.trim()) return alert("Debes ingresar el producto propuesto.");
+    if (!budgetCuotaValor || isNaN(Number(budgetCuotaValor))) return alert("Debes ingresar un valor de cuota válido.");
+
+    const nuevoItem = {
+      id: "item_" + Date.now(),
+      producto: budgetProd.trim(),
+      contado: Number(budgetContado) || 0,
+      cuotas: Number(budgetCuotas) || 12,
+      valorCuota: Number(budgetCuotaValor),
+      proveedor: budgetProveedor.trim() || null,
+      linkProveedor: budgetLinkProveedor.trim() || null
+    };
+
+    setDraftItems([...draftItems, nuevoItem]);
+
+    // Reset product specific fields
+    setBudgetProd("");
+    setBudgetContado("");
+    setBudgetProveedor("");
+    setBudgetLinkProveedor("");
+  };
+
+  const handleQuitarItemDelBorrador = (itemId: string) => {
+    setDraftItems(draftItems.filter(item => item.id !== itemId));
+  };
+
+  const handleEnviarPresupuesto = async (sol: any) => {
+    if (draftItems.length === 0) return alert("Debes agregar al menos un producto al presupuesto.");
+
+    const nuevoPresupuesto = {
+      id: "pres_" + Date.now(),
+      items: draftItems,
+      tna: Number(budgetTna) || 60,
+      mora: Number(budgetMora) || 0.5,
+      notas: budgetNotas.trim(),
+      fecha: new Date().toISOString(),
+      estado: "Enviado"
+    };
+
+    const updatedPresupuestos = [...(sol.presupuestos || []), nuevoPresupuesto];
+    try {
+      await updateDoc(doc(db, "solicitudes_cuenta", sol.id), {
+        presupuestos: updatedPresupuestos
+      });
+      
+      // WhatsApp text generation
+      const tel = sol.whatsapp.replace(/[^0-9]/g, "");
+      let itemsListText = "";
+      draftItems.forEach((item) => {
+        itemsListText += `\n- *${item.producto}*: ${item.cuotas} cuotas de $${item.valorCuota}`;
+      });
+      const msg = `Hola ${sol.nombre || sol.nombreCompleto}, ya armamos tu presupuesto a medida:${itemsListText}\n\nSi estás de acuerdo o querés cambiar algo avisame y lo coordinamos!`;
+      const wame = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
+      window.open(wame, "_blank");
+
+      alert("Presupuesto guardado e invitación de WhatsApp generada.");
+      
+      // Reset form and draft
+      setDraftItems([]);
+      setBudgetProd("");
+      setBudgetContado("");
+      setBudgetCuotas("12");
+      setBudgetCuotaValor("");
+      setBudgetNotas("");
+      setBudgetProveedor("");
+      setBudgetLinkProveedor("");
+      
+      await fetchAperturas();
+    } catch (err) {
+      console.error(err);
+      alert("Error al guardar presupuesto.");
+    }
+  };
+
+  const handleDescargarPdfPresupuestoBorrador = (sol: any) => {
+    if (draftItems.length === 0) return alert("Debes agregar al menos un producto al presupuesto.");
+    const nroPres = sol.id.substring(0, 6).toUpperCase() + "-" + Math.floor(100 + Math.random() * 900);
+    generarPdfPresupuesto({
+      nroPresupuesto: nroPres,
+      fecha: new Date().toLocaleDateString("es-AR"),
+      clienteNombre: sol.nombreCompleto || sol.nombre || "Cliente",
+      clienteDni: sol.numeroDni || sol.dni || "S/D",
+      clienteWhatsapp: sol.whatsapp || "S/D",
+      clienteLocalidad: sol.localidad || "S/D",
+      items: draftItems,
+      notas: budgetNotas.trim() || undefined
+    });
+  };
+
+  const handleDescargarPdfPresupuestoHistorial = (sol: any, pres: any) => {
+    generarPdfPresupuesto({
+      nroPresupuesto: pres.id.replace("pres_", "").substring(0, 8).toUpperCase(),
+      fecha: new Date(pres.fecha).toLocaleDateString("es-AR"),
+      clienteNombre: sol.nombreCompleto || sol.nombre || "Cliente",
+      clienteDni: sol.numeroDni || sol.dni || "S/D",
+      clienteWhatsapp: sol.whatsapp || "S/D",
+      clienteLocalidad: sol.localidad || "S/D",
+      items: pres.items || (pres.producto ? [{
+        producto: pres.producto,
+        contado: pres.contado || 0,
+        cuotas: pres.cuotas || 12,
+        valorCuota: pres.valorCuota
+      }] : []),
+      notas: pres.notas || undefined
+    });
+  };
+
+  const handleAceptarPresupuesto = async (sol: any, presId: string) => {
+    if (!confirm("¿Marcar este presupuesto como aceptado por el cliente?")) return;
+    const updatedPresupuestos = (sol.presupuestos || []).map((p: any) => {
+      if (p.id === presId) {
+        return { ...p, estado: "Aceptado" };
+      }
+      return { ...p, estado: "Rechazado" };
+    });
+
+    try {
+      await updateDoc(doc(db, "solicitudes_cuenta", sol.id), {
+        presupuestos: updatedPresupuestos,
+        estado: "Aprobado_Presupuesto" // Special state to signify it's ready for legal contract
+      });
+      alert("Presupuesto aceptado. Listo para confeccionar contrato.");
+      await fetchAperturas();
+    } catch (err) {
+      console.error(err);
+      alert("Error al actualizar presupuesto.");
+    }
+  };
+
+  const handleRechazarPresupuesto = async (sol: any, presId: string) => {
+    if (!confirm("¿Marcar este presupuesto como rechazado?")) return;
+    const updatedPresupuestos = (sol.presupuestos || []).map((p: any) => {
+      if (p.id === presId) {
+        return { ...p, estado: "Rechazado" };
+      }
+      return p;
+    });
+
+    try {
+      await updateDoc(doc(db, "solicitudes_cuenta", sol.id), {
+        presupuestos: updatedPresupuestos
+      });
+      alert("Presupuesto rechazado.");
+      await fetchAperturas();
+    } catch (err) {
+      console.error(err);
+      alert("Error al actualizar presupuesto.");
+    }
+  };
+
   // Stock states for delivery confirmation
   const [productos, setProductos] = useState<any[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
@@ -114,10 +277,35 @@ export default function AdminValidacionesPage() {
 
   const handleOpenContratoEditor = (sol: any) => {
     let planCuotasList = [];
-    const planElegido = sol.planElegido || "12";
-    const montoCuota = sol.montoCuota || 0;
+    let planElegido = sol.planElegido || "12";
+    let montoCuota = sol.montoCuota || 0;
+    let tna = sol.tasaInteresTna || 60;
+    let mora = sol.tasaMora || 0.5;
+    let prod = sol.productoDeseado || sol.productoNombre || "";
+
+    // If it is a quick contact request, load details from the accepted budget!
+    if (sol.tipo === "contacto_rapido") {
+      const acceptedBudget = (sol.presupuestos || []).find((p: any) => p.estado === "Aceptado");
+      if (acceptedBudget) {
+        const items = acceptedBudget.items || [];
+        if (items.length > 0) {
+          prod = items.map((it: any) => it.producto).join(" + ");
+          planElegido = String(items[0].cuotas);
+          montoCuota = items.reduce((sum: number, it: any) => sum + it.valorCuota, 0);
+          tna = acceptedBudget.tna || 60;
+          mora = acceptedBudget.mora || 0.5;
+        } else if (acceptedBudget.producto) {
+          // Fallback for single item budget
+          planElegido = String(acceptedBudget.cuotas);
+          montoCuota = acceptedBudget.valorCuota;
+          tna = acceptedBudget.tna || 60;
+          mora = acceptedBudget.mora || 0.5;
+          prod = acceptedBudget.producto;
+        }
+      }
+    }
+
     const vc = montoCuota;
-    const tna = sol.tasaInteresTna || 60;
 
     if (sol.planPagos && sol.planPagos.length > 0) {
       planCuotasList = sol.planPagos.filter((c: any) => c.numero > 0).map((c: any) => ({
@@ -141,13 +329,12 @@ export default function AdminValidacionesPage() {
       }
     }
 
-    const nombre = sol.datosPersonales?.nombreCompleto || sol.nombreCompleto || "";
-    const dni = sol.datosPersonales?.numeroDni || sol.numeroDni || "";
+    const nombre = sol.datosPersonales?.nombreCompleto || sol.nombreCompleto || sol.nombre || "";
+    const dni = sol.datosPersonales?.numeroDni || sol.numeroDni || sol.dni || "";
     const dom = sol.datosPersonales?.direccion 
       ? `${sol.datosPersonales.direccion}, ${sol.datosPersonales.localidad || ""}` 
       : (sol.direccion || "");
     const tel = sol.datosPersonales?.telefono || sol.whatsapp || "";
-    const prod = sol.productoDeseado || sol.productoNombre || "";
 
     // Reverse-calculate cash price (precioContado) from TNA, plan duration, and installment amount
     let calculatedContado = 0;
@@ -169,7 +356,7 @@ export default function AdminValidacionesPage() {
 
     setContratoAEditar({
       solId: sol.id,
-      isApertura: !sol.datosPersonales,
+      isApertura: true,
       originalSolicitud: sol,
       nroContrato: sol.id.substring(0, 8).toUpperCase(),
       nombreComprador: nombre,
@@ -496,8 +683,26 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
   const combinedRequests = [
     ...aperturas
-      .filter((ap: any) => ap.estado === "Pendiente")
-      .map((ap: any) => ({ ...ap, isApertura: true, fechaSort: ap.fecha?.seconds ? ap.fecha.seconds * 1000 : 0 })),
+      .filter((ap: any) => ap.estado === "Pendiente" || ap.estado === "Aprobado_Presupuesto")
+      .map((ap: any) => {
+        if (ap.tipo === "contacto_rapido") {
+          return {
+            ...ap,
+            isApertura: true,
+            nombreCompleto: ap.nombre,
+            numeroDni: ap.dni,
+            whatsapp: ap.whatsapp,
+            localidad: ap.localidad,
+            productoNombre: ap.necesidad,
+            fechaSort: ap.fecha?.seconds ? ap.fecha.seconds * 1000 : 0
+          };
+        }
+        return { 
+          ...ap, 
+          isApertura: true, 
+          fechaSort: ap.fecha?.seconds ? ap.fecha.seconds * 1000 : 0 
+        };
+      }),
     ...solicitudes
       .filter((sol: any) => sol.estado === "PENDIENTE" || sol.estado === "REQUIERE_INFO" || sol.estado === "PENDIENTE_FIRMA")
       .map((sol: any) => ({ ...sol, isApertura: false, fechaSort: sol.fechaCreacion?.seconds ? sol.fechaCreacion.seconds * 1000 : 0 }))
@@ -578,14 +783,20 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                     return (
                       <div key={req.id} className={`bg-zinc-950 border ${isExpanded ? 'border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'border-zinc-800 hover:border-amber-500/40'} rounded-xl transition-all overflow-hidden`}>
                         <div 
-                          onClick={() => setExpandedId(isExpanded ? null : req.id)}
+                          onClick={() => { setExpandedId(isExpanded ? null : req.id); setDraftItems([]); }}
                           className="p-4 md:p-6 cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative"
                         >
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-1">
-                              <span className="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded font-black uppercase tracking-wider">
-                                Apertura de Cuenta
-                              </span>
+                              {req.tipo === "contacto_rapido" ? (
+                                <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-black uppercase tracking-wider">
+                                  Producto Especial
+                                </span>
+                              ) : (
+                                <span className="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded font-black uppercase tracking-wider">
+                                  Apertura de Cuenta
+                                </span>
+                              )}
                               <h3 className="font-bold text-white text-lg">{req.nombreCompleto || "Cliente Sin Nombre"}</h3>
                             </div>
                             <p className="text-sm text-zinc-400 mt-1">DNI: {req.numeroDni || "S/D"} | WhatsApp: {req.whatsapp || "S/D"}</p>
@@ -602,65 +813,292 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                         </div>
                         {isExpanded && (
                           <div className="p-6 border-t border-zinc-900 bg-zinc-900/20 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              <div className="space-y-3">
-                                <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Datos Personales</h4>
-                                <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Fecha Nacimiento:</strong> {req.fechaNacimiento || "S/D"}</p>
-                                <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Ocupación:</strong> {req.ocupacion || "S/D"}</p>
-                                <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Dirección y Localidad:</strong> {req.direccion || "S/D"}</p>
-                              </div>
-                              <div className="space-y-3">
-                                <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Detalles de Scoring</h4>
-                                <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Producto Interés:</strong> {req.productoNombre || "S/D"}</p>
-                                <p className="text-sm text-zinc-300"><strong className="text-zinc-500">TNA Asociada:</strong> {req.tasaInteresTna ? `${req.tasaInteresTna}%` : "No especificada"}</p>
-                                <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Mora Asociada:</strong> {req.tasaMora ? `${req.tasaMora}% diaria` : "No especificada"}</p>
-                                <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Asesor/Afiliado:</strong> {req.nombreAfiliado || "S/D"}</p>
-                                <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Referido por:</strong> {req.referidoPor || "S/D"}</p>
-                                <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Email:</strong> {req.email || "S/D"}</p>
-                                <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Antigüedad Laboral:</strong> {req.antiguedadLaboral ? new Date(req.antiguedadLaboral).toLocaleDateString("es-AR") : "S/D"}</p>
-                              </div>
-                            </div>
+                            {req.tipo === "contacto_rapido" ? (
+                              // RENDER SECCIÓN ESPECIAL CONTACTO RÁPIDO / PRESUPUESTOS A MEDIDA
+                              <div className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  <div className="space-y-3 bg-zinc-950 p-4 rounded-xl border border-zinc-900">
+                                    <h4 className="text-sm font-black text-yellow-400 uppercase tracking-wider border-b border-zinc-900 pb-2 mb-2">Producto Solicitado (Especial)</h4>
+                                    <p className="text-sm text-zinc-300 font-bold bg-zinc-900 p-3 rounded-lg border border-zinc-850"><strong className="text-zinc-500 block text-xs uppercase mb-1 font-black">Necesidad del cliente:</strong> {req.necesidad}</p>
+                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Localidad:</strong> {req.localidad}</p>
+                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Referido por:</strong> {req.referente || "Ninguno"}</p>
+                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">WhatsApp:</strong> {req.whatsapp}</p>
+                                  </div>
 
-                            <div className="border-t border-zinc-900 pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                              <div>
-                                {req.comprobanteURL && req.comprobanteURL !== "Pendiente envío WhatsApp" ? (
-                                  <a href={req.comprobanteURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline flex items-center gap-2">
-                                    📄 Ver Comprobante de Ingresos
-                                  </a>
-                                ) : (
-                                  <span className="text-zinc-500 italic">Sin comprobante subido en web (Pendiente de envío por WhatsApp)</span>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-3">
-                                <a href={`https://wa.me/${(req.whatsapp || "").replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition-colors">
-                                  💬 Hablar por WhatsApp
-                                </a>
-                                <select 
-                                  value={req.estado || "Pendiente"} 
-                                  onChange={(e) => handleActualizarEstadoApertura(req.id, e.target.value)}
-                                  className="bg-zinc-800 text-white border border-zinc-700 px-3 py-1.5 rounded-lg text-xs font-bold outline-none focus:border-yellow-500"
-                                >
-                                  <option value="Pendiente">Pendiente</option>
-                                  <option value="Aprobado">Aprobado</option>
-                                  <option value="Rechazado">Rechazado</option>
-                                </select>
-                                <button onClick={() => handleEliminarApertura(req.id)} className="bg-red-950/40 text-red-400 border border-red-900/50 hover:bg-red-900 hover:text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors">
-                                  🗑️ Eliminar
-                                </button>
-                              </div>
-                            </div>
+                                  {/* Formulario para cargar nuevo presupuesto */}
+                                  <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-900 space-y-3">
+                                    <h4 className="text-sm font-black text-yellow-400 uppercase tracking-wider border-b border-zinc-900 pb-2">Armar Presupuesto Combinado</h4>
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div className="col-span-2">
+                                        <label className="block text-[10px] text-zinc-500 font-bold mb-1">Producto Propuesto</label>
+                                        <input type="text" value={budgetProd} onChange={e=>setBudgetProd(e.target.value)} placeholder="Ej: Samsung S24 Ultra - 256GB" className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500" />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[10px] text-zinc-500 font-bold mb-1">Monto Referencia Contado ($)</label>
+                                        <input type="number" value={budgetContado} onChange={e=>setBudgetContado(e.target.value)} placeholder="Opcional" className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-mono" />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[10px] text-zinc-500 font-bold mb-1">Valor de la Cuota ($)</label>
+                                        <input type="number" value={budgetCuotaValor} onChange={e=>setBudgetCuotaValor(e.target.value)} placeholder="Ej: 18000" className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-bold font-mono" />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[10px] text-zinc-500 font-bold mb-1">Cantidad de Cuotas</label>
+                                        <select value={budgetCuotas} onChange={e=>setBudgetCuotas(e.target.value)} className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500">
+                                          <option value="12">12 Cuotas</option>
+                                          <option value="8">8 Cuotas</option>
+                                          <option value="6">6 Cuotas</option>
+                                          <option value="18">18 Cuotas</option>
+                                        </select>
+                                      </div>
+                                      <div>
+                                        <label className="block text-[10px] text-zinc-500 font-bold mb-1">TNA Interés (%)</label>
+                                        <input type="number" value={budgetTna} onChange={e=>setBudgetTna(e.target.value)} className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-zinc-400 w-full outline-none focus:border-yellow-500 font-mono" />
+                                      </div>
+                                      
+                                      {/* NUEVOS CAMPOS EXCLUSIVOS USO INTERNO */}
+                                      <div>
+                                        <label className="block text-[10px] text-amber-500 font-bold mb-1">🔒 Proveedor (Uso Interno)</label>
+                                        <input type="text" value={budgetProveedor} onChange={e=>setBudgetProveedor(e.target.value)} placeholder="Ej: Distribuidora BA" className="bg-zinc-900 border border-amber-950/40 p-2 rounded text-xs text-white w-full outline-none focus:border-amber-500" />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[10px] text-amber-500 font-bold mb-1">🔒 Link Proveedor (Uso Interno)</label>
+                                        <input type="text" value={budgetLinkProveedor} onChange={e=>setBudgetLinkProveedor(e.target.value)} placeholder="Ej: mercadolibre.com.ar/..." className="bg-zinc-900 border border-amber-950/40 p-2 rounded text-xs text-white w-full outline-none focus:border-amber-500" />
+                                      </div>
+                                    </div>
+                                    <button 
+                                      type="button" 
+                                      onClick={handleAgregarItemAlBorrador}
+                                      className="w-full bg-zinc-800 hover:bg-zinc-700 text-yellow-400 py-2.5 rounded font-bold text-xs uppercase tracking-wider transition-colors mt-2 border border-zinc-700"
+                                    >
+                                      ＋ Agregar Producto al Presupuesto
+                                    </button>
 
-                            <div className="border-t border-zinc-900 pt-4">
-                              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">Generación Legal</h4>
-                              <div className="grid grid-cols-2 gap-3">
-                                <button onClick={() => handleOpenContratoEditor(req)} className="bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-zinc-400 hover:text-yellow-400 py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">
-                                  📄 Editar Contrato
-                                </button>
-                                <button onClick={() => handleOpenContratoEditor(req)} className="bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-zinc-400 hover:text-yellow-400 py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">
-                                  📄 Editar Pagaré
-                                </button>
+                                    {/* LISTADO DE ITEMS AGREGADOS (BORRADOR) */}
+                                    <div className="mt-4 border-t border-zinc-900 pt-3 space-y-2">
+                                      <h5 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Borrador del Presupuesto ({draftItems.length})</h5>
+                                      {draftItems.length === 0 ? (
+                                        <p className="text-[11px] text-zinc-600 italic">No hay productos en el borrador.</p>
+                                      ) : (
+                                        <div className="space-y-2">
+                                          {draftItems.map((item) => (
+                                            <div key={item.id} className="flex justify-between items-center bg-zinc-900/60 p-2.5 rounded-lg border border-zinc-850">
+                                              <div className="flex-1">
+                                                <p className="text-xs text-white font-bold">{item.producto}</p>
+                                                <p className="text-[10px] text-zinc-400">{item.cuotas} cuotas de ${item.valorCuota}</p>
+                                                {(item.proveedor || item.linkProveedor) && (
+                                                  <p className="text-[9px] text-amber-500 italic mt-0.5">🔒 Prov: {item.proveedor || "S/D"}</p>
+                                                )}
+                                              </div>
+                                              <button type="button" onClick={() => handleQuitarItemDelBorrador(item.id)} className="text-red-500 hover:text-red-400 p-1">
+                                                ✕
+                                              </button>
+                                            </div>
+                                          ))}
+
+                                          <div className="pt-2">
+                                            <label className="block text-[10px] text-zinc-500 font-bold mb-1">Notas / Detalles Adicionales</label>
+                                            <input type="text" value={budgetNotas} onChange={e=>setBudgetNotas(e.target.value)} placeholder="Ej: Vidrio templado y funda de regalo." className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500" />
+                                          </div>
+
+                                          <div className="grid grid-cols-2 gap-2 pt-2">
+                                            <button 
+                                              type="button" 
+                                              onClick={() => handleEnviarPresupuesto(req)}
+                                              className="bg-yellow-500 hover:bg-yellow-400 text-black py-2 rounded font-black text-[10px] uppercase tracking-wider transition-colors"
+                                            >
+                                              💾 Guardar y Enviar
+                                            </button>
+                                            <button 
+                                              type="button" 
+                                              onClick={() => handleDescargarPdfPresupuestoBorrador(req)}
+                                              className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2 rounded font-black text-[10px] uppercase tracking-wider transition-colors border border-zinc-700"
+                                            >
+                                              📄 Descargar PDF
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Historial de presupuestos enviados */}
+                                <div className="space-y-3">
+                                  <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest border-b border-zinc-800 pb-2">Historial de Presupuestos Enviados</h4>
+                                  <div className="space-y-2">
+                                    {(!req.presupuestos || req.presupuestos.length === 0) ? (
+                                      <p className="text-xs text-zinc-500 italic text-center py-4">No se han enviado presupuestos todavía para esta solicitud especial.</p>
+                                    ) : (
+                                      req.presupuestos.map((p: any) => (
+                                        <div key={p.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-zinc-950 p-4 rounded-xl border border-zinc-850 gap-4">
+                                          <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                              <span className="font-bold text-sm text-white">Presupuesto {p.id.replace("pres_", "").substring(0, 8).toUpperCase()}</span>
+                                              <span className={`text-[9px] px-2 py-0.5 rounded font-black uppercase ${
+                                                p.estado === "Aceptado" ? "bg-green-500/10 text-green-400 border border-green-500/20" :
+                                                p.estado === "Rechazado" ? "bg-red-500/10 text-red-400 border border-red-500/20" :
+                                                "bg-zinc-850 text-zinc-400 border border-zinc-800"
+                                              }`}>
+                                                {p.estado}
+                                              </span>
+                                            </div>
+
+                                            {p.items && p.items.length > 0 ? (
+                                              <div className="space-y-1.5 mt-1 border-l-2 border-yellow-500/30 pl-3">
+                                                {p.items.map((item: any, idx: number) => (
+                                                  <div key={idx} className="text-xs text-zinc-300">
+                                                    <span className="font-bold text-white">{item.producto}</span>: {item.cuotas} cuotas de <span className="text-yellow-400 font-mono font-bold">${item.valorCuota}</span>
+                                                    {item.contado > 0 && ` (Ref. Contado: $${item.contado})`}
+                                                    
+                                                    {/* INTERNAL USE FIELDS */}
+                                                    {(item.proveedor || item.linkProveedor) && (
+                                                      <div className="text-[10px] text-amber-400/80 mt-0.5 bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10 inline-block block">
+                                                        🔒 Uso Interno: {item.proveedor ? `Prov: ${item.proveedor}` : "Prov: S/D"}
+                                                        {item.linkProveedor && (
+                                                          <>
+                                                            {" | "}
+                                                            <a href={item.linkProveedor.startsWith("http") ? item.linkProveedor : `https://${item.linkProveedor}`} target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-300">
+                                                              Ver Link del Proveedor ↗
+                                                            </a>
+                                                          </>
+                                                        )}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            ) : (
+                                              // Fallback for old single budgets
+                                              <div>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                  <span className="font-bold text-sm text-white">{p.producto}</span>
+                                                </div>
+                                                <p className="text-xs text-zinc-400">
+                                                  Plan: <span className="font-black text-yellow-400 font-mono">{p.cuotas} cuotas de ${p.valorCuota}</span>
+                                                  {p.contado > 0 && ` | Ref. Contado: $${p.contado}`}
+                                                </p>
+                                              </div>
+                                            )}
+
+                                            <p className="text-xs text-zinc-400 mt-2 font-bold">
+                                              TNA: {p.tna}% | Mora: {p.mora || 0.5}% diaria
+                                            </p>
+                                            {p.notas && <p className="text-[11px] text-zinc-500 italic mt-1">Notas: {p.notas}</p>}
+                                            <p className="text-[9px] text-zinc-600 mt-1">Enviado: {new Date(p.fecha).toLocaleString("es-AR")}</p>
+                                          </div>
+                                          
+                                          <div className="flex items-center gap-2">
+                                            <button 
+                                              onClick={() => handleDescargarPdfPresupuestoHistorial(req, p)}
+                                              className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold px-3 py-1.5 rounded text-xs transition-colors flex items-center gap-1"
+                                            >
+                                              📄 PDF
+                                            </button>
+                                            {p.estado === "Enviado" && (
+                                              <>
+                                                <button 
+                                                  onClick={() => handleAceptarPresupuesto(req, p.id)} 
+                                                  className="bg-green-600 hover:bg-green-500 text-white font-bold px-3 py-1.5 rounded text-xs transition-colors"
+                                                >
+                                                  ✓ Aceptar
+                                                </button>
+                                                <button 
+                                                  onClick={() => handleRechazarPresupuesto(req, p.id)} 
+                                                  className="bg-transparent hover:bg-red-950/20 text-red-500 hover:text-red-400 font-bold px-3 py-1.5 rounded text-xs transition-colors border border-transparent hover:border-red-900/30"
+                                                >
+                                                  ✕ Rechazar
+                                                </button>
+                                              </>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Acciones de cierre del asesoramiento */}
+                                <div className="border-t border-zinc-900 pt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                  <div>
+                                    <a href={`https://wa.me/${req.whatsapp.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2.5 rounded-lg text-xs transition-colors inline-flex items-center gap-2">
+                                      💬 Continuar Asesoramiento WhatsApp
+                                    </a>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    {(req.presupuestos || []).some((p: any) => p.estado === "Aceptado") ? (
+                                      <button 
+                                        onClick={() => handleOpenContratoEditor(req)} 
+                                        className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-lg"
+                                      >
+                                        ✍️ Confeccionar Contrato y Pagaré
+                                      </button>
+                                    ) : (
+                                      <span className="text-zinc-500 italic text-xs">Espera a que el cliente acepte un presupuesto para confeccionar formularios.</span>
+                                    )}
+                                    <button 
+                                      onClick={() => handleEliminarApertura(req.id)}
+                                      className="text-red-500 hover:text-red-400 text-xs font-bold px-3 py-2 rounded hover:bg-red-950/20 transition-all"
+                                    >
+                                      🗑️ Rechazar y Archivar
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
+                            ) : (
+                              // RENDER SECCIÓN ESTÁNDAR DE APERTURA DE CUENTA
+                              <>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  <div className="space-y-3">
+                                    <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Datos Personales</h4>
+                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Fecha Nacimiento:</strong> {req.fechaNacimiento || "S/D"}</p>
+                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Ocupación:</strong> {req.ocupacion || "S/D"}</p>
+                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Dirección y Localidad:</strong> {req.direccion || "S/D"}</p>
+                                  </div>
+                                  <div className="space-y-3">
+                                    <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Detalles de Scoring</h4>
+                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Producto Interés:</strong> {req.productoNombre || "S/D"}</p>
+                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">TNA Asociada:</strong> {req.tasaInteresTna ? `${req.tasaInteresTna}%` : "No especificada"}</p>
+                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Mora Asociada:</strong> {req.tasaMora ? `${req.tasaMora}% diaria` : "No especificada"}</p>
+                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Asesor/Afiliado:</strong> {req.nombreAfiliado || "S/D"}</p>
+                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Referido por:</strong> {req.referidoPor || "S/D"}</p>
+                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Email:</strong> {req.email || "S/D"}</p>
+                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Antigüedad Laboral:</strong> {req.antiguedadLaboral ? new Date(req.antiguedadLaboral).toLocaleDateString("es-AR") : "S/D"}</p>
+                                  </div>
+                                </div>
+
+                                <div className="border-t border-zinc-900 pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                  <div>
+                                    {req.comprobanteURL && req.comprobanteURL !== "Pendiente envío WhatsApp" ? (
+                                      <a href={req.comprobanteURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline flex items-center gap-2">
+                                        📄 Ver Comprobante de Ingresos
+                                      </a>
+                                    ) : (
+                                      <span className="text-zinc-500 italic">Sin comprobante subido en web (Pendiente de envío por WhatsApp)</span>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-3">
+                                    <a href={`https://wa.me/${(req.whatsapp || "").replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition-colors">
+                                      💬 Hablar por WhatsApp
+                                    </a>
+                                    <select 
+                                      value={req.estado || "Pendiente"} 
+                                      onChange={(e) => handleActualizarEstadoApertura(req.id, e.target.value)}
+                                      className="bg-zinc-800 text-white border border-zinc-700 px-3 py-1.5 rounded-lg text-xs font-bold outline-none focus:border-yellow-500"
+                                    >
+                                      <option value="Pendiente">Pendiente</option>
+                                      <option value="Aprobado">Aprobado</option>
+                                      <option value="Rechazado">Rechazado</option>
+                                    </select>
+                                    <button onClick={() => handleOpenContratoEditor(req)} className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-lg">
+                                      ✍️ Confeccionar Contrato
+                                    </button>
+                                    <button onClick={() => handleEliminarApertura(req.id)} className="text-red-500 hover:text-red-400 text-xs font-bold px-3 py-2 rounded hover:bg-red-950/20 transition-all">
+                                      Borrar
+                                    </button>
+                                  </div>
+                                </div>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
