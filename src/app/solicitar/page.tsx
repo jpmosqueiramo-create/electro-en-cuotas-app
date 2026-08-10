@@ -88,12 +88,12 @@ function SolicitarForm() {
       
       if (user && dniFrente && dniDorso) {
         btn.innerText = "Subiendo DNI Frente...";
-        const frenteRef = ref(storage, `documentos/dni_frente/${Date.now()}_frente_${dniFrente.name}`);
+        const frenteRef = ref(storage, `comprobantes/cuenta_solicitudes/${Date.now()}_frente_${dniFrente.name}`);
         await uploadBytes(frenteRef, dniFrente);
         dniFrenteUrlReal = await getDownloadURL(frenteRef);
 
         btn.innerText = "Subiendo DNI Dorso...";
-        const dorsoRef = ref(storage, `documentos/dni_dorso/${Date.now()}_dorso_${dniDorso.name}`);
+        const dorsoRef = ref(storage, `comprobantes/cuenta_solicitudes/${Date.now()}_dorso_${dniDorso.name}`);
         await uploadBytes(dorsoRef, dniDorso);
         dniDorsoUrlReal = await getDownloadURL(dorsoRef);
       }
@@ -144,7 +144,7 @@ function SolicitarForm() {
       window.location.href = `https://wa.me/5491125659686?text=${encodeURIComponent(textMsg)}`;
     } catch (err: any) {
       console.error("Error al procesar solicitud:", err);
-      alert("Error de conexión al procesar la solicitud. Chequea tu internet e intenta nuevamente.");
+      alert("Error al procesar la solicitud: " + (err.message || err.toString()) + ". Por favor, chequea tu internet o reporta el error.");
       btn.innerText = oldText;
       btn.disabled = false;
     }
