@@ -1272,6 +1272,21 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                            <span>🏦 Central de Deudores BCRA</span>
                                            <span className="text-[9px] text-zinc-500 font-mono">Pegar (Ctrl+V)</span>
                                          </button>
+                                         <button
+                                            onClick={() => {
+                                              const dniToCopy = (req.numeroDni || req.dni || req.cuil || "").replace(/\D/g, "");
+                                              const cleanDni = dniToCopy.length > 8 ? dniToCopy.substring(2, 10) : dniToCopy;
+                                              if (cleanDni) {
+                                                navigator.clipboard.writeText(cleanDni);
+                                                alert(`DNI ${cleanDni} copiado al portapapeles.`);
+                                              }
+                                              window.open("https://www.padron.gob.ar/", "_blank");
+                                            }}
+                                            className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-800 transition-all flex items-center justify-between"
+                                          >
+                                            <span>🗳️ Padrón Electoral CNE</span>
+                                            <span className="text-[9px] text-zinc-500 font-mono">Pegar (Ctrl+V)</span>
+                                          </button>
                                          {(req.cuil || "").replace(/\D/g, "") && (
                                            <a
                                              href={`https://www.cuitonline.com/detalle/${(req.cuil || "").replace(/\D/g, "")}/cuit-online.html`}
@@ -1445,6 +1460,21 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                        className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-850 transition-all flex items-center justify-between"
                                      >
                                        <span>🏦 Central BCRA</span>
+                                       <span className="text-[9px] text-zinc-500 font-mono">Pegar (Ctrl+V)</span>
+                                     </button>
+                                     <button
+                                       onClick={() => {
+                                         const dniToCopy = (req.datosPersonales?.numeroDni || req.datosPersonales?.cuil || "").replace(/\D/g, "");
+                                         const cleanDni = dniToCopy.length > 8 ? dniToCopy.substring(2, 10) : dniToCopy;
+                                         if (cleanDni) {
+                                           navigator.clipboard.writeText(cleanDni);
+                                           alert(`DNI ${cleanDni} copiado al portapapeles.`);
+                                         }
+                                         window.open("https://www.padron.gob.ar/", "_blank");
+                                       }}
+                                       className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-850 transition-all flex items-center justify-between"
+                                     >
+                                       <span>🗳️ Padrón Electoral CNE</span>
                                        <span className="text-[9px] text-zinc-500 font-mono">Pegar (Ctrl+V)</span>
                                      </button>
                                      {(req.datosPersonales?.cuil || "").replace(/\D/g, "") && (
