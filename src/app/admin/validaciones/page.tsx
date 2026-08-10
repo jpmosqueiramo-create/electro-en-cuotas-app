@@ -1,8 +1,9 @@
 "use client";
 
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import { collection, getDocs, getDoc, updateDoc, deleteDoc, doc, query, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { generarContratoModelo, generarPagareModelo, generarRemitoModelo, generarPdfPresupuesto } from "@/lib/pdfGenerator";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -227,6 +228,42 @@ export default function AdminValidacionesPage() {
     } catch (err: any) {
       console.error("Error al guardar cambios de edición:", err);
       alert("Error al guardar cambios: " + err.message);
+    }
+  };
+
+  const handleSubirDocumentoManual = async (req: any, file: File, tipoDoc: "domicilio" | "ingresos") => {
+    const confirm = window.confirm(`¿Estás seguro de subir y adjuntar este archivo como comprobante de ${tipoDoc === "domicilio" ? "domicilio" : "ingresos"}?`);
+    if (!confirm) return;
+
+    try {
+      // 1. Upload to Storage in the authorized 'comprobantes' bucket folder
+      const storageRef = ref(storage, `comprobantes/cuenta_solicitudes/${Date.now()}_manual_${tipoDoc}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(storageRef);
+
+      // 2. Update Firestore
+      if (req.isApertura) {
+        const docRef = doc(db, "solicitudes_cuenta", req.id);
+        if (tipoDoc === "domicilio") {
+          await updateDoc(docRef, { comprobanteDomicilioURL: downloadUrl });
+        } else {
+          await updateDoc(docRef, { comprobanteURL: downloadUrl });
+        }
+      } else {
+        const docRef = doc(db, "solicitudes", req.id);
+        if (tipoDoc === "domicilio") {
+          await updateDoc(docRef, { "documentos.servicio": downloadUrl });
+        } else {
+          await updateDoc(docRef, { "documentos.reciboSueldo": downloadUrl });
+        }
+      }
+
+      alert("¡Comprobante subido y guardado exitosamente en el legajo!");
+      await fetchSolicitudes();
+      await fetchAperturas();
+    } catch (err: any) {
+      console.error("Error al subir archivo manual:", err);
+      alert("Error al subir archivo: " + (err.message || err.toString()));
     }
   };
 
@@ -1471,26 +1508,64 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                  </div>
 
                                 <div className="border-t border-zinc-900 pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                  <div className="flex flex-col gap-2">
+                                  <div className="flex flex-col gap-2 bg-zinc-900 border border-zinc-850 p-4 rounded-xl shadow-inner mt-4 w-full md:w-auto min-w-[280px]">
+                                    <span className="text-[10px] text-zinc-500 font-bold uppercase border-b border-zinc-800 pb-1 mb-1">Legajo de Documentos</span>
                                     {req.dniFrenteURL && req.dniFrenteURL !== "Pendiente envío WhatsApp" ? (
-                                      <a href={req.dniFrenteURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline flex items-center gap-2">
-                                        📷 Ver DNI Frente
+                                      <a href={req.dniFrenteURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
+                                        📷 DNI Frente
                                       </a>
                                     ) : null}
                                     {req.dniDorsoURL && req.dniDorsoURL !== "Pendiente envío WhatsApp" ? (
-                                      <a href={req.dniDorsoURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline flex items-center gap-2">
-                                        📷 Ver DNI Dorso
+                                      <a href={req.dniDorsoURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
+                                        📷 DNI Dorso
                                       </a>
                                     ) : null}
                                     {req.comprobanteURL && req.comprobanteURL !== "Pendiente envío WhatsApp" && (
-                                      <a href={req.comprobanteURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline flex items-center gap-2">
-                                        📄 Ver Comprobante de Ingresos (Anterior)
+                                      <a href={req.comprobanteURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
+                                        📄 Comprobante de Ingresos
                                       </a>
                                     )}
-                                    {(!req.dniFrenteURL && !req.dniDorsoURL && !req.comprobanteURL) || 
-                                     (req.dniFrenteURL === "Pendiente envío WhatsApp" || req.dniDorsoURL === "Pendiente envío WhatsApp" || req.comprobanteURL === "Pendiente envío WhatsApp") ? (
-                                      <span className="text-zinc-500 italic text-xs">Sin documentación subida en web (Pendiente de envío por WhatsApp)</span>
+                                    {req.comprobanteDomicilioURL && req.comprobanteDomicilioURL !== "Pendiente envío WhatsApp" && (
+                                      <a href={req.comprobanteDomicilioURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
+                                        📄 Comprobante de Domicilio
+                                      </a>
+                                    )}
+                                    {(!req.dniFrenteURL && !req.dniDorsoURL && !req.comprobanteURL && !req.comprobanteDomicilioURL) || 
+                                     (req.dniFrenteURL === "Pendiente envío WhatsApp" && req.dniDorsoURL === "Pendiente envío WhatsApp" && req.comprobanteURL === "Pendiente envío WhatsApp") ? (
+                                      <span className="text-zinc-650 italic text-[10px]">Sin archivos (Pendiente WhatsApp)</span>
                                     ) : null}
+
+                                    <div className="border-t border-zinc-800 pt-2.5 mt-1 space-y-1.5">
+                                      <span className="text-[9px] text-zinc-500 font-black uppercase">Cargar Manualmente</span>
+                                      <div className="flex flex-col gap-1.5">
+                                        <label className="flex items-center justify-between bg-zinc-950 border border-zinc-800 hover:border-yellow-500/50 p-1.5 rounded text-[9px] font-bold text-zinc-400 cursor-pointer transition-colors">
+                                          <span>🏠 Domicilio (Servicio)</span>
+                                          <input 
+                                            type="file" 
+                                            accept="image/*,application/pdf" 
+                                            onChange={async (e) => {
+                                              if (e.target.files && e.target.files[0]) {
+                                                await handleSubirDocumentoManual(req, e.target.files[0], "domicilio");
+                                              }
+                                            }} 
+                                            className="hidden" 
+                                          />
+                                        </label>
+                                        <label className="flex items-center justify-between bg-zinc-950 border border-zinc-800 hover:border-yellow-500/50 p-1.5 rounded text-[9px] font-bold text-zinc-400 cursor-pointer transition-colors">
+                                          <span>💵 Ingresos (Recibo)</span>
+                                          <input 
+                                            type="file" 
+                                            accept="image/*,application/pdf" 
+                                            onChange={async (e) => {
+                                              if (e.target.files && e.target.files[0]) {
+                                                await handleSubirDocumentoManual(req, e.target.files[0], "ingresos");
+                                              }
+                                            }} 
+                                            className="hidden" 
+                                          />
+                                        </label>
+                                      </div>
+                                    </div>
                                   </div>
                                   <div className="flex flex-wrap items-center gap-3">
                                     <a href={`https://wa.me/${(req.whatsapp || "").replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition-colors">
@@ -1722,13 +1797,53 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                    </div>
                                  </div>
 
-                                 <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-inner">
+                                 <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-inner space-y-4">
                                    <h3 className="text-sm font-black text-yellow-400 mb-3 uppercase tracking-widest border-b border-zinc-800 pb-2">Documentos Adjuntos</h3>
                                    <div className="grid grid-cols-2 gap-3">
-                                     <a href={req.documentos?.dniFrente} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-yellow-400 p-2 rounded-lg text-xs font-bold transition-colors">📷 DNI Frente</a>
-                                     <a href={req.documentos?.dniDorso} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-yellow-400 p-2 rounded-lg text-xs font-bold transition-colors">📷 DNI Dorso</a>
-                                     <a href={req.documentos?.reciboSueldo} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-yellow-400 p-2 rounded-lg text-xs font-bold transition-colors">📄 Recibo Sueldo</a>
-                                     <a href={req.documentos?.servicio} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-yellow-400 p-2 rounded-lg text-xs font-bold transition-colors">📄 Impuesto/Serv.</a>
+                                     {req.documentos?.dniFrente ? (
+                                       <a href={req.documentos.dniFrente} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-yellow-400 p-2 rounded-lg text-xs font-bold transition-colors">📷 DNI Frente</a>
+                                     ) : <span className="text-[10px] text-zinc-600 italic text-center p-2 border border-zinc-850 rounded">Sin DNI Frente</span>}
+                                     {req.documentos?.dniDorso ? (
+                                       <a href={req.documentos.dniDorso} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-yellow-400 p-2 rounded-lg text-xs font-bold transition-colors">📷 DNI Dorso</a>
+                                     ) : <span className="text-[10px] text-zinc-600 italic text-center p-2 border border-zinc-850 rounded">Sin DNI Dorso</span>}
+                                     {req.documentos?.reciboSueldo ? (
+                                       <a href={req.documentos.reciboSueldo} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-yellow-400 p-2 rounded-lg text-xs font-bold transition-colors">📄 Recibo Sueldo</a>
+                                     ) : <span className="text-[10px] text-zinc-600 italic text-center p-2 border border-zinc-850 rounded">Sin Recibo</span>}
+                                     {req.documentos?.servicio ? (
+                                       <a href={req.documentos.servicio} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-yellow-400 p-2 rounded-lg text-xs font-bold transition-colors">📄 Impuesto/Serv.</a>
+                                     ) : <span className="text-[10px] text-zinc-600 italic text-center p-2 border border-zinc-850 rounded">Sin Impuesto</span>}
+                                   </div>
+                                   
+                                   <div className="border-t border-zinc-800 pt-3 space-y-3">
+                                     <p className="text-[10px] text-zinc-500 font-bold uppercase">Subir Documentación (Manual)</p>
+                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                       <label className="flex items-center justify-between bg-zinc-950 border border-zinc-800 hover:border-yellow-500/50 p-2 rounded-lg text-[10px] font-bold text-zinc-400 cursor-pointer transition-colors">
+                                         <span>🏠 Cargar Domicilio (Servicio)</span>
+                                         <input 
+                                           type="file" 
+                                           accept="image/*,application/pdf" 
+                                           onChange={async (e) => {
+                                             if (e.target.files && e.target.files[0]) {
+                                               await handleSubirDocumentoManual(req, e.target.files[0], "domicilio");
+                                             }
+                                           }} 
+                                           className="hidden" 
+                                         />
+                                       </label>
+                                       <label className="flex items-center justify-between bg-zinc-950 border border-zinc-800 hover:border-yellow-500/50 p-2 rounded-lg text-[10px] font-bold text-zinc-400 cursor-pointer transition-colors">
+                                         <span>💵 Cargar Ingresos (Recibo)</span>
+                                         <input 
+                                           type="file" 
+                                           accept="image/*,application/pdf" 
+                                           onChange={async (e) => {
+                                             if (e.target.files && e.target.files[0]) {
+                                               await handleSubirDocumentoManual(req, e.target.files[0], "ingresos");
+                                             }
+                                           }} 
+                                           className="hidden" 
+                                         />
+                                       </label>
+                                     </div>
                                    </div>
                                  </div>
 
