@@ -130,6 +130,7 @@ function SolicitarForm() {
         tasaMora: productoData?.tasaMora || 0,
         fecha: serverTimestamp(),
         estado: "Pendiente",
+        comprobanteURL: dniFrenteUrlReal,
         dniFrenteURL: dniFrenteUrlReal,
         dniDorsoURL: dniDorsoUrlReal
       });
