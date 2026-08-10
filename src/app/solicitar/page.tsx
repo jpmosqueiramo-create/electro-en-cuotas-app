@@ -30,7 +30,8 @@ function SolicitarForm() {
   const [nombreAfiliado, setNombreAfiliado] = useState("");
   const [referidoPor, setReferidoPor] = useState("");
 
-  const [comprobante, setComprobante] = useState<File | null>(null);
+  const [dniFrente, setDniFrente] = useState<File | null>(null);
+  const [dniDorso, setDniDorso] = useState<File | null>(null);
   const [planElegido, setPlanElegido] = useState("12");
 
   const handleCuilChange = (val: string) => {
@@ -65,8 +66,8 @@ function SolicitarForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (user && !comprobante) {
-      alert("Por favor adjunta una foto de tu comprobante de ingresos.");
+    if (user && (!dniFrente || !dniDorso)) {
+      alert("Por favor adjunta la foto de tu DNI frente y dorso.");
       return;
     }
 
@@ -82,14 +83,19 @@ function SolicitarForm() {
     btn.disabled = true;
 
     try {
-      let comprobanteUrlReal = "Pendiente envío WhatsApp";
+      let dniFrenteUrlReal = "Pendiente envío WhatsApp";
+      let dniDorsoUrlReal = "Pendiente envío WhatsApp";
       
-      if (user && comprobante) {
-        btn.innerText = "Subiendo comprobante...";
-        // Subir el archivo de ingresos a Firebase Storage
-        const storageRef = ref(storage, `comprobantes/cuenta_solicitudes/${Date.now()}_${comprobante.name}`);
-        await uploadBytes(storageRef, comprobante);
-        comprobanteUrlReal = await getDownloadURL(storageRef);
+      if (user && dniFrente && dniDorso) {
+        btn.innerText = "Subiendo DNI Frente...";
+        const frenteRef = ref(storage, `documentos/dni_frente/${Date.now()}_frente_${dniFrente.name}`);
+        await uploadBytes(frenteRef, dniFrente);
+        dniFrenteUrlReal = await getDownloadURL(frenteRef);
+
+        btn.innerText = "Subiendo DNI Dorso...";
+        const dorsoRef = ref(storage, `documentos/dni_dorso/${Date.now()}_dorso_${dniDorso.name}`);
+        await uploadBytes(dorsoRef, dniDorso);
+        dniDorsoUrlReal = await getDownloadURL(dorsoRef);
       }
 
       const planCuotas = planElegido === "8" ? (productoData?.cuota8 || 0) : (productoData?.cuota12 || 0);
@@ -124,11 +130,12 @@ function SolicitarForm() {
         tasaMora: productoData?.tasaMora || 0,
         fecha: serverTimestamp(),
         estado: "Pendiente",
-        comprobanteURL: comprobanteUrlReal 
+        dniFrenteURL: dniFrenteUrlReal,
+        dniDorsoURL: dniDorsoUrlReal
       });
 
       if (!user) {
-        alert("¡Solicitud registrada con éxito! Nos pondremos en contacto para pedirte información adicional o documentación respaldatoria. Te derivaremos a WhatsApp para continuar el contacto.");
+        alert("¡Solicitud registrada con éxito! Nos pondremos en contacto para pedirte tu DNI Frente y Dorso. Te derivaremos a WhatsApp para continuar el contacto.");
       } else {
         alert("¡Solicitud registrada con éxito! Te derivaremos a WhatsApp para continuar el contacto.");
       }
@@ -288,18 +295,28 @@ function SolicitarForm() {
 
               {/* ARCHIVO (Solo si está logueado) */}
               {user ? (
-                <div className="md:col-span-2 border border-dashed border-zinc-800 p-6 rounded-2xl bg-zinc-800/40 text-center hover:bg-zinc-900 transition-colors">
-                  <Upload className="w-8 h-8 text-yellow-400 mx-auto mb-3" />
-                  <label className="block text-sm text-white mb-2 font-bold cursor-pointer">
-                    Subí una foto de tu comprobante de ingresos (Recibo de sueldo, Monotributo, etc.)
-                    <input type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setComprobante(e.target.files[0])}} className="hidden" />
-                  </label>
-                  <span className="text-xs text-zinc-400">{comprobante ? comprobante.name : "Ningún archivo seleccionado"}</span>
+                <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="border border-dashed border-zinc-800 p-6 rounded-2xl bg-zinc-800/40 text-center hover:bg-zinc-900 transition-colors flex flex-col items-center justify-center">
+                    <Upload className="w-8 h-8 text-yellow-400 mb-2" />
+                    <label className="block text-xs font-bold text-white mb-1 cursor-pointer">
+                      Subir DNI Frente
+                      <input type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setDniFrente(e.target.files[0])}} className="hidden" />
+                    </label>
+                    <span className="text-[10px] text-zinc-400 truncate max-w-full">{dniFrente ? dniFrente.name : "Sin archivo"}</span>
+                  </div>
+                  <div className="border border-dashed border-zinc-800 p-6 rounded-2xl bg-zinc-800/40 text-center hover:bg-zinc-900 transition-colors flex flex-col items-center justify-center">
+                    <Upload className="w-8 h-8 text-yellow-400 mb-2" />
+                    <label className="block text-xs font-bold text-white mb-1 cursor-pointer">
+                      Subir DNI Dorso
+                      <input type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setDniDorso(e.target.files[0])}} className="hidden" />
+                    </label>
+                    <span className="text-[10px] text-zinc-400 truncate max-w-full">{dniDorso ? dniDorso.name : "Sin archivo"}</span>
+                  </div>
                 </div>
               ) : (
                 <div className="md:col-span-2 bg-yellow-500/5 border border-yellow-500/20 p-4 rounded-xl text-yellow-400 text-xs flex flex-col gap-1">
                   <span className="font-bold">💡 Documentación pendiente:</span>
-                  <p className="text-zinc-400">Como no iniciaste sesión, no es necesario subir comprobantes ahora. Te los pediremos más adelante para validar tu identidad y scoring.</p>
+                  <p className="text-zinc-400">Como no iniciaste sesión, no es necesario subir tu DNI ahora. Te lo pediremos más adelante para validar tu identidad.</p>
                 </div>
               )}
 

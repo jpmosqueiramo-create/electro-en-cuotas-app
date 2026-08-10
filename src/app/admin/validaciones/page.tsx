@@ -524,9 +524,9 @@ export default function AdminValidacionesPage() {
             localidad: ""
           },
           documentos: {
-            dniFrente: "",
-            dniDorso: "",
-            reciboSueldo: c.originalSolicitud.comprobanteURL || "",
+            dniFrente: c.originalSolicitud.dniFrenteURL || "",
+            dniDorso: c.originalSolicitud.dniDorsoURL || "",
+            reciboSueldo: "",
             servicio: ""
           },
           productoDeseado: c.producto,
@@ -1324,14 +1324,26 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                  </div>
 
                                 <div className="border-t border-zinc-900 pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                  <div>
-                                    {req.comprobanteURL && req.comprobanteURL !== "Pendiente envío WhatsApp" ? (
-                                      <a href={req.comprobanteURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline flex items-center gap-2">
-                                        📄 Ver Comprobante de Ingresos
+                                  <div className="flex flex-col gap-2">
+                                    {req.dniFrenteURL && req.dniFrenteURL !== "Pendiente envío WhatsApp" ? (
+                                      <a href={req.dniFrenteURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline flex items-center gap-2">
+                                        📷 Ver DNI Frente
                                       </a>
-                                    ) : (
-                                      <span className="text-zinc-500 italic">Sin comprobante subido en web (Pendiente de envío por WhatsApp)</span>
+                                    ) : null}
+                                    {req.dniDorsoURL && req.dniDorsoURL !== "Pendiente envío WhatsApp" ? (
+                                      <a href={req.dniDorsoURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline flex items-center gap-2">
+                                        📷 Ver DNI Dorso
+                                      </a>
+                                    ) : null}
+                                    {req.comprobanteURL && req.comprobanteURL !== "Pendiente envío WhatsApp" && (
+                                      <a href={req.comprobanteURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline flex items-center gap-2">
+                                        📄 Ver Comprobante de Ingresos (Anterior)
+                                      </a>
                                     )}
+                                    {(!req.dniFrenteURL && !req.dniDorsoURL && !req.comprobanteURL) || 
+                                     (req.dniFrenteURL === "Pendiente envío WhatsApp" || req.dniDorsoURL === "Pendiente envío WhatsApp" || req.comprobanteURL === "Pendiente envío WhatsApp") ? (
+                                      <span className="text-zinc-500 italic text-xs">Sin documentación subida en web (Pendiente de envío por WhatsApp)</span>
+                                    ) : null}
                                   </div>
                                   <div className="flex flex-wrap items-center gap-3">
                                     <a href={`https://wa.me/${(req.whatsapp || "").replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition-colors">
