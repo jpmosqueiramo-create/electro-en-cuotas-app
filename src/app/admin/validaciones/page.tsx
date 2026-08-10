@@ -760,6 +760,64 @@ export default function AdminValidacionesPage() {
         updateData.motivoRechazo = motivoRechazo;
       }
       await updateDoc(doc(db, "solicitudes_cuenta", id), updateData);
+
+      // Auto-create in solicitudes collection if approved so it immediately enters Logística
+      if (nuevoEstado === "Aprobado") {
+        const reqObj = aperturas.find((ap: any) => ap.id === id);
+        if (reqObj) {
+          const exists = solicitudes.some((s: any) => s.clienteId === "aperturado_" + id);
+          if (!exists) {
+            const planCuotasList = [];
+            const planElegidoVal = reqObj.planElegido || "12";
+            const montoCuotaVal = reqObj.montoCuota || 0;
+            const cant = parseInt(planElegidoVal) || 12;
+            const bDate = new Date();
+            for(let i = 1; i <= cant; i++) {
+              const nd = new Date(bDate);
+              nd.setMonth(nd.getMonth() + i);
+              planCuotasList.push({
+                numero: i,
+                vencimiento: nd.toISOString().split('T')[0],
+                montoOriginal: montoCuotaVal,
+                observacion: "Cuota mensual ordinaria",
+                estado: "PENDIENTE"
+              });
+            }
+
+            await addDoc(collection(db, "solicitudes"), {
+              clienteId: "aperturado_" + id,
+              clienteEmail: reqObj.email || "no-email@cuenta-hogar.com",
+              datosPersonales: {
+                nombreCompleto: reqObj.nombreCompleto || reqObj.nombre || "",
+                numeroDni: reqObj.numeroDni || reqObj.dni || "",
+                telefono: reqObj.whatsapp || "",
+                direccion: reqObj.direccion || "",
+                localidad: reqObj.localidad || "",
+                cuil: reqObj.cuil || ""
+              },
+              documentos: {
+                dniFrente: reqObj.dniFrenteURL || "",
+                dniDorso: reqObj.dniDorsoURL || "",
+                reciboSueldo: reqObj.comprobanteURL || "",
+                servicio: reqObj.comprobanteDomicilioURL || ""
+              },
+              productoDeseado: reqObj.productoNombre || reqObj.necesidad || "A definir",
+              montoCuota: montoCuotaVal,
+              planElegido: planElegidoVal,
+              tasaInteresTna: reqObj.tasaInteresTna || 60,
+              tasaMora: reqObj.tasaMora || 0.5,
+              estado: "APROBADO",
+              estadoEntrega: "PENDIENTE_ENTREGA",
+              fechaCreacion: serverTimestamp(),
+              cargadoPorAfiliado: false,
+              afiliadoEmail: reqObj.referidoPor || reqObj.afiliadoEmail || null,
+              planPagos: planCuotasList
+            });
+            await fetchSolicitudes();
+          }
+        }
+      }
+
       alert("Estado de la solicitud de apertura actualizado.");
       await fetchAperturas();
     } catch (e) {
