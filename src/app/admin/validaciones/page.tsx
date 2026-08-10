@@ -1253,6 +1253,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                      <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Antigüedad Laboral:</strong> {req.antiguedadLaboral ? new Date(req.antiguedadLaboral).toLocaleDateString("es-AR") : "S/D"}</p>
                                    </div>
                                    <div className="space-y-3">
+                                     <BcraScoringPanel cuit={req.cuil || req.numeroDni || req.dni || ""} />
                                      <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Consultas Scoring Crediticio</h4>
                                      <div className="bg-zinc-900 border border-zinc-850 p-4 rounded-xl space-y-3 shadow-inner">
                                        <p className="text-[11px] text-zinc-400">Acciones rápidas para investigar comportamiento financiero:</p>
@@ -1426,6 +1427,8 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                      <p><strong className="text-white">Mora Pactada:</strong> {req.tasaMora ? `${req.tasaMora}% diaria` : "No especificada"}</p>
                                    </div>
                                  </div>
+
+                                 <BcraScoringPanel cuit={req.datosPersonales?.cuil || req.datosPersonales?.numeroDni || ""} />
 
                                  <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-inner space-y-3">
                                    <h3 className="text-xs font-black text-yellow-500 uppercase tracking-widest border-b border-zinc-800 pb-2">Consultas Crediticias</h3>
@@ -2278,5 +2281,116 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
         </div>
       </div>
     </AdminProtectedRoute>
+  );
+}
+
+interface BcraScoringPanelProps {
+  cuit: string;
+}
+
+function BcraScoringPanel({ cuit }: BcraScoringPanelProps) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const cleanCuit = (cuit || "").replace(/\D/g, "");
+
+  const handleFetch = async () => {
+    if (!cleanCuit || cleanCuit.length !== 11) {
+      setError("CUIL/CUIT inválido o incompleto.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    setData(null);
+    try {
+      const res = await fetch(`https://api.bcra.gob.ar/centraldedeudores/v1.0/Deudas/${cleanCuit}`);
+      if (!res.ok) {
+        if (res.status === 503) {
+          throw new Error("El servicio oficial del BCRA se encuentra en mantenimiento (Error 503).");
+        }
+        throw new Error(`Error de conexión con BCRA (Código ${res.status}).`);
+      }
+      const json = await res.json();
+      if (json.status === 200 && json.results) {
+        setData(json.results);
+      } else {
+        throw new Error(json.errorMessages ? json.errorMessages.join(", ") : "Respuesta de API no exitosa.");
+      }
+    } catch (err: any) {
+      console.error("BCRA API Fetch error:", err);
+      if (err.message.includes("Failed to fetch") || err.name === "TypeError") {
+        setError("Error de CORS / Red: La API del BCRA bloqueó la consulta directa por navegador. Utilizá el botón manual de abajo.");
+      } else {
+        setError(err.message || "Error al consultar la API del BCRA.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-inner space-y-3">
+      <h4 className="text-xs font-black text-yellow-400 uppercase tracking-widest flex items-center gap-1.5 justify-between">
+        <span>📊 Scoring BCRA (En App)</span>
+        {cleanCuit && cleanCuit.length === 11 && !data && !loading && (
+          <button
+            onClick={handleFetch}
+            className="text-[10px] bg-yellow-500 hover:bg-yellow-400 text-black px-2.5 py-1 rounded font-black transition-all"
+          >
+            ⚡ Consultar
+          </button>
+        )}
+      </h4>
+
+      {loading && (
+        <div className="flex items-center gap-2 text-xs text-zinc-400 font-mono py-1">
+          <span className="animate-spin text-yellow-500">⏳</span> Consultando base del BCRA...
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 p-2.5 rounded text-[10px] text-red-400 space-y-1">
+          <p className="font-bold">⚠️ Falló la consulta automática:</p>
+          <p className="font-mono">{error}</p>
+        </div>
+      )}
+
+      {data && (
+        <div className="space-y-3 text-xs bg-zinc-950 p-3 rounded-lg border border-zinc-850">
+          <div>
+            <span className="text-[10px] text-zinc-500 font-black block uppercase">Denominación Oficial</span>
+            <span className="font-bold text-white uppercase">{data.denominacion || "Sin nombre registrado"}</span>
+          </div>
+
+          {data.periodos && data.periodos.length > 0 ? (
+            <div className="space-y-2">
+              <span className="text-[10px] text-zinc-500 font-black block uppercase">Deudas Consolidadas (Período: {data.periodos[0].periodo})</span>
+              <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
+                {data.periodos[0].entidades.map((ent: any, idx: number) => {
+                  const sit = Number(ent.situacion);
+                  let badgeColor = "bg-green-500/20 text-green-400 border-green-500/30";
+                  if (sit === 2) badgeColor = "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+                  if (sit >= 3) badgeColor = "bg-red-500/20 text-red-400 border-red-500/30";
+                  return (
+                    <div key={idx} className="bg-zinc-900/60 p-2 rounded border border-zinc-850 flex justify-between items-center text-[10px] gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-zinc-300 truncate" title={ent.entidad}>{ent.entidad}</p>
+                        <p className="text-zinc-500 text-[9px]">Monto: ${ent.monto ? ent.monto * 1000 : 0} ARS</p>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded border text-[9px] font-black ${badgeColor}`}>
+                        Sit. {sit}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <p className="text-[10px] text-green-400 font-bold">✓ Sin deudas registradas en el sistema financiero.</p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
