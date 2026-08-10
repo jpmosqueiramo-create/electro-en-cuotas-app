@@ -192,7 +192,7 @@ export default function PublicCatalog() {
           </h1>
           
           <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-3xl font-light leading-relaxed">
-            En Cuenta Hogar gestionamos la compra de tu tecnología, te la acercamos a la puerta de tu casa y te armamos un plan de pagos a tu medida. A sola firma and con la confianza de siempre.
+            En Cuenta Hogar gestionamos la compra de tu tecnología, te la acercamos a la puerta de tu casa y te armamos un plan de pagos a tu medida. A sola firma y con la confianza de siempre.
           </p>
           
           <a href="#contacto" className="group flex items-center justify-center gap-2 bg-yellow-textured text-black text-lg font-bold px-8 py-4 rounded-full hover:-translate-y-1 active:scale-95 transition-all duration-300 shadow-md hover:scale-105 shadow-[0_0_30px_rgba(234,179,8,0.3)]">
