@@ -21,6 +21,7 @@ type Solicitud = {
   datosPersonales?: {
     nombreCompleto: string;
     numeroDni: string;
+    cuil?: string;
     telefono: string;
     direccion: string;
     localidad: string;
@@ -1232,24 +1233,79 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                             ) : (
                               // RENDER SECCIÓN ESTÁNDAR DE APERTURA DE CUENTA
                               <>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                  <div className="space-y-3">
-                                    <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Datos Personales</h4>
-                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Fecha Nacimiento:</strong> {req.fechaNacimiento || "S/D"}</p>
-                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Ocupación:</strong> {req.ocupacion || "S/D"}</p>
-                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Dirección y Localidad:</strong> {req.direccion || "S/D"}</p>
-                                  </div>
-                                  <div className="space-y-3">
-                                    <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Detalles de Scoring</h4>
-                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Producto Interés:</strong> {req.productoNombre || "S/D"}</p>
-                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">TNA Asociada:</strong> {req.tasaInteresTna ? `${req.tasaInteresTna}%` : "No especificada"}</p>
-                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Mora Asociada:</strong> {req.tasaMora ? `${req.tasaMora}% diaria` : "No especificada"}</p>
-                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Asesor/Afiliado:</strong> {req.nombreAfiliado || "S/D"}</p>
-                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Referido por:</strong> {req.referidoPor || "S/D"}</p>
-                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Email:</strong> {req.email || "S/D"}</p>
-                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Antigüedad Laboral:</strong> {req.antiguedadLaboral ? new Date(req.antiguedadLaboral).toLocaleDateString("es-AR") : "S/D"}</p>
-                                  </div>
-                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                   <div className="space-y-3">
+                                     <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Datos Personales</h4>
+                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">DNI:</strong> {req.numeroDni || req.dni || "S/D"}</p>
+                                     {req.cuil && <p className="text-sm text-zinc-300"><strong className="text-zinc-500">CUIL:</strong> {req.cuil}</p>}
+                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Fecha Nacimiento:</strong> {req.fechaNacimiento || "S/D"}</p>
+                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Ocupación:</strong> {req.ocupacion || "S/D"}</p>
+                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Dirección y Localidad:</strong> {req.direccion || "S/D"}</p>
+                                   </div>
+                                   <div className="space-y-3">
+                                     <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Detalles de Scoring</h4>
+                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Producto Interés:</strong> {req.productoNombre || "S/D"}</p>
+                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">TNA Asociada:</strong> {req.tasaInteresTna ? `${req.tasaInteresTna}%` : "No especificada"}</p>
+                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Mora Asociada:</strong> {req.tasaMora ? `${req.tasaMora}% diaria` : "No especificada"}</p>
+                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Asesor/Afiliado:</strong> {req.nombreAfiliado || "S/D"}</p>
+                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Referido por:</strong> {req.referidoPor || "S/D"}</p>
+                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Email:</strong> {req.email || "S/D"}</p>
+                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Antigüedad Laboral:</strong> {req.antiguedadLaboral ? new Date(req.antiguedadLaboral).toLocaleDateString("es-AR") : "S/D"}</p>
+                                   </div>
+                                   <div className="space-y-3">
+                                     <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Consultas Scoring Crediticio</h4>
+                                     <div className="bg-zinc-900 border border-zinc-850 p-4 rounded-xl space-y-3 shadow-inner">
+                                       <p className="text-[11px] text-zinc-400">Acciones rápidas para investigar comportamiento financiero:</p>
+                                       <div className="grid grid-cols-1 gap-2">
+                                         <button
+                                           onClick={() => {
+                                             const valToCopy = (req.cuil || req.numeroDni || req.dni || "").replace(/\D/g, "");
+                                             if (valToCopy) {
+                                               navigator.clipboard.writeText(valToCopy);
+                                               alert(`CUIL/DNI ${valToCopy} copiado al portapapeles.`);
+                                             }
+                                             window.open("https://www.bcra.gob.ar/BCRAyVos/Situacion_Crediticia.asp", "_blank");
+                                          }}
+                                           className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-800 transition-all flex items-center justify-between"
+                                         >
+                                           <span>🏦 Central de Deudores BCRA</span>
+                                           <span className="text-[9px] text-zinc-500 font-mono">Pegar (Ctrl+V)</span>
+                                         </button>
+                                         {(req.cuil || "").replace(/\D/g, "") && (
+                                           <a
+                                             href={`https://www.cuitonline.com/detalle/${(req.cuil || "").replace(/\D/g, "")}/cuit-online.html`}
+                                             target="_blank"
+                                             rel="noopener noreferrer"
+                                             className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-800 transition-all flex items-center justify-between"
+                                           >
+                                             <span>📄 CUIT Online</span>
+                                             <span className="text-[10px] text-yellow-500 font-black">→</span>
+                                           </a>
+                                         )}
+                                         <a
+                                           href={`https://www.google.com/search?q=${(req.cuil || req.numeroDni || req.dni || "").replace(/\D/g, "")}`}
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-800 transition-all flex items-center justify-between"
+                                         >
+                                           <span>🌐 Buscar en Google</span>
+                                           <span className="text-[10px] text-zinc-500">→</span>
+                                         </a>
+                                         {(req.cuil || "").replace(/\D/g, "") && (
+                                           <a
+                                             href={`https://www.dateas.com/es/consulta_cuit_cuil?cuit=${(req.cuil || "").replace(/\D/g, "")}`}
+                                             target="_blank"
+                                             rel="noopener noreferrer"
+                                             className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-800 transition-all flex items-center justify-between"
+                                           >
+                                             <span>📊 Consultar Dateas</span>
+                                             <span className="text-[10px] text-zinc-500">→</span>
+                                           </a>
+                                         )}
+                                       </div>
+                                     </div>
+                                   </div>
+                                 </div>
 
                                 <div className="border-t border-zinc-900 pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                   <div>
@@ -1361,11 +1417,64 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                  <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-inner">
                                    <h3 className="text-sm font-black text-yellow-400 mb-3 uppercase tracking-widest border-b border-zinc-800 pb-2">Perfil Crediticio</h3>
                                    <div className="space-y-2 text-sm text-zinc-400">
+                                     <p><strong className="text-white">DNI:</strong> {req.datosPersonales?.numeroDni || "S/D"}</p>
+                                     {req.datosPersonales?.cuil && <p><strong className="text-white">CUIL:</strong> {req.datosPersonales.cuil}</p>}
                                      <p><strong className="text-white">Email:</strong> {req.clienteEmail}</p>
                                      <p><strong className="text-white">Teléfono:</strong> {req.datosPersonales?.telefono}</p>
                                      <p><strong className="text-white">Domicilio:</strong> {req.datosPersonales?.direccion}, {req.datosPersonales?.localidad}</p>
                                      <p><strong className="text-white">TNA Pactada:</strong> {req.tasaInteresTna ? `${req.tasaInteresTna}%` : "No especificada"}</p>
                                      <p><strong className="text-white">Mora Pactada:</strong> {req.tasaMora ? `${req.tasaMora}% diaria` : "No especificada"}</p>
+                                   </div>
+                                 </div>
+
+                                 <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-inner space-y-3">
+                                   <h3 className="text-xs font-black text-yellow-500 uppercase tracking-widest border-b border-zinc-800 pb-2">Consultas Crediticias</h3>
+                                   <div className="grid grid-cols-1 gap-2">
+                                     <button
+                                       onClick={() => {
+                                         const valToCopy = (req.datosPersonales?.cuil || req.datosPersonales?.numeroDni || "").replace(/\D/g, "");
+                                         if (valToCopy) {
+                                           navigator.clipboard.writeText(valToCopy);
+                                           alert(`CUIL/DNI ${valToCopy} copiado al portapapeles.`);
+                                         }
+                                         window.open("https://www.bcra.gob.ar/BCRAyVos/Situacion_Crediticia.asp", "_blank");
+                                       }}
+                                       className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-850 transition-all flex items-center justify-between"
+                                     >
+                                       <span>🏦 Central BCRA</span>
+                                       <span className="text-[9px] text-zinc-500 font-mono">Pegar (Ctrl+V)</span>
+                                     </button>
+                                     {(req.datosPersonales?.cuil || "").replace(/\D/g, "") && (
+                                       <a
+                                         href={`https://www.cuitonline.com/detalle/${(req.datosPersonales?.cuil || "").replace(/\D/g, "")}/cuit-online.html`}
+                                         target="_blank"
+                                         rel="noopener noreferrer"
+                                         className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-850 transition-all flex items-center justify-between"
+                                       >
+                                         <span>📄 CUIT Online</span>
+                                         <span className="text-[10px] text-yellow-500">→</span>
+                                       </a>
+                                     )}
+                                     <a
+                                       href={`https://www.google.com/search?q=${(req.datosPersonales?.cuil || req.datosPersonales?.numeroDni || "").replace(/\D/g, "")}`}
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-850 transition-all flex items-center justify-between"
+                                     >
+                                       <span>🌐 Buscar Google</span>
+                                       <span className="text-[10px] text-zinc-500">→</span>
+                                     </a>
+                                     {(req.datosPersonales?.cuil || "").replace(/\D/g, "") && (
+                                       <a
+                                         href={`https://www.dateas.com/es/consulta_cuit_cuil?cuit=${(req.datosPersonales?.cuil || "").replace(/\D/g, "")}`}
+                                         target="_blank"
+                                         rel="noopener noreferrer"
+                                         className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-850 transition-all flex items-center justify-between"
+                                       >
+                                         <span>📊 Consultar Dateas</span>
+                                         <span className="text-[10px] text-zinc-500">→</span>
+                                       </a>
+                                     )}
                                    </div>
                                  </div>
 

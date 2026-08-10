@@ -20,6 +20,7 @@ function SolicitarForm() {
   // Nombres de los campos requeridos
   const [nombreCompleto, setNombreCompleto] = useState("");
   const [numeroDni, setNumeroDni] = useState("");
+  const [cuil, setCuil] = useState("");
   const [fechaNacimiento, setFechaNacimiento] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [direccion, setDireccion] = useState("");
@@ -31,6 +32,18 @@ function SolicitarForm() {
 
   const [comprobante, setComprobante] = useState<File | null>(null);
   const [planElegido, setPlanElegido] = useState("12");
+
+  const handleCuilChange = (val: string) => {
+    const clean = val.replace(/\D/g, "").slice(0, 11);
+    let formatted = clean;
+    if (clean.length > 2) {
+      formatted = `${clean.slice(0, 2)}-${clean.slice(2)}`;
+    }
+    if (clean.length > 10) {
+      formatted = `${clean.slice(0, 2)}-${clean.slice(2, 10)}-${clean.slice(10)}`;
+    }
+    setCuil(formatted);
+  };
 
   useEffect(() => {
     if (productoId) {
@@ -54,6 +67,12 @@ function SolicitarForm() {
     e.preventDefault();
     if (user && !comprobante) {
       alert("Por favor adjunta una foto de tu comprobante de ingresos.");
+      return;
+    }
+
+    const cuilRegex = /^\d{2}-\d{8}-\d{1}$/;
+    if (!cuilRegex.test(cuil)) {
+      alert("Por favor ingresa un CUIL válido en formato XX-XXXXXXXX-X (con guiones).");
       return;
     }
 
@@ -82,6 +101,7 @@ function SolicitarForm() {
         montoCuota: planCuotas,
         nombreCompleto, 
         numeroDni, 
+        cuil,
         fechaNacimiento,
         whatsapp, 
         direccion, 
@@ -213,6 +233,11 @@ function SolicitarForm() {
               <div>
                 <label className="block text-sm text-zinc-400 mb-2 font-bold">DNI</label>
                 <input required value={numeroDni} onChange={e=>setNumeroDni(e.target.value)} type="number" placeholder="Ej: 30123456" className="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-yellow-500 transition-colors" />
+              </div>
+
+              <div>
+                <label className="block text-sm text-zinc-400 mb-2 font-bold">CUIL (formato con guiones)</label>
+                <input required value={cuil} onChange={e=>handleCuilChange(e.target.value)} type="text" placeholder="Ej: 20-30123456-7" className="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-yellow-500 transition-colors font-mono" />
               </div>
 
               <div>
