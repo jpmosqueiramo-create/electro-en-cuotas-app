@@ -46,6 +46,9 @@ type Solicitud = {
   comentarioEntrega?: string;
   fechaEntrega?: string;
   planPagos?: any[];
+  comisionistaNombre?: string;
+  comisionistaCosto?: number;
+  comisionistaFechaEnvio?: string;
 };
 
 export default function AdminValidacionesPage() {
@@ -78,6 +81,10 @@ export default function AdminValidacionesPage() {
   const [budgetCostoProveedor, setBudgetCostoProveedor] = useState("");
   const [draftItems, setDraftItems] = useState<any[]>([]);
   const [editandoPresupuestoId, setEditandoPresupuestoId] = useState<string | null>(null);
+  const [comisionistaEditId, setComisionistaEditId] = useState<string | null>(null);
+  const [comisionistaNombre, setComisionistaNombre] = useState("");
+  const [comisionistaCosto, setComisionistaCosto] = useState("");
+  const [comisionistaFechaEnvio, setComisionistaFechaEnvio] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editFields, setEditFields] = useState<any>({
     nombreCompleto: "",
@@ -264,6 +271,23 @@ export default function AdminValidacionesPage() {
     } catch (err: any) {
       console.error("Error al subir archivo manual:", err);
       alert("Error al subir archivo: " + (err.message || err.toString()));
+    }
+  };
+
+  const handleGuardarComisionista = async (solId: string) => {
+    try {
+      const docRef = doc(db, "solicitudes", solId);
+      await updateDoc(docRef, {
+        comisionistaNombre: comisionistaNombre,
+        comisionistaCosto: Number(comisionistaCosto) || 0,
+        comisionistaFechaEnvio: comisionistaFechaEnvio
+      });
+      alert("Datos de comisionista y envío actualizados exitosamente.");
+      setComisionistaEditId(null);
+      await fetchSolicitudes();
+    } catch (err: any) {
+      console.error("Error al guardar comisionista:", err);
+      alert("Error al guardar comisionista: " + err.message);
     }
   };
 
@@ -2206,15 +2230,117 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                         className="bg-zinc-900 text-sm p-3 rounded-lg text-white font-medium outline-none border border-blue-900 focus:border-blue-500 w-full"
                                       >
                                          <option value="En depósito (Central)">🏢 En depósito (Central)</option>
-                                         <option value="En stock (Afiliado)">👤 En manos del Afiliado</option>
-                                         <option value="En viaje">🚚 En viaje al Cliente</option>
-                                         <option value="Encargado a proveedor">📦 Encargado a proveedor</option>
+                                         <option value="En stock (Afiliado)">👤 En manos del Afiliado (Sucursal)</option>
+                                         <option value="Encargado a proveedor">📦 Encargado a proveedor (Pendiente)</option>
+                                         <option value="Traslado entre Puntos de Venta">🔄 Traslado de Stock en tránsito</option>
+                                         <option value="En viaje al Cliente (Comisionista)">🚚 En viaje al Cliente (Despachado)</option>
                                       </select>
                                       {sol.historialRecepcion && (
                                         <p className="text-[10px] text-green-400 mt-2 bg-green-900/20 px-2 py-1.5 rounded-md border border-green-500/10 flex items-center gap-1">
                                           <CheckCircle2 className="w-3 h-3"/> {sol.historialRecepcion}
                                         </p>
                                       )}
+                                   </div>
+
+                                   {/* REGISTRO DE COMISIONISTA / ENVÍO */}
+                                   <div className="pt-4 border-t border-zinc-800 space-y-3 relative z-10">
+                                     <h4 className="text-xs font-black text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                                       🚚 Envío por Comisionista
+                                     </h4>
+                                     
+                                     {sol.comisionistaNombre || sol.comisionistaCosto || sol.comisionistaFechaEnvio ? (
+                                       <div className="bg-zinc-900 border border-blue-900/30 p-3 rounded-lg text-xs space-y-1.5">
+                                         {sol.comisionistaNombre && (
+                                           <p className="text-zinc-300">
+                                             <strong className="text-zinc-500 font-bold">Transporte/Comisionista:</strong> {sol.comisionistaNombre}
+                                           </p>
+                                         )}
+                                         {sol.comisionistaCosto !== undefined && (
+                                           <p className="text-zinc-300">
+                                             <strong className="text-zinc-500 font-bold">Costo de Envío:</strong> <span className="text-green-400 font-bold">${sol.comisionistaCosto}</span>
+                                           </p>
+                                         )}
+                                         {sol.comisionistaFechaEnvio && (
+                                           <p className="text-zinc-300">
+                                             <strong className="text-zinc-500 font-bold">Fecha Estimada de Envío:</strong> {new Date(sol.comisionistaFechaEnvio).toLocaleDateString("es-AR")}
+                                           </p>
+                                         )}
+                                         <button 
+                                           onClick={() => {
+                                             setComisionistaNombre(sol.comisionistaNombre || "");
+                                             setComisionistaCosto(sol.comisionistaCosto ? String(sol.comisionistaCosto) : "");
+                                             setComisionistaFechaEnvio(sol.comisionistaFechaEnvio || "");
+                                             setComisionistaEditId(sol.id);
+                                           }}
+                                           className="text-[10px] text-yellow-500 hover:text-yellow-400 font-bold underline block mt-2 text-left"
+                                         >
+                                           ✏️ Editar datos de envío
+                                         </button>
+                                       </div>
+                                     ) : (
+                                       <p className="text-[10px] text-zinc-500 italic">No se ha registrado comisionista ni costo de envío.</p>
+                                     )}
+
+                                     {(comisionistaEditId === sol.id || (!sol.comisionistaNombre && !sol.comisionistaCosto && !sol.comisionistaFechaEnvio)) && (
+                                       <div className="bg-zinc-950 p-3 border border-zinc-850 rounded-xl space-y-3 mt-2">
+                                         <div>
+                                           <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Nombre Comisionista / Empresa</label>
+                                           <input 
+                                             type="text" 
+                                             value={comisionistaEditId === sol.id ? comisionistaNombre : ""} 
+                                             onChange={(e) => {
+                                               setComisionistaEditId(sol.id);
+                                               setComisionistaNombre(e.target.value);
+                                             }} 
+                                             placeholder="Ej: Comisionista Chivilcoy / Andreani" 
+                                             className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-blue-500" 
+                                           />
+                                         </div>
+                                         <div className="grid grid-cols-2 gap-2">
+                                           <div>
+                                             <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Costo Envío ($)</label>
+                                             <input 
+                                               type="number" 
+                                               value={comisionistaEditId === sol.id ? comisionistaCosto : ""} 
+                                               onChange={(e) => {
+                                                 setComisionistaEditId(sol.id);
+                                                 setComisionistaCosto(e.target.value);
+                                               }} 
+                                               placeholder="Costo" 
+                                               className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-blue-500" 
+                                             />
+                                           </div>
+                                           <div>
+                                             <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Fecha Envío</label>
+                                             <input 
+                                               type="date" 
+                                               value={comisionistaEditId === sol.id ? comisionistaFechaEnvio : ""} 
+                                               onChange={(e) => {
+                                                 setComisionistaEditId(sol.id);
+                                                 setComisionistaFechaEnvio(e.target.value);
+                                               }} 
+                                               className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-blue-500" 
+                                             />
+                                           </div>
+                                         </div>
+                                         <div className="flex gap-2 pt-1">
+                                           <button 
+                                             onClick={() => handleGuardarComisionista(sol.id)} 
+                                             className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-1.5 rounded text-[10px] transition-all uppercase tracking-wider"
+                                           >
+                                             💾 Guardar Envío
+                                           </button>
+                                           {comisionistaEditId === sol.id && (
+                                             <button 
+                                               onClick={() => setComisionistaEditId(null)} 
+                                               className="bg-transparent border border-zinc-700 hover:text-white text-zinc-400 font-bold py-1.5 px-3 rounded text-[10px] transition-all"
+                                             >
+                                               ✕
+                                             </button>
+                                           )}
+                                         </div>
+                                       </div>
+                                     )}
                                    </div>
 
                                    <div className="pt-2 border-t border-blue-900/50">
