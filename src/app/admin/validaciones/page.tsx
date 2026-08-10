@@ -77,6 +77,16 @@ export default function AdminValidacionesPage() {
   const [budgetCostoProveedor, setBudgetCostoProveedor] = useState("");
   const [draftItems, setDraftItems] = useState<any[]>([]);
   const [editandoPresupuestoId, setEditandoPresupuestoId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editFields, setEditFields] = useState<any>({
+    nombreCompleto: "",
+    numeroDni: "",
+    cuil: "",
+    email: "",
+    telefono: "",
+    direccion: "",
+    localidad: ""
+  });
 
   const calcularTnaDesdeCuota = (contado: number, cuota: number, n: number): number => {
     if (contado <= 0 || cuota <= 0 || n <= 0) return 0;
@@ -129,6 +139,95 @@ export default function AdminValidacionesPage() {
     }
     const calculatedTna = calcularTnaDesdeCuota(contado, cuota, cuotas);
     setBudgetTna(calculatedTna > 0 ? String(calculatedTna) : "0");
+  };
+
+  const startEditing = (req: any) => {
+    setEditingId(req.id);
+    if (req.isApertura) {
+      setEditFields({
+        nombreCompleto: req.nombreCompleto || req.nombre || "",
+        numeroDni: req.numeroDni || req.dni || "",
+        cuil: req.cuil || "",
+        email: req.email || "",
+        telefono: req.whatsapp || "",
+        direccion: req.direccion || "",
+        localidad: req.localidad || ""
+      });
+    } else {
+      setEditFields({
+        nombreCompleto: req.datosPersonales?.nombreCompleto || "",
+        numeroDni: req.datosPersonales?.numeroDni || "",
+        cuil: req.datosPersonales?.cuil || "",
+        email: req.clienteEmail || "",
+        telefono: req.datosPersonales?.telefono || "",
+        direccion: req.datosPersonales?.direccion || "",
+        localidad: req.datosPersonales?.localidad || ""
+      });
+    }
+  };
+
+  const handleEditCuilChange = (val: string) => {
+    const clean = val.replace(/\D/g, "").slice(0, 11);
+    let formatted = clean;
+    if (clean.length > 2) {
+      formatted = `${clean.slice(0, 2)}-${clean.slice(2)}`;
+    }
+    if (clean.length > 10) {
+      formatted = `${clean.slice(0, 2)}-${clean.slice(2, 10)}-${clean.slice(10)}`;
+    }
+    setEditFields((prev: any) => ({ ...prev, cuil: formatted }));
+  };
+
+  const handleGuardarDatosEditados = async (req: any) => {
+    if (!editFields.nombreCompleto.trim() || !editFields.numeroDni.trim()) {
+      alert("Nombre y DNI son campos obligatorios.");
+      return;
+    }
+    const cuilRegex = /^\d{2}-\d{8}-\d{1}$/;
+    if (editFields.cuil && !cuilRegex.test(editFields.cuil)) {
+      alert("El CUIL debe tener el formato válido: XX-XXXXXXXX-X");
+      return;
+    }
+
+    try {
+      if (req.isApertura) {
+        const docRef = doc(db, "solicitudes_cuenta", req.id);
+        const updates: any = {
+          nombreCompleto: editFields.nombreCompleto,
+          numeroDni: editFields.numeroDni,
+          cuil: editFields.cuil,
+          email: editFields.email,
+          whatsapp: editFields.telefono,
+          direccion: editFields.direccion,
+          localidad: editFields.localidad
+        };
+        if (req.tipo === "contacto_rapido") {
+          updates.nombre = editFields.nombreCompleto;
+          updates.dni = editFields.numeroDni;
+          updates.whatsapp = editFields.telefono;
+          updates.localidad = editFields.localidad;
+        }
+        await updateDoc(docRef, updates);
+      } else {
+        const docRef = doc(db, "solicitudes", req.id);
+        await updateDoc(docRef, {
+          clienteEmail: editFields.email,
+          "datosPersonales.nombreCompleto": editFields.nombreCompleto,
+          "datosPersonales.numeroDni": editFields.numeroDni,
+          "datosPersonales.cuil": editFields.cuil,
+          "datosPersonales.telefono": editFields.telefono,
+          "datosPersonales.direccion": editFields.direccion,
+          "datosPersonales.localidad": editFields.localidad
+        });
+      }
+      alert("Datos actualizados con éxito.");
+      setEditingId(null);
+      await fetchSolicitudes();
+      await fetchAperturas();
+    } catch (err: any) {
+      console.error("Error al guardar cambios de edición:", err);
+      alert("Error al guardar cambios: " + err.message);
+    }
   };
 
   const handleAgregarItemAlBorrador = () => {
@@ -1234,13 +1333,61 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                               // RENDER SECCIÓN ESTÁNDAR DE APERTURA DE CUENTA
                               <>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                   <div className="space-y-3">
-                                     <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Datos Personales</h4>
-                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">DNI:</strong> {req.numeroDni || req.dni || "S/D"}</p>
-                                     {req.cuil && <p className="text-sm text-zinc-300"><strong className="text-zinc-500">CUIL:</strong> {req.cuil}</p>}
-                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Fecha Nacimiento:</strong> {req.fechaNacimiento || "S/D"}</p>
-                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Ocupación:</strong> {req.ocupacion || "S/D"}</p>
-                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Dirección y Localidad:</strong> {req.direccion || "S/D"}</p>
+                                   <div className="space-y-3 bg-zinc-900/30 border border-zinc-850 p-4 rounded-xl shadow-inner">
+                                     <div className="flex justify-between items-center border-b border-zinc-800 pb-2 mb-2">
+                                       <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Datos Personales</h4>
+                                       {editingId !== req.id && (
+                                         <button 
+                                           onClick={() => startEditing(req)}
+                                           className="text-[10px] bg-zinc-850 hover:bg-zinc-800 text-yellow-500 font-bold px-2 py-0.5 rounded transition-all border border-zinc-800"
+                                         >
+                                           ✏️ Editar
+                                         </button>
+                                       )}
+                                     </div>
+
+                                     {editingId === req.id ? (
+                                       <div className="space-y-3 text-xs text-zinc-300">
+                                         <div>
+                                           <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Nombre Completo</label>
+                                           <input type="text" value={editFields.nombreCompleto} onChange={e => setEditFields({...editFields, nombreCompleto: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                         </div>
+                                         <div className="grid grid-cols-2 gap-2">
+                                           <div>
+                                             <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">DNI</label>
+                                             <input type="text" value={editFields.numeroDni} onChange={e => setEditFields({...editFields, numeroDni: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                           </div>
+                                           <div>
+                                             <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">CUIL</label>
+                                             <input type="text" value={editFields.cuil} onChange={e => handleEditCuilChange(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500 font-mono" />
+                                           </div>
+                                         </div>
+                                         <div>
+                                           <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Email</label>
+                                           <input type="email" value={editFields.email} onChange={e => setEditFields({...editFields, email: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                         </div>
+                                         <div>
+                                           <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Teléfono (WhatsApp)</label>
+                                           <input type="text" value={editFields.telefono} onChange={e => setEditFields({...editFields, telefono: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                         </div>
+                                         <div>
+                                           <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Dirección y Localidad</label>
+                                           <input type="text" value={editFields.direccion} onChange={e => setEditFields({...editFields, direccion: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                         </div>
+                                         <div className="flex gap-2 pt-2">
+                                           <button onClick={() => handleGuardarDatosEditados(req)} className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded text-xs transition-all uppercase tracking-wider">💾 Guardar</button>
+                                           <button onClick={() => setEditingId(null)} className="bg-transparent border border-zinc-700 hover:text-white text-zinc-400 font-bold py-2 px-4 rounded text-xs transition-all">✕ Cancelar</button>
+                                         </div>
+                                       </div>
+                                     ) : (
+                                       <div className="space-y-2 text-sm text-zinc-400">
+                                         <p className="text-sm text-zinc-300"><strong className="text-zinc-500">DNI:</strong> {req.numeroDni || req.dni || "S/D"}</p>
+                                         {req.cuil && <p className="text-sm text-zinc-300"><strong className="text-zinc-500">CUIL:</strong> {req.cuil}</p>}
+                                         <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Fecha Nacimiento:</strong> {req.fechaNacimiento || "S/D"}</p>
+                                         <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Ocupación:</strong> {req.ocupacion || "S/D"}</p>
+                                         <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Dirección y Localidad:</strong> {req.direccion || "S/D"}</p>
+                                       </div>
+                                     )}
                                    </div>
                                    <div className="space-y-3">
                                      <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Detalles de Scoring</h4>
@@ -1442,17 +1589,69 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                               
                               {/* COLUMNA 1 */}
                               <div className="flex flex-col gap-6">
-                                 <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-inner">
-                                   <h3 className="text-sm font-black text-yellow-400 mb-3 uppercase tracking-widest border-b border-zinc-800 pb-2">Perfil Crediticio</h3>
-                                   <div className="space-y-2 text-sm text-zinc-400">
-                                     <p><strong className="text-white">DNI:</strong> {req.datosPersonales?.numeroDni || "S/D"}</p>
-                                     {req.datosPersonales?.cuil && <p><strong className="text-white">CUIL:</strong> {req.datosPersonales.cuil}</p>}
-                                     <p><strong className="text-white">Email:</strong> {req.clienteEmail}</p>
-                                     <p><strong className="text-white">Teléfono:</strong> {req.datosPersonales?.telefono}</p>
-                                     <p><strong className="text-white">Domicilio:</strong> {req.datosPersonales?.direccion}, {req.datosPersonales?.localidad}</p>
-                                     <p><strong className="text-white">TNA Pactada:</strong> {req.tasaInteresTna ? `${req.tasaInteresTna}%` : "No especificada"}</p>
-                                     <p><strong className="text-white">Mora Pactada:</strong> {req.tasaMora ? `${req.tasaMora}% diaria` : "No especificada"}</p>
+                                 <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-inner space-y-4">
+                                   <div className="flex justify-between items-center border-b border-zinc-800 pb-2 mb-1">
+                                     <h3 className="text-sm font-black text-yellow-400 uppercase tracking-widest">Perfil Crediticio</h3>
+                                     {editingId !== req.id && (
+                                       <button 
+                                         onClick={() => startEditing(req)}
+                                         className="text-xs bg-zinc-850 hover:bg-zinc-800 text-yellow-500 font-bold px-2 py-1 rounded transition-all border border-zinc-800"
+                                       >
+                                         ✏️ Editar Datos
+                                       </button>
+                                     )}
                                    </div>
+
+                                   {editingId === req.id ? (
+                                     <div className="space-y-3 text-xs text-zinc-300">
+                                       <div>
+                                         <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Nombre Completo</label>
+                                         <input type="text" value={editFields.nombreCompleto} onChange={e => setEditFields({...editFields, nombreCompleto: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                       </div>
+                                       <div className="grid grid-cols-2 gap-2">
+                                         <div>
+                                           <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">DNI</label>
+                                           <input type="text" value={editFields.numeroDni} onChange={e => setEditFields({...editFields, numeroDni: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                         </div>
+                                         <div>
+                                           <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">CUIL</label>
+                                           <input type="text" value={editFields.cuil} onChange={e => handleEditCuilChange(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500 font-mono" />
+                                         </div>
+                                       </div>
+                                       <div>
+                                         <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Email</label>
+                                         <input type="email" value={editFields.email} onChange={e => setEditFields({...editFields, email: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                       </div>
+                                       <div>
+                                         <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Teléfono</label>
+                                         <input type="text" value={editFields.telefono} onChange={e => setEditFields({...editFields, telefono: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                       </div>
+                                       <div className="grid grid-cols-2 gap-2">
+                                         <div>
+                                           <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Dirección</label>
+                                           <input type="text" value={editFields.direccion} onChange={e => setEditFields({...editFields, direccion: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                         </div>
+                                         <div>
+                                           <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Localidad</label>
+                                           <input type="text" value={editFields.localidad} onChange={e => setEditFields({...editFields, localidad: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                         </div>
+                                       </div>
+                                       <div className="flex gap-2 pt-2">
+                                         <button onClick={() => handleGuardarDatosEditados(req)} className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded text-xs transition-all uppercase tracking-wider">💾 Guardar</button>
+                                         <button onClick={() => setEditingId(null)} className="bg-transparent border border-zinc-700 hover:text-white text-zinc-400 font-bold py-2 px-4 rounded text-xs transition-all">✕ Cancelar</button>
+                                       </div>
+                                     </div>
+                                   ) : (
+                                     <div className="space-y-2 text-sm text-zinc-400">
+                                       <p><strong className="text-white">DNI:</strong> {req.datosPersonales?.numeroDni || "S/D"}</p>
+                                       {req.datosPersonales?.cuil && <p><strong className="text-white">CUIL:</strong> {req.datosPersonales.cuil}</p>}
+                                       <p><strong className="text-white">Email:</strong> {req.clienteEmail}</p>
+                                       <p><strong className="text-white">Teléfono:</strong> {req.datosPersonales?.telefono}</p>
+                                       <p><strong className="text-white">Domicilio:</strong> {req.datosPersonales?.direccion}, {req.datosPersonales?.localidad}</p>
+                                       <p><strong className="text-white">TNA Pactada:</strong> {req.tasaInteresTna ? `${req.tasaInteresTna}%` : "No especificada"}</p>
+                                       <p><strong className="text-white">Mora Pactada:</strong> {req.tasaMora ? `${req.tasaMora}% diaria` : "No especificada"}</p>
+                                     </div>
+                                   )}
                                  </div>
 
                                  <BcraScoringPanel cuit={req.datosPersonales?.cuil || req.datosPersonales?.numeroDni || ""} />
