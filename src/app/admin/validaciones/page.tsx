@@ -51,6 +51,7 @@ type Solicitud = {
   comisionistaFechaEnvio?: string;
   vinculoProductoId?: string;
   vinculoUnidadId?: string;
+  sucursalDestino?: string;
 };
 
 const sucursalesDisponibles = [
@@ -97,6 +98,7 @@ export default function AdminValidacionesPage() {
   const [comisionistaNombre, setComisionistaNombre] = useState("");
   const [comisionistaCosto, setComisionistaCosto] = useState("");
   const [comisionistaFechaEnvio, setComisionistaFechaEnvio] = useState("");
+  const [selectedDestino, setSelectedDestino] = useState("Lincoln");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editFields, setEditFields] = useState<any>({
     nombreCompleto: "",
@@ -342,21 +344,22 @@ export default function AdminValidacionesPage() {
     }
   };
 
-  const handleReservarStock = async (solId: string, prodId: string, unitId: string, numSerie: string) => {
+  const handleReservarStock = async (solId: string, prodId: string, unitId: string, numSerie: string, destino: string) => {
     try {
       if (!prodId) return alert("Debes seleccionar un producto del catálogo.");
+      if (!destino) return alert("Debes seleccionar una sucursal de destino.");
       
       const prodRef = doc(db, "productos", prodId);
       const currentProd = productos.find(p => p.id === prodId);
       if (!currentProd) return;
 
-      let localidad = "Depósito Central";
+      let origen = "Depósito Central";
       let updatedStock = currentProd.stock || [];
 
       if (unitId && unitId !== "manual") {
         updatedStock = (currentProd.stock || []).map((u: any) => {
           if (u.id === unitId) {
-            localidad = u.localidad || "Depósito Central";
+            origen = u.localidad || "Depósito Central";
             return { ...u, estado: "Reservado" };
           }
           return u;
@@ -365,12 +368,17 @@ export default function AdminValidacionesPage() {
 
       await updateDoc(prodRef, { stock: updatedStock });
 
+      const msg = origen === destino 
+        ? `Reserva de stock realizada: Unidad con Serie/IMEI ${numSerie} asignada localmente en ${destino}.`
+        : `Reserva de stock realizada: Unidad con Serie/IMEI ${numSerie} asignada en origen ${origen} con destino a sucursal ${destino}.`;
+
       await updateDoc(doc(db, "solicitudes", solId), {
         vinculoProductoId: prodId,
         vinculoUnidadId: unitId,
         numeroSerie: numSerie,
-        estadoProducto: "En depósito (Central)",
-        historialRecepcion: `Reserva de stock realizada: Unidad con Serie/IMEI ${numSerie} reservada en ${localidad}.`
+        sucursalDestino: destino,
+        estadoProducto: origen === destino ? "En stock (Afiliado)" : "En viaje",
+        historialRecepcion: msg
       });
 
       alert("¡Unidad reservada temporalmente con éxito en el stock!");
@@ -402,6 +410,7 @@ export default function AdminValidacionesPage() {
         vinculoProductoId: "",
         vinculoUnidadId: "",
         numeroSerie: "",
+        sucursalDestino: "",
         estadoProducto: "En depósito (Central)",
         historialRecepcion: "Reserva de stock liberada. Unidad devuelta a disponibles."
       });
@@ -412,6 +421,35 @@ export default function AdminValidacionesPage() {
     } catch (e: any) {
       console.error(e);
       alert("Error al liberar reserva: " + e.message);
+    }
+  };
+
+  const handleConfirmarArriboSucursal = async (solId: string, prodId: string, unitId: string, destino: string) => {
+    try {
+      const prodRef = doc(db, "productos", prodId);
+      const currentProd = productos.find(p => p.id === prodId);
+      if (!currentProd) return;
+
+      const updatedStock = (currentProd.stock || []).map((u: any) => {
+        if (u.id === unitId) {
+          return { ...u, localidad: destino }; // physically update stock location to destination sucursal
+        }
+        return u;
+      });
+
+      await updateDoc(prodRef, { stock: updatedStock });
+
+      await updateDoc(doc(db, "solicitudes", solId), {
+        estadoProducto: "En stock (Afiliado)",
+        historialRecepcion: `El comisionista entregó el producto al afiliado en la sucursal de destino: ${destino}. Ruteo interno finalizado.`
+      });
+
+      alert(`¡Llegada confirmada! La unidad física ahora se encuentra en ${destino} en manos del afiliado local.`);
+      await fetchProductos();
+      await fetchSolicitudes();
+    } catch (e: any) {
+      console.error(e);
+      alert("Error al confirmar arribo: " + e.message);
     }
   };
 
@@ -1110,6 +1148,13 @@ export default function AdminValidacionesPage() {
           setSelectedProductStock(null);
           setSelectedStockUnitId("");
           setNserie("");
+        }
+
+        // Auto-select sucursalDestino
+        if (sol.sucursalDestino) {
+          setSelectedDestino(sol.sucursalDestino);
+        } else {
+          setSelectedDestino(sol.datosPersonales?.localidad || "Lincoln");
         }
       }
     }
@@ -2445,71 +2490,171 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                  <h3 className="text-sm font-black text-blue-400 mb-4 uppercase tracking-widest flex items-center gap-2"><Truck className="w-4 h-4"/> Logística y Entrega</h3>
                                  
                                  <div className="space-y-4 relative z-10">
-                                   {/* SECCIÓN 1: STOCK FÍSICO Y RESERVA */}
-                                   <div className="bg-zinc-950 p-4 border border-zinc-800 rounded-xl space-y-3 relative z-10">
+                                   {/* SECCIÓN 1: ASIGNACIÓN DE STOCK Y RUTEO */}
+                                   <div className="bg-zinc-950 p-4 border border-zinc-850 rounded-xl space-y-3 relative z-10">
                                      <h4 className="text-xs font-black text-blue-400 uppercase tracking-wider flex items-center gap-1.5 border-b border-zinc-900 pb-2">
-                                       📦 Stock Físico y Reserva
+                                       📦 Asignación de Stock y Reserva
                                      </h4>
 
                                      {sol.vinculoUnidadId ? (
                                        // YA TIENE RESERVA
                                        <div className="space-y-3">
-                                         <div className="bg-blue-950/30 border border-blue-500/30 p-3 rounded-lg text-xs space-y-1.5">
-                                           <p className="text-zinc-300 font-bold flex items-center gap-1.5 text-blue-300">
-                                             📌 ¡Stock Reservado con éxito!
-                                           </p>
-                                           <p className="text-zinc-400">
-                                             <strong className="text-zinc-500">Producto:</strong> {sol.productoDeseado}
-                                           </p>
-                                           <p className="text-zinc-400 font-mono">
-                                             <strong className="text-zinc-500 font-sans">IMEI/Serie:</strong> {sol.numeroSerie || "Sin serie registrada"}
-                                           </p>
-                                           <p className="text-zinc-400">
-                                             <strong className="text-zinc-500">Ubicación Actual:</strong> <span className="bg-blue-900/40 text-blue-300 px-2 py-0.5 rounded text-[10px] font-bold">{sol.estadoProducto || "Depósito Central"}</span>
-                                           </p>
-                                         </div>
+                                         {(() => {
+                                           // Find unit in selected product stock or general catalog
+                                           const unit = selectedProductStock
+                                             ? (selectedProductStock.stock || []).find((u: any) => u.id === sol.vinculoUnidadId)
+                                             : null;
+                                           const origen = unit?.localidad || "Depósito Central";
+                                           const destino = sol.sucursalDestino || "Lincoln";
+                                           const requiereTransito = origen !== destino;
 
-                                         {/* Ruteo / Transferencia entre Sucursales */}
-                                         {selectedStockUnitId && selectedStockUnitId !== "manual" && selectedProductStock && (
-                                           <div className="bg-zinc-900 border border-zinc-800/80 p-3 rounded-lg space-y-2">
-                                             <label className="block text-[10px] text-zinc-400 font-bold uppercase">Ruteo: Transferir Unidad a Sucursal</label>
-                                             <div className="flex gap-2">
-                                               <select 
-                                                 id={`target_sucursal_${sol.id}`}
-                                                 className="bg-zinc-950 text-zinc-100 px-2 py-1.5 rounded text-xs border border-zinc-850 flex-1 outline-none focus:border-blue-500"
-                                               >
-                                                 {sucursalesDisponibles.map(suc => (
-                                                   <option key={suc} value={suc}>{suc}</option>
-                                                 ))}
-                                               </select>
+                                           return (
+                                             <div className="space-y-3">
+                                               <div className="bg-blue-950/30 border border-blue-500/30 p-3 rounded-lg text-xs space-y-1.5">
+                                                 <p className="text-zinc-300 font-bold flex items-center gap-1.5 text-blue-300">
+                                                   📌 ¡Stock Reservado con éxito!
+                                                 </p>
+                                                 <p className="text-zinc-400">
+                                                   <strong className="text-zinc-500">Producto:</strong> {sol.productoDeseado}
+                                                 </p>
+                                                 <p className="text-zinc-400 font-mono">
+                                                   <strong className="text-zinc-500 font-sans">IMEI/Serie:</strong> {sol.numeroSerie || "Sin serie registrada"}
+                                                 </p>
+                                                 <p className="text-zinc-400">
+                                                   <strong className="text-zinc-500">Origen (Stock):</strong> <span className="bg-zinc-900 text-zinc-300 px-2 py-0.5 rounded text-[10px] font-bold border border-zinc-800">{origen}</span>
+                                                 </p>
+                                                 <p className="text-zinc-400">
+                                                   <strong className="text-zinc-500">Destino (Entrega):</strong> <span className="bg-zinc-900 text-zinc-300 px-2 py-0.5 rounded text-[10px] font-bold border border-zinc-800">{destino}</span>
+                                                 </p>
+                                                 <p className="text-zinc-400">
+                                                   <strong className="text-zinc-500">Estado de Ruteo:</strong> <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${requiereTransito ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" : "bg-green-500/20 text-green-400 border border-green-500/30"}`}>{requiereTransito ? "Tránsito Requerido" : "Listo para entrega"}</span>
+                                                 </p>
+                                               </div>
+
+                                               {/* RUTEO POR COMISIONISTA (SOLO SI ORIGEN !== DESTINO) */}
+                                               {requiereTransito ? (
+                                                 <div className="bg-zinc-900 border border-blue-900/30 p-3.5 rounded-lg space-y-3">
+                                                   <h5 className="text-[10px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-1">
+                                                     🚚 Ruteo Interno (Comisionista a Sucursal)
+                                                   </h5>
+                                                   <p className="text-[9px] text-zinc-500 italic">
+                                                     El comisionista transportará la unidad asignada desde {origen} y la entregará al afiliado local en {destino}.
+                                                   </p>
+
+                                                   {sol.comisionistaNombre || sol.comisionistaCosto || sol.comisionistaFechaEnvio ? (
+                                                     <div className="bg-zinc-950 p-2.5 rounded border border-zinc-850 text-[11px] space-y-1">
+                                                       {sol.comisionistaNombre && <p className="text-zinc-300"><strong className="text-zinc-500">Comisionista:</strong> {sol.comisionistaNombre}</p>}
+                                                       {sol.comisionistaCosto !== undefined && <p className="text-zinc-300"><strong className="text-zinc-500">Costo Envío:</strong> <span className="text-green-400 font-bold">${sol.comisionistaCosto}</span></p>}
+                                                       {sol.comisionistaFechaEnvio && <p className="text-zinc-300"><strong className="text-zinc-500">Fecha Salida:</strong> {new Date(sol.comisionistaFechaEnvio).toLocaleDateString("es-AR")}</p>}
+                                                       
+                                                       <div className="flex gap-2 pt-2 border-t border-zinc-900 mt-2">
+                                                         <button 
+                                                           onClick={() => {
+                                                             setComisionistaNombre(sol.comisionistaNombre || "");
+                                                             setComisionistaCosto(sol.comisionistaCosto ? String(sol.comisionistaCosto) : "");
+                                                             setComisionistaFechaEnvio(sol.comisionistaFechaEnvio || "");
+                                                             setComisionistaEditId(sol.id);
+                                                           }}
+                                                           className="text-[9px] text-yellow-500 hover:text-yellow-400 font-bold underline"
+                                                         >
+                                                           ✏️ Editar envío
+                                                         </button>
+                                                         
+                                                         <button 
+                                                           onClick={() => handleConfirmarArriboSucursal(sol.id, sol.vinculoProductoId || selectedProductId, sol.vinculoUnidadId || "", destino)}
+                                                           className="ml-auto bg-blue-600 hover:bg-blue-500 text-white font-black text-[9px] uppercase tracking-widest px-2.5 py-1 rounded transition-colors"
+                                                         >
+                                                           📥 Confirmar Arribo a Sucursal
+                                                         </button>
+                                                       </div>
+                                                     </div>
+                                                   ) : null}
+
+                                                   {(comisionistaEditId === sol.id || (!sol.comisionistaNombre && !sol.comisionistaCosto && !sol.comisionistaFechaEnvio)) && (
+                                                     <div className="bg-zinc-950 p-2.5 border border-zinc-850 rounded-lg space-y-2">
+                                                       <div>
+                                                         <label className="block text-[8px] text-zinc-500 font-bold uppercase mb-0.5">Nombre Comisionista</label>
+                                                         <input 
+                                                           type="text" 
+                                                           value={comisionistaEditId === sol.id ? comisionistaNombre : ""} 
+                                                           onChange={e => { setComisionistaEditId(sol.id); setComisionistaNombre(e.target.value); }} 
+                                                           placeholder="Ej: Comisionista Junín" 
+                                                           className="w-full bg-zinc-900 border border-zinc-800 p-1.5 rounded text-[11px] text-white outline-none focus:border-blue-500" 
+                                                         />
+                                                       </div>
+                                                       <div className="grid grid-cols-2 gap-2">
+                                                         <div>
+                                                           <label className="block text-[8px] text-zinc-500 font-bold uppercase mb-0.5">Costo ($)</label>
+                                                           <input 
+                                                             type="number" 
+                                                             value={comisionistaEditId === sol.id ? comisionistaCosto : ""} 
+                                                             onChange={e => { setComisionistaEditId(sol.id); setComisionistaCosto(e.target.value); }} 
+                                                             placeholder="ARS" 
+                                                             className="w-full bg-zinc-900 border border-zinc-800 p-1.5 rounded text-[11px] text-white outline-none focus:border-blue-500" 
+                                                           />
+                                                         </div>
+                                                         <div>
+                                                           <label className="block text-[8px] text-zinc-500 font-bold uppercase mb-0.5">Fecha Envío</label>
+                                                           <input 
+                                                             type="date" 
+                                                             value={comisionistaEditId === sol.id ? comisionistaFechaEnvio : ""} 
+                                                             onChange={e => { setComisionistaEditId(sol.id); setComisionistaFechaEnvio(e.target.value); }} 
+                                                             className="w-full bg-zinc-900 border border-zinc-800 p-1.5 rounded text-[11px] text-white outline-none focus:border-blue-500" 
+                                                           />
+                                                         </div>
+                                                       </div>
+                                                       <button 
+                                                         onClick={() => handleGuardarComisionista(sol.id)} 
+                                                         className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 rounded text-[9px] transition-all uppercase tracking-wider"
+                                                       >
+                                                         💾 Registrar Salida Comisionista
+                                                       </button>
+                                                     </div>
+                                                   )}
+                                                 </div>
+                                               ) : (
+                                                 <div className="bg-green-950/20 border border-green-500/20 p-3 rounded-lg text-xs flex items-start gap-2">
+                                                   <span className="text-base">🟢</span>
+                                                   <p className="text-green-400">
+                                                     <strong>Local listo para entrega:</strong> El producto ya está en sucursal {destino}. El afiliado local puede entregárselo al cliente en el paso final.
+                                                   </p>
+                                                 </div>
+                                               )}
+
+                                               {sol.historialRecepcion && (
+                                                 <p className="text-[10px] text-green-400 mt-2 bg-green-900/20 px-2.5 py-1.5 rounded-md border border-green-500/10 flex items-center gap-1.5">
+                                                   <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0"/> {sol.historialRecepcion}
+                                                 </p>
+                                               )}
+
                                                <button
                                                  type="button"
-                                                 onClick={() => {
-                                                   const el = document.getElementById(`target_sucursal_${sol.id}`) as HTMLSelectElement;
-                                                   const targetSuc = el.value;
-                                                   if (targetSuc) {
-                                                     handleTransferirStockUnidad(selectedProductId, selectedStockUnitId, targetSuc, sol.id);
-                                                   }
-                                                 }}
-                                                 className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded text-[10px] transition-all uppercase tracking-wider flex items-center gap-1 active:scale-95"
+                                                 onClick={() => handleLiberarReserva(sol.id, sol.vinculoProductoId || selectedProductId, sol.vinculoUnidadId || "")}
+                                                 className="w-full bg-red-950/20 hover:bg-red-950/40 border border-red-900/50 text-red-400 font-bold py-2 rounded-lg text-[10px] transition-colors uppercase tracking-wider"
                                                >
-                                                 🔄 Trasladar
+                                                 ✕ Liberar Reserva (Volver a Disponible)
                                                </button>
                                              </div>
-                                           </div>
-                                         )}
-
-                                         <button
-                                           type="button"
-                                           onClick={() => handleLiberarReserva(sol.id, sol.vinculoProductoId || selectedProductId, sol.vinculoUnidadId || "")}
-                                           className="w-full bg-red-950/20 hover:bg-red-950/40 border border-red-900 text-red-400 font-bold py-2 rounded-lg text-xs transition-colors uppercase tracking-wider"
-                                         >
-                                           ✕ Liberar Reserva (Volver a Disponible)
-                                         </button>
+                                           );
+                                         })()}
                                        </div>
                                      ) : (
                                        // AÚN NO TIENE RESERVA (SELECCIONAR Y RESERVAR)
                                        <div className="space-y-3">
+                                         {/* Selector de Sucursal de Entrega (Destino) */}
+                                         <div>
+                                           <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Sucursal de Destino / Entrega</label>
+                                           <select 
+                                             value={selectedDestino}
+                                             onChange={e => setSelectedDestino(e.target.value)}
+                                             className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg text-xs border border-zinc-800 w-full focus:border-blue-500 outline-none font-bold"
+                                           >
+                                             {sucursalesDisponibles.map(suc => (
+                                               <option key={suc} value={suc}>{suc}</option>
+                                             ))}
+                                           </select>
+                                         </div>
+
                                          {/* Selector de Producto de Inventario */}
                                          <div>
                                            <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Producto en Catálogo</label>
@@ -2535,7 +2680,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                          {/* Selector de Unidad de Stock */}
                                          {selectedProductStock && (
                                            <div>
-                                             <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Unidad de Stock Disponible</label>
+                                             <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Unidad de Stock Disponible (Origen)</label>
                                              <select 
                                                value={selectedStockUnitId}
                                                onChange={(e) => {
@@ -2550,7 +2695,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                }}
                                                className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg text-xs border border-zinc-800 w-full focus:border-blue-500 outline-none"
                                              >
-                                               <option value="manual">Cargar manualmente (Sin stock / Otro)</option>
+                                               <option value="manual">Cargar manualmente (Sin stock / Casa Central)</option>
                                                {(selectedProductStock.stock || []).filter((u: any) => u.estado === "Disponible").map((u: any) => (
                                                  <option key={u.id} value={u.id}>
                                                    [{u.localidad}] - {u.nserie ? `IMEI/Serie: ${u.nserie}` : "Sin número registrado"}
@@ -2561,16 +2706,16 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                          )}
 
                                          {/* Informar asignación de venta */}
-                                         <div className="text-[9px] text-zinc-400 font-medium bg-zinc-900 p-2 rounded border border-zinc-850">
+                                         <div className="text-[9px] text-zinc-500 font-medium bg-zinc-900 p-2 rounded border border-zinc-850">
                                            {!sol.afiliadoEmail ? (
-                                             <span className="text-yellow-500">ℹ️ Venta libre (sin asignar): puedes asignar stock de cualquier ubicación.</span>
+                                             <span className="text-yellow-500">ℹ️ Venta libre: puedes asignar stock de Casa Central o cualquier sucursal.</span>
                                            ) : (
-                                             <span>ℹ️ Venta delegada a: <strong className="text-zinc-300">{sol.afiliadoEmail}</strong>. Se aconseja ruteo local o traslado.</span>
+                                             <span>ℹ️ Venta del afiliado: <strong className="text-zinc-300">{sol.afiliadoEmail}</strong>. Se recomienda seleccionar stock local o rutarlo.</span>
                                            )}
                                          </div>
 
                                          <div>
-                                           <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Nº de Serie / IMEI a Reservar</label>
+                                           <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Nº de Serie / IMEI a Asignar</label>
                                            <input 
                                              type="text" 
                                              value={nserie} 
@@ -2582,138 +2727,11 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                                          <button
                                            type="button"
-                                           onClick={() => handleReservarStock(sol.id, selectedProductId, selectedStockUnitId, nserie)}
-                                           className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg text-xs transition-colors uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95"
+                                           onClick={() => handleReservarStock(sol.id, selectedProductId, selectedStockUnitId, nserie, selectedDestino)}
+                                           className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg text-xs transition-colors uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95"
                                          >
-                                           📌 Confirmar Reserva de Stock
+                                           📌 Confirmar Reserva y Ruteo de Stock
                                          </button>
-                                       </div>
-                                     )}
-                                   </div>
-
-                                   {/* UBICACIÓN LOGÍSTICA GENERAL */}
-                                   <div className="bg-zinc-950 p-4 border border-zinc-800 rounded-xl space-y-3 relative z-10">
-                                     <h4 className="text-xs font-black text-blue-400 uppercase tracking-wider flex items-center gap-1.5 border-b border-zinc-900 pb-2">
-                                       📍 Ubicación Física e Historial
-                                     </h4>
-                                     <div>
-                                        <label className="block text-[10px] text-zinc-500 mb-1 font-bold uppercase">Estado de Ubicación Actual:</label>
-                                        <select 
-                                          value={sol.estadoProducto || "En depósito (Central)"}
-                                          onChange={e => handleActualizarEstadoProducto(sol.id, e.target.value)}
-                                          className="bg-zinc-900 text-sm p-3 rounded-lg text-white font-medium outline-none border border-blue-900 focus:border-blue-500 w-full"
-                                        >
-                                           <option value="En depósito (Central)">🏢 En depósito (Central)</option>
-                                           <option value="En stock (Afiliado)">👤 En manos del Afiliado (Sucursal)</option>
-                                           <option value="Encargado a proveedor">📦 Encargado a proveedor (Pendiente)</option>
-                                           <option value="Traslado entre Puntos de Venta">🔄 Traslado de Stock en tránsito</option>
-                                           <option value="En viaje al Cliente (Comisionista)">🚚 En viaje al Cliente (Despachado)</option>
-                                        </select>
-                                        {sol.historialRecepcion && (
-                                          <p className="text-[10px] text-green-400 mt-2 bg-green-900/20 px-2 py-1.5 rounded-md border border-green-500/10 flex items-center gap-1">
-                                            <CheckCircle2 className="w-3 h-3"/> {sol.historialRecepcion}
-                                          </p>
-                                        )}
-                                     </div>
-                                   </div>
-
-                                   {/* REGISTRO DE COMISIONISTA / ENVÍO */}
-                                   <div className="pt-4 border-t border-zinc-800 space-y-3 relative z-10">
-                                     <h4 className="text-xs font-black text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-                                       🚚 Envío por Comisionista
-                                     </h4>
-                                     
-                                     {sol.comisionistaNombre || sol.comisionistaCosto || sol.comisionistaFechaEnvio ? (
-                                       <div className="bg-zinc-900 border border-blue-900/30 p-3 rounded-lg text-xs space-y-1.5">
-                                         {sol.comisionistaNombre && (
-                                           <p className="text-zinc-300">
-                                             <strong className="text-zinc-500 font-bold">Transporte/Comisionista:</strong> {sol.comisionistaNombre}
-                                           </p>
-                                         )}
-                                         {sol.comisionistaCosto !== undefined && (
-                                           <p className="text-zinc-300">
-                                             <strong className="text-zinc-500 font-bold">Costo de Envío:</strong> <span className="text-green-400 font-bold">${sol.comisionistaCosto}</span>
-                                           </p>
-                                         )}
-                                         {sol.comisionistaFechaEnvio && (
-                                           <p className="text-zinc-300">
-                                             <strong className="text-zinc-500 font-bold">Fecha Estimada de Envío:</strong> {new Date(sol.comisionistaFechaEnvio).toLocaleDateString("es-AR")}
-                                           </p>
-                                         )}
-                                         <button 
-                                           onClick={() => {
-                                             setComisionistaNombre(sol.comisionistaNombre || "");
-                                             setComisionistaCosto(sol.comisionistaCosto ? String(sol.comisionistaCosto) : "");
-                                             setComisionistaFechaEnvio(sol.comisionistaFechaEnvio || "");
-                                             setComisionistaEditId(sol.id);
-                                           }}
-                                           className="text-[10px] text-yellow-500 hover:text-yellow-400 font-bold underline block mt-2 text-left"
-                                         >
-                                           ✏️ Editar datos de envío
-                                         </button>
-                                       </div>
-                                     ) : (
-                                       <p className="text-[10px] text-zinc-500 italic">No se ha registrado comisionista ni costo de envío.</p>
-                                     )}
-
-                                     {(comisionistaEditId === sol.id || (!sol.comisionistaNombre && !sol.comisionistaCosto && !sol.comisionistaFechaEnvio)) && (
-                                       <div className="bg-zinc-950 p-3 border border-zinc-850 rounded-xl space-y-3 mt-2">
-                                         <div>
-                                           <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Nombre Comisionista / Empresa</label>
-                                           <input 
-                                             type="text" 
-                                             value={comisionistaEditId === sol.id ? comisionistaNombre : ""} 
-                                             onChange={(e) => {
-                                               setComisionistaEditId(sol.id);
-                                               setComisionistaNombre(e.target.value);
-                                             }} 
-                                             placeholder="Ej: Comisionista Chivilcoy / Andreani" 
-                                             className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-blue-500" 
-                                           />
-                                         </div>
-                                         <div className="grid grid-cols-2 gap-2">
-                                           <div>
-                                             <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Costo Envío ($)</label>
-                                             <input 
-                                               type="number" 
-                                               value={comisionistaEditId === sol.id ? comisionistaCosto : ""} 
-                                               onChange={(e) => {
-                                                 setComisionistaEditId(sol.id);
-                                                 setComisionistaCosto(e.target.value);
-                                               }} 
-                                               placeholder="Costo" 
-                                               className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-blue-500" 
-                                             />
-                                           </div>
-                                           <div>
-                                             <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Fecha Envío</label>
-                                             <input 
-                                               type="date" 
-                                               value={comisionistaEditId === sol.id ? comisionistaFechaEnvio : ""} 
-                                               onChange={(e) => {
-                                                 setComisionistaEditId(sol.id);
-                                                 setComisionistaFechaEnvio(e.target.value);
-                                               }} 
-                                               className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-blue-500" 
-                                             />
-                                           </div>
-                                         </div>
-                                         <div className="flex gap-2 pt-1">
-                                           <button 
-                                             onClick={() => handleGuardarComisionista(sol.id)} 
-                                             className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-1.5 rounded text-[10px] transition-all uppercase tracking-wider"
-                                           >
-                                             💾 Guardar Envío
-                                           </button>
-                                           {comisionistaEditId === sol.id && (
-                                             <button 
-                                               onClick={() => setComisionistaEditId(null)} 
-                                               className="bg-transparent border border-zinc-700 hover:text-white text-zinc-400 font-bold py-1.5 px-3 rounded text-[10px] transition-all"
-                                             >
-                                               ✕
-                                             </button>
-                                           )}
-                                         </div>
                                        </div>
                                      )}
                                    </div>
