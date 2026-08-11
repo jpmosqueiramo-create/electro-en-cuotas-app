@@ -51,6 +51,16 @@ type Solicitud = {
   comisionistaFechaEnvio?: string;
 };
 
+const sucursalesDisponibles = [
+  "Depósito Central",
+  "Lincoln",
+  "Junín",
+  "Chivilcoy",
+  "Bragado",
+  "Pehuajó",
+  "9 de Julio"
+];
+
 export default function AdminValidacionesPage() {
   const [solicitudes, setSolicitudes] = useState<Solicitud[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -288,6 +298,45 @@ export default function AdminValidacionesPage() {
     } catch (err: any) {
       console.error("Error al guardar comisionista:", err);
       alert("Error al guardar comisionista: " + err.message);
+    }
+  };
+
+  const handleTransferirStockUnidad = async (prodId: string, unitId: string, nuevaSucursal: string, solId: string) => {
+    try {
+      const prodRef = doc(db, "productos", prodId);
+      const currentProd = productos.find(p => p.id === prodId);
+      if (!currentProd) return;
+      
+      let origen = "";
+      const updatedStock = (currentProd.stock || []).map((u: any) => {
+        if (u.id === unitId) {
+          origen = u.localidad || "Depósito Central";
+          return { ...u, localidad: nuevaSucursal };
+        }
+        return u;
+      });
+      
+      await updateDoc(prodRef, { stock: updatedStock });
+      
+      // Also update request details to reflect the transfer
+      const msg = `Traslado de Stock en tránsito: de sucursal ${origen} a sucursal ${nuevaSucursal}.`;
+      await updateDoc(doc(db, "solicitudes", solId), {
+        estadoProducto: "Traslado entre Puntos de Venta",
+        historialRecepcion: msg
+      });
+
+      alert(`¡Unidad transferida con éxito a la sucursal ${nuevaSucursal}!`);
+      
+      // Update local states
+      await fetchProductos();
+      await fetchSolicitudes();
+      
+      // Update selected product stock reference in memory
+      const updatedProdObj = { ...currentProd, stock: updatedStock };
+      setSelectedProductStock(updatedProdObj);
+    } catch (e: any) {
+      console.error(e);
+      alert("Error al transferir stock: " + e.message);
     }
   };
 
@@ -2396,6 +2445,54 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                    </option>
                                                  ))}
                                                </select>
+                                             </div>
+                                           )}
+
+                                           {/* Informar asignación de venta */}
+                                           <div className="text-[10px] text-zinc-400 font-medium bg-zinc-950 p-2.5 rounded border border-zinc-850/50 mt-1">
+                                             {!sol.afiliadoEmail ? (
+                                               <span className="text-yellow-500">ℹ️ Venta libre (sin asignar): puedes asignar stock de cualquier ubicación central o sucursal.</span>
+                                             ) : (
+                                               <span>ℹ️ Venta delegada a: <strong className="text-zinc-300">{sol.afiliadoEmail}</strong>. Se aconseja ruteo local o traslado a sucursal.</span>
+                                             )}
+                                           </div>
+
+                                           {/* Ruteo / Transferencia entre Sucursales */}
+                                           {selectedStockUnitId && selectedStockUnitId !== "manual" && selectedProductStock && (
+                                             <div className="bg-zinc-950 p-3 border border-zinc-850/50 rounded-xl space-y-2 mt-1">
+                                               <div className="flex justify-between items-center text-xs">
+                                                 <span className="text-[10px] text-zinc-500 font-bold uppercase">Ubicación Actual:</span>
+                                                 <span className="bg-blue-900/30 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider">
+                                                   {((selectedProductStock.stock || []).find((u: any) => u.id === selectedStockUnitId)?.localidad) || "Depósito Central"}
+                                                 </span>
+                                               </div>
+                                               
+                                               <div className="pt-2 border-t border-zinc-900/60 space-y-2">
+                                                 <label className="block text-[10px] text-zinc-400 font-bold uppercase">Ruteo: Transferir Unidad a Sucursal</label>
+                                                 <div className="flex gap-2">
+                                                   <select 
+                                                     id={`target_sucursal_${sol.id}`}
+                                                     className="bg-zinc-900 text-zinc-100 px-2 py-1.5 rounded text-xs border border-zinc-800 flex-1 outline-none focus:border-blue-500"
+                                                   >
+                                                     {sucursalesDisponibles.map(suc => (
+                                                       <option key={suc} value={suc}>{suc}</option>
+                                                     ))}
+                                                   </select>
+                                                   <button
+                                                     type="button"
+                                                     onClick={() => {
+                                                       const el = document.getElementById(`target_sucursal_${sol.id}`) as HTMLSelectElement;
+                                                       const targetSuc = el.value;
+                                                       if (targetSuc) {
+                                                         handleTransferirStockUnidad(selectedProductId, selectedStockUnitId, targetSuc, sol.id);
+                                                       }
+                                                     }}
+                                                     className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded text-[10px] transition-all uppercase tracking-wider flex items-center gap-1 active:scale-95"
+                                                   >
+                                                     🔄 Trasladar
+                                                   </button>
+                                                 </div>
+                                               </div>
                                              </div>
                                            )}
 
