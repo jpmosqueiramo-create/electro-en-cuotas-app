@@ -2533,6 +2533,34 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                  </p>
                                                </div>
 
+                                               {/* BOTÓN DE GENERACIÓN DE REMITO (EN RUTEO INTERNO) */}
+                                               <button
+                                                 type="button"
+                                                 onClick={() => {
+                                                   const unit = selectedProductStock
+                                                     ? (selectedProductStock.stock || []).find((u: any) => u.id === sol.vinculoUnidadId)
+                                                     : null;
+                                                   
+                                                   const rDatos = {
+                                                     nroRemito: `R-${sol.id.substring(0, 6).toUpperCase()}`,
+                                                     fecha: new Date().toLocaleDateString("es-AR"),
+                                                     clienteNombre: sol.datosPersonales?.nombreCompleto || "",
+                                                     clienteDni: sol.datosPersonales?.numeroDni || "",
+                                                     clienteDireccion: `${sol.datosPersonales?.direccion || ''}, ${sol.datosPersonales?.localidad || ''}`,
+                                                     clienteTelefono: sol.datosPersonales?.telefono || "",
+                                                     productoNombre: sol.productoDeseado || (selectedProductStock?.nombre || ""),
+                                                     nserie: sol.numeroSerie || unit?.nserie || "",
+                                                     origen: unit?.localidad || "Depósito Central",
+                                                     destino: sol.sucursalDestino || sol.datosPersonales?.localidad || "Lincoln",
+                                                     afiliadoEmail: sol.afiliadoEmail || ""
+                                                   };
+                                                   generarRemitoModelo(rDatos);
+                                                 }}
+                                                 className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 shadow-md uppercase tracking-wider"
+                                               >
+                                                 📄 Generar Remito de Envío (PDF)
+                                               </button>
+
                                                {/* RUTEO POR COMISIONISTA (SOLO SI ORIGEN !== DESTINO) */}
                                                {requiereTransito ? (
                                                  <div className="bg-zinc-900 border border-blue-900/30 p-3.5 rounded-lg space-y-3">
@@ -2878,34 +2906,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                              <input type="text" value={nserie} onChange={e=>setNserie(e.target.value)} placeholder="Ej: SN-12345" className="bg-zinc-950 text-zinc-100 px-3 py-2.5 rounded-lg text-sm border border-zinc-800 w-full focus:border-blue-500 outline-none font-mono" />
                                            </div>
 
-                                           {/* Botón de Generación de Remito */}
-                                           {selectedStockUnitId && selectedStockUnitId !== "manual" && (
-                                             <button
-                                               type="button"
-                                               onClick={() => {
-                                                 const unit = (selectedProductStock?.stock || []).find((u: any) => u.id === selectedStockUnitId);
-                                                 if (!unit) return;
-                                                 
-                                                 const rDatos = {
-                                                   nroRemito: `R-${sol.id.substring(0, 6).toUpperCase()}`,
-                                                   fecha: new Date().toLocaleDateString("es-AR"),
-                                                   clienteNombre: sol.datosPersonales?.nombreCompleto || "",
-                                                   clienteDni: sol.datosPersonales?.numeroDni || "",
-                                                   clienteDireccion: `${sol.datosPersonales?.direccion || ''}, ${sol.datosPersonales?.localidad || ''}`,
-                                                   clienteTelefono: sol.datosPersonales?.telefono || "",
-                                                   productoNombre: selectedProductStock.nombre,
-                                                   nserie: nserie || unit.nserie || "",
-                                                   origen: unit.localidad,
-                                                   destino: sol.datosPersonales?.localidad || "Lincoln",
-                                                   afiliadoEmail: sol.afiliadoEmail || ""
-                                                 };
-                                                 generarRemitoModelo(rDatos);
-                                               }}
-                                               className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 shadow-md"
-                                             >
-                                               📄 Generar Remito de Envío (PDF)
-                                             </button>
-                                           )}
+                                           
 
                                            <div className="grid grid-cols-2 gap-3">
                                              <div>
