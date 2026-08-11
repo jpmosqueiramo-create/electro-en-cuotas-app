@@ -792,11 +792,83 @@ export default function AdminValidacionesPage() {
 
   const fetchAperturas = async () => {
     try {
+      // Fetch current solicitudes to check for duplicates and prevent race conditions
+      const solSnap = await getDocs(collection(db, "solicitudes"));
+      const currentSols: any[] = [];
+      solSnap.forEach(d => currentSols.push({ id: d.id, ...d.data() }));
+
       const q = query(collection(db, "solicitudes_cuenta"), orderBy("fecha", "desc"));
       const snap = await getDocs(q);
       const results: any[] = [];
       snap.forEach(d => results.push({ id: d.id, ...d.data() }));
       setAperturas(results);
+
+      // Legacy auto-migration for approved accounts that have not been replicated in solicitudes
+      let hasMigrated = false;
+      for (const req of results) {
+        if (req.estado === "Aprobado") {
+          const exists = currentSols.some((s: any) => s.clienteId === "aperturado_" + req.id);
+          if (!exists) {
+            console.log("Migrating legacy approved account:", req.id);
+            const planCuotasList = [];
+            const planElegidoVal = req.planElegido || "12";
+            const montoCuotaVal = req.montoCuota || 0;
+            const cant = parseInt(planElegidoVal) || 12;
+            const bDate = new Date();
+            for(let i = 1; i <= cant; i++) {
+              const nd = new Date(bDate);
+              nd.setMonth(nd.getMonth() + i);
+              planCuotasList.push({
+                numero: i,
+                vencimiento: nd.toISOString().split('T')[0],
+                montoOriginal: montoCuotaVal,
+                observacion: "Cuota mensual ordinaria",
+                estado: "PENDIENTE"
+              });
+            }
+
+            await addDoc(collection(db, "solicitudes"), {
+              clienteId: "aperturado_" + req.id,
+              clienteEmail: req.email || "no-email@cuenta-hogar.com",
+              datosPersonales: {
+                nombreCompleto: req.nombreCompleto || req.nombre || "",
+                numeroDni: req.numeroDni || req.dni || "",
+                telefono: req.whatsapp || "",
+                direccion: req.direccion || "",
+                localidad: req.localidad || "",
+                cuil: req.cuil || ""
+              },
+              documentos: {
+                dniFrente: req.dniFrenteURL || "",
+                dniDorso: req.dniDorsoURL || "",
+                reciboSueldo: req.comprobanteURL || "",
+                servicio: req.comprobanteDomicilioURL || ""
+              },
+              productoDeseado: req.productoNombre || req.necesidad || "A definir",
+              montoCuota: montoCuotaVal,
+              planElegido: planElegidoVal,
+              tasaInteresTna: req.tasaInteresTna || 60,
+              tasaMora: req.tasaMora || 0.5,
+              estado: "APROBADO",
+              estadoEntrega: "PENDIENTE_ENTREGA",
+              fechaCreacion: serverTimestamp(),
+              cargadoPorAfiliado: false,
+              afiliadoEmail: req.referidoPor || req.afiliadoEmail || null,
+              planPagos: planCuotasList
+            });
+            hasMigrated = true;
+          }
+        }
+      }
+
+      if (hasMigrated) {
+        // Refresh local solicitudes state
+        const q2 = query(collection(db, "solicitudes"), orderBy("fechaCreacion", "desc"));
+        const snap2 = await getDocs(q2);
+        const results2: Solicitud[] = [];
+        snap2.forEach(d => results2.push({ id: d.id, ...d.data() } as Solicitud));
+        setSolicitudes(results2);
+      }
     } catch (error) {
       console.error(error);
       try {
