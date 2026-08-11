@@ -3093,6 +3093,68 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                             </div>
                                          </div>
                                       )}
+
+                                       {cuota.estado === "PENDIENTE" && (
+                                         <div className="bg-zinc-950/60 p-3 rounded-lg border border-zinc-900/60 flex flex-col gap-2 mt-1">
+                                           <p className="text-[10px] text-zinc-500 font-medium">Registrar cobro manual realizado en efectivo o transferencia:</p>
+                                           <div className="flex gap-2">
+                                             <button
+                                               onClick={async () => {
+                                                 if (!confirm(`¿Confirmar cobro manual de la Cuota ${cuota.numero} por $${cuota.montoOriginal} en EFECTIVO?`)) return;
+                                                 const newPlan = [...(sol.planPagos || [])];
+                                                 newPlan[idx].estado = "PAGADO";
+                                                 newPlan[idx].fechaPago = new Date().toISOString();
+                                                 newPlan[idx].metodoPagoManual = "Efectivo";
+                                                 await updateDoc(doc(db, "solicitudes", sol.id), { planPagos: newPlan });
+                                                 if (sol.afiliadoEmail) {
+                                                   await addDoc(collection(db, "notificaciones"), {
+                                                     afiliadoEmail: sol.afiliadoEmail,
+                                                     mensaje: `¡Excelente! Se cobró la cuota ${cuota.numero} de ${sol.datosPersonales?.nombreCompleto || 'cliente'} por $${cuota.montoOriginal} en Efectivo. Comisión ganada.`,
+                                                     fecha: new Date().toISOString(),
+                                                     leida: false,
+                                                     comisionAsociada: cuota.montoOriginal * 0.15,
+                                                     estadoPago: "PENDIENTE",
+                                                     cuotaAsociada: cuota.numero || idx + 1,
+                                                     clienteNombre: sol.datosPersonales?.nombreCompleto || 'Desconocido'
+                                                   });
+                                                 }
+                                                 await fetchSolicitudes();
+                                                 alert("Pago registrado correctamente.");
+                                               }}
+                                               className="flex-1 bg-green-950/30 hover:bg-green-600 border border-green-500/20 text-green-400 hover:text-white py-1.5 rounded text-[10px] font-black transition uppercase tracking-wider"
+                                             >
+                                               💵 Efectivo
+                                             </button>
+                                             <button
+                                               onClick={async () => {
+                                                 if (!confirm(`¿Confirmar cobro manual de la Cuota ${cuota.numero} por $${cuota.montoOriginal} por TRANSFERENCIA?`)) return;
+                                                 const newPlan = [...(sol.planPagos || [])];
+                                                 newPlan[idx].estado = "PAGADO";
+                                                 newPlan[idx].fechaPago = new Date().toISOString();
+                                                 newPlan[idx].metodoPagoManual = "Transferencia";
+                                                 await updateDoc(doc(db, "solicitudes", sol.id), { planPagos: newPlan });
+                                                 if (sol.afiliadoEmail) {
+                                                   await addDoc(collection(db, "notificaciones"), {
+                                                     afiliadoEmail: sol.afiliadoEmail,
+                                                     mensaje: `¡Excelente! Se cobró la cuota ${cuota.numero} de ${sol.datosPersonales?.nombreCompleto || 'cliente'} por $${cuota.montoOriginal} vía Transferencia. Comisión ganada.`,
+                                                     fecha: new Date().toISOString(),
+                                                     leida: false,
+                                                     comisionAsociada: cuota.montoOriginal * 0.15,
+                                                     estadoPago: "PENDIENTE",
+                                                     cuotaAsociada: cuota.numero || idx + 1,
+                                                     clienteNombre: sol.datosPersonales?.nombreCompleto || 'Desconocido'
+                                                   });
+                                                 }
+                                                 await fetchSolicitudes();
+                                                 alert("Pago registrado correctamente.");
+                                               }}
+                                               className="flex-1 bg-blue-950/30 hover:bg-blue-650 border border-blue-500/20 text-blue-400 hover:text-white py-1.5 rounded text-[10px] font-black transition uppercase tracking-wider"
+                                             >
+                                               📱 Transf.
+                                             </button>
+                                           </div>
+                                         </div>
+                                       )}
                                     </div>
                                   ))}
                                 </div>
