@@ -2175,11 +2175,12 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                 const searchStr = `${sol.datosPersonales?.nombreCompleto || ''} ${sol.datosPersonales?.numeroDni || ''} ${sol.clienteEmail || ''} ${sol.productoDeseado || ''}`.toLowerCase();
                 if (searchTerm && !searchStr.includes(searchTerm.toLowerCase())) return false;
                 
-                if (activeTab === 'logistica') return sol.estado === 'APROBADO' && sol.estadoEntrega !== 'ENTREGADO';
-                if (activeTab === 'cobranzas') return sol.estado === 'APROBADO' && sol.estadoEntrega === 'ENTREGADO' && sol.planPagos && sol.planPagos.some(p => p.estado === 'EN_REVISION' || p.estado === 'PENDIENTE');
+                const estadoUpper = (sol.estado || "").toUpperCase();
+                if (activeTab === 'logistica') return estadoUpper === 'APROBADO' && sol.estadoEntrega !== 'ENTREGADO';
+                if (activeTab === 'cobranzas') return estadoUpper === 'APROBADO' && sol.estadoEntrega === 'ENTREGADO' && sol.planPagos && sol.planPagos.some(p => p.estado === 'EN_REVISION' || p.estado === 'PENDIENTE');
                 return true; // Historial
               }).map(sol => {
-                const currentEstado = nuevosEstados[sol.id] || sol.estado;
+                const currentEstado = (nuevosEstados[sol.id] || sol.estado || "").toUpperCase();
                 const currentMensaje = nuevosMensajes[sol.id] !== undefined ? nuevosMensajes[sol.id] : (sol.mensajeAdmin || "");
                 const isExpanded = expandedId === sol.id;
                 
@@ -2213,15 +2214,15 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                       <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
                         <div className="flex flex-col items-end">
                           <span className={`px-3 py-1 rounded-full text-xs font-black tracking-widest uppercase border ${
-                              sol.estado === "PENDIENTE" ? "bg-blue-500/20 text-blue-400 border-blue-500/50" :
-                              sol.estado === "PENDIENTE_FIRMA" ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/50" :
-                              sol.estado === "APROBADO" ? "bg-green-500/20 text-green-400 border-green-500/50" :
-                              sol.estado === "RECHAZADO" ? "bg-red-500/20 text-red-400 border-red-500/50" :
+                              currentEstado === "PENDIENTE" ? "bg-blue-500/20 text-blue-400 border-blue-500/50" :
+                              currentEstado === "PENDIENTE_FIRMA" ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/50" :
+                              currentEstado === "APROBADO" ? "bg-green-500/20 text-green-400 border-green-500/50" :
+                              currentEstado === "RECHAZADO" ? "bg-red-500/20 text-red-400 border-red-500/50" :
                               "bg-orange-500/20 text-orange-400 border-orange-500/50"
                             }`}>
-                            {sol.estado === "PENDIENTE_FIRMA" ? "Pendiente de Firma" : sol.estado}
+                            {currentEstado === "PENDIENTE_FIRMA" ? "Pendiente de Firma" : currentEstado}
                           </span>
-                          {sol.estado === 'APROBADO' && (
+                          {currentEstado === 'APROBADO' && (
                              <span className="text-[10px] text-zinc-500 mt-1">
                                Logística: {sol.estadoEntrega === 'ENTREGADO' ? '✅ Entregado' : '⏳ Pendiente'}
                              </span>
@@ -2337,7 +2338,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                              </div>
 
                              {/* LOGÍSTICA (SOLO SI ESTÁ APROBADO) */}
-                             {(sol.estado === "APROBADO" || currentEstado === "APROBADO") && (
+                             {currentEstado === "APROBADO" && (
                                <div className="bg-blue-950/20 border-2 border-blue-500/30 p-5 rounded-xl shadow-2xl shadow-black/60 relative overflow-hidden">
                                  <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10" />
                                  <h3 className="text-sm font-black text-blue-400 mb-4 uppercase tracking-widest flex items-center gap-2"><Truck className="w-4 h-4"/> Logística y Entrega</h3>
@@ -2658,7 +2659,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                              )}
 
                              {/* DOCUMENTACIÓN LEGAL */}
-                             {(currentEstado === "APROBADO" || sol.estado === "APROBADO") && (
+                             {currentEstado === "APROBADO" && (
                                <div className="bg-zinc-950 border border-zinc-850 p-4 rounded-xl">
                                  <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest text-center mb-3">Generación Legal (PDF)</h3>
                                  <div className="grid grid-cols-2 gap-3">
