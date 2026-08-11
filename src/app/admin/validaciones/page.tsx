@@ -49,6 +49,8 @@ type Solicitud = {
   comisionistaNombre?: string;
   comisionistaCosto?: number;
   comisionistaFechaEnvio?: string;
+  vinculoProductoId?: string;
+  vinculoUnidadId?: string;
 };
 
 const sucursalesDisponibles = [
@@ -337,6 +339,79 @@ export default function AdminValidacionesPage() {
     } catch (e: any) {
       console.error(e);
       alert("Error al transferir stock: " + e.message);
+    }
+  };
+
+  const handleReservarStock = async (solId: string, prodId: string, unitId: string, numSerie: string) => {
+    try {
+      if (!prodId) return alert("Debes seleccionar un producto del catálogo.");
+      
+      const prodRef = doc(db, "productos", prodId);
+      const currentProd = productos.find(p => p.id === prodId);
+      if (!currentProd) return;
+
+      let localidad = "Depósito Central";
+      let updatedStock = currentProd.stock || [];
+
+      if (unitId && unitId !== "manual") {
+        updatedStock = (currentProd.stock || []).map((u: any) => {
+          if (u.id === unitId) {
+            localidad = u.localidad || "Depósito Central";
+            return { ...u, estado: "Reservado" };
+          }
+          return u;
+        });
+      }
+
+      await updateDoc(prodRef, { stock: updatedStock });
+
+      await updateDoc(doc(db, "solicitudes", solId), {
+        vinculoProductoId: prodId,
+        vinculoUnidadId: unitId,
+        numeroSerie: numSerie,
+        estadoProducto: "En depósito (Central)",
+        historialRecepcion: `Reserva de stock realizada: Unidad con Serie/IMEI ${numSerie} reservada en ${localidad}.`
+      });
+
+      alert("¡Unidad reservada temporalmente con éxito en el stock!");
+      await fetchProductos();
+      await fetchSolicitudes();
+    } catch (e: any) {
+      console.error(e);
+      alert("Error al reservar stock: " + e.message);
+    }
+  };
+
+  const handleLiberarReserva = async (solId: string, prodId: string, unitId: string) => {
+    try {
+      if (!prodId) return;
+      
+      const prodRef = doc(db, "productos", prodId);
+      const currentProd = productos.find(p => p.id === prodId);
+      if (currentProd && unitId && unitId !== "manual") {
+        const updatedStock = (currentProd.stock || []).map((u: any) => {
+          if (u.id === unitId) {
+            return { ...u, estado: "Disponible" };
+          }
+          return u;
+        });
+        await updateDoc(prodRef, { stock: updatedStock });
+      }
+
+      await updateDoc(doc(db, "solicitudes", solId), {
+        vinculoProductoId: "",
+        vinculoUnidadId: "",
+        numeroSerie: "",
+        estadoProducto: "En depósito (Central)",
+        historialRecepcion: "Reserva de stock liberada. Unidad devuelta a disponibles."
+      });
+
+      alert("¡Reserva liberada! La unidad está disponible nuevamente.");
+      await fetchProductos();
+      await fetchSolicitudes();
+    } catch (e: any) {
+      console.error(e);
+      alert("Error al liberar reserva: " + e.message);
     }
   };
 
@@ -1013,6 +1088,32 @@ export default function AdminValidacionesPage() {
     fetchAperturas();
     fetchProductos();
   }, []);
+
+  useEffect(() => {
+    if (expandedId) {
+      const sol = solicitudes.find(s => s.id === expandedId);
+      if (sol) {
+        // Find product with name matching sol.productoDeseado case-insensitively
+        const match = productos.find(p => p.nombre.toLowerCase().trim() === (sol.productoDeseado || "").toLowerCase().trim());
+        if (match) {
+          setSelectedProductId(match.id);
+          setSelectedProductStock(match);
+          if (sol.vinculoUnidadId) {
+            setSelectedStockUnitId(sol.vinculoUnidadId);
+            setNserie(sol.numeroSerie || "");
+          } else {
+            setSelectedStockUnitId("");
+            setNserie("");
+          }
+        } else {
+          setSelectedProductId("");
+          setSelectedProductStock(null);
+          setSelectedStockUnitId("");
+          setNserie("");
+        }
+      }
+    }
+  }, [expandedId, solicitudes, productos]);
 
   
   
@@ -2344,24 +2445,176 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                  <h3 className="text-sm font-black text-blue-400 mb-4 uppercase tracking-widest flex items-center gap-2"><Truck className="w-4 h-4"/> Logística y Entrega</h3>
                                  
                                  <div className="space-y-4 relative z-10">
-                                   <div>
-                                      <label className="block text-xs font-bold text-blue-300/70 mb-2">Ubicación Física del Inventario:</label>
-                                      <select 
-                                        value={sol.estadoProducto || "En depósito (Central)"}
-                                        onChange={e => handleActualizarEstadoProducto(sol.id, e.target.value)}
-                                        className="bg-zinc-900 text-sm p-3 rounded-lg text-white font-medium outline-none border border-blue-900 focus:border-blue-500 w-full"
-                                      >
-                                         <option value="En depósito (Central)">🏢 En depósito (Central)</option>
-                                         <option value="En stock (Afiliado)">👤 En manos del Afiliado (Sucursal)</option>
-                                         <option value="Encargado a proveedor">📦 Encargado a proveedor (Pendiente)</option>
-                                         <option value="Traslado entre Puntos de Venta">🔄 Traslado de Stock en tránsito</option>
-                                         <option value="En viaje al Cliente (Comisionista)">🚚 En viaje al Cliente (Despachado)</option>
-                                      </select>
-                                      {sol.historialRecepcion && (
-                                        <p className="text-[10px] text-green-400 mt-2 bg-green-900/20 px-2 py-1.5 rounded-md border border-green-500/10 flex items-center gap-1">
-                                          <CheckCircle2 className="w-3 h-3"/> {sol.historialRecepcion}
-                                        </p>
-                                      )}
+                                   {/* SECCIÓN 1: STOCK FÍSICO Y RESERVA */}
+                                   <div className="bg-zinc-950 p-4 border border-zinc-800 rounded-xl space-y-3 relative z-10">
+                                     <h4 className="text-xs font-black text-blue-400 uppercase tracking-wider flex items-center gap-1.5 border-b border-zinc-900 pb-2">
+                                       📦 Stock Físico y Reserva
+                                     </h4>
+
+                                     {sol.vinculoUnidadId ? (
+                                       // YA TIENE RESERVA
+                                       <div className="space-y-3">
+                                         <div className="bg-blue-950/30 border border-blue-500/30 p-3 rounded-lg text-xs space-y-1.5">
+                                           <p className="text-zinc-300 font-bold flex items-center gap-1.5 text-blue-300">
+                                             📌 ¡Stock Reservado con éxito!
+                                           </p>
+                                           <p className="text-zinc-400">
+                                             <strong className="text-zinc-500">Producto:</strong> {sol.productoDeseado}
+                                           </p>
+                                           <p className="text-zinc-400 font-mono">
+                                             <strong className="text-zinc-500 font-sans">IMEI/Serie:</strong> {sol.numeroSerie || "Sin serie registrada"}
+                                           </p>
+                                           <p className="text-zinc-400">
+                                             <strong className="text-zinc-500">Ubicación Actual:</strong> <span className="bg-blue-900/40 text-blue-300 px-2 py-0.5 rounded text-[10px] font-bold">{sol.estadoProducto || "Depósito Central"}</span>
+                                           </p>
+                                         </div>
+
+                                         {/* Ruteo / Transferencia entre Sucursales */}
+                                         {selectedStockUnitId && selectedStockUnitId !== "manual" && selectedProductStock && (
+                                           <div className="bg-zinc-900 border border-zinc-800/80 p-3 rounded-lg space-y-2">
+                                             <label className="block text-[10px] text-zinc-400 font-bold uppercase">Ruteo: Transferir Unidad a Sucursal</label>
+                                             <div className="flex gap-2">
+                                               <select 
+                                                 id={`target_sucursal_${sol.id}`}
+                                                 className="bg-zinc-950 text-zinc-100 px-2 py-1.5 rounded text-xs border border-zinc-850 flex-1 outline-none focus:border-blue-500"
+                                               >
+                                                 {sucursalesDisponibles.map(suc => (
+                                                   <option key={suc} value={suc}>{suc}</option>
+                                                 ))}
+                                               </select>
+                                               <button
+                                                 type="button"
+                                                 onClick={() => {
+                                                   const el = document.getElementById(`target_sucursal_${sol.id}`) as HTMLSelectElement;
+                                                   const targetSuc = el.value;
+                                                   if (targetSuc) {
+                                                     handleTransferirStockUnidad(selectedProductId, selectedStockUnitId, targetSuc, sol.id);
+                                                   }
+                                                 }}
+                                                 className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded text-[10px] transition-all uppercase tracking-wider flex items-center gap-1 active:scale-95"
+                                               >
+                                                 🔄 Trasladar
+                                               </button>
+                                             </div>
+                                           </div>
+                                         )}
+
+                                         <button
+                                           type="button"
+                                           onClick={() => handleLiberarReserva(sol.id, sol.vinculoProductoId || selectedProductId, sol.vinculoUnidadId || "")}
+                                           className="w-full bg-red-950/20 hover:bg-red-950/40 border border-red-900 text-red-400 font-bold py-2 rounded-lg text-xs transition-colors uppercase tracking-wider"
+                                         >
+                                           ✕ Liberar Reserva (Volver a Disponible)
+                                         </button>
+                                       </div>
+                                     ) : (
+                                       // AÚN NO TIENE RESERVA (SELECCIONAR Y RESERVAR)
+                                       <div className="space-y-3">
+                                         {/* Selector de Producto de Inventario */}
+                                         <div>
+                                           <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Producto en Catálogo</label>
+                                           <select 
+                                             value={selectedProductId}
+                                             onChange={(e) => {
+                                               const pId = e.target.value;
+                                               setSelectedProductId(pId);
+                                               const prodObj = productos.find(p => p.id === pId);
+                                               setSelectedProductStock(prodObj || null);
+                                               setSelectedStockUnitId("manual");
+                                               setNserie("");
+                                             }}
+                                             className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg text-xs border border-zinc-800 w-full focus:border-blue-500 outline-none"
+                                           >
+                                             <option value="">-- Seleccionar de catálogo --</option>
+                                             {productos.map(p => (
+                                               <option key={p.id} value={p.id}>{p.nombre}</option>
+                                             ))}
+                                           </select>
+                                         </div>
+
+                                         {/* Selector de Unidad de Stock */}
+                                         {selectedProductStock && (
+                                           <div>
+                                             <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Unidad de Stock Disponible</label>
+                                             <select 
+                                               value={selectedStockUnitId}
+                                               onChange={(e) => {
+                                                 const unitId = e.target.value;
+                                                 setSelectedStockUnitId(unitId);
+                                                 if (unitId === "manual") {
+                                                   setNserie("");
+                                                 } else {
+                                                   const unit = (selectedProductStock?.stock || []).find((u: any) => u.id === unitId);
+                                                   setNserie(unit?.nserie || "");
+                                                 }
+                                               }}
+                                               className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg text-xs border border-zinc-800 w-full focus:border-blue-500 outline-none"
+                                             >
+                                               <option value="manual">Cargar manualmente (Sin stock / Otro)</option>
+                                               {(selectedProductStock.stock || []).filter((u: any) => u.estado === "Disponible").map((u: any) => (
+                                                 <option key={u.id} value={u.id}>
+                                                   [{u.localidad}] - {u.nserie ? `IMEI/Serie: ${u.nserie}` : "Sin número registrado"}
+                                                 </option>
+                                               ))}
+                                             </select>
+                                           </div>
+                                         )}
+
+                                         {/* Informar asignación de venta */}
+                                         <div className="text-[9px] text-zinc-400 font-medium bg-zinc-900 p-2 rounded border border-zinc-850">
+                                           {!sol.afiliadoEmail ? (
+                                             <span className="text-yellow-500">ℹ️ Venta libre (sin asignar): puedes asignar stock de cualquier ubicación.</span>
+                                           ) : (
+                                             <span>ℹ️ Venta delegada a: <strong className="text-zinc-300">{sol.afiliadoEmail}</strong>. Se aconseja ruteo local o traslado.</span>
+                                           )}
+                                         </div>
+
+                                         <div>
+                                           <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Nº de Serie / IMEI a Reservar</label>
+                                           <input 
+                                             type="text" 
+                                             value={nserie} 
+                                             onChange={e=>setNserie(e.target.value)} 
+                                             placeholder="Ej: SN-12345" 
+                                             className="bg-zinc-900 text-zinc-100 px-3 py-2 border border-zinc-800 rounded-lg text-xs w-full focus:border-blue-500 outline-none font-mono" 
+                                           />
+                                         </div>
+
+                                         <button
+                                           type="button"
+                                           onClick={() => handleReservarStock(sol.id, selectedProductId, selectedStockUnitId, nserie)}
+                                           className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg text-xs transition-colors uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95"
+                                         >
+                                           📌 Confirmar Reserva de Stock
+                                         </button>
+                                       </div>
+                                     )}
+                                   </div>
+
+                                   {/* UBICACIÓN LOGÍSTICA GENERAL */}
+                                   <div className="bg-zinc-950 p-4 border border-zinc-800 rounded-xl space-y-3 relative z-10">
+                                     <h4 className="text-xs font-black text-blue-400 uppercase tracking-wider flex items-center gap-1.5 border-b border-zinc-900 pb-2">
+                                       📍 Ubicación Física e Historial
+                                     </h4>
+                                     <div>
+                                        <label className="block text-[10px] text-zinc-500 mb-1 font-bold uppercase">Estado de Ubicación Actual:</label>
+                                        <select 
+                                          value={sol.estadoProducto || "En depósito (Central)"}
+                                          onChange={e => handleActualizarEstadoProducto(sol.id, e.target.value)}
+                                          className="bg-zinc-900 text-sm p-3 rounded-lg text-white font-medium outline-none border border-blue-900 focus:border-blue-500 w-full"
+                                        >
+                                           <option value="En depósito (Central)">🏢 En depósito (Central)</option>
+                                           <option value="En stock (Afiliado)">👤 En manos del Afiliado (Sucursal)</option>
+                                           <option value="Encargado a proveedor">📦 Encargado a proveedor (Pendiente)</option>
+                                           <option value="Traslado entre Puntos de Venta">🔄 Traslado de Stock en tránsito</option>
+                                           <option value="En viaje al Cliente (Comisionista)">🚚 En viaje al Cliente (Despachado)</option>
+                                        </select>
+                                        {sol.historialRecepcion && (
+                                          <p className="text-[10px] text-green-400 mt-2 bg-green-900/20 px-2 py-1.5 rounded-md border border-green-500/10 flex items-center gap-1">
+                                            <CheckCircle2 className="w-3 h-3"/> {sol.historialRecepcion}
+                                          </p>
+                                        )}
+                                     </div>
                                    </div>
 
                                    {/* REGISTRO DE COMISIONISTA / ENVÍO */}
