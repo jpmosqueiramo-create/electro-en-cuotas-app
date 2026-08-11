@@ -52,6 +52,7 @@ type Solicitud = {
   vinculoProductoId?: string;
   vinculoUnidadId?: string;
   sucursalDestino?: string;
+  comisionistaFechaRecepcion?: string;
 };
 
 const sucursalesDisponibles = [
@@ -441,6 +442,7 @@ export default function AdminValidacionesPage() {
 
       await updateDoc(doc(db, "solicitudes", solId), {
         estadoProducto: "En stock (Afiliado)",
+        comisionistaFechaRecepcion: new Date().toISOString(),
         historialRecepcion: `El comisionista entregó el producto al afiliado en la sucursal de destino: ${destino}. Ruteo interno finalizado.`
       });
 
@@ -2621,8 +2623,39 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                  </div>
                                                )}
 
+                                               {/* HISTORIAL / AUDITORÍA DE LOGÍSTICA PERSISTENTE */}
+                                               {(sol.comisionistaNombre || sol.comisionistaCosto || sol.comisionistaFechaEnvio || sol.comisionistaFechaRecepcion) ? (
+                                                 <div className="bg-zinc-900 border border-zinc-800 p-3.5 rounded-lg space-y-2 text-[11px]">
+                                                   <h5 className="text-[10px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-1.5 border-b border-zinc-950 pb-1 mb-2">
+                                                     📋 Registro de Envío e Internación (Auditoría)
+                                                   </h5>
+                                                   <div className="space-y-1 text-zinc-300">
+                                                     {sol.comisionistaNombre && (
+                                                       <p>
+                                                         <strong className="text-zinc-500">Comisionista:</strong> {sol.comisionistaNombre}
+                                                       </p>
+                                                     )}
+                                                     {sol.comisionistaCosto !== undefined && (
+                                                       <p>
+                                                         <strong className="text-zinc-500">Costo de Envío:</strong> <span className="text-green-400 font-bold">${sol.comisionistaCosto}</span>
+                                                       </p>
+                                                     )}
+                                                     {sol.comisionistaFechaEnvio && (
+                                                       <p>
+                                                         <strong className="text-zinc-500">Fecha de Envío:</strong> {new Date(sol.comisionistaFechaEnvio).toLocaleDateString("es-AR")}
+                                                       </p>
+                                                     )}
+                                                     {sol.comisionistaFechaRecepcion && (
+                                                       <p>
+                                                         <strong className="text-zinc-500">Fecha de Arribo a Sucursal:</strong> {new Date(sol.comisionistaFechaRecepcion).toLocaleDateString("es-AR")}
+                                                       </p>
+                                                     )}
+                                                   </div>
+                                                 </div>
+                                               ) : null}
+
                                                {sol.historialRecepcion && (
-                                                 <p className="text-[10px] text-green-400 mt-2 bg-green-900/20 px-2.5 py-1.5 rounded-md border border-green-500/10 flex items-center gap-1.5">
+                                                 <p className="text-[10px] text-green-400 mt-2 bg-green-900/20 px-2.5 py-1.5 rounded-md border border-green-500/10 flex items-center gap-1.5 font-mono">
                                                    <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0"/> {sol.historialRecepcion}
                                                  </p>
                                                )}
