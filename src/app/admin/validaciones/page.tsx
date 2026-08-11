@@ -100,6 +100,10 @@ export default function AdminValidacionesPage() {
   const [comisionistaCosto, setComisionistaCosto] = useState("");
   const [comisionistaFechaEnvio, setComisionistaFechaEnvio] = useState("");
   const [selectedDestino, setSelectedDestino] = useState("Lincoln");
+  const [remitoDestinatarioNombre, setRemitoDestinatarioNombre] = useState("");
+  const [remitoDestinatarioDireccion, setRemitoDestinatarioDireccion] = useState("");
+  const [remitoDestinatarioDoc, setRemitoDestinatarioDoc] = useState("");
+  const [remitoDestinatarioTel, setRemitoDestinatarioTel] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editFields, setEditFields] = useState<any>({
     nombreCompleto: "",
@@ -1153,11 +1157,12 @@ export default function AdminValidacionesPage() {
         }
 
         // Auto-select sucursalDestino
-        if (sol.sucursalDestino) {
-          setSelectedDestino(sol.sucursalDestino);
-        } else {
-          setSelectedDestino(sol.datosPersonales?.localidad || "Lincoln");
-        }
+        const dest = sol.sucursalDestino || sol.datosPersonales?.localidad || "Lincoln";
+        setSelectedDestino(dest);
+        setRemitoDestinatarioNombre(sol.afiliadoEmail || "");
+        setRemitoDestinatarioDireccion(dest);
+        setRemitoDestinatarioDoc("");
+        setRemitoDestinatarioTel("");
       }
     }
   }, [expandedId, solicitudes, productos]);
@@ -2533,6 +2538,57 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                  </p>
                                                </div>
 
+                                               {/* DATOS DEL DESTINATARIO PARA EL REMITO */}
+                                               <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/80 space-y-2 text-[11px] mb-2">
+                                                 <h5 className="text-[10px] font-black text-amber-500 uppercase tracking-widest">
+                                                   👤 Destinatario del Remito (Vendedor / Afiliado)
+                                                 </h5>
+                                                 <div className="space-y-2">
+                                                   <div>
+                                                     <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Nombre Destinatario</label>
+                                                     <input 
+                                                       type="text"
+                                                       value={remitoDestinatarioNombre}
+                                                       onChange={e => setRemitoDestinatarioNombre(e.target.value)}
+                                                       placeholder="Nombre del Vendedor / Afiliado o Cliente"
+                                                       className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-bold"
+                                                     />
+                                                   </div>
+                                                   <div className="grid grid-cols-2 gap-2">
+                                                     <div>
+                                                       <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">DNI / CUIT</label>
+                                                       <input 
+                                                         type="text"
+                                                         value={remitoDestinatarioDoc}
+                                                         onChange={e => setRemitoDestinatarioDoc(e.target.value)}
+                                                         placeholder="Documento / CUIT"
+                                                         className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500"
+                                                       />
+                                                     </div>
+                                                     <div>
+                                                       <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Teléfono</label>
+                                                       <input 
+                                                         type="text"
+                                                         value={remitoDestinatarioTel}
+                                                         onChange={e => setRemitoDestinatarioTel(e.target.value)}
+                                                         placeholder="Teléfono"
+                                                         className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500"
+                                                       />
+                                                     </div>
+                                                   </div>
+                                                   <div>
+                                                     <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Dirección de Entrega</label>
+                                                     <input 
+                                                       type="text"
+                                                       value={remitoDestinatarioDireccion}
+                                                       onChange={e => setRemitoDestinatarioDireccion(e.target.value)}
+                                                       placeholder="Sucursal o domicilio del afiliado"
+                                                       className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500"
+                                                     />
+                                                   </div>
+                                                 </div>
+                                               </div>
+
                                                {/* BOTÓN DE GENERACIÓN DE REMITO (EN RUTEO INTERNO) */}
                                                <button
                                                  type="button"
@@ -2544,10 +2600,10 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                    const rDatos = {
                                                      nroRemito: `R-${sol.id.substring(0, 6).toUpperCase()}`,
                                                      fecha: new Date().toLocaleDateString("es-AR"),
-                                                     clienteNombre: sol.datosPersonales?.nombreCompleto || "",
-                                                     clienteDni: sol.datosPersonales?.numeroDni || "",
-                                                     clienteDireccion: `${sol.datosPersonales?.direccion || ''}, ${sol.datosPersonales?.localidad || ''}`,
-                                                     clienteTelefono: sol.datosPersonales?.telefono || "",
+                                                     clienteNombre: remitoDestinatarioNombre || sol.afiliadoEmail || "",
+                                                     clienteDni: remitoDestinatarioDoc || "",
+                                                     clienteDireccion: remitoDestinatarioDireccion || sol.sucursalDestino || "",
+                                                     clienteTelefono: remitoDestinatarioTel || "",
                                                      productoNombre: sol.productoDeseado || (selectedProductStock?.nombre || ""),
                                                      nserie: sol.numeroSerie || unit?.nserie || "",
                                                      origen: unit?.localidad || "Depósito Central",
@@ -2556,7 +2612,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                    };
                                                    generarRemitoModelo(rDatos);
                                                  }}
-                                                 className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 shadow-md uppercase tracking-wider"
+                                                 className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 shadow-md uppercase tracking-wider mb-2"
                                                >
                                                  📄 Generar Remito de Envío (PDF)
                                                </button>

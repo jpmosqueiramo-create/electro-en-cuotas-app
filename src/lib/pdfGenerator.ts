@@ -408,10 +408,10 @@ export const generarRemitoModelo = (datos: DatosRemito) => {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text("Datos del Destinatario (Cliente)", 15, 75);
+  doc.text("Datos del Destinatario", 15, 75);
 
-  drawFormBox(doc, "Señor/a (Nombre y Apellido):", datos.clienteNombre, 15, 79, 180, 11);
-  drawFormBox(doc, "DNI:", datos.clienteDni, 15, 93, 60, 11);
+  drawFormBox(doc, "Destinatario (Nombre / Vendedor / Afiliado):", datos.clienteNombre, 15, 79, 180, 11);
+  drawFormBox(doc, "DNI / CUIT:", datos.clienteDni, 15, 93, 60, 11);
   drawFormBox(doc, "Teléfono / WhatsApp:", datos.clienteTelefono, 78, 93, 117, 11);
   drawFormBox(doc, "Dirección de Entrega:", datos.clienteDireccion, 15, 107, 180, 11);
 
