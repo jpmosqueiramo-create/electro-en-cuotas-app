@@ -181,15 +181,15 @@ export default function RedAfiliadosPage() {
             <div className="space-y-4 text-[11px] text-zinc-500 text-justify leading-relaxed column-count-1 md:columns-2 gap-8">
               
               <p>
-                <strong className="text-zinc-300">Naturaleza del Vínculo:</strong> La relación es estrictamente comercial y civil. Bajo ninguna circunstancia existirá relación de dependencia, subordinación jurídica, técnica ni económica entre el Afiliado y Cuenta Hogar SRL.
+                <strong className="text-zinc-300">Naturaleza del Vínculo:</strong> La relación es estrictamente comercial y civil. Bajo ninguna circunstancia existirá relación de dependencia, subordinación jurídica, técnica ni económica entre el Afiliado y LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar).
               </p>
               
               <p>
-                <strong className="text-zinc-300">Derecho de Admisión y Baja:</strong> Cuenta Hogar SRL se reserva el derecho de admisión y el derecho de suspender o dar de baja a cualquier Afiliado de forma unilateral, sin invocación de causa, sin previo aviso y sin derecho a reclamo o indemnización alguna.
+                <strong className="text-zinc-300">Derecho de Admisión y Baja:</strong> LOOP GESTIÓN INTEGRAL S.A.S. se reserva el derecho de admisión y el derecho de suspender o dar de baja a cualquier Afiliado de forma unilateral, sin invocación de causa, sin previo aviso y sin derecho a reclamo o indemnización alguna.
               </p>
               
               <p>
-                <strong className="text-zinc-300">Condiciones de Comisión:</strong> El cobro del 15% está sujeto a la gestión activa y acreditación de fondos. Si el cliente entra en mora y el Afiliado no regulariza el pago, obligando a Cuenta Hogar SRL a intervenir directamente, el Afiliado perderá automáticamente el derecho a percibir la comisión de esa cuota y de todas las futuras de dicho contrato.
+                <strong className="text-zinc-300">Condiciones de Comisión:</strong> El cobro del 15% está sujeto a la gestión activa y acreditación de fondos. Si el cliente entra en mora y el Afiliado no regulariza el pago, obligando a LOOP GESTIÓN INTEGRAL S.A.S. a intervenir directamente, el Afiliado perderá automáticamente el derecho a percibir la comisión de esa cuota y de todas las futuras de dicho contrato.
               </p>
               
               <p>
@@ -201,14 +201,14 @@ export default function RedAfiliadosPage() {
               </p>
               
               <p>
-                <strong className="text-zinc-300">Código de Conducta:</strong> Prohibido el uso de extorsiones o métodos abusivos para el cobro. El Afiliado asume total responsabilidad civil y penal por su accionar, manteniendo indemne a Cuenta Hogar SRL.
+                <strong className="text-zinc-300">Código de Conducta:</strong> Prohibido el uso de extorsiones o métodos abusivos para el cobro. El Afiliado asume total responsabilidad civil y penal por su accionar, manteniendo indemne a LOOP GESTIÓN INTEGRAL S.A.S.
               </p>
             </div>
           </div>
 
           <div className="pt-8 border-t border-zinc-850 text-center text-zinc-400 text-xs space-y-2">
-            <p className="font-bold text-zinc-400">Cuenta Hogar SRL | CUIT: 30-00000000-0 | Domicilio Legal: Av. Ejemplo 123, CABA, Argentina</p>
-            <p>Cuenta Hogar SRL presta servicios de gestión administrativa y financiación propia. No realizamos intermediación financiera en los términos de la Ley de Entidades Financieras.</p>
+            <p className="font-bold text-zinc-400">LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar) | Domicilio Legal: Av. Ejemplo 123, CABA, Argentina</p>
+            <p>LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar) presta servicios de gestión administrativa y financiación propia. No realizamos intermediación financiera en los términos de la Ley de Entidades Financieras.</p>
           </div>
           
         </div>

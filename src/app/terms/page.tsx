@@ -25,7 +25,7 @@ export default function TermsPage() {
             Términos y Condiciones Generales de Servicio
           </h1>
           <p className="text-lg text-zinc-400 font-light">
-            Por favor, leé detenidamente las condiciones que rigen los servicios de gestión de Cuenta Hogar SRL.
+            Por favor, leé detenidamente las condiciones que rigen los servicios de gestión de LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar).
           </p>
         </header>
 
@@ -36,7 +36,7 @@ export default function TermsPage() {
               <span className="text-yellow-400">1.</span> Naturaleza de la Empresa y Objeto de los Servicios
             </h2>
             <p className="leading-relaxed text-justify">
-              <strong className="text-black">Cuenta Hogar SRL es exclusivamente una empresa de prestación de servicios.</strong> Nuestra actividad principal consiste en la gestión administrativa y el mandato de compra de productos tecnológicos y electrodomésticos a pedido del cliente. Dejamos expresa constancia de que Cuenta Hogar SRL <strong>NO es una tienda minorista, NO es el fabricante de los bienes, y NO es una entidad financiera</strong> en los términos de la Ley de Entidades Financieras de la República Argentina.
+              <strong className="text-black">LOOP GESTIÓN INTEGRAL S.A.S. es exclusivamente una empresa de prestación de servicios (bajo la marca fantasía Cuenta Hogar). de prestación de servicios.</strong> Nuestra actividad principal consiste en la gestión administrativa y el mandato de compra de productos tecnológicos y electrodomésticos a pedido del cliente. Dejamos expresa constancia de que Cuenta Hogar SRL <strong>NO es una tienda minorista, NO es el fabricante de los bienes, y NO es una entidad financiera</strong> en los términos de la Ley de Entidades Financieras de la República Argentina.
             </p>
           </section>
 
@@ -45,7 +45,7 @@ export default function TermsPage() {
               <span className="text-yellow-400">2.</span> Contrato de Mandato de Compra
             </h2>
             <p className="leading-relaxed text-justify">
-              Al utilizar nuestra plataforma y solicitar un producto, el cliente otorga una orden expresa y mandato irrevocable a Cuenta Hogar SRL para que, actuando en su nombre y representación, adquiera el bien especificado utilizando el capital de la empresa. El cliente se compromete a abonar los costos de gestión, el valor del bien y la financiación asociada según el plan acordado.
+              Al utilizar nuestra plataforma y solicitar un producto, el cliente otorga una orden expresa y mandato irrevocable a LOOP GESTIÓN INTEGRAL S.A.S. para que, actuando en su nombre y representación, adquiera el bien especificado utilizando el capital de la empresa. El cliente se compromete a abonar los costos de gestión, el valor del bien y la financiación asociada según el plan acordado.
             </p>
           </section>
 
@@ -54,7 +54,7 @@ export default function TermsPage() {
               <span className="text-yellow-400">3.</span> Intermediación en Soporte Técnico
             </h2>
             <p className="leading-relaxed text-justify">
-              Cuenta Hogar SRL ofrece un servicio de acompañamiento y gestión de soporte técnico ante fallas de fábrica. Esto implica que la empresa actuará como intermediario para gestionar la garantía oficial ante el fabricante o el proveedor original. <strong>Cuenta Hogar SRL no realiza reparaciones técnicas directas ni abre los equipos bajo ninguna circunstancia.</strong> Los tiempos de respuesta y resolución técnica dependen exclusivamente de las políticas del fabricante.
+              LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar) ofrece un servicio de acompañamiento y gestión de soporte técnico ante fallas de fábrica. Esto implica que la empresa actuará como intermediario para gestionar la garantía oficial ante el fabricante o el proveedor original. <strong>LOOP GESTIÓN INTEGRAL S.A.S. no realiza reparaciones técnicas directas ni abre los equipos bajo ninguna circunstancia.</strong> Los tiempos de respuesta y resolución técnica dependen exclusivamente de las políticas del fabricante.
             </p>
           </section>
 
@@ -63,7 +63,7 @@ export default function TermsPage() {
               <span className="text-yellow-400">4.</span> Obligación de Pago y Mora
             </h2>
             <p className="leading-relaxed text-justify">
-              Al conformar el plan, el cliente asume una obligación de pago estructurada en cuotas fijas, expresadas en pesos argentinos, documentada mediante la suscripción de títulos a sola firma (pagarés) y contratos de mutuo o adhesión. En caso de incumplimiento de pago, el cliente incurrirá en mora automática sin necesidad de interpelación previa. Cuenta Hogar SRL se reserva el derecho de iniciar las acciones de recupero extrajudicial y judicial pertinentes de forma directa o a través de terceros autorizados.
+              Al conformar el plan, el cliente asume una obligación de pago estructurada en cuotas fijas, expresadas en pesos argentinos, documentada mediante la suscripción de títulos a sola firma (pagarés) y contratos de mutuo o adhesión. En caso de incumplimiento de pago, el cliente incurrirá en mora automática sin necesidad de interpelación previa. LOOP GESTIÓN INTEGRAL S.A.S. se reserva el derecho de iniciar las acciones de recupero extrajudicial y judicial pertinentes de forma directa o a través de terceros autorizados.
             </p>
           </section>
 
@@ -72,7 +72,7 @@ export default function TermsPage() {
               <span className="text-yellow-400">5.</span> Red de Afiliados Independientes
             </h2>
             <p className="leading-relaxed text-justify">
-              La plataforma opera comercialmente con el apoyo de una red de <strong>Afiliados Independientes</strong>. Estos son terceros ajenos a la estructura societaria de Cuenta Hogar SRL que prestan servicios de referenciación, scoring participativo y gestión de cobranza. <strong>Bajo ninguna circunstancia existe relación de dependencia laboral ni subordinación jurídica entre Cuenta Hogar SRL y el Afiliado Independiente.</strong> Cada Afiliado asume su propia responsabilidad civil y penal por sus actos, gestiones y omisiones durante su actividad comercial independiente.
+              La plataforma opera comercialmente con el apoyo de una red de <strong>Afiliados Independientes</strong>. Estos son terceros ajenos a la estructura societaria de LOOP GESTIÓN INTEGRAL S.A.S. que prestan servicios de referenciación, scoring participativo y gestión de cobranza. <strong>Bajo ninguna circunstancia existe relación de dependencia laboral ni subordinación jurídica entre LOOP GESTIÓN INTEGRAL S.A.S. y el Afiliado Independiente.</strong> Cada Afiliado asume su propia responsabilidad civil y penal por sus actos, gestiones y omisiones durante su actividad comercial independiente.
             </p>
           </section>
 
@@ -89,7 +89,7 @@ export default function TermsPage() {
 
         <div className="mt-20 pt-8 border-t border-zinc-850 text-center text-sm text-zinc-500">
           <p>Última actualización: {new Date().toLocaleDateString('es-AR')}</p>
-          <p className="mt-2">Cuenta Hogar SRL | CUIT: 30-00000000-0 | Domicilio Legal: Av. Ejemplo 123, CABA, Argentina</p>
+          <p className="mt-2">LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar) | Domicilio Legal: Av. Ejemplo 123, CABA, Argentina</p>
         </div>
       </main>
     </div>

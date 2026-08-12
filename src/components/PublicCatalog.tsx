@@ -456,7 +456,7 @@ export default function PublicCatalog() {
           </p>
 
           <div className="pt-6 border-t border-zinc-850 max-w-3xl mx-auto text-xs text-zinc-400">
-            <p>Cuenta Hogar SRL presta servicios de gestión administrativa y financiación propia. No realizamos intermediación financiera en los términos de la Ley de Entidades Financieras.</p>
+            <p>LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar) presta servicios de gestión administrativa y financiación propia. No realizamos intermediación financiera en los términos de la Ley de Entidades Financieras.</p>
           </div>
         </div>
       </footer>

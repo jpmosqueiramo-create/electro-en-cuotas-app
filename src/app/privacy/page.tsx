@@ -36,7 +36,7 @@ export default function PrivacyPage() {
               <span className="text-yellow-400">1.</span> Marco Legal
             </h2>
             <p className="leading-relaxed">
-              Cuenta Hogar SRL respeta tu derecho a la privacidad. La presente política se encuentra regulada por la legislación vigente de la República Argentina, en especial la Ley de Protección de Datos Personales N° 25.326 y sus disposiciones complementarias.
+              LOOP GESTIÓN INTEGRAL S.A.S. (comercialmente Cuenta Hogar) respeta tu derecho a la privacidad. La presente política se encuentra regulada por la legislación vigente de la República Argentina, en especial la Ley de Protección de Datos Personales N° 25.326 y sus disposiciones complementarias.
             </p>
           </section>
 
@@ -83,7 +83,7 @@ export default function PrivacyPage() {
               <span className="text-yellow-400">5.</span> Seguridad
             </h2>
             <p className="leading-relaxed">
-              Tus archivos digitales (fotos de DNI, comprobantes) y datos personales se encuentran protegidos mediante protocolos de encriptación y son almacenados en servidores seguros con acceso restringido únicamente al personal autorizado y evaluador de Cuenta Hogar SRL.
+              Tus archivos digitales (fotos de DNI, comprobantes) y datos personales se encuentran protegidos mediante protocolos de encriptación y son almacenados en servidores seguros con acceso restringido únicamente al personal autorizado y evaluador de LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar).
             </p>
           </section>
 
@@ -100,7 +100,7 @@ export default function PrivacyPage() {
 
         <div className="mt-20 pt-8 border-t border-zinc-850 text-center text-sm text-zinc-500">
           <p>Última actualización: {new Date().toLocaleDateString('es-AR')}</p>
-          <p className="mt-2">Cuenta Hogar SRL | CUIT: 30-00000000-0 | Domicilio Legal: Av. Ejemplo 123, CABA, Argentina</p>
+          <p className="mt-2">LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar) | Domicilio Legal: Av. Ejemplo 123, CABA, Argentina</p>
         </div>
       </main>
     </div>
