@@ -766,6 +766,7 @@ export interface DatosComprobantePago {
   cuentaDestino?: string;
   proximaCuotaValor?: number;
   proximaCuotaNumero?: number;
+  esPagoParcial?: boolean;
 }
 
 export const generarComprobantePago = (datos: DatosComprobantePago) => {
@@ -860,5 +861,8 @@ export const generarComprobantePago = (datos: DatosComprobantePago) => {
   doc.setFontSize(7.5);
   doc.text("Cuenta Hogar", 96, y + 4);
 
-  doc.save(`Recibo-${datos.nroRecibo}.pdf`);
+  const clientClean = datos.clienteNombre.trim().replace(/[^a-zA-Z0-9\s]/g, "");
+  const productClean = datos.productoNombre.trim().replace(/[^a-zA-Z0-9\s]/g, "");
+  const suffix = datos.esPagoParcial ? " (Pago Parcial)" : "";
+  doc.save(`${clientClean} - ${productClean} - Cuota ${datos.cuotaNumero}${suffix}.pdf`);
 };

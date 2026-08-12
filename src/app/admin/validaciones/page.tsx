@@ -525,7 +525,8 @@ export default function AdminValidacionesPage() {
         nroComprobante: pagoComprobante.trim() || undefined,
         cuentaDestino: pagoCuentaDestino.trim() || undefined,
         proximaCuotaValor: nextCuotaVal,
-        proximaCuotaNumero: nextCuotaNum
+        proximaCuotaNumero: nextCuotaNum,
+        esPagoParcial: difference !== 0
       });
 
       // Enviar Notificación al Afiliado
