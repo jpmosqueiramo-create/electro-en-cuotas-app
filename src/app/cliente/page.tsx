@@ -184,8 +184,14 @@ export default function ClientePage() {
         snapReload.forEach(doc => reloadResults.push({ id: doc.id, ...doc.data() } as Solicitud));
         setSolicitudes(reloadResults);
         setTieneUnlinked(false);
+        if (reloadResults.length > 0) {
+          setMostrarFormulario(false);
+        }
       } else {
         setTieneUnlinked(unlinkedSols.length > 0);
+        if (results.length > 0) {
+          setMostrarFormulario(false);
+        }
       }
     } catch (e) {
       console.error(e);
