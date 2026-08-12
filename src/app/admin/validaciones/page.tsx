@@ -3023,9 +3023,55 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                           {/* COLUMNA 3: COBRANZA Y CUOTAS (SOLO SI TIENE PLAN) */}
                           <div className="flex flex-col gap-6">
                             {sol.planPagos ? (
-                              <div className="bg-green-950/10 border-2 border-green-500/20 p-5 rounded-xl shadow-2xl shadow-black/60 h-full">
-                                <h3 className="text-sm font-black text-green-400 mb-4 uppercase tracking-widest flex items-center gap-2"><DollarSign className="w-4 h-4"/> Auditoría de Cuotas</h3>
-                                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                              <div className="bg-green-950/10 border-2 border-green-500/20 p-5 rounded-xl shadow-2xl shadow-black/60 h-full flex flex-col gap-4">
+                                <h3 className="text-sm font-black text-green-400 uppercase tracking-widest flex items-center gap-2 border-b border-green-950/50 pb-3"><DollarSign className="w-4 h-4"/> Auditoría de Cuotas</h3>
+                                
+                                {/* RESUMEN DE PAGO */}
+                                {(() => {
+                                   const plan = sol.planPagos || [];
+                                   const paidCuotas = plan.filter((c: any) => c.estado === "PAGADO");
+                                   const pendingCuotas = plan.filter((c: any) => c.estado === "PENDIENTE" || c.estado === "EN_REVISION");
+                                   
+                                   const totalAbonado = paidCuotas.reduce((sum: number, c: any) => sum + (c.montoAbonado || c.montoOriginal || 0), 0);
+                                   const totalOriginal = plan.reduce((sum: number, c: any) => sum + (c.montoOriginal || 0), 0);
+                                   const totalPendiente = pendingCuotas.reduce((sum: number, c: any) => sum + (c.montoOriginal || 0), 0);
+                                   
+                                   const pct = totalOriginal > 0 ? Math.round((totalAbonado / totalOriginal) * 100) : 0;
+                                   
+                                   return (
+                                      <div className="bg-zinc-950/70 border border-green-500/10 p-4 rounded-xl space-y-3">
+                                         <div className="flex justify-between items-center text-xs border-b border-zinc-900 pb-2">
+                                            <span className="text-zinc-500 font-bold uppercase tracking-wider">Resumen de Pagos</span>
+                                            <span className="text-green-400 font-mono font-black">{paidCuotas.length} / {plan.length} Cuotas</span>
+                                         </div>
+                                         <div className="grid grid-cols-3 gap-2 text-center">
+                                            <div className="bg-zinc-900/50 p-2 rounded border border-zinc-850">
+                                               <span className="block text-[8px] text-zinc-500 font-bold uppercase">Total Plan</span>
+                                               <span className="text-[11px] text-zinc-300 font-black">${totalOriginal}</span>
+                                            </div>
+                                            <div className="bg-green-950/20 p-2 rounded border border-green-500/10">
+                                               <span className="block text-[8px] text-green-500/60 font-bold uppercase">Abonado</span>
+                                               <span className="text-[11px] text-green-400 font-black">${totalAbonado}</span>
+                                            </div>
+                                            <div className="bg-zinc-900/50 p-2 rounded border border-zinc-850">
+                                               <span className="block text-[8px] text-zinc-500 font-bold uppercase">Pendiente</span>
+                                               <span className="text-[11px] text-orange-400 font-black">${totalPendiente}</span>
+                                            </div>
+                                         </div>
+                                         <div className="space-y-1 pt-1">
+                                            <div className="flex justify-between text-[9px] font-bold text-zinc-500">
+                                               <span>PROGRESO DE PAGO</span>
+                                               <span>{pct}%</span>
+                                            </div>
+                                            <div className="w-full bg-zinc-900 h-2 rounded-full overflow-hidden border border-zinc-850">
+                                               <div className="bg-green-500 h-full transition-all duration-500" style={{ width: `${pct}%` }}></div>
+                                            </div>
+                                         </div>
+                                      </div>
+                                   );
+                                })()}
+                                
+                                <div className="space-y-3 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar">
                                   {sol.planPagos.map((cuota: any, idx: number) => (
                                     <div key={idx} className="bg-zinc-900 border border-green-900/50 p-4 rounded-lg flex flex-col gap-3">
                                       <div className="flex justify-between items-start border-b border-green-900/30 pb-2">
@@ -3040,9 +3086,65 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                         </div>
                                       </div>
                                       
-                                      {cuota.estado === "PAGADO" && cuota.comprobanteUrl && (
-                                         <div className="flex justify-end">
-                                            <a href={cuota.comprobanteUrl} target="_blank" rel="noreferrer" className="text-[10px] text-zinc-500 hover:text-white transition-colors underline">Ver Recibo Guardado</a>
+                                      {cuota.estado === "PAGADO" && (
+                                         <div className="flex flex-col gap-1.5 mt-1 bg-zinc-950 p-2.5 rounded border border-zinc-900">
+                                            <div className="flex justify-between items-center text-[10px]">
+                                               <span className="text-zinc-500 font-bold uppercase">Abonado:</span>
+                                               <span className="text-green-400 font-black">${cuota.montoAbonado || cuota.montoOriginal}</span>
+                                            </div>
+                                            {cuota.fechaPago && (
+                                               <div className="flex justify-between items-center text-[10px]">
+                                                  <span className="text-zinc-500">Fecha de Pago:</span>
+                                                  <span className="text-zinc-300">{new Date(cuota.fechaPago).toLocaleDateString("es-AR")}</span>
+                                               </div>
+                                            )}
+                                            {(cuota.cuentaDestino || cuota.metodoPagoManual || cuota.metodoPago) && (
+                                               <div className="flex justify-between items-center text-[10px]">
+                                                  <span className="text-zinc-500">Medio / Cuenta:</span>
+                                                  <span className="text-zinc-300">{cuota.cuentaDestino || cuota.metodoPagoManual || cuota.metodoPago}</span>
+                                               </div>
+                                            )}
+                                            {cuota.nroComprobante && (
+                                               <div className="flex justify-between items-center text-[10px]">
+                                                  <span className="text-zinc-500">Transacción:</span>
+                                                  <span className="text-zinc-300 font-mono">{cuota.nroComprobante}</span>
+                                               </div>
+                                            )}
+                                            <div className="flex gap-2 mt-2 pt-2 border-t border-zinc-900">
+                                               {cuota.comprobanteUrl && (
+                                                  <a 
+                                                    href={cuota.comprobanteUrl} 
+                                                    target="_blank" 
+                                                    rel="noreferrer" 
+                                                    className="flex-1 bg-blue-950/20 text-blue-400 border border-blue-500/20 text-center py-1 rounded text-[9px] font-bold hover:bg-blue-600 hover:text-white transition"
+                                                  >
+                                                    📄 Ver Adjunto
+                                                  </a>
+                                               )}
+                                               <button
+                                                  onClick={() => {
+                                                     const isPartial = cuota.montoAbonado !== undefined && cuota.montoAbonado !== cuota.montoOriginal;
+                                                     const receiptId = `REC-${sol.id.substring(0, 5).toUpperCase()}-${cuota.numero}`;
+                                                     
+                                                     generarComprobantePago({
+                                                        nroRecibo: receiptId,
+                                                        fecha: cuota.fechaPago ? new Date(cuota.fechaPago).toLocaleDateString("es-AR") : new Date().toLocaleDateString("es-AR"),
+                                                        clienteNombre: sol.datosPersonales?.nombreCompleto || "",
+                                                        clienteDni: sol.datosPersonales?.numeroDni || "",
+                                                        productoNombre: sol.productoDeseado || "Producto",
+                                                        cuotaNumero: cuota.numero,
+                                                        montoAbonado: cuota.montoAbonado || cuota.montoOriginal,
+                                                        metodoPago: cuota.metodoPagoManual || cuota.metodoPago || "Acreditado",
+                                                        nroComprobante: cuota.nroComprobante,
+                                                        cuentaDestino: cuota.cuentaDestino,
+                                                        esPagoParcial: isPartial
+                                                     });
+                                                  }}
+                                                  className="flex-1 bg-green-950/20 text-green-400 border border-green-500/20 py-1 rounded text-[9px] font-bold hover:bg-green-600 hover:text-white transition uppercase tracking-wider flex items-center justify-center gap-1"
+                                               >
+                                                  📥 Descargar Recibo PDF
+                                               </button>
+                                            </div>
                                          </div>
                                       )}
 
