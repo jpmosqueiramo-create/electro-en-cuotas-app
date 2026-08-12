@@ -1178,11 +1178,12 @@ export default function AdminValidacionesPage() {
 
   const handleConfirmarEntregaAdmin = async (id: string, nuevoEstado: string, esDirecto: boolean = false, selectedProdId: string = "", selectedUnitId: string = "") => {
     try {
+      const solObj = solicitudes.find((s: any) => s.id === id);
       const dataToUpdate: any = { estadoEntrega: nuevoEstado };
       if (nuevoEstado === "ENTREGADO" && !esDirecto) {
-        if (!nserie || nserie.trim().length < 3) return alert("ADMIN: Debes ingresar un número de serie válido.");
+        const finalNserie = solObj?.numeroSerie || "";
+        dataToUpdate.numeroSerie = finalNserie;
         if (!montoAbonado || isNaN(Number(montoAbonado))) return alert("ADMIN: Debes ingresar un monto válido.");
-        dataToUpdate.numeroSerie = nserie.trim();
         dataToUpdate.montoAbonado = Number(montoAbonado);
         dataToUpdate.metodoPago = metodoPago;
         if (comentarioEntrega) dataToUpdate.comentarioEntrega = comentarioEntrega;
@@ -1209,8 +1210,6 @@ export default function AdminValidacionesPage() {
             await fetchProductos();
           }
         }
-        
-        const solObj = solicitudes.find((s: any) => s.id === id);
         if (solObj && solObj.planElegido) {
            const cant = parseInt(solObj.planElegido);
            const vc = solObj.montoCuota || 0;
