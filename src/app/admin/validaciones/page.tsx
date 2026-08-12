@@ -108,6 +108,27 @@ export default function AdminValidacionesPage() {
   const [pagoMonto, setPagoMonto] = useState("");
   const [pagoComprobante, setPagoComprobante] = useState("");
   const [pagoCuentaDestino, setPagoCuentaDestino] = useState("Caja Efectivo");
+  const [activeProductSolId, setActiveProductSolId] = useState<Record<string, string>>({});
+
+  const groupSolicitudes = (items: any[]) => {
+    const groups: Record<string, { key: string; name: string; dni: string; cuil: string; items: any[] }> = {};
+    items.forEach(item => {
+      const dni = (item.datosPersonales?.numeroDni || item.numeroDni || item.dni || "").trim().replace(/\D/g, "");
+      const cuil = (item.cuil || item.datosPersonales?.cuil || "").trim().replace(/\D/g, "");
+      const key = dni || cuil || item.id;
+      if (!groups[key]) {
+        groups[key] = {
+          key,
+          name: item.datosPersonales?.nombreCompleto || item.nombreCompleto || item.clienteNombre || "Cliente Sin Nombre",
+          dni: item.datosPersonales?.numeroDni || item.numeroDni || item.dni || "N/A",
+          cuil: item.cuil || item.datosPersonales?.cuil || "N/A",
+          items: []
+        };
+      }
+      groups[key].items.push(item);
+    });
+    return Object.values(groups);
+  };
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editFields, setEditFields] = useState<any>({
     nombreCompleto: "",
@@ -1491,18 +1512,20 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
           {/* LISTADO DE SOLICITUDES (ACORDEÓN) */}
           <div className="space-y-4">
             {activeTab === 'analisis' ? (
-              filteredCombined.length === 0 ? (
+              groupSolicitudes(filteredCombined).length === 0 ? (
                 <p className="text-zinc-500 italic text-center py-10">No se encontraron solicitudes pendientes en evaluación.</p>
               ) : (
-                filteredCombined.map((req: any) => {
-                  const isExpanded = expandedId === req.id;
+                groupSolicitudes(filteredCombined).map((group: any) => {
+                  const isExpanded = expandedId === group.key;
+                  const activeId = activeProductSolId[group.key] || group.items[0].id;
+                  const req = group.items.find((x: any) => x.id === activeId) || group.items[0];
                   
                   if (req.isApertura) {
                     // Render Apertura Accordion Item
                     return (
-                      <div key={req.id} className={`bg-zinc-950 border ${isExpanded ? 'border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'border-zinc-800 hover:border-amber-500/40'} rounded-xl transition-all overflow-hidden`}>
+                      <div key={group.key} className={`bg-zinc-950 border ${isExpanded ? 'border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'border-zinc-800 hover:border-amber-500/40'} rounded-xl transition-all overflow-hidden`}>
                         <div 
-                          onClick={() => { setExpandedId(isExpanded ? null : req.id); setDraftItems([]); }}
+                          onClick={() => { setExpandedId(isExpanded ? null : group.key); setDraftItems([]); }}
                           className="p-4 md:p-6 cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative"
                         >
                           <div className="flex-1">
@@ -1532,6 +1555,27 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                         </div>
                         {isExpanded && (
                           <div className="p-6 border-t border-zinc-900 bg-zinc-900/20 space-y-6">
+                            {group.items.length > 1 && (
+                              <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-4 mb-4">
+                                <span className="text-zinc-500 text-[10px] font-black uppercase self-center mr-2">Ver Producto:</span>
+                                {group.items.map((item: any) => {
+                                   const isActive = item.id === req.id;
+                                   return (
+                                     <button
+                                       key={item.id}
+                                       type="button"
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         setActiveProductSolId(prev => ({ ...prev, [group.key]: item.id }));
+                                       }}
+                                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${isActive ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-zinc-950 text-zinc-400 border border-zinc-850 hover:bg-zinc-900'}`}
+                                     >
+                                       🛍️ {item.productoDeseado || item.producto || "Apertura"} ({item.estado})
+                                     </button>
+                                   );
+                                })}
+                              </div>
+                            )}
                             {req.estado === "Rechazado" && (
                               <div className="bg-red-950/30 border border-red-500/30 p-4 rounded-xl text-red-400 text-xs flex flex-col gap-1 w-full">
                                 <span className="font-black text-red-500 uppercase tracking-widest text-[10px]">❌ Solicitud de Apertura Rechazada</span>
@@ -2051,10 +2095,10 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                     const currentMensaje = nuevosMensajes[req.id] !== undefined ? nuevosMensajes[req.id] : (req.mensajeAdmin || "");
                     
                     return (
-                      <div key={req.id} className={`bg-zinc-950 border ${isExpanded ? 'border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)]' : 'border-zinc-800 hover:border-yellow-500/40'} rounded-xl transition-all overflow-hidden`}>
+                      <div key={group.key} className={`bg-zinc-950 border ${isExpanded ? 'border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)]' : 'border-zinc-800 hover:border-yellow-500/40'} rounded-xl transition-all overflow-hidden`}>
                         {/* CARD HEADER */}
                         <div 
-                          onClick={() => setExpandedId(isExpanded ? null : req.id)}
+                          onClick={() => setExpandedId(isExpanded ? null : group.key)}
                           className="p-4 md:p-6 cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative"
                         >
                           {req.cargadoPorAfiliado && (
@@ -2071,11 +2115,16 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                               <h2 className="text-xl font-bold text-white">{req.datosPersonales?.nombreCompleto || "Cliente Sin Nombre"}</h2>
                               <span className="text-sm text-zinc-500 font-medium">DNI: {req.datosPersonales?.numeroDni || "N/A"}</span>
                             </div>
-                            <p className="text-yellow-400 font-bold flex items-center gap-2">
-                              {req.productoDeseado}
+                            <p className="text-yellow-400 font-bold flex flex-wrap items-center gap-2">
+                              {group.items.map((x: any) => x.productoDeseado || x.producto || "Apertura").join(" + ")}
                               <span className="text-xs font-normal text-zinc-500 px-2 py-0.5 bg-zinc-900 rounded">
                                 {req.fechaCreacion ? new Date(req.fechaCreacion.seconds * 1000).toLocaleDateString() : ''}
                               </span>
+                              {group.items.length > 1 && (
+                                <span className="text-[9px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-2 py-0.5 rounded font-black uppercase tracking-wider">
+                                  📦 {group.items.length} Productos
+                                </span>
+                              )}
                             </p>
                           </div>
 
@@ -2105,6 +2154,27 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                         {/* CARD BODY */}
                         {isExpanded && (
                           <div className="p-4 md:p-6 border-t border-zinc-800 bg-zinc-900/40">
+                            {group.items.length > 1 && (
+                              <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-4 mb-4">
+                                <span className="text-zinc-500 text-[10px] font-black uppercase self-center mr-2">Ver Producto:</span>
+                                {group.items.map((item: any) => {
+                                   const isActive = item.id === req.id;
+                                   return (
+                                     <button
+                                       key={item.id}
+                                       type="button"
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         setActiveProductSolId(prev => ({ ...prev, [group.key]: item.id }));
+                                       }}
+                                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${isActive ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' : 'bg-zinc-950 text-zinc-400 border border-zinc-850 hover:bg-zinc-900'}`}
+                                     >
+                                       🛍️ {item.productoDeseado || item.producto || "Solicitud"} ({item.estado})
+                                     </button>
+                                   );
+                                })}
+                              </div>
+                            )}
                             {req.estado === "RECHAZADO" && (
                               <div className="mb-6 bg-red-950/30 border border-red-500/30 p-4 rounded-xl text-red-400 text-xs flex flex-col gap-1 w-full">
                                 <span className="font-black text-red-500 uppercase tracking-widest text-[10px]">❌ Solicitud de Producto Rechazada</span>
@@ -2419,7 +2489,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                 })
               )
             ) : (
-              solicitudes.filter(sol => {
+              groupSolicitudes(solicitudes.filter(sol => {
                 const searchStr = `${sol.datosPersonales?.nombreCompleto || ''} ${sol.datosPersonales?.numeroDni || ''} ${sol.clienteEmail || ''} ${sol.productoDeseado || ''}`.toLowerCase();
                 if (searchTerm && !searchStr.includes(searchTerm.toLowerCase())) return false;
                 
@@ -2427,17 +2497,20 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                 if (activeTab === 'logistica') return estadoUpper === 'APROBADO' && sol.estadoEntrega !== 'ENTREGADO';
                 if (activeTab === 'cobranzas') return estadoUpper === 'APROBADO' && sol.estadoEntrega === 'ENTREGADO' && sol.planPagos && sol.planPagos.some(p => p.estado === 'EN_REVISION' || p.estado === 'PENDIENTE');
                 return true; // Historial
-              }).map(sol => {
+              })).map((group: any) => {
+                const isExpanded = expandedId === group.key;
+                const activeId = activeProductSolId[group.key] || group.items[0].id;
+                const sol = group.items.find((x: any) => x.id === activeId) || group.items[0];
+                
                 const currentEstado = (nuevosEstados[sol.id] || sol.estado || "").toUpperCase();
                 const currentMensaje = nuevosMensajes[sol.id] !== undefined ? nuevosMensajes[sol.id] : (sol.mensajeAdmin || "");
-                const isExpanded = expandedId === sol.id;
                 
                 return (
-                  <div key={sol.id} className={`bg-zinc-950 border ${isExpanded ? 'border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)]' : 'border-zinc-800 hover:border-yellow-500/40'} rounded-xl transition-all overflow-hidden`}>
+                  <div key={group.key} className={`bg-zinc-950 border ${isExpanded ? 'border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)]' : 'border-zinc-800 hover:border-yellow-500/40'} rounded-xl transition-all overflow-hidden`}>
                     
                     {/* CARD HEADER (COMPACT VIEW) */}
                     <div 
-                      onClick={() => setExpandedId(isExpanded ? null : sol.id)}
+                      onClick={() => setExpandedId(isExpanded ? null : group.key)}
                       className="p-4 md:p-6 cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative"
                     >
                       {sol.cargadoPorAfiliado && (
@@ -2451,11 +2524,16 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                           <h2 className="text-xl font-bold text-white">{sol.datosPersonales?.nombreCompleto || "Cliente Sin Nombre"}</h2>
                           <span className="text-sm text-zinc-500 font-medium">DNI: {sol.datosPersonales?.numeroDni || "N/A"}</span>
                         </div>
-                        <p className="text-yellow-400 font-bold flex items-center gap-2">
-                          {sol.productoDeseado}
+                        <p className="text-yellow-400 font-bold flex flex-wrap items-center gap-2">
+                          {group.items.map((x: any) => x.productoDeseado || x.producto || "Apertura").join(" + ")}
                           <span className="text-xs font-normal text-zinc-500 px-2 py-0.5 bg-zinc-900 rounded">
                             {sol.fechaCreacion ? new Date(sol.fechaCreacion.seconds * 1000).toLocaleDateString() : ''}
                           </span>
+                          {group.items.length > 1 && (
+                            <span className="text-[9px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-2 py-0.5 rounded font-black uppercase tracking-wider">
+                              📦 {group.items.length} Productos
+                            </span>
+                          )}
                         </p>
                       </div>
 
@@ -2485,6 +2563,27 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                     {/* CARD BODY (EXPANDED VIEW) */}
                     {isExpanded && (
                       <div className="p-4 md:p-6 border-t border-zinc-800 bg-zinc-900/40">
+                        {group.items.length > 1 && (
+                          <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-4 mb-4">
+                            <span className="text-zinc-500 text-[10px] font-black uppercase self-center mr-2">Ver Producto:</span>
+                            {group.items.map((item: any) => {
+                               const isActive = item.id === sol.id;
+                               return (
+                                 <button
+                                   key={item.id}
+                                   type="button"
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     setActiveProductSolId(prev => ({ ...prev, [group.key]: item.id }));
+                                   }}
+                                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${isActive ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' : 'bg-zinc-950 text-zinc-400 border border-zinc-850 hover:bg-zinc-900'}`}
+                                 >
+                                   🛍️ {item.productoDeseado || item.producto || "Solicitud"} ({item.estado})
+                                 </button>
+                               );
+                            })}
+                          </div>
+                        )}
                         
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                           
