@@ -459,6 +459,115 @@ export default function AdminValidacionesPage() {
     }
   };
 
+  const handleCobroManual = async (solId: string, idx: number, metodo: string) => {
+    try {
+      const sol = solicitudes.find(s => s.id === solId);
+      const cuota = sol?.planPagos?.[idx];
+      if (!sol || !cuota) return;
+
+      const amountStr = prompt(`Ingrese el monto cobrado para la Cuota ${cuota.numero} (Valor original de cuota: $${cuota.montoOriginal}):`, String(cuota.montoOriginal));
+      if (amountStr === null) return;
+      const amountPaid = Number(amountStr);
+      if (isNaN(amountPaid) || amountPaid < 0) return alert("Monto de pago inválido.");
+
+      const newPlan = [...(sol.planPagos || [])];
+      newPlan[idx].estado = "PAGADO";
+      newPlan[idx].montoAbonado = amountPaid;
+      newPlan[idx].fechaPago = new Date().toISOString();
+      newPlan[idx].metodoPagoManual = metodo;
+
+      const difference = cuota.montoOriginal - amountPaid;
+      let feedbackMsg = "Cobro manual registrado correctamente.";
+
+      if (difference !== 0) {
+        const nextPendingIdx = newPlan.findIndex((c, i) => i > idx && c.estado === "PENDIENTE");
+        if (nextPendingIdx !== -1) {
+          const oldVal = newPlan[nextPendingIdx].montoOriginal;
+          const newVal = Math.max(0, oldVal + difference);
+          newPlan[nextPendingIdx].montoOriginal = newVal;
+          feedbackMsg = `Pago registrado. Diferencia de $${difference > 0 ? '+' : ''}${difference} ajustada en la Cuota ${newPlan[nextPendingIdx].numero}. Nuevo valor de la próxima cuota: $${newVal}.`;
+        } else {
+          feedbackMsg = `Pago registrado. Se detectó una diferencia de $${difference} en la última cuota del plan.`;
+        }
+      }
+
+      await updateDoc(doc(db, "solicitudes", solId), { planPagos: newPlan });
+
+      if (sol.afiliadoEmail) {
+        await addDoc(collection(db, "notificaciones"), {
+          afiliadoEmail: sol.afiliadoEmail,
+          mensaje: `Se cobró la cuota ${cuota.numero} de ${sol.datosPersonales?.nombreCompleto || 'cliente'} por $${amountPaid} (${metodo}). Comisión ganada.`,
+          fecha: new Date().toISOString(),
+          leida: false,
+          comisionAsociada: amountPaid * 0.15,
+          estadoPago: "PENDIENTE",
+          cuotaAsociada: cuota.numero || idx + 1,
+          clienteNombre: sol.datosPersonales?.nombreCompleto || 'Desconocido'
+        });
+      }
+
+      await fetchSolicitudes();
+      alert(feedbackMsg);
+    } catch (err: any) {
+      console.error(err);
+      alert("Error al registrar cobro manual: " + err.message);
+    }
+  };
+
+  const handleAprobarPagoCliente = async (solId: string, idx: number) => {
+    try {
+      const sol = solicitudes.find(s => s.id === solId);
+      const cuota = sol?.planPagos?.[idx];
+      if (!sol || !cuota) return;
+
+      const amountStr = prompt(`Confirmar monto acreditado para la Cuota ${cuota.numero} (Monto de cuota: $${cuota.montoOriginal}):`, String(cuota.montoOriginal));
+      if (amountStr === null) return;
+      const amountPaid = Number(amountStr);
+      if (isNaN(amountPaid) || amountPaid < 0) return alert("Monto acreditado inválido.");
+
+      const newPlan = [...(sol.planPagos || [])];
+      newPlan[idx].estado = "PAGADO";
+      newPlan[idx].montoAbonado = amountPaid;
+      newPlan[idx].fechaPago = new Date().toISOString();
+
+      const difference = cuota.montoOriginal - amountPaid;
+      let feedbackMsg = "Pago de cliente aprobado correctamente.";
+
+      if (difference !== 0) {
+        const nextPendingIdx = newPlan.findIndex((c, i) => i > idx && c.estado === "PENDIENTE");
+        if (nextPendingIdx !== -1) {
+          const oldVal = newPlan[nextPendingIdx].montoOriginal;
+          const newVal = Math.max(0, oldVal + difference);
+          newPlan[nextPendingIdx].montoOriginal = newVal;
+          feedbackMsg = `Pago aprobado. Diferencia de $${difference > 0 ? '+' : ''}${difference} ajustada en la Cuota ${newPlan[nextPendingIdx].numero}. Nuevo valor de la próxima cuota: $${newVal}.`;
+        } else {
+          feedbackMsg = `Pago aprobado. Se detectó una diferencia de $${difference} en la última cuota del plan.`;
+        }
+      }
+
+      await updateDoc(doc(db, "solicitudes", solId), { planPagos: newPlan });
+
+      if (sol.afiliadoEmail) {
+        await addDoc(collection(db, "notificaciones"), {
+          afiliadoEmail: sol.afiliadoEmail,
+          mensaje: `¡Excelente! Se aprobó el recibo de ${sol.datosPersonales?.nombreCompleto || 'cliente'} por $${amountPaid}. Comisión ganada.`,
+          fecha: new Date().toISOString(),
+          leida: false,
+          comisionAsociada: amountPaid * 0.15,
+          estadoPago: "PENDIENTE",
+          cuotaAsociada: cuota.numero || idx + 1,
+          clienteNombre: sol.datosPersonales?.nombreCompleto || 'Desconocido'
+        });
+      }
+
+      await fetchSolicitudes();
+      alert(feedbackMsg);
+    } catch (err: any) {
+      console.error(err);
+      alert("Error al aprobar pago: " + err.message);
+    }
+  };
+
   const handleAgregarItemAlBorrador = () => {
     if (!budgetProd.trim()) return alert("Debes ingresar el producto propuesto.");
     if (!budgetCuotaValor || isNaN(Number(budgetCuotaValor))) return alert("Debes ingresar un valor de cuota válido.");
@@ -2967,25 +3076,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                   await fetchSolicitudes();
                                                   alert("Pago Rechazado.");
                                               }} className="flex-1 bg-red-900/40 text-red-400 border border-red-500/10 hover:bg-red-600 hover:text-white py-2 rounded text-xs font-bold transition">Rechazar</button>
-                                              <button onClick={async () => {
-                                                  const newPlan = [...(sol.planPagos || [])];
-                                                  newPlan[idx].estado = "PAGADO";
-                                                  newPlan[idx].fechaPago = new Date().toISOString();
-                                                  await updateDoc(doc(db, "solicitudes", sol.id), { planPagos: newPlan });
-                                                  if (sol.afiliadoEmail) {
-                                                     await addDoc(collection(db, "notificaciones"), {
-                                                        afiliadoEmail: sol.afiliadoEmail,
-                                                        mensaje: '¡Excelente! Se aprobó el recibo de ' + (sol.datosPersonales?.nombreCompleto || 'cliente') + ' por $' + cuota.montoOriginal + '. Ya tenés la comisión ganada.',
-                                                        fecha: new Date().toISOString(),
-                                                        leida: false,
-                                                        comisionAsociada: cuota.montoOriginal * 0.15,
-                                                        estadoPago: "PENDIENTE",
-                                                        cuotaAsociada: cuota.numero || idx + 1,
-                                                        clienteNombre: sol.datosPersonales?.nombreCompleto || 'Desconocido'
-                                                     });
-                                                  }
-                                                  await fetchSolicitudes();
-                                              }} className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2 rounded text-xs font-black transition shadow-2xl shadow-black/60">✓ Aprobar</button>
+                                              <button onClick={() => handleAprobarPagoCliente(sol.id, idx)} className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2 rounded text-xs font-black transition shadow-2xl shadow-black/60">✓ Aprobar</button>
                                             </div>
                                          </div>
                                       )}
@@ -2995,55 +3086,13 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                            <p className="text-[10px] text-zinc-500 font-medium">Registrar cobro manual realizado en efectivo o transferencia:</p>
                                            <div className="flex gap-2">
                                              <button
-                                               onClick={async () => {
-                                                 if (!confirm(`¿Confirmar cobro manual de la Cuota ${cuota.numero} por $${cuota.montoOriginal} en EFECTIVO?`)) return;
-                                                 const newPlan = [...(sol.planPagos || [])];
-                                                 newPlan[idx].estado = "PAGADO";
-                                                 newPlan[idx].fechaPago = new Date().toISOString();
-                                                 newPlan[idx].metodoPagoManual = "Efectivo";
-                                                 await updateDoc(doc(db, "solicitudes", sol.id), { planPagos: newPlan });
-                                                 if (sol.afiliadoEmail) {
-                                                   await addDoc(collection(db, "notificaciones"), {
-                                                     afiliadoEmail: sol.afiliadoEmail,
-                                                     mensaje: `¡Excelente! Se cobró la cuota ${cuota.numero} de ${sol.datosPersonales?.nombreCompleto || 'cliente'} por $${cuota.montoOriginal} en Efectivo. Comisión ganada.`,
-                                                     fecha: new Date().toISOString(),
-                                                     leida: false,
-                                                     comisionAsociada: cuota.montoOriginal * 0.15,
-                                                     estadoPago: "PENDIENTE",
-                                                     cuotaAsociada: cuota.numero || idx + 1,
-                                                     clienteNombre: sol.datosPersonales?.nombreCompleto || 'Desconocido'
-                                                   });
-                                                 }
-                                                 await fetchSolicitudes();
-                                                 alert("Pago registrado correctamente.");
-                                               }}
+                                               onClick={() => handleCobroManual(sol.id, idx, "Efectivo")}
                                                className="flex-1 bg-green-950/30 hover:bg-green-600 border border-green-500/20 text-green-400 hover:text-white py-1.5 rounded text-[10px] font-black transition uppercase tracking-wider"
                                              >
                                                💵 Efectivo
                                              </button>
                                              <button
-                                               onClick={async () => {
-                                                 if (!confirm(`¿Confirmar cobro manual de la Cuota ${cuota.numero} por $${cuota.montoOriginal} por TRANSFERENCIA?`)) return;
-                                                 const newPlan = [...(sol.planPagos || [])];
-                                                 newPlan[idx].estado = "PAGADO";
-                                                 newPlan[idx].fechaPago = new Date().toISOString();
-                                                 newPlan[idx].metodoPagoManual = "Transferencia";
-                                                 await updateDoc(doc(db, "solicitudes", sol.id), { planPagos: newPlan });
-                                                 if (sol.afiliadoEmail) {
-                                                   await addDoc(collection(db, "notificaciones"), {
-                                                     afiliadoEmail: sol.afiliadoEmail,
-                                                     mensaje: `¡Excelente! Se cobró la cuota ${cuota.numero} de ${sol.datosPersonales?.nombreCompleto || 'cliente'} por $${cuota.montoOriginal} vía Transferencia. Comisión ganada.`,
-                                                     fecha: new Date().toISOString(),
-                                                     leida: false,
-                                                     comisionAsociada: cuota.montoOriginal * 0.15,
-                                                     estadoPago: "PENDIENTE",
-                                                     cuotaAsociada: cuota.numero || idx + 1,
-                                                     clienteNombre: sol.datosPersonales?.nombreCompleto || 'Desconocido'
-                                                   });
-                                                 }
-                                                 await fetchSolicitudes();
-                                                 alert("Pago registrado correctamente.");
-                                               }}
+                                               onClick={() => handleCobroManual(sol.id, idx, "Transferencia")}
                                                className="flex-1 bg-blue-950/30 hover:bg-blue-650 border border-blue-500/20 text-blue-400 hover:text-white py-1.5 rounded text-[10px] font-black transition uppercase tracking-wider"
                                              >
                                                📱 Transf.
