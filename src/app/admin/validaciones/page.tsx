@@ -4,7 +4,7 @@ import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { db, storage } from "@/lib/firebase";
 import { collection, getDocs, getDoc, updateDoc, deleteDoc, doc, query, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { generarContratoModelo, generarPagareModelo, generarRemitoModelo, generarPdfPresupuesto, generarComprobantePago } from "@/lib/pdfGenerator";
+import { generarContratoModelo, generarPagareModelo, generarRemitoModelo, generarPdfPresupuesto, generarComprobantePago, generarEstadoCuenta } from "@/lib/pdfGenerator";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, Search, Filter, AlertCircle, CheckCircle2, Truck, DollarSign, Archive, UserPlus } from "lucide-react";
@@ -3067,6 +3067,26 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                <div className="bg-green-500 h-full transition-all duration-500" style={{ width: `${pct}%` }}></div>
                                             </div>
                                          </div>
+                                          <div className="pt-2 border-t border-zinc-900">
+                                            <button
+                                               onClick={() => {
+                                                  generarEstadoCuenta({
+                                                     nroLegajo: sol.id.substring(0, 8).toUpperCase(),
+                                                     fechaEmision: new Date().toLocaleDateString("es-AR"),
+                                                     clienteNombre: sol.datosPersonales?.nombreCompleto || "",
+                                                     clienteDni: sol.datosPersonales?.numeroDni || "",
+                                                     productoNombre: sol.productoDeseado || "Producto",
+                                                     totalPlan: totalOriginal,
+                                                     totalAbonado: totalAbonado,
+                                                     totalPendiente: totalPendiente,
+                                                     planPagos: plan
+                                                  });
+                                               }}
+                                               className="w-full bg-green-950/20 hover:bg-green-600 border border-green-500/25 text-green-400 hover:text-white font-bold py-2 rounded-lg text-xs transition uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95"
+                                            >
+                                               📥 Descargar Resumen de Cuenta (PDF)
+                                            </button>
+                                          </div>
                                       </div>
                                    );
                                 })()}

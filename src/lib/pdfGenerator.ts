@@ -866,3 +866,180 @@ export const generarComprobantePago = (datos: DatosComprobantePago) => {
   const suffix = datos.esPagoParcial ? " (Pago Parcial)" : "";
   doc.save(`${clientClean} - ${productClean} - Cuota ${datos.cuotaNumero}${suffix}.pdf`);
 };
+
+export interface DatosEstadoCuenta {
+  nroLegajo: string;
+  fechaEmision: string;
+  clienteNombre: string;
+  clienteDni: string;
+  productoNombre: string;
+  totalPlan: number;
+  totalAbonado: number;
+  totalPendiente: number;
+  planPagos: Array<{
+    numero: number;
+    montoOriginal: number;
+    montoAbonado?: number;
+    estado: string;
+    vencimiento: string;
+    fechaPago?: string;
+    metodoPagoManual?: string;
+    metodoPago?: string;
+    cuentaDestino?: string;
+    nroComprobante?: string;
+  }>;
+}
+
+export const generarEstadoCuenta = (datos: DatosEstadoCuenta) => {
+  const doc = new jsPDF();
+  
+  // Header box
+  doc.setFillColor(244, 244, 245);
+  doc.rect(15, 15, 180, 22, "F");
+  doc.setDrawColor(234, 179, 8); // Gold border
+  doc.setLineWidth(0.5);
+  doc.rect(15, 15, 180, 22, "S");
+
+  // Logo text
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
+  doc.setTextColor(234, 179, 8); // Gold
+  doc.text("CUENTA HOGAR", 20, 24);
+  
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(15, 23, 42);
+  doc.text("RESUMEN DE CUENTA / ESTADO DE PAGOS", 100, 24);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text("Gestión de Compras y Créditos a Medida", 20, 30);
+  doc.text("ELECTRO EN CUOTAS", 100, 30);
+
+  // Recibo details box
+  drawFormBox(doc, "Legajo de Referencia:", datos.nroLegajo, 15, 43, 90, 11);
+  drawFormBox(doc, "Fecha Emisión:", datos.fechaEmision, 105, 43, 90, 11);
+
+  // Client info
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Datos del Cliente / Titular", 15, 68);
+
+  drawFormBox(doc, "Cliente (Nombre y Apellido):", datos.clienteNombre, 15, 72, 180, 11);
+  drawFormBox(doc, "DNI:", datos.clienteDni, 15, 86, 180, 11);
+
+  // Financial Stats
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Resumen Financiero del Plan", 15, 112);
+
+  drawFormBox(doc, "Monto Total Plan:", `$${datos.totalPlan}`, 15, 116, 60, 11);
+  drawFormBox(doc, "Monto Total Abonado:", `$${datos.totalAbonado}`, 75, 116, 60, 11);
+  drawFormBox(doc, "Monto Total Pendiente:", `$${datos.totalPendiente}`, 135, 116, 60, 11);
+
+  // Installments Table
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Plan de Pagos y Estado de Cuotas", 15, 142);
+
+  let y = 148;
+  doc.setFillColor(244, 244, 245);
+  doc.rect(15, y, 180, 8, "F");
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.3);
+  doc.rect(15, y, 180, 8, "S");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Cuota", 17, y + 5.5);
+  doc.text("Vencimiento", 30, y + 5.5);
+  doc.text("Valor Original", 58, y + 5.5);
+  doc.text("Estado", 88, y + 5.5);
+  doc.text("Monto Abonado", 118, y + 5.5);
+  doc.text("Fecha y Cuenta de Pago", 148, y + 5.5);
+  
+  y += 8;
+  doc.setFont("helvetica", "normal");
+  datos.planPagos.forEach((c) => {
+    // Check pagination safety
+    if (y > 275) {
+      doc.addPage();
+      y = 25;
+      // redraw table header
+      doc.setFillColor(244, 244, 245);
+      doc.rect(15, y, 180, 8, "F");
+      doc.rect(15, y, 180, 8, "S");
+      doc.setFont("helvetica", "bold");
+      doc.text("Cuota", 17, y + 5.5);
+      doc.text("Vencimiento", 30, y + 5.5);
+      doc.text("Valor Original", 58, y + 5.5);
+      doc.text("Estado", 88, y + 5.5);
+      doc.text("Monto Abonado", 118, y + 5.5);
+      doc.text("Fecha y Cuenta de Pago", 148, y + 5.5);
+      y += 8;
+      doc.setFont("helvetica", "normal");
+    }
+
+    doc.rect(15, y, 180, 8, "S");
+    doc.text(String(c.numero), 17, y + 5.5);
+    doc.text(new Date(c.vencimiento).toLocaleDateString("es-AR"), 30, y + 5.5);
+    doc.text(`$${c.montoOriginal}`, 58, y + 5.5);
+    
+    // state text
+    const stateStr = c.estado === "PAGADO" ? "PAGADA" : c.estado === "EN_REVISION" ? "EN REVISIÓN" : "PENDIENTE";
+    if (c.estado === "PAGADO") {
+      doc.setTextColor(22, 163, 74);
+      doc.setFont("helvetica", "bold");
+    } else if (c.estado === "EN_REVISION") {
+      doc.setTextColor(37, 99, 235);
+      doc.setFont("helvetica", "bold");
+    } else {
+      doc.setTextColor(220, 38, 38);
+      doc.setFont("helvetica", "normal");
+    }
+    doc.text(stateStr, 88, y + 5.5);
+    doc.setTextColor(15, 23, 42);
+    doc.setFont("helvetica", "normal");
+    
+    doc.text(c.estado === "PAGADO" ? `$${c.montoAbonado || c.montoOriginal}` : "-", 118, y + 5.5);
+    
+    let info = "-";
+    if (c.estado === "PAGADO") {
+      const fPago = c.fechaPago ? new Date(c.fechaPago).toLocaleDateString("es-AR") : "";
+      const medio = c.cuentaDestino || c.metodoPagoManual || c.metodoPago || "";
+      info = `${fPago} ${medio ? `(${medio.substring(0,12)})` : ""}`;
+    }
+    doc.text(info, 148, y + 5.5);
+    
+    y += 8;
+  });
+
+  // Footer / Notes
+  y += 10;
+  if (y > 260) {
+    doc.addPage();
+    y = 25;
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.text("Detalle del Producto:", 15, y);
+  y += 5;
+  doc.setFont("helvetica", "normal");
+  doc.text(`Producto Adquirido: ${datos.productoNombre}`, 15, y);
+  y += 10;
+
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text("Este estado de cuenta refleja los cobros validados en las cuentas de la administración central de Cuenta Hogar.", 15, y);
+  y += 4;
+  doc.text("Para reclamos o aclaraciones, presente los comprobantes de pago emitidos por el sistema.", 15, y);
+
+  const clientClean = datos.clienteNombre.trim().replace(/[^a-zA-Z0-9\s]/g, "");
+  doc.save(`Resumen de Cuenta - ${clientClean}.pdf`);
+};
