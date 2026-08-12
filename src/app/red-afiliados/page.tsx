@@ -207,7 +207,7 @@ export default function RedAfiliadosPage() {
           </div>
 
           <div className="pt-8 border-t border-zinc-850 text-center text-zinc-400 text-xs space-y-2">
-            <p className="font-bold text-zinc-400">LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar) | Domicilio Legal: Av. Ejemplo 123, CABA, Argentina</p>
+            <p className="font-bold text-zinc-400">LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar) | Domicilio Legal: Caracas 1101, CABA, Argentina</p>
             <p>LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar) presta servicios de gestión administrativa y financiación propia. No realizamos intermediación financiera en los términos de la Ley de Entidades Financieras.</p>
           </div>
           

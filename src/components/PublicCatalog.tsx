@@ -437,7 +437,7 @@ export default function PublicCatalog() {
           <p className="font-semibold text-white">Cuenta Hogar</p>
           <p>© {new Date().getFullYear()} Cuenta Hogar. Todos los derechos reservados.</p>
           <p>Razón Social: Cuenta Hogar S.R.L. | CUIT: 30-00000000-0</p>
-          <p>Domicilio Legal: Av. Ejemplo 123, Ciudad Autónoma de Buenos Aires, Argentina</p>
+          <p>Domicilio Legal: Caracas 1101, CABA, Argentina</p>
           
           <div className="flex justify-center gap-2 flex-wrap items-center pt-2">
             <Link href="/terms" className="hover:text-yellow-400 transition-colors">Términos y Condiciones</Link>

@@ -89,7 +89,7 @@ export default function TermsPage() {
 
         <div className="mt-20 pt-8 border-t border-zinc-850 text-center text-sm text-zinc-500">
           <p>Última actualización: {new Date().toLocaleDateString('es-AR')}</p>
-          <p className="mt-2">LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar) | Domicilio Legal: Av. Ejemplo 123, CABA, Argentina</p>
+          <p className="mt-2">LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar) | Domicilio Legal: Caracas 1101, CABA, Argentina</p>
         </div>
       </main>
     </div>
