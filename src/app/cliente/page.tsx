@@ -22,6 +22,8 @@ type Solicitud = {
   montoAbonado?: number;
   metodoPago?: string;
   estadoRendicion?: string;
+  datosPersonales?: any;
+  numeroDni?: string;
 };
 
 export default function ClientePage() {
@@ -123,22 +125,68 @@ export default function ClientePage() {
   const fetchSolicitudes = async () => {
     if (!user) return;
     try {
+      // 1. Fetch requests linked to this UID
       const q = query(collection(db, "solicitudes"), where("clienteId", "==", user.uid));
       const snap = await getDocs(q);
       const results: Solicitud[] = [];
       snap.forEach(doc => results.push({ id: doc.id, ...doc.data() } as Solicitud));
       setSolicitudes(results);
 
-      // Check if there are requests with matching email but not matching clienteId
-      const qEmail = query(collection(db, "solicitudes"), where("clienteEmail", "==", user.email));
-      const snapEmail = await getDocs(qEmail);
-      let unlinkedFound = false;
-      snapEmail.forEach(docSnap => {
-        if (docSnap.data().clienteId !== user.uid) {
-          unlinkedFound = true;
-        }
+      // Get customer DNI if they already have linked requests
+      let knownDni = "";
+      results.forEach(r => {
+        const dni = (r.datosPersonales?.numeroDni || r.numeroDni || "").toString().replace(/\D/g, "");
+        if (dni) knownDni = dni;
       });
-      setTieneUnlinked(unlinkedFound);
+
+      // 2. Fetch requests matching their email case-insensitively to see if there are unlinked ones
+      const emailLower = (user.email || "").trim().toLowerCase();
+      const emailRaw = (user.email || "").trim();
+      
+      const queries = [
+        query(collection(db, "solicitudes"), where("clienteEmail", "==", emailRaw)),
+        query(collection(db, "solicitudes"), where("clienteEmail", "==", emailLower))
+      ];
+      
+      const unlinkedSols: any[] = [];
+      const processedIds = new Set<string>();
+      for (const qObj of queries) {
+        const snapEmail = await getDocs(qObj);
+        snapEmail.forEach(docSnap => {
+          if (processedIds.has(docSnap.id)) return;
+          processedIds.add(docSnap.id);
+          const data = docSnap.data();
+          if (data.clienteId !== user.uid) {
+            unlinkedSols.push({ id: docSnap.id, ...data });
+          }
+        });
+      }
+
+      // If we have a known DNI, we can auto-link unlinked requests that match email + DNI!
+      let newlyLinked = 0;
+      if (knownDni && unlinkedSols.length > 0) {
+        for (const sol of unlinkedSols) {
+          const solDni = (sol.datosPersonales?.numeroDni || sol.numeroDni || "").toString().replace(/\D/g, "");
+          if (solDni === knownDni) {
+            await updateDoc(doc(db, "solicitudes", sol.id), {
+              clienteId: user.uid
+            });
+            newlyLinked++;
+          }
+        }
+      }
+
+      if (newlyLinked > 0) {
+        // Reload if we auto-linked anything
+        const qReload = query(collection(db, "solicitudes"), where("clienteId", "==", user.uid));
+        const snapReload = await getDocs(qReload);
+        const reloadResults: Solicitud[] = [];
+        snapReload.forEach(doc => reloadResults.push({ id: doc.id, ...doc.data() } as Solicitud));
+        setSolicitudes(reloadResults);
+        setTieneUnlinked(false);
+      } else {
+        setTieneUnlinked(unlinkedSols.length > 0);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -370,20 +418,33 @@ export default function ClientePage() {
                        if (!dniVincular.trim()) return alert("Por favor ingresa tu DNI.");
                        setVinculando(true);
                        try {
-                          const q = query(collection(db, "solicitudes"), where("clienteEmail", "==", user.email));
-                          const snap = await getDocs(q);
-                          let vinculadas = 0;
+                          const emailLower = (user.email || "").trim().toLowerCase();
+                          const emailRaw = (user.email || "").trim();
                           
-                          for (const d of snap.docs) {
-                             const data = d.data();
-                             const requestDni = (data.datosPersonales?.numeroDni || data.numeroDni || "").toString().replace(/\D/g, "");
-                             const inputDniClean = dniVincular.replace(/\D/g, "");
-                             
-                             if (requestDni === inputDniClean && data.clienteId !== user.uid) {
-                                await updateDoc(doc(db, "solicitudes", d.id), {
-                                   clienteId: user.uid
-                                });
-                                vinculadas++;
+                          const queries = [
+                            query(collection(db, "solicitudes"), where("clienteEmail", "==", emailRaw)),
+                            query(collection(db, "solicitudes"), where("clienteEmail", "==", emailLower))
+                          ];
+                          
+                          let vinculadas = 0;
+                          const processedDocIds = new Set<string>();
+                          
+                          for (const qObj of queries) {
+                             const snap = await getDocs(qObj);
+                             for (const d of snap.docs) {
+                                if (processedDocIds.has(d.id)) continue;
+                                processedDocIds.add(d.id);
+                                
+                                const data = d.data();
+                                const requestDni = (data.datosPersonales?.numeroDni || data.numeroDni || "").toString().replace(/\D/g, "");
+                                const inputDniClean = dniVincular.replace(/\D/g, "");
+                                
+                                if (requestDni === inputDniClean && data.clienteId !== user.uid) {
+                                   await updateDoc(doc(db, "solicitudes", d.id), {
+                                      clienteId: user.uid
+                                   });
+                                   vinculadas++;
+                                }
                              }
                           }
                           
