@@ -2858,112 +2858,6 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                       {entregaActiva === sol.id ? (
                                         <div className="bg-zinc-900 border border-blue-500 p-4 rounded-xl flex flex-col gap-3 shadow-2xl">
                                            <h4 className="text-blue-400 font-bold text-xs uppercase text-center border-b border-blue-900 pb-2 mb-1">Confirmar Cierre y Adelanto</h4>
-                                           
-                                           {/* Selector de Producto de Inventario */}
-                                           <div>
-                                             <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Producto en Catálogo</label>
-                                             <select 
-                                               value={selectedProductId}
-                                               onChange={(e) => {
-                                                 const pId = e.target.value;
-                                                 setSelectedProductId(pId);
-                                                 const prodObj = productos.find(p => p.id === pId);
-                                                 setSelectedProductStock(prodObj || null);
-                                                 setSelectedStockUnitId("manual");
-                                                 setNserie("");
-                                               }}
-                                               className="bg-zinc-950 text-zinc-100 px-3 py-2 rounded-lg text-xs border border-zinc-800 w-full focus:border-blue-500 outline-none"
-                                             >
-                                               <option value="">-- No vincular a catálogo --</option>
-                                               {productos.map(p => (
-                                                 <option key={p.id} value={p.id}>{p.nombre}</option>
-                                               ))}
-                                             </select>
-                                           </div>
-
-                                           {/* Selector de Unidad de Stock */}
-                                           {selectedProductStock && (
-                                             <div>
-                                               <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Unidad de Stock Disponible</label>
-                                               <select 
-                                                 value={selectedStockUnitId}
-                                                 onChange={(e) => {
-                                                   const unitId = e.target.value;
-                                                   setSelectedStockUnitId(unitId);
-                                                   if (unitId === "manual") {
-                                                     setNserie("");
-                                                   } else {
-                                                     const unit = (selectedProductStock?.stock || []).find((u: any) => u.id === unitId);
-                                                     setNserie(unit?.nserie || "");
-                                                   }
-                                                 }}
-                                                 className="bg-zinc-950 text-zinc-100 px-3 py-2 rounded-lg text-xs border border-zinc-800 w-full focus:border-blue-500 outline-none"
-                                               >
-                                                 <option value="manual">Cargar manualmente (Sin stock / Otro)</option>
-                                                 {(selectedProductStock.stock || []).filter((u: any) => u.estado === "Disponible").map((u: any) => (
-                                                   <option key={u.id} value={u.id}>
-                                                     [{u.localidad}] - {u.nserie ? `IMEI/Serie: ${u.nserie}` : "Sin número registrado"}
-                                                   </option>
-                                                 ))}
-                                               </select>
-                                             </div>
-                                           )}
-
-                                           {/* Informar asignación de venta */}
-                                           <div className="text-[10px] text-zinc-400 font-medium bg-zinc-950 p-2.5 rounded border border-zinc-850/50 mt-1">
-                                             {!sol.afiliadoEmail ? (
-                                               <span className="text-yellow-500">ℹ️ Venta libre (sin asignar): puedes asignar stock de cualquier ubicación central o sucursal.</span>
-                                             ) : (
-                                               <span>ℹ️ Venta delegada a: <strong className="text-zinc-300">{sol.afiliadoEmail}</strong>. Se aconseja ruteo local o traslado a sucursal.</span>
-                                             )}
-                                           </div>
-
-                                           {/* Ruteo / Transferencia entre Sucursales */}
-                                           {selectedStockUnitId && selectedStockUnitId !== "manual" && selectedProductStock && (
-                                             <div className="bg-zinc-950 p-3 border border-zinc-850/50 rounded-xl space-y-2 mt-1">
-                                               <div className="flex justify-between items-center text-xs">
-                                                 <span className="text-[10px] text-zinc-500 font-bold uppercase">Ubicación Actual:</span>
-                                                 <span className="bg-blue-900/30 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider">
-                                                   {((selectedProductStock.stock || []).find((u: any) => u.id === selectedStockUnitId)?.localidad) || "Depósito Central"}
-                                                 </span>
-                                               </div>
-                                               
-                                               <div className="pt-2 border-t border-zinc-900/60 space-y-2">
-                                                 <label className="block text-[10px] text-zinc-400 font-bold uppercase">Ruteo: Transferir Unidad a Sucursal</label>
-                                                 <div className="flex gap-2">
-                                                   <select 
-                                                     id={`target_sucursal_${sol.id}`}
-                                                     className="bg-zinc-900 text-zinc-100 px-2 py-1.5 rounded text-xs border border-zinc-800 flex-1 outline-none focus:border-blue-500"
-                                                   >
-                                                     {sucursalesDisponibles.map(suc => (
-                                                       <option key={suc} value={suc}>{suc}</option>
-                                                     ))}
-                                                   </select>
-                                                   <button
-                                                     type="button"
-                                                     onClick={() => {
-                                                       const el = document.getElementById(`target_sucursal_${sol.id}`) as HTMLSelectElement;
-                                                       const targetSuc = el.value;
-                                                       if (targetSuc) {
-                                                         handleTransferirStockUnidad(selectedProductId, selectedStockUnitId, targetSuc, sol.id);
-                                                       }
-                                                     }}
-                                                     className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded text-[10px] transition-all uppercase tracking-wider flex items-center gap-1 active:scale-95"
-                                                   >
-                                                     🔄 Trasladar
-                                                   </button>
-                                                 </div>
-                                               </div>
-                                             </div>
-                                           )}
-
-                                           <div>
-                                             <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Nº de Serie / IMEI del Producto</label>
-                                             <input type="text" value={nserie} onChange={e=>setNserie(e.target.value)} placeholder="Ej: SN-12345" className="bg-zinc-950 text-zinc-100 px-3 py-2.5 rounded-lg text-sm border border-zinc-800 w-full focus:border-blue-500 outline-none font-mono" />
-                                           </div>
-
-                                           
-
                                            <div className="grid grid-cols-2 gap-3">
                                              <div>
                                                <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Adelanto Abonado ($)</label>
@@ -2983,7 +2877,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                            </div>
                                            <div className="flex gap-2 mt-3">
                                              <button onClick={() => setEntregaActiva(null)} className="flex-1 bg-zinc-800/80 text-zinc-400 py-2.5 rounded-lg text-xs font-bold hover:bg-gray-200 transition">Cancelar</button>
-                                             <button onClick={() => handleConfirmarEntregaAdmin(sol.id, "ENTREGADO", false, selectedProductId, selectedStockUnitId)} className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-xs font-black hover:bg-blue-500 transition shadow-2xl shadow-black/60">✓ GUARDAR CIERRE</button>
+                                             <button onClick={() => handleConfirmarEntregaAdmin(sol.id, "ENTREGADO", false, sol.vinculoProductoId || "", sol.vinculoUnidadId || "")} className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-xs font-black hover:bg-blue-500 transition shadow-2xl shadow-black/60">✓ GUARDAR CIERRE</button>
                                            </div>
                                         </div>
                                       ) : (
