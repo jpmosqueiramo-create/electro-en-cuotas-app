@@ -338,7 +338,7 @@ export default function ClientePage() {
   };
 
   if (loading || cargandoDatos) {
-    return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-white to-yellow-50 text-amber-600 font-bold text-xl animate-pulse">Cargando tu perfil premium...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-white to-yellow-50 text-amber-600 font-bold text-xl animate-pulse">Estamos cargando tu Cuenta Hogar. Esto puede demorar unos segundos.</div>;
   }
 
   if (!user) return null;
