@@ -752,3 +752,113 @@ export const generarPdfPresupuesto = (datos: DatosPresupuestoPdf) => {
 
   doc.save(`Presupuesto_${datos.nroPresupuesto}_${datos.clienteNombre.replace(/\s/g,"_")}.pdf`);
 };
+
+export interface DatosComprobantePago {
+  nroRecibo: string;
+  fecha: string;
+  clienteNombre: string;
+  clienteDni: string;
+  productoNombre: string;
+  cuotaNumero: number;
+  montoAbonado: number;
+  metodoPago: string;
+  nroComprobante?: string;
+  cuentaDestino?: string;
+  proximaCuotaValor?: number;
+  proximaCuotaNumero?: number;
+}
+
+export const generarComprobantePago = (datos: DatosComprobantePago) => {
+  const doc = new jsPDF();
+  
+  // Header box
+  doc.setFillColor(244, 244, 245);
+  doc.rect(15, 15, 180, 22, "F");
+  doc.setDrawColor(234, 179, 8); // Gold border
+  doc.setLineWidth(0.5);
+  doc.rect(15, 15, 180, 22, "S");
+
+  // Logo text
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
+  doc.setTextColor(234, 179, 8); // Gold
+  doc.text("CUENTA HOGAR", 20, 24);
+  
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(15, 23, 42);
+  doc.text("COMPROBANTE OFICIAL DE PAGO", 115, 24);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text("Gestión de Compras y Créditos a Medida", 20, 30);
+  doc.text("ELECTRO EN CUOTAS", 115, 30);
+
+  // Recibo details box
+  drawFormBox(doc, "Recibo N°:", datos.nroRecibo, 15, 43, 90, 11);
+  drawFormBox(doc, "Fecha Cobro:", datos.fecha, 105, 43, 90, 11);
+
+  // Client info
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Datos del Cliente / Titular", 15, 68);
+
+  drawFormBox(doc, "Cliente (Nombre y Apellido):", datos.clienteNombre, 15, 72, 180, 11);
+  drawFormBox(doc, "DNI:", datos.clienteDni, 15, 86, 180, 11);
+
+  // Payment details
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Detalle de la Acreditación", 15, 112);
+  
+  drawFormBox(doc, "Concepto:", `Pago Cuota N° ${datos.cuotaNumero} - ${datos.productoNombre}`, 15, 116, 180, 11);
+  drawFormBox(doc, "Monto Abonado:", `$${datos.montoAbonado}`, 15, 130, 90, 11);
+  drawFormBox(doc, "Forma de Pago:", datos.metodoPago, 105, 130, 90, 11);
+
+  drawFormBox(doc, "N° de Transacción / Comprobante:", datos.nroComprobante || "N/A", 15, 144, 90, 11);
+  drawFormBox(doc, "Cuenta de Destino:", datos.cuentaDestino || "N/A", 105, 144, 90, 11);
+
+  // Adjustments notice if applicable
+  let y = 168;
+  if (datos.proximaCuotaValor !== undefined && datos.proximaCuotaNumero !== undefined) {
+    doc.setFillColor(254, 243, 199); // light amber background
+    doc.rect(15, y, 180, 12, "F");
+    doc.setDrawColor(245, 158, 11);
+    doc.rect(15, y, 180, 12, "S");
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(146, 64, 14);
+    doc.text(`Ajuste financiero aplicado: La diferencia de pago se trasladó a la Cuota N° ${datos.proximaCuotaNumero}.`, 20, y + 5);
+    doc.text(`Nuevo valor establecido para la Cuota N° ${datos.proximaCuotaNumero}: $${datos.proximaCuotaValor}`, 20, y + 9);
+    y += 18;
+  } else {
+    y += 5;
+  }
+
+  // Legal note
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text("Este comprobante posee validez administrativa como constancia de pago de la cuota mencionada.", 15, y); y += 5;
+  doc.text("Conserve este documento. Ante cualquier duda comuníquese con su vendedor oficial.", 15, y); y += 20;
+
+  // Signature
+  doc.setDrawColor(148, 163, 184);
+  doc.setLineWidth(0.3);
+  doc.line(70, y, 140, y);
+  
+  y += 5;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Firma Autorizada", 93, y);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.text("Cuenta Hogar", 96, y + 4);
+
+  doc.save(`Recibo-${datos.nroRecibo}.pdf`);
+};

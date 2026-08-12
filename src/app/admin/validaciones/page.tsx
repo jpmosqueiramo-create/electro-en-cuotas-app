@@ -4,7 +4,7 @@ import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { db, storage } from "@/lib/firebase";
 import { collection, getDocs, getDoc, updateDoc, deleteDoc, doc, query, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { generarContratoModelo, generarPagareModelo, generarRemitoModelo, generarPdfPresupuesto } from "@/lib/pdfGenerator";
+import { generarContratoModelo, generarPagareModelo, generarRemitoModelo, generarPdfPresupuesto, generarComprobantePago } from "@/lib/pdfGenerator";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, Search, Filter, AlertCircle, CheckCircle2, Truck, DollarSign, Archive, UserPlus } from "lucide-react";
@@ -104,6 +104,10 @@ export default function AdminValidacionesPage() {
   const [remitoDestinatarioDireccion, setRemitoDestinatarioDireccion] = useState("");
   const [remitoDestinatarioDoc, setRemitoDestinatarioDoc] = useState("");
   const [remitoDestinatarioTel, setRemitoDestinatarioTel] = useState("");
+  const [pagoAConfirmar, setPagoAConfirmar] = useState<any | null>(null);
+  const [pagoMonto, setPagoMonto] = useState("");
+  const [pagoComprobante, setPagoComprobante] = useState("");
+  const [pagoCuentaDestino, setPagoCuentaDestino] = useState("Caja Efectivo");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editFields, setEditFields] = useState<any>({
     nombreCompleto: "",
@@ -459,79 +463,36 @@ export default function AdminValidacionesPage() {
     }
   };
 
-  const handleCobroManual = async (solId: string, idx: number, metodo: string) => {
-    try {
-      const sol = solicitudes.find(s => s.id === solId);
-      const cuota = sol?.planPagos?.[idx];
-      if (!sol || !cuota) return;
-
-      const amountStr = prompt(`Ingrese el monto cobrado para la Cuota ${cuota.numero} (Valor original de cuota: $${cuota.montoOriginal}):`, String(cuota.montoOriginal));
-      if (amountStr === null) return;
-      const amountPaid = Number(amountStr);
-      if (isNaN(amountPaid) || amountPaid < 0) return alert("Monto de pago inválido.");
-
-      const newPlan = [...(sol.planPagos || [])];
-      newPlan[idx].estado = "PAGADO";
-      newPlan[idx].montoAbonado = amountPaid;
-      newPlan[idx].fechaPago = new Date().toISOString();
-      newPlan[idx].metodoPagoManual = metodo;
-
-      const difference = cuota.montoOriginal - amountPaid;
-      let feedbackMsg = "Cobro manual registrado correctamente.";
-
-      if (difference !== 0) {
-        const nextPendingIdx = newPlan.findIndex((c, i) => i > idx && c.estado === "PENDIENTE");
-        if (nextPendingIdx !== -1) {
-          const oldVal = newPlan[nextPendingIdx].montoOriginal;
-          const newVal = Math.max(0, oldVal + difference);
-          newPlan[nextPendingIdx].montoOriginal = newVal;
-          feedbackMsg = `Pago registrado. Diferencia de $${difference > 0 ? '+' : ''}${difference} ajustada en la Cuota ${newPlan[nextPendingIdx].numero}. Nuevo valor de la próxima cuota: $${newVal}.`;
-        } else {
-          feedbackMsg = `Pago registrado. Se detectó una diferencia de $${difference} en la última cuota del plan.`;
-        }
-      }
-
-      await updateDoc(doc(db, "solicitudes", solId), { planPagos: newPlan });
-
-      if (sol.afiliadoEmail) {
-        await addDoc(collection(db, "notificaciones"), {
-          afiliadoEmail: sol.afiliadoEmail,
-          mensaje: `Se cobró la cuota ${cuota.numero} de ${sol.datosPersonales?.nombreCompleto || 'cliente'} por $${amountPaid} (${metodo}). Comisión ganada.`,
-          fecha: new Date().toISOString(),
-          leida: false,
-          comisionAsociada: amountPaid * 0.15,
-          estadoPago: "PENDIENTE",
-          cuotaAsociada: cuota.numero || idx + 1,
-          clienteNombre: sol.datosPersonales?.nombreCompleto || 'Desconocido'
-        });
-      }
-
-      await fetchSolicitudes();
-      alert(feedbackMsg);
-    } catch (err: any) {
-      console.error(err);
-      alert("Error al registrar cobro manual: " + err.message);
+  const handleProcesarPagoFinal = async () => {
+    if (!pagoAConfirmar) return;
+    const { solId, idx, metodo, originalAmount, isClientApprove } = pagoAConfirmar;
+    
+    const amountPaid = Number(pagoMonto);
+    if (isNaN(amountPaid) || amountPaid < 0) {
+      alert("Por favor, ingrese un monto válido.");
+      return;
     }
-  };
 
-  const handleAprobarPagoCliente = async (solId: string, idx: number) => {
     try {
       const sol = solicitudes.find(s => s.id === solId);
-      const cuota = sol?.planPagos?.[idx];
-      if (!sol || !cuota) return;
-
-      const amountStr = prompt(`Confirmar monto acreditado para la Cuota ${cuota.numero} (Monto de cuota: $${cuota.montoOriginal}):`, String(cuota.montoOriginal));
-      if (amountStr === null) return;
-      const amountPaid = Number(amountStr);
-      if (isNaN(amountPaid) || amountPaid < 0) return alert("Monto acreditado inválido.");
+      if (!sol) return;
 
       const newPlan = [...(sol.planPagos || [])];
+      const cuota = newPlan[idx];
+
       newPlan[idx].estado = "PAGADO";
       newPlan[idx].montoAbonado = amountPaid;
       newPlan[idx].fechaPago = new Date().toISOString();
+      newPlan[idx].nroComprobante = pagoComprobante.trim();
+      newPlan[idx].cuentaDestino = pagoCuentaDestino.trim();
+      if (!isClientApprove) {
+        newPlan[idx].metodoPagoManual = metodo;
+      }
 
-      const difference = cuota.montoOriginal - amountPaid;
-      let feedbackMsg = "Pago de cliente aprobado correctamente.";
+      const difference = originalAmount - amountPaid;
+      let nextCuotaVal: number | undefined = undefined;
+      let nextCuotaNum: number | undefined = undefined;
+      let feedbackMsg = "Pago registrado y acreditado con éxito.";
 
       if (difference !== 0) {
         const nextPendingIdx = newPlan.findIndex((c, i) => i > idx && c.estado === "PENDIENTE");
@@ -539,18 +500,39 @@ export default function AdminValidacionesPage() {
           const oldVal = newPlan[nextPendingIdx].montoOriginal;
           const newVal = Math.max(0, oldVal + difference);
           newPlan[nextPendingIdx].montoOriginal = newVal;
-          feedbackMsg = `Pago aprobado. Diferencia de $${difference > 0 ? '+' : ''}${difference} ajustada en la Cuota ${newPlan[nextPendingIdx].numero}. Nuevo valor de la próxima cuota: $${newVal}.`;
+          nextCuotaVal = newVal;
+          nextCuotaNum = newPlan[nextPendingIdx].numero;
+          feedbackMsg = `Pago registrado. Diferencia de $${difference > 0 ? '+' : ''}${difference} trasladada a la Cuota ${newPlan[nextPendingIdx].numero} (Nuevo valor: $${newVal}).`;
         } else {
-          feedbackMsg = `Pago aprobado. Se detectó una diferencia de $${difference} en la última cuota del plan.`;
+          feedbackMsg = `Pago registrado. Diferencia residual de $${difference} asentada en la cuota final del plan.`;
         }
       }
 
+      // Guardar en Firebase
       await updateDoc(doc(db, "solicitudes", solId), { planPagos: newPlan });
 
+      // Generar Comprobante en PDF e iniciar descarga automática
+      const receiptId = `REC-${solId.substring(0, 5).toUpperCase()}-${cuota.numero}`;
+      generarComprobantePago({
+        nroRecibo: receiptId,
+        fecha: new Date().toLocaleDateString("es-AR"),
+        clienteNombre: sol.datosPersonales?.nombreCompleto || "",
+        clienteDni: sol.datosPersonales?.numeroDni || "",
+        productoNombre: sol.productoDeseado || "Producto",
+        cuotaNumero: cuota.numero,
+        montoAbonado: amountPaid,
+        metodoPago: isClientApprove ? "Aprobación Recibo Online" : metodo,
+        nroComprobante: pagoComprobante.trim() || undefined,
+        cuentaDestino: pagoCuentaDestino.trim() || undefined,
+        proximaCuotaValor: nextCuotaVal,
+        proximaCuotaNumero: nextCuotaNum
+      });
+
+      // Enviar Notificación al Afiliado
       if (sol.afiliadoEmail) {
         await addDoc(collection(db, "notificaciones"), {
           afiliadoEmail: sol.afiliadoEmail,
-          mensaje: `¡Excelente! Se aprobó el recibo de ${sol.datosPersonales?.nombreCompleto || 'cliente'} por $${amountPaid}. Comisión ganada.`,
+          mensaje: `Se acreditó el pago de cuota ${cuota.numero} de ${sol.datosPersonales?.nombreCompleto || 'cliente'} por $${amountPaid}. Comisión ganada.`,
           fecha: new Date().toISOString(),
           leida: false,
           comisionAsociada: amountPaid * 0.15,
@@ -561,10 +543,11 @@ export default function AdminValidacionesPage() {
       }
 
       await fetchSolicitudes();
-      alert(feedbackMsg);
-    } catch (err: any) {
-      console.error(err);
-      alert("Error al aprobar pago: " + err.message);
+      setPagoAConfirmar(null);
+      alert(`${feedbackMsg}\n\n¡El comprobante de pago PDF ha sido generado y descargado!`);
+    } catch (e: any) {
+      console.error(e);
+      alert("Error al procesar el pago: " + e.message);
     }
   };
 
@@ -3076,7 +3059,12 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                   await fetchSolicitudes();
                                                   alert("Pago Rechazado.");
                                               }} className="flex-1 bg-red-900/40 text-red-400 border border-red-500/10 hover:bg-red-600 hover:text-white py-2 rounded text-xs font-bold transition">Rechazar</button>
-                                              <button onClick={() => handleAprobarPagoCliente(sol.id, idx)} className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2 rounded text-xs font-black transition shadow-2xl shadow-black/60">✓ Aprobar</button>
+                                              <button onClick={() => {
+                                                  setPagoAConfirmar({ solId: sol.id, idx, metodo: 'Transferencia', originalAmount: cuota.montoOriginal, isClientApprove: true });
+                                                  setPagoMonto(String(cuota.montoOriginal));
+                                                  setPagoComprobante(cuota.nroComprobante || "");
+                                                  setPagoCuentaDestino(cuota.cuentaDestino || "Mercado Pago (Fintech)");
+                                              }} className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2 rounded text-xs font-black transition shadow-2xl shadow-black/60">✓ Aprobar</button>
                                             </div>
                                          </div>
                                       )}
@@ -3086,13 +3074,23 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                            <p className="text-[10px] text-zinc-500 font-medium">Registrar cobro manual realizado en efectivo o transferencia:</p>
                                            <div className="flex gap-2">
                                              <button
-                                               onClick={() => handleCobroManual(sol.id, idx, "Efectivo")}
+                                               onClick={() => {
+                                                 setPagoAConfirmar({ solId: sol.id, idx, metodo: 'Efectivo', originalAmount: cuota.montoOriginal, isClientApprove: false });
+                                                 setPagoMonto(String(cuota.montoOriginal));
+                                                 setPagoComprobante("");
+                                                 setPagoCuentaDestino("Caja Efectivo");
+                                               }}
                                                className="flex-1 bg-green-950/30 hover:bg-green-600 border border-green-500/20 text-green-400 hover:text-white py-1.5 rounded text-[10px] font-black transition uppercase tracking-wider"
                                              >
                                                💵 Efectivo
                                              </button>
                                              <button
-                                               onClick={() => handleCobroManual(sol.id, idx, "Transferencia")}
+                                               onClick={() => {
+                                                 setPagoAConfirmar({ solId: sol.id, idx, metodo: 'Transferencia', originalAmount: cuota.montoOriginal, isClientApprove: false });
+                                                 setPagoMonto(String(cuota.montoOriginal));
+                                                 setPagoComprobante("");
+                                                 setPagoCuentaDestino("Mercado Pago (Fintech)");
+                                               }}
                                                className="flex-1 bg-blue-950/30 hover:bg-blue-650 border border-blue-500/20 text-blue-400 hover:text-white py-1.5 rounded text-[10px] font-black transition uppercase tracking-wider"
                                              >
                                                📱 Transf.
@@ -3119,6 +3117,74 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
               })
             )}
           </div>
+             {/* MODAL DE CONFIRMACIÓN DE COBRO Y EMISIÓN DE COMPROBANTE */}
+             {pagoAConfirmar && (
+               <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                 <div className="bg-zinc-900 border-2 border-green-500/20 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-5">
+                   <div className="border-b border-zinc-800 pb-3 flex justify-between items-center">
+                     <div>
+                       <h3 className="text-sm font-black text-green-400 uppercase tracking-widest">💰 Acreditación de Pago</h3>
+                       <p className="text-[10px] text-zinc-500">Registre los datos de la transacción para emitir comprobante</p>
+                     </div>
+                     <button onClick={() => setPagoAConfirmar(null)} className="text-zinc-500 hover:text-white text-xs font-bold">✕</button>
+                   </div>
+                   
+                   <div className="space-y-4 text-xs">
+                     <div>
+                       <label className="block text-[10px] text-zinc-400 font-bold uppercase mb-1">Monto Real Cobrado ($)</label>
+                       <input 
+                         type="number" 
+                         value={pagoMonto} 
+                         onChange={e => setPagoMonto(e.target.value)} 
+                         className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white font-black text-sm outline-none focus:border-green-500" 
+                         placeholder="Monto"
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-[10px] text-zinc-400 font-bold uppercase mb-1">Nº Comprobante / Transacción (Opcional)</label>
+                       <input 
+                         type="text" 
+                         value={pagoComprobante} 
+                         onChange={e => setPagoComprobante(e.target.value)} 
+                         className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white font-mono outline-none focus:border-green-500" 
+                         placeholder="Ej: TXN-99887766"
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-[10px] text-zinc-400 font-bold uppercase mb-1">Cuenta de Destino / Depósito</label>
+                       <select 
+                         value={pagoCuentaDestino} 
+                         onChange={e => setPagoCuentaDestino(e.target.value)} 
+                         className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white outline-none focus:border-green-500 font-medium"
+                       >
+                         <option value="Caja Efectivo">💵 Caja Efectivo</option>
+                         <option value="Mercado Pago (Fintech)">📱 Mercado Pago (Fintech)</option>
+                         <option value="Banco Galicia">🏢 Banco Galicia</option>
+                         <option value="Banco Provincia">🏢 Banco Provincia</option>
+                         <option value="Ualá">📱 Ualá</option>
+                         <option value="Otra Cuenta / Cheque">📄 Otra Cuenta / Cheque</option>
+                       </select>
+                     </div>
+                   </div>
+
+                   <div className="flex gap-3 pt-2">
+                     <button 
+                       onClick={() => setPagoAConfirmar(null)} 
+                       className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold py-2 rounded-lg text-xs transition uppercase tracking-wider"
+                     >
+                       Cancelar
+                     </button>
+                     <button 
+                       onClick={handleProcesarPagoFinal} 
+                       className="flex-1 bg-green-600 hover:bg-green-500 text-white font-black py-2 rounded-lg text-xs transition shadow-lg shadow-green-900/30 uppercase tracking-wider"
+                     >
+                       💾 Confirmar y Generar PDF
+                     </button>
+                   </div>
+                 </div>
+               </div>
+             )}
+
              {/* MODAL EDITOR DE CONTRATO */}
              {contratoAEditar && (
                <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
