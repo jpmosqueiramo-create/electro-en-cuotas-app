@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, addDoc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
-import { LogIn, ChevronLeft, ChevronRight, ShieldCheck, CheckCircle2, MessageSquare, Truck, PackageCheck, Send, Menu, X } from "lucide-react";
+import { LogIn, ChevronLeft, ChevronRight, ShieldCheck, ArrowRight, MessageSquare, Truck, PackageCheck, Send, Menu, X } from "lucide-react";
 
 type Producto = {
   id: string;
@@ -556,7 +556,7 @@ function ProductCard({ p, formatPrice }: { p: Producto; formatPrice: (price: num
             href={`/solicitar?id=${p.id}`} 
             className="w-full bg-yellow-textured text-black font-extrabold text-[11px] tracking-wider py-3.5 rounded-full flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] hover:shadow-lg active:scale-95 transition-all duration-200"
           >
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <ArrowRight className="w-4 h-4 shrink-0" />
             <span>SOLICITAR SCORING PARA ESTE PLAN</span>
           </Link>
         </div>
