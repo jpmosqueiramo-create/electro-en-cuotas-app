@@ -36,7 +36,7 @@ export default function PrivacyPage() {
               <span className="text-yellow-400">1.</span> Marco Legal
             </h2>
             <p className="leading-relaxed">
-              LOOP GESTIÓN INTEGRAL S.A.S. (comercialmente Cuenta Hogar) respeta tu derecho a la privacidad. La presente política se encuentra regulada por la legislación vigente de la República Argentina, en especial la Ley de Protección de Datos Personales N° 25.326 y sus disposiciones complementarias.
+              LOOP GESTIÓN INTEGRAL S.A.S. respeta tu derecho a la privacidad. La presente política se encuentra regulada por la legislación vigente de la República Argentina, en especial la Ley de Protección de Datos Personales N° 25.326 y sus disposiciones complementarias.
             </p>
           </section>
 
@@ -74,7 +74,7 @@ export default function PrivacyPage() {
               <span className="text-yellow-400">4.</span> Red de Afiliados Independientes
             </h2>
             <p className="leading-relaxed">
-              Cuenta Hogar SRL <strong>NO vende, alquila ni comercializa bases de datos</strong> a terceros con fines publicitarios. No obstante, en virtud de nuestro modelo de gestión descentralizada, informamos que compartimos los datos de contacto y el estado de cuenta del cliente con el <strong>Afiliado Independiente</strong> responsable de su zona geográfica. Esta transferencia de información tiene como propósito <strong>exclusivo</strong> la gestión logística, el seguimiento operativo y la cobranza activa en terreno.
+              LOOP GESTIÓN INTEGRAL S.A.S. <strong>NO vende, alquila ni comercializa bases de datos</strong> a terceros con fines publicitarios. No obstante, en virtud de nuestro modelo de gestión descentralizada, informamos que compartimos los datos de contacto y el estado de cuenta del cliente con el <strong>Afiliado Independiente</strong> responsable de su zona geográfica. Esta transferencia de información tiene como propósito <strong>exclusivo</strong> la gestión logística, el seguimiento operativo y la cobranza activa en terreno.
             </p>
           </section>
 
@@ -83,7 +83,7 @@ export default function PrivacyPage() {
               <span className="text-yellow-400">5.</span> Seguridad
             </h2>
             <p className="leading-relaxed">
-              Tus archivos digitales (fotos de DNI, comprobantes) y datos personales se encuentran protegidos mediante protocolos de encriptación y son almacenados en servidores seguros con acceso restringido únicamente al personal autorizado y evaluador de LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar).
+              Tus archivos digitales (fotos de DNI, comprobantes) y datos personales se encuentran protegidos mediante protocolos de encriptación y son almacenados en servidores seguros con acceso restringido únicamente al personal autorizado y evaluador de LOOP GESTIÓN INTEGRAL S.A.S..
             </p>
           </section>
 
@@ -100,7 +100,7 @@ export default function PrivacyPage() {
 
         <div className="mt-20 pt-8 border-t border-zinc-850 text-center text-sm text-zinc-500">
           <p>Última actualización: {new Date().toLocaleDateString('es-AR')}</p>
-          <p className="mt-2">LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar) | Domicilio Legal: Caracas 1101, CABA, Argentina</p>
+          <p className="mt-2">LOOP GESTIÓN INTEGRAL S.A.S. | Domicilio Legal: Caracas 1101, CABA, Argentina</p>
         </div>
       </main>
     </div>

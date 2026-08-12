@@ -181,7 +181,7 @@ export default function RedAfiliadosPage() {
             <div className="space-y-4 text-[11px] text-zinc-500 text-justify leading-relaxed column-count-1 md:columns-2 gap-8">
               
               <p>
-                <strong className="text-zinc-300">Naturaleza del Vínculo:</strong> La relación es estrictamente comercial y civil. Bajo ninguna circunstancia existirá relación de dependencia, subordinación jurídica, técnica ni económica entre el Afiliado y LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar).
+                <strong className="text-zinc-300">Naturaleza del Vínculo:</strong> La relación es estrictamente comercial y civil. Bajo ninguna circunstancia existirá relación de dependencia, subordinación jurídica, técnica ni económica entre el Afiliado y LOOP GESTIÓN INTEGRAL S.A.S..
               </p>
               
               <p>
@@ -207,8 +207,8 @@ export default function RedAfiliadosPage() {
           </div>
 
           <div className="pt-8 border-t border-zinc-850 text-center text-zinc-400 text-xs space-y-2">
-            <p className="font-bold text-zinc-400">LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar) | Domicilio Legal: Caracas 1101, CABA, Argentina</p>
-            <p>LOOP GESTIÓN INTEGRAL S.A.S. (Cuenta Hogar) presta servicios de gestión administrativa y financiación propia. No realizamos intermediación financiera en los términos de la Ley de Entidades Financieras.</p>
+            <p className="font-bold text-zinc-400">LOOP GESTIÓN INTEGRAL S.A.S. | Domicilio Legal: Caracas 1101, CABA, Argentina</p>
+            <p>LOOP GESTIÓN INTEGRAL S.A.S. presta servicios de gestión administrativa y financiación propia. No realizamos intermediación financiera en los términos de la Ley de Entidades Financieras.</p>
           </div>
           
         </div>
