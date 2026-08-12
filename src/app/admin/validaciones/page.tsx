@@ -1216,33 +1216,36 @@ export default function AdminValidacionesPage() {
            const planArr = [];
            const bDate = new Date();
            
-           if (Number(montoAbonado) > 0) {
-              planArr.push({
-                 numero: 0,
-                 montoOriginal: Number(montoAbonado),
-                 montoAbonado: Number(montoAbonado),
-                 estado: "PAGADO",
-                 vencimiento: new Date().toISOString(),
-                 fechaPago: new Date().toISOString(),
-                 metodoPago: metodoPago,
-                 comprobanteUrl: null,
-                 notaAcumulacion: "Adelanto Inicial"
-              });
-           }
-
-           for(let i = 1; i <= cant; i++) {
+           const hasAbonado = Number(montoAbonado) > 0;
+           
+           for (let i = 1; i <= cant; i++) {
               const nd = new Date(bDate);
               nd.setMonth(nd.getMonth() + i);
-              planArr.push({
-                 numero: i,
-                 montoOriginal: vc,
-                 montoAbonado: 0,
-                 estado: "PENDIENTE",
-                 vencimiento: nd.toISOString(),
-                 fechaPago: null,
-                 metodoPago: null,
-                 comprobanteUrl: null
-              });
+              
+              if (i === 1 && hasAbonado) {
+                 planArr.push({
+                    numero: 1,
+                    montoOriginal: Number(montoAbonado),
+                    montoAbonado: Number(montoAbonado),
+                    estado: "PAGADO",
+                    vencimiento: new Date().toISOString(),
+                    fechaPago: new Date().toISOString(),
+                    metodoPago: metodoPago,
+                    comprobanteUrl: null,
+                    notaAcumulacion: "Cobrada en Entrega"
+                 });
+              } else {
+                 planArr.push({
+                    numero: i,
+                    montoOriginal: vc,
+                    montoAbonado: 0,
+                    estado: "PENDIENTE",
+                    vencimiento: nd.toISOString(),
+                    fechaPago: null,
+                    metodoPago: null,
+                    comprobanteUrl: null
+                 });
+              }
            }
            dataToUpdate.planPagos = planArr;
         }
