@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [dni, setDni] = useState("");
   
 
   useEffect(() => {
@@ -57,6 +58,27 @@ export default function LoginPage() {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         auth.languageCode = "es";
         await sendEmailVerification(userCredential.user);
+        
+        // Auto-link solicitudes where email and DNI match
+        try {
+          const { collection, getDocs, query, where, updateDoc, doc } = await import("firebase/firestore");
+          const { db } = await import("@/lib/firebase");
+          
+          const q = query(collection(db, "solicitudes"), where("clienteEmail", "==", email));
+          const snap = await getDocs(q);
+          for (const d of snap.docs) {
+             const data = d.data();
+             const requestDni = (data.datosPersonales?.numeroDni || data.numeroDni || "").toString().replace(/\D/g, "");
+             const inputDniClean = dni.replace(/\D/g, "");
+             if (requestDni === inputDniClean) {
+                await updateDoc(doc(db, "solicitudes", d.id), {
+                   clienteId: userCredential.user.uid
+                });
+             }
+          }
+        } catch (linkErr) {
+          console.error("Error auto-linking requests on signup:", linkErr);
+        }
         
         alert("¡Cuenta creada exitosamente! Por favor, debes revisar tu correo electrónico (incluyendo SPAM) y hacer clic en el enlace para validar tu cuenta antes de solicitar un crédito.");
       }
@@ -120,6 +142,20 @@ export default function LoginPage() {
               placeholder="••••••••"
             />
           </div>
+
+          {!isLogin && (
+            <div>
+              <label className="block text-sm mb-1 text-zinc-300 font-bold">DNI del Cliente</label>
+              <input 
+                type="text" 
+                required
+                value={dni}
+                onChange={e => setDni(e.target.value.replace(/\D/g, ""))}
+                className="w-full bg-zinc-800/40 border border-zinc-800 focus:border-yellow-500 rounded p-3 text-white focus:outline-none font-bold font-mono"
+                placeholder="Solo números"
+              />
+            </div>
+          )}
 
           
 

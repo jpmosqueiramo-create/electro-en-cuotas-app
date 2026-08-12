@@ -29,6 +29,9 @@ export default function ClientePage() {
   const router = useRouter();
 
   const [solicitudes, setSolicitudes] = useState<Solicitud[]>([]);
+  const [tieneUnlinked, setTieneUnlinked] = useState(false);
+  const [dniVincular, setDniVincular] = useState("");
+  const [vinculando, setVinculando] = useState(false);
   const [cargandoDatos, setCargandoDatos] = useState(true);
   const [subiendo, setSubiendo] = useState(false);
   const [correoEnviado, setCorreoEnviado] = useState(false);
@@ -125,6 +128,17 @@ export default function ClientePage() {
       const results: Solicitud[] = [];
       snap.forEach(doc => results.push({ id: doc.id, ...doc.data() } as Solicitud));
       setSolicitudes(results);
+
+      // Check if there are requests with matching email but not matching clienteId
+      const qEmail = query(collection(db, "solicitudes"), where("clienteEmail", "==", user.email));
+      const snapEmail = await getDocs(qEmail);
+      let unlinkedFound = false;
+      snapEmail.forEach(docSnap => {
+        if (docSnap.data().clienteId !== user.uid) {
+          unlinkedFound = true;
+        }
+      });
+      setTieneUnlinked(unlinkedFound);
     } catch (e) {
       console.error(e);
     } finally {
@@ -335,6 +349,66 @@ export default function ClientePage() {
             </button>
           </div>
         </header>
+
+        {tieneUnlinked && (
+           <div className="bg-yellow-950/20 border-2 border-yellow-500/20 p-6 md:p-8 rounded-3xl shadow-2xl text-center space-y-4 max-w-lg mx-auto animate-pulse-slow">
+              <span className="text-4xl">🔗</span>
+              <h3 className="text-lg font-black text-yellow-400 uppercase tracking-widest">Vincular Solicitud Existente</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                 Hemos encontrado solicitudes ingresadas con tu correo electrónico. Por seguridad, ingresa tu número de DNI para vincularlas a tu cuenta:
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                 <input
+                    type="text"
+                    placeholder="Ingresa tu DNI"
+                    value={dniVincular}
+                    onChange={e => setDniVincular(e.target.value.replace(/\D/g, ""))}
+                    className="flex-1 bg-zinc-950 border border-zinc-850 rounded-xl p-3 text-white text-center font-bold font-mono outline-none focus:border-yellow-500 transition-all text-sm"
+                 />
+                 <button
+                    onClick={async () => {
+                       if (!dniVincular.trim()) return alert("Por favor ingresa tu DNI.");
+                       setVinculando(true);
+                       try {
+                          const q = query(collection(db, "solicitudes"), where("clienteEmail", "==", user.email));
+                          const snap = await getDocs(q);
+                          let vinculadas = 0;
+                          
+                          for (const d of snap.docs) {
+                             const data = d.data();
+                             const requestDni = (data.datosPersonales?.numeroDni || data.numeroDni || "").toString().replace(/\D/g, "");
+                             const inputDniClean = dniVincular.replace(/\D/g, "");
+                             
+                             if (requestDni === inputDniClean && data.clienteId !== user.uid) {
+                                await updateDoc(doc(db, "solicitudes", d.id), {
+                                   clienteId: user.uid
+                                });
+                                vinculadas++;
+                             }
+                          }
+                          
+                          if (vinculadas > 0) {
+                             alert(`¡Se han vinculado con éxito ${vinculadas} solicitud(es) a tu cuenta!`);
+                             setDniVincular("");
+                             await fetchSolicitudes();
+                          } else {
+                             alert("El DNI ingresado no coincide con ninguna solicitud bajo tu correo.");
+                          }
+                       } catch(e) {
+                          console.error(e);
+                          alert("Error al vincular cuentas.");
+                       } finally {
+                          setVinculando(false);
+                       }
+                    }}
+                    disabled={vinculando}
+                    className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-black px-6 py-3 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-300 hover:shadow-lg"
+                 >
+                    {vinculando ? "Vinculando..." : "Confirmar"}
+                 </button>
+              </div>
+           </div>
+        )}
 
         {/* Centro de Asistencia */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

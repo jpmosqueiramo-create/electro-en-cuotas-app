@@ -39,6 +39,7 @@ export default function AfiliadoPage() {
   const [entregaActiva, setEntregaActiva] = useState<string | null>(null);
   const [recepcionActiva, setRecepcionActiva] = useState<string | null>(null);
   const [expandedCarteraId, setExpandedCarteraId] = useState<string | null>(null);
+  const [activeProductSolId, setActiveProductSolId] = useState<Record<string, string>>({});
   const [nuevaNota, setNuevaNota] = useState("");
   const [fechaPromesa, setFechaPromesa] = useState("");
   const [fechaRecepcion, setFechaRecepcion] = useState("");
@@ -194,33 +195,36 @@ export default function AfiliadoPage() {
            const planArr = [];
            const bDate = new Date();
            
-           if (Number(montoAbonado) > 0) {
-              planArr.push({
-                 numero: 0,
-                 montoOriginal: Number(montoAbonado),
-                 montoAbonado: Number(montoAbonado),
-                 estado: "PAGADO",
-                 vencimiento: new Date().toISOString(),
-                 fechaPago: new Date().toISOString(),
-                 metodoPago: metodoPago,
-                 comprobanteUrl: null,
-                 notaAcumulacion: "Adelanto Inicial"
-              });
-           }
-
-           for(let i = 1; i <= cant; i++) {
+           const hasAbonado = Number(montoAbonado) > 0;
+           
+           for (let i = 1; i <= cant; i++) {
               const nd = new Date(bDate);
               nd.setMonth(nd.getMonth() + i);
-              planArr.push({
-                 numero: i,
-                 montoOriginal: vc,
-                 montoAbonado: 0,
-                 estado: "PENDIENTE",
-                 vencimiento: nd.toISOString(),
-                 fechaPago: null,
-                 metodoPago: null,
-                 comprobanteUrl: null
-              });
+              
+              if (i === 1 && hasAbonado) {
+                 planArr.push({
+                    numero: 1,
+                    montoOriginal: Number(montoAbonado),
+                    montoAbonado: Number(montoAbonado),
+                    estado: "PAGADO",
+                    vencimiento: new Date().toISOString(),
+                    fechaPago: new Date().toISOString(),
+                    metodoPago: metodoPago,
+                    comprobanteUrl: null,
+                    notaAcumulacion: "Cobrada en Entrega"
+                 });
+              } else {
+                 planArr.push({
+                    numero: i,
+                    montoOriginal: vc,
+                    montoAbonado: 0,
+                    estado: "PENDIENTE",
+                    vencimiento: nd.toISOString(),
+                    fechaPago: null,
+                    metodoPago: null,
+                    comprobanteUrl: null
+                 });
+              }
            }
            dataToUpdate.planPagos = planArr;
         }
@@ -773,17 +777,47 @@ export default function AfiliadoPage() {
                <p className="text-zinc-500 text-sm">No tienes clientes con financiación activa asignados a ti.</p>
             ) : (
                <div className="grid grid-cols-1 gap-6">
-                 {solicitudes.filter(s => s.estadoEntrega === "ENTREGADO").map(sol => {
-                    const est = calcularEstadoCuotas(sol.planPagos);
-                    if (est.restantes === 0 && est.pagadas > 0) return null; // Hide finished ones optionally, but let's keep them if they are here. Wait, let's keep them for now. 
-                    return (
-                      <div key={sol.id} className="bg-zinc-950 border border-zinc-850 p-6 rounded-2xl flex flex-col gap-3 relative shadow-2xl shadow-black/80 overflow-hidden hover:border-zinc-800 transition-all">
-                         {est.atrasadas > 0 && <span className="absolute top-0 right-0 bg-red-600 text-[10px] text-white font-black px-4 py-1.5 rounded-bl-xl uppercase shadow-md animate-pulse tracking-widest text-shadow">🛑 MOROSO ({est.atrasadas})</span>}
-                         
-                         <div className="flex flex-col border-b border-zinc-850 pb-3">
-                           <h3 className="text-xl font-black text-white mb-1">{sol.datosPersonales?.nombreCompleto || "Desconocido"}</h3>
-                           <p className="text-zinc-500 text-xs flex items-center gap-2">📱 {sol.datosPersonales?.telefono} <span className="text-yellow-400/50">|</span> 📺 {sol.productoDeseado}</p>
-                         </div>
+                  {(() => {
+                    const delivered = solicitudes.filter(s => s.estadoEntrega === "ENTREGADO");
+                    const groups: Record<string, { key: string; name: string; items: any[] }> = {};
+                    delivered.forEach(item => {
+                       const dni = (item.datosPersonales?.numeroDni || item.numeroDni || item.dni || "").trim().replace(/\D/g, "");
+                       const cuil = (item.cuil || item.datosPersonales?.cuil || "").trim().replace(/\D/g, "");
+                       const key = dni || cuil || item.id;
+                       if (!groups[key]) {
+                          groups[key] = { key, name: item.datosPersonales?.nombreCompleto || "Cliente", items: [] };
+                       }
+                       groups[key].items.push(item);
+                    });
+                    
+                    return Object.values(groups).map((group: any) => {
+                       const activeId = activeProductSolId[group.key] || group.items[0].id;
+                       const sol = group.items.find((x: any) => x.id === activeId) || group.items[0];
+                       const est = calcularEstadoCuotas(sol.planPagos);
+                       if (est.restantes === 0 && est.pagadas > 0) return null;
+                       
+                       return (
+                          <div key={group.key} className="bg-zinc-950 border border-zinc-850 p-6 rounded-2xl flex flex-col gap-3 relative shadow-2xl shadow-black/80 overflow-hidden hover:border-zinc-800 transition-all">
+                             {est.atrasadas > 0 && <span className="absolute top-0 right-0 bg-red-600 text-[10px] text-white font-black px-4 py-1.5 rounded-bl-xl uppercase shadow-md animate-pulse tracking-widest text-shadow">🛑 MOROSO ({est.atrasadas})</span>}
+                             
+                             <div className="flex flex-col border-b border-zinc-850 pb-3">
+                               <h3 className="text-xl font-black text-white mb-1">{group.name}</h3>
+                               {group.items.length > 1 ? (
+                                  <div className="flex flex-wrap gap-2 mt-2">
+                                     {group.items.map((item: any) => (
+                                        <button
+                                           key={item.id}
+                                           onClick={() => setActiveProductSolId(prev => ({ ...prev, [group.key]: item.id }))}
+                                           className={`px-2.5 py-1 rounded text-[10px] font-bold transition ${item.id === sol.id ? 'bg-yellow-500 text-black' : 'bg-zinc-900 text-zinc-400 border border-zinc-800'}`}
+                                        >
+                                           📺 {item.productoDeseado || "Producto"}
+                                        </button>
+                                     ))}
+                                  </div>
+                               ) : (
+                                  <p className="text-zinc-500 text-xs flex items-center gap-2">📱 {sol.datosPersonales?.telefono} <span className="text-yellow-400/50">|</span> 📺 {sol.productoDeseado}</p>
+                               )}
+                             </div>
 
                          {/* RESUMEN DEUDA REDISEÑADO */}
                          <div className="grid grid-cols-3 gap-3 text-center my-1 rounded-xl p-1">
@@ -890,8 +924,9 @@ export default function AfiliadoPage() {
                            </div>
                          )}
                       </div>
-                    )
-                 })}
+                       )
+                    })
+                 })()}
                </div>
             )}
             </div>
