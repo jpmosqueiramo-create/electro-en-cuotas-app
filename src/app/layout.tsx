@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cuenta Hogar | LOOP GESTIÓN INTEGRAL S.A.S.",
+  title: "Cuenta Hogar | LOOP GESTIÓN INTEGRAL S.R.L.",
   description: "Lo que te haga falta, te lo llevamos y financiamos.",
 };
 

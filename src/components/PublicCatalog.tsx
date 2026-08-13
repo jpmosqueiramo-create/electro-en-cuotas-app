@@ -436,7 +436,7 @@ export default function PublicCatalog() {
         <div className="max-w-7xl mx-auto px-6 text-center text-zinc-500 text-sm space-y-4">
           <p className="font-semibold text-white">Cuenta Hogar</p>
           <p>© {new Date().getFullYear()} Cuenta Hogar. Todos los derechos reservados.</p>
-          <p>Razón Social: LOOP GESTIÓN INTEGRAL S.A.S.</p>
+          <p>Razón Social: LOOP GESTIÓN INTEGRAL S.R.L.</p>
           <p>Domicilio Legal: Caracas 1101, CABA, Argentina</p>
           
           <div className="flex justify-center gap-2 flex-wrap items-center pt-2">
@@ -456,7 +456,7 @@ export default function PublicCatalog() {
           </p>
 
           <div className="pt-6 border-t border-zinc-850 max-w-3xl mx-auto text-xs text-zinc-400">
-            <p>LOOP GESTIÓN INTEGRAL S.A.S. presta servicios de gestión administrativa y financiación propia. No realizamos intermediación financiera en los términos de la Ley de Entidades Financieras.</p>
+            <p>LOOP GESTIÓN INTEGRAL S.R.L. presta servicios de gestión administrativa y financiación propia. No realizamos intermediación financiera en los términos de la Ley de Entidades Financieras.</p>
           </div>
         </div>
       </footer>

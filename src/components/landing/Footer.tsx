@@ -12,7 +12,7 @@ export default function Footer() {
               CUENTA <span className="text-accent-gold">HOGAR</span>
             </span>
           </div>
-          <p className="text-sm">© {new Date().getFullYear()} LOOP GESTIÓN INTEGRAL S.A.S.. Todos los derechos reservados.</p>
+          <p className="text-sm">© {new Date().getFullYear()} LOOP GESTIÓN INTEGRAL S.R.L.. Todos los derechos reservados.</p>
         </div>
         
         <div className="flex gap-8 text-sm flex-wrap justify-center">
