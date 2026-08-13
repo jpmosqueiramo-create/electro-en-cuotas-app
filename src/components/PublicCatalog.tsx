@@ -436,7 +436,7 @@ export default function PublicCatalog() {
         <div className="max-w-7xl mx-auto px-6 text-center text-zinc-500 text-sm space-y-4">
           <p className="font-semibold text-white">Cuenta Hogar</p>
           <p>© {new Date().getFullYear()} Cuenta Hogar. Todos los derechos reservados.</p>
-          <p>Razón Social: Cuenta Hogar S.R.L. | CUIT: 30-00000000-0</p>
+          <p>Razón Social: LOOP GESTIÓN INTEGRAL S.A.S.</p>
           <p>Domicilio Legal: Caracas 1101, CABA, Argentina</p>
           
           <div className="flex justify-center gap-2 flex-wrap items-center pt-2">

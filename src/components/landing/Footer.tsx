@@ -1,4 +1,6 @@
 "use client";
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer className="bg-[#001F3F] border-t border-white/5 py-16 text-white/50">
@@ -13,10 +15,10 @@ export default function Footer() {
           <p className="text-sm">© {new Date().getFullYear()} LOOP GESTIÓN INTEGRAL S.A.S.. Todos los derechos reservados.</p>
         </div>
         
-        <div className="flex gap-8 text-sm">
-          <a href="#" className="hover:text-white transition-colors">Términos y Condiciones</a>
-          <a href="#" className="hover:text-white transition-colors">Privacidad</a>
-          <a href="#" className="hover:text-white transition-colors">Contacto</a>
+        <div className="flex gap-8 text-sm flex-wrap justify-center">
+          <Link href="/terms" className="hover:text-white transition-colors">Términos y Condiciones</Link>
+          <Link href="/privacy" className="hover:text-white transition-colors">Privacidad</Link>
+          <Link href="/arrepentimiento" className="text-yellow-400 font-medium hover:underline">Botón de Arrepentimiento</Link>
         </div>
       </div>
     </footer>
