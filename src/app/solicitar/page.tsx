@@ -1,5 +1,7 @@
 "use client";
 
+import { registrarProductoBorradorSiNoExiste } from "@/lib/catalogManager";
+import { calcularTablaTodosLosPlanes } from "@/lib/financialEngine";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight, ArrowLeft, Upload } from "lucide-react";
@@ -32,7 +34,12 @@ function SolicitarForm() {
 
   const [dniFrente, setDniFrente] = useState<File | null>(null);
   const [dniDorso, setDniDorso] = useState<File | null>(null);
+  const cuotasParam = searchParams.get("cuotas") || "12";
   const [planElegido, setPlanElegido] = useState("12");
+
+  useEffect(() => {
+    if (cuotasParam) setPlanElegido(cuotasParam);
+  }, [cuotasParam]);
 
   const handleCuilChange = (val: string) => {
     const clean = val.replace(/\D/g, "").slice(0, 11);
@@ -66,10 +73,7 @@ function SolicitarForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (user && (!dniFrente || !dniDorso)) {
-      alert("Por favor adjunta la foto de tu DNI frente y dorso.");
-      return;
-    }
+// DNI Photo Upload disabled by requirement
 
     const cuilRegex = /^\d{2}-\d{8}-\d{1}$/;
     if (!cuilRegex.test(cuil)) {
@@ -83,22 +87,12 @@ function SolicitarForm() {
     btn.disabled = true;
 
     try {
-      let dniFrenteUrlReal = "Pendiente envío WhatsApp";
-      let dniDorsoUrlReal = "Pendiente envío WhatsApp";
-      
-      if (user && dniFrente && dniDorso) {
-        btn.innerText = "Subiendo DNI Frente...";
-        const frenteRef = ref(storage, `comprobantes/cuenta_solicitudes/${Date.now()}_frente_${dniFrente.name}`);
-        await uploadBytes(frenteRef, dniFrente);
-        dniFrenteUrlReal = await getDownloadURL(frenteRef);
+      let dniFrenteUrlReal = "No requerido en solicitud inicial";
+      let dniDorsoUrlReal = "No requerido en solicitud inicial";
 
-        btn.innerText = "Subiendo DNI Dorso...";
-        const dorsoRef = ref(storage, `comprobantes/cuenta_solicitudes/${Date.now()}_dorso_${dniDorso.name}`);
-        await uploadBytes(dorsoRef, dniDorso);
-        dniDorsoUrlReal = await getDownloadURL(dorsoRef);
-      }
-
-      const planCuotas = planElegido === "8" ? (productoData?.cuota8 || 0) : (productoData?.cuota12 || 0);
+      const planesProducto = productoData ? calcularTablaTodosLosPlanes(Number(productoData.costoProducto || productoData.precioContado) || 0, productoData.factoresPlanes, productoData.planesActivos).filter(pl => pl.activo && pl.cuotaMensual > 0) : [];
+      const planSelObj = planesProducto.find(pl => String(pl.cuotas) === planElegido);
+      const planCuotas = planSelObj ? planSelObj.cuotaMensual : (planElegido === "8" ? (productoData?.cuota8 || 0) : (productoData?.cuota12 || 0));
 
       const datos = {
         productoId: productoId || "A definir",
@@ -122,43 +116,77 @@ function SolicitarForm() {
         localStorage.setItem("datosPreliminares", JSON.stringify(datos));
       }
       
-      await addDoc(collection(db, "solicitudes_cuenta"), {
-        tipo: "apertura_cuenta",
-        ...datos,
-        precioContado: productoData?.precioContado || 0,
-        tasaInteresTna: productoData?.tasaInteresTna || 0,
-        tasaMora: productoData?.tasaMora || 0,
-        fecha: serverTimestamp(),
-        estado: "Pendiente",
-        comprobanteURL: dniFrenteUrlReal,
-        dniFrenteURL: dniFrenteUrlReal,
-        dniDorsoURL: dniDorsoUrlReal
-      });
-
-      if (!user) {
-        alert("¡Solicitud registrada con éxito! Nos pondremos en contacto para pedirte tu DNI Frente y Dorso. Te derivaremos a WhatsApp para continuar el contacto.");
-      } else {
-        alert("¡Solicitud registrada con éxito! Te derivaremos a WhatsApp para continuar el contacto.");
+      if (productoData?.nombre) { await registrarProductoBorradorSiNoExiste(productoData.nombre, productoData.precioContado || 0, productoData.imagenUrl || "").catch(() => {}); }
+      
+      // 1. Guardar en solicitudes_cuenta (Colección de recepción de solicitudes de apertura)
+      try {
+        await addDoc(collection(db, "solicitudes_cuenta"), {
+          tipo: "apertura_cuenta",
+          ...datos,
+          precioContado: productoData?.precioContado || 0,
+          tasaInteresTna: productoData?.tasaInteresTna || 0,
+          tasaMora: productoData?.tasaMora || 0,
+          fecha: serverTimestamp(),
+        fechaIso: new Date().toISOString(),
+          estado: "Pendiente",
+          comprobanteURL: dniFrenteUrlReal,
+          dniFrenteURL: dniFrenteUrlReal,
+          dniDorsoURL: dniDorsoUrlReal
+        });
+      } catch (errDb) {
+        console.warn("Aviso Firestore solicitudes_cuenta:", errDb);
       }
+
+      // Crear alerta para el panel de administración
+      try {
+        await addDoc(collection(db, "alertas_admin"), {
+          tipo: "APERTURA_CUENTA",
+          clienteEmail: email || whatsapp || nombreCompleto,
+          mensaje: `📋 Solicitud de Apertura de Cuenta: ${nombreCompleto} (DNI: ${numeroDni}, Tel: ${whatsapp}, Loc: ${direccion}) - Producto: ${productoData?.nombre || "A definir"}`,
+          fechaCreacion: serverTimestamp(),
+          leida: false
+        });
+      } catch (errAlt) {
+        console.warn("Aviso Firestore alertas_admin:", errAlt);
+      }
+
+      // Enviar notificación por correo electrónico al administrador
+      try {
+        await fetch("/api/notificar-presupuesto", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nombre: nombreCompleto,
+            dni: numeroDni,
+            whatsapp: whatsapp,
+            localidad: direccion,
+            necesidad: productoData?.nombre || "Apertura de Cuenta",
+            referente: nombreAfiliado || referidoPor,
+            tipo: "apertura_cuenta"
+          })
+        });
+      } catch (e) {
+        console.error("Error al enviar email de solicitud:", e);
+      }
+
       const textMsg = `Hola, acabo de llenar el formulario de Apertura de Cuenta. Elegí el plan de ${planElegido} cuotas para el producto ${productoData?.nombre || 'A definir'}. Mi DNI es ${numeroDni}`;
       window.location.href = `https://wa.me/5491125659686?text=${encodeURIComponent(textMsg)}`;
     } catch (err: any) {
       console.error("Error al procesar solicitud:", err);
-      alert("Error al procesar la solicitud: " + (err.message || err.toString()) + ". Por favor, chequea tu internet o reporta el error.");
-      btn.innerText = oldText;
-      btn.disabled = false;
+      const textMsg = `Hola, acabo de llenar el formulario de Apertura de Cuenta. Elegí el plan de ${planElegido} cuotas para el producto ${productoData?.nombre || 'A definir'}. Mi DNI es ${numeroDni}`;
+      window.location.href = `https://wa.me/5491125659686?text=${encodeURIComponent(textMsg)}`;
     }
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 px-4 py-8 flex flex-col items-center font-sans">
-      <div className="w-full max-w-3xl bg-zinc-900 border border-zinc-800 shadow-[0_0_30px_rgba(0,0,0,0.5)] rounded-3xl p-6 md:p-10 shadow-[0_0_30px_rgba(234,179,8,0.1)]">
+    <div className="min-h-screen bg-[#121316] text-zinc-100 px-4 py-8 flex flex-col items-center font-sans">
+      <div className="w-full max-w-3xl bg-[#181920] border border-zinc-800 shadow-[0_0_30px_rgba(0,0,0,0.5)] rounded-3xl p-6 md:p-10 shadow-[0_0_30px_rgba(254,80,0,0.15)]">
         <div className="flex justify-between items-start mb-8">
-          <button onClick={()=>router.push("/")} className="text-zinc-400 hover:text-yellow-400 flex items-center gap-1 text-sm transition-colors font-bold">
+          <button onClick={()=>router.push("/")} className="text-zinc-400 hover:text-[#fe5000] flex items-center gap-1 text-sm transition-colors font-bold">
             <ArrowLeft className="w-4 h-4" /> Volver
           </button>
           <div className="flex items-center gap-2">
-            <span className="text-xl font-black text-white">CUENTA <span className="text-yellow-400">HOGAR</span></span>
+            <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-14 md:h-16 w-auto object-contain" />
           </div>
         </div>
         
@@ -169,10 +197,10 @@ function SolicitarForm() {
           
           {/* SECCIÓN PRODUCTO */}
           {productoData && (
-            <div className="bg-yellow-500/5 border border-zinc-850 p-6 rounded-2xl space-y-6">
+            <div className="bg-[#fe5000]/5 border border-zinc-800 p-6 rounded-2xl space-y-6">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
                 <div className="flex flex-col gap-2 flex-shrink-0">
-                  <div className="w-24 h-24 bg-zinc-900 rounded-xl p-1 flex items-center justify-center relative overflow-hidden">
+                  <div className="w-24 h-24 bg-[#181920] rounded-xl p-1 flex items-center justify-center relative overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={activeSolImage || productoData.imagenUrl} 
@@ -190,7 +218,7 @@ function SolicitarForm() {
                           onClick={() => setActiveSolImage(url)}
                           className={`w-4 h-4 rounded border transition-all ${
                             (activeSolImage || productoData.imagenUrl) === url 
-                              ? 'border-yellow-500 bg-yellow-500/10' 
+                              ? 'border-[#fe5000] bg-[#fe5000]/10' 
                               : 'border-zinc-800 hover:border-zinc-700'
                           }`}
                         >
@@ -202,27 +230,46 @@ function SolicitarForm() {
                   )}
                 </div>
                 <div className="text-center sm:text-left">
-                  <p className="text-xs text-yellow-400 font-black tracking-widest uppercase">Producto a gestionar</p>
+                  <p className="text-xs text-[#fe5000] font-black tracking-widest uppercase">Producto a gestionar</p>
                   <p className="font-bold text-white text-lg">{productoData.nombre}</p>
                 </div>
               </div>
               
-              <div className="border-t border-zinc-850 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="border-t border-zinc-800 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-zinc-400 mb-2">ELEGIR PLAN DE CUOTAS</label>
                   <select 
                     value={planElegido} 
                     onChange={e => setPlanElegido(e.target.value)}
-                    className="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-yellow-500 transition-colors font-bold"
+                    className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors font-bold"
                   >
-                    <option value="12">Financiación en 12 Cuotas</option>
-                    <option value="8">Financiación en 8 Cuotas</option>
+                    {(() => {
+                      const list = calcularTablaTodosLosPlanes(Number(productoData.costoProducto || productoData.precioContado) || 0, productoData.factoresPlanes, productoData.planesActivos).filter(pl => pl.activo && pl.cuotaMensual > 0);
+                      if (list.length === 0) {
+                        return (
+                          <>
+                            <option value="12">Financiación en 12 Cuotas</option>
+                            <option value="8">Financiación en 8 Cuotas</option>
+                          </>
+                        );
+                      }
+                      return list.map(pl => (
+                        <option key={pl.cuotas} value={String(pl.cuotas)}>
+                          Financiación en {pl.cuotas} {pl.cuotas === 1 ? "Cuota" : "Cuotas"} (${pl.cuotaMensual.toLocaleString("es-AR")} / mes)
+                        </option>
+                      ));
+                    })()}
                   </select>
                 </div>
-                <div className="flex flex-col justify-center bg-zinc-950 p-4 rounded-xl border border-zinc-900">
+                <div className="flex flex-col justify-center bg-[#121316] p-4 rounded-xl border border-zinc-900">
                   <p className="text-xs text-zinc-500 font-bold uppercase">VALOR MENSUAL DE LA CUOTA</p>
-                  <p className="text-2xl font-black text-yellow-400 mt-1">
-                    ${planElegido === "12" ? productoData.cuota12 : productoData.cuota8} <span className="text-xs font-normal text-zinc-500">/ mes</span>
+                  <p className="text-2xl font-black text-[#fe5000] mt-1">
+                    ${(() => {
+                      const list = calcularTablaTodosLosPlanes(Number(productoData.costoProducto || productoData.precioContado) || 0, productoData.factoresPlanes, productoData.planesActivos).filter(pl => pl.activo && pl.cuotaMensual > 0);
+                      const found = list.find(pl => String(pl.cuotas) === planElegido);
+                      const val = found ? found.cuotaMensual : (planElegido === "8" ? productoData.cuota8 : productoData.cuota12);
+                      return (val || 0).toLocaleString("es-AR");
+                    })()} <span className="text-xs font-normal text-zinc-500">/ mes</span>
                   </p>
                 </div>
               </div>
@@ -230,96 +277,79 @@ function SolicitarForm() {
           )}
 
           {/* DATOS PERSONALES */}
-          <div className="bg-zinc-950 border border-zinc-850 p-6 md:p-8 rounded-2xl">
+          <div className="bg-[#121316] border border-zinc-800 p-6 md:p-8 rounded-2xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               <div className="md:col-span-2">
                 <label className="block text-sm text-zinc-400 mb-2 font-bold">Nombre y Apellido</label>
-                <input required value={nombreCompleto} onChange={e=>setNombreCompleto(e.target.value)} type="text" placeholder="Ej: Juan Perez" className="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-yellow-500 transition-colors" />
+                <input required value={nombreCompleto} onChange={e=>setNombreCompleto(e.target.value)} type="text" placeholder="Ej: Juan Perez" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
               </div>
 
               <div>
                 <label className="block text-sm text-zinc-400 mb-2 font-bold">DNI</label>
-                <input required value={numeroDni} onChange={e=>setNumeroDni(e.target.value)} type="number" placeholder="Ej: 30123456" className="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-yellow-500 transition-colors" />
+                <input required value={numeroDni} onChange={e=>setNumeroDni(e.target.value)} type="number" placeholder="Ej: 30123456" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
               </div>
 
               <div>
                 <label className="block text-sm text-zinc-400 mb-2 font-bold">CUIL (formato con guiones)</label>
-                <input required value={cuil} onChange={e=>handleCuilChange(e.target.value)} type="text" placeholder="Ej: 20-30123456-7" className="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-yellow-500 transition-colors font-mono" />
+                <input required value={cuil} onChange={e=>handleCuilChange(e.target.value)} type="text" placeholder="Ej: 20-30123456-7" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors font-mono" />
               </div>
 
               <div>
                 <label className="block text-sm text-zinc-400 mb-2 font-bold">Fecha de Nacimiento</label>
-                <input required value={fechaNacimiento} onChange={e=>setFechaNacimiento(e.target.value)} type="date" className="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-yellow-500 transition-colors" />
+                <input required value={fechaNacimiento} onChange={e=>setFechaNacimiento(e.target.value)} type="date" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
               </div>
 
               <div>
                 <label className="block text-sm text-zinc-400 mb-2 font-bold">WhatsApp</label>
-                <input required value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} type="tel" placeholder="Ej: +54 9 11 1234-5678" className="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-yellow-500 transition-colors" />
+                <input required value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} type="tel" placeholder="Ej: +54 9 11 1234-5678" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
               </div>
 
               <div>
                 <label className="block text-sm text-zinc-400 mb-2 font-bold">Ocupación</label>
-                <input required value={ocupacion} onChange={e=>setOcupacion(e.target.value)} type="text" placeholder="Ej: Empleado de comercio" className="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-yellow-500 transition-colors" />
+                <input required value={ocupacion} onChange={e=>setOcupacion(e.target.value)} type="text" placeholder="Ej: Empleado de comercio" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
               </div>
 
               <div>
                 <label className="block text-sm text-zinc-400 mb-2 font-bold">Correo Electrónico (Obligatorio)</label>
-                <input required value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="Ej: juanperez@gmail.com" className="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-yellow-500 transition-colors" />
+                <input required value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="Ej: juanperez@gmail.com" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
               </div>
 
               <div>
                 <label className="block text-sm text-zinc-400 mb-2 font-bold">Antigüedad Laboral (Fecha de Ingreso)</label>
-                <input required value={antiguedadLaboral} onChange={e=>setAntiguedadLaboral(e.target.value)} type="date" className="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-yellow-500 transition-colors" />
+                <input required value={antiguedadLaboral} onChange={e=>setAntiguedadLaboral(e.target.value)} type="date" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
               </div>
 
               <div className="md:col-span-2">
                 <label className="block text-sm text-zinc-400 mb-2 font-bold">Localidad y Dirección Exacta</label>
-                <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" placeholder="Ej: Av. San Martín 1500, Piso 2A, Junín" className="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-yellow-500 transition-colors" />
+                <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" placeholder="Ej: Av. San Martín 1500, Piso 2A, Junín" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
               </div>
 
               
-              <div className="md:col-span-2 border-t border-zinc-850 pt-6 mt-2">
-                <h3 className="text-lg font-bold text-yellow-400 mb-4">Referencias y Recomendaciones</h3>
+              <div className="md:col-span-2 border-t border-zinc-800 pt-6 mt-2">
+                <h3 className="text-lg font-bold text-[#fe5000] mb-4">Referencias y Recomendaciones</h3>
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm text-zinc-400 mb-2 font-bold">¿Qué Afiliado Independiente te está asesorando? <span className="text-xs text-zinc-500 font-normal">(Opcional)</span></label>
-                    <input value={nombreAfiliado} onChange={e=>setNombreAfiliado(e.target.value)} type="text" placeholder="Nombre del Afiliado" className="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-yellow-500 transition-colors" />
+                    <input value={nombreAfiliado} onChange={e=>setNombreAfiliado(e.target.value)} type="text" placeholder="Nombre del Afiliado" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
                     <p className="text-xs text-zinc-500 mt-2">Sirve para asignar la comisión correspondientemente.</p>
                   </div>
                   <div>
                     <label className="block text-sm text-zinc-400 mb-2 font-bold">¿Sos referido de algún cliente actual de Cuenta Hogar? Contanos quién es. <span className="text-xs text-zinc-500 font-normal">(Opcional)</span></label>
-                    <input value={referidoPor} onChange={e=>setReferidoPor(e.target.value)} type="text" placeholder="En Cuenta Hogar valoramos la palabra de nuestros clientes. Si alguien ya tiene su plan y te recomendó, poné su nombre acá." className="w-full bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-yellow-500 transition-colors" />
+                    <input value={referidoPor} onChange={e=>setReferidoPor(e.target.value)} type="text" placeholder="En Cuenta Hogar valoramos la palabra de nuestros clientes. Si alguien ya tiene su plan y te recomendó, poné su nombre acá." className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
                   </div>
                 </div>
               </div>
 
-              {/* ARCHIVO (Solo si está logueado) */}
-              {user ? (
-                <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="border border-dashed border-zinc-800 p-6 rounded-2xl bg-zinc-800/40 text-center hover:bg-zinc-900 transition-colors flex flex-col items-center justify-center">
-                    <Upload className="w-8 h-8 text-yellow-400 mb-2" />
-                    <label className="block text-xs font-bold text-white mb-1 cursor-pointer">
-                      Subir DNI Frente
-                      <input type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setDniFrente(e.target.files[0])}} className="hidden" />
-                    </label>
-                    <span className="text-[10px] text-zinc-400 truncate max-w-full">{dniFrente ? dniFrente.name : "Sin archivo"}</span>
-                  </div>
-                  <div className="border border-dashed border-zinc-800 p-6 rounded-2xl bg-zinc-800/40 text-center hover:bg-zinc-900 transition-colors flex flex-col items-center justify-center">
-                    <Upload className="w-8 h-8 text-yellow-400 mb-2" />
-                    <label className="block text-xs font-bold text-white mb-1 cursor-pointer">
-                      Subir DNI Dorso
-                      <input type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setDniDorso(e.target.files[0])}} className="hidden" />
-                    </label>
-                    <span className="text-[10px] text-zinc-400 truncate max-w-full">{dniDorso ? dniDorso.name : "Sin archivo"}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="md:col-span-2 bg-yellow-500/5 border border-yellow-500/20 p-4 rounded-xl text-yellow-400 text-xs flex flex-col gap-1">
-                  <span className="font-bold">💡 Documentación pendiente:</span>
-                  <p className="text-zinc-400">Como no iniciaste sesión, no es necesario subir tu DNI ahora. Te lo pediremos más adelante para validar tu identidad.</p>
-                </div>
-              )}
+              {/* AVISO SOLICITUD A SOLA FIRMA SIN DNI REQUERIDO */}
+              <div className="md:col-span-2 bg-[#fe5000]/10 border border-[#fe5000]/30 p-5 rounded-2xl text-[#fe5000] text-xs flex flex-col gap-1.5 shadow-lg">
+                <span className="font-black text-sm text-[#fe5000] uppercase tracking-wider flex items-center gap-1.5">
+                  ✨ Solicitud 100% a Sola Firma
+                </span>
+                <p className="text-zinc-300 leading-relaxed font-normal">
+                  No es necesario adjuntar fotos de tu DNI. Evaluaremos tu solicitud directamente con tu DNI y datos declarados.
+                </p>
+              </div>
 
             </div>
           </div>
@@ -335,7 +365,7 @@ function SolicitarForm() {
 
 export default function SolicitarPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">Cargando formulario...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#121316] text-zinc-100 flex items-center justify-center">Cargando formulario...</div>}>
       <SolicitarForm />
     </Suspense>
   );

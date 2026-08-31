@@ -51,11 +51,11 @@ export default function ArrepentimientoPage() {
 
   if (ticketId) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-zinc-900/50 border border-yellow-500/20 p-8 rounded-3xl text-center space-y-6 shadow-2xl backdrop-blur-md">
+      <div className="min-h-screen bg-[#121316] text-zinc-100 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-[#181920]/50 border border-[#fe5000]/30 p-8 rounded-3xl text-center space-y-6 shadow-2xl backdrop-blur-md">
           <div className="text-6xl">📥</div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-500 uppercase tracking-wide">
+            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-[#fe5000] to-amber-500 uppercase tracking-wide">
               Solicitud Recibida
             </h2>
             <p className="text-zinc-400 text-xs leading-relaxed">
@@ -63,10 +63,10 @@ export default function ArrepentimientoPage() {
             </p>
           </div>
 
-          <div className="bg-zinc-950/80 p-4 rounded-xl border border-zinc-850 font-mono text-xs text-left space-y-2.5">
+          <div className="bg-[#121316]/80 p-4 rounded-xl border border-zinc-800 font-mono text-xs text-left space-y-2.5">
             <div className="flex justify-between border-b border-zinc-900 pb-2">
               <span className="text-zinc-500">Nro. de Gestión:</span>
-              <span className="text-yellow-400 font-bold">{ticketId}</span>
+              <span className="text-[#fe5000] font-bold">{ticketId}</span>
             </div>
             <div className="flex justify-between border-b border-zinc-900 pb-2">
               <span className="text-zinc-500">Cliente:</span>
@@ -82,7 +82,7 @@ export default function ArrepentimientoPage() {
             </div>
           </div>
 
-          <div className="text-xs text-zinc-500 italic bg-yellow-500/5 p-3.5 rounded-lg border border-yellow-500/10 text-left">
+          <div className="text-xs text-zinc-500 italic bg-[#fe5000]/5 p-3.5 rounded-lg border border-[#fe5000]/10 text-left">
             🚩 <strong>Información importante:</strong> Nos contactaremos con vos dentro de las próximas 24 a 48 horas hábiles para coordinar la rescisión del plan y la entrega/devolución del equipo sin cargo.
           </div>
 
@@ -98,16 +98,16 @@ export default function ArrepentimientoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-yellow-500 selection:text-black">
+    <div className="min-h-screen bg-[#121316] text-zinc-100 font-sans selection:bg-yellow-500 selection:text-black">
       
       {/* NAVBAR */}
-      <nav className="sticky top-0 z-50 bg-zinc-900/90 backdrop-blur-xl border-b border-zinc-850">
+      <nav className="sticky top-0 z-50 bg-[#181920]/90 backdrop-blur-xl border-b border-zinc-800">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="text-zinc-400 hover:text-yellow-400 flex items-center gap-2 text-sm transition-colors font-bold">
+          <Link href="/" className="text-zinc-400 hover:text-[#fe5000] flex items-center gap-2 text-sm transition-colors font-bold">
             <ArrowLeft className="w-5 h-5" /> Volver al inicio
           </Link>
           <div className="flex items-center gap-2">
-            <img src="https://storage.googleapis.com/negocio-facil-page.firebasestorage.app/Logos/LOGO%20SIN%20NOMBRE%20-%20CUENTA%20HOGAR.png" alt="Cuenta Hogar Logo" className="h-10 w-auto object-contain" />
+            <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-10 w-auto object-contain" />
             <span className="font-mono text-xs uppercase tracking-widest font-black text-zinc-500 hidden sm:inline">Portal Legal</span>
           </div>
         </div>
@@ -116,11 +116,11 @@ export default function ArrepentimientoPage() {
       {/* HEADER SECTION */}
       <div className="max-w-3xl mx-auto px-6 pt-12 pb-24 space-y-12">
         <div className="text-center space-y-4">
-          <div className="inline-flex items-center gap-2 bg-yellow-500/15 text-yellow-400 px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 bg-yellow-500/15 text-[#fe5000] px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5" /> Defensa del Consumidor
           </div>
           <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tight text-white leading-none">
-            Botón de <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-500">Arrepentimiento</span>
+            Botón de <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-[#fe5000] to-amber-500">Arrepentimiento</span>
           </h1>
           <p className="text-zinc-400 text-sm max-w-xl mx-auto leading-relaxed">
             De acuerdo con la legislación argentina, podés revocar la aceptación del servicio dentro de los 10 días corridos contados a partir de la firma del contrato o de la entrega del producto.
@@ -128,7 +128,7 @@ export default function ArrepentimientoPage() {
         </div>
 
         {/* FORM */}
-        <div className="bg-zinc-900/30 backdrop-blur-xl border border-zinc-850 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8">
+        <div className="bg-[#181920]/30 backdrop-blur-xl border border-zinc-800 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8">
           <div>
             <h2 className="text-lg font-black text-white uppercase tracking-wider">Formulario de Revocación</h2>
             <p className="text-zinc-500 text-xs mt-1">Completa los datos de tu legajo para procesar la baja inmediata.</p>
@@ -143,7 +143,7 @@ export default function ArrepentimientoPage() {
                   required
                   value={nombreCompleto}
                   onChange={e => setNombreCompleto(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 outline-none text-sm font-bold transition-all"
+                  className="w-full bg-[#121316] border border-zinc-800 rounded-xl p-3.5 text-white focus:border-[#fe5000] outline-none text-sm font-bold transition-all"
                   placeholder="Ej: Juan Pérez"
                 />
               </div>
@@ -155,7 +155,7 @@ export default function ArrepentimientoPage() {
                   required
                   value={dni}
                   onChange={e => setDni(e.target.value.replace(/\D/g, ""))}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 outline-none text-sm font-bold transition-all font-mono"
+                  className="w-full bg-[#121316] border border-zinc-800 rounded-xl p-3.5 text-white focus:border-[#fe5000] outline-none text-sm font-bold transition-all font-mono"
                   placeholder="Solo números"
                 />
               </div>
@@ -167,7 +167,7 @@ export default function ArrepentimientoPage() {
                   required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 outline-none text-sm font-bold transition-all"
+                  className="w-full bg-[#121316] border border-zinc-800 rounded-xl p-3.5 text-white focus:border-[#fe5000] outline-none text-sm font-bold transition-all"
                   placeholder="tu@correo.com"
                 />
               </div>
@@ -179,7 +179,7 @@ export default function ArrepentimientoPage() {
                   required
                   value={telefono}
                   onChange={e => setTelefono(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 outline-none text-sm font-bold transition-all"
+                  className="w-full bg-[#121316] border border-zinc-800 rounded-xl p-3.5 text-white focus:border-[#fe5000] outline-none text-sm font-bold transition-all"
                   placeholder="Ej: +54 9 11 2345 6789"
                 />
               </div>
@@ -191,7 +191,7 @@ export default function ArrepentimientoPage() {
                   required
                   value={producto}
                   onChange={e => setProducto(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 outline-none text-sm font-bold transition-all"
+                  className="w-full bg-[#121316] border border-zinc-800 rounded-xl p-3.5 text-white focus:border-[#fe5000] outline-none text-sm font-bold transition-all"
                   placeholder="Ej: Samsung Galaxy S23"
                 />
               </div>
@@ -202,7 +202,7 @@ export default function ArrepentimientoPage() {
                   type="date"
                   value={fechaCompra}
                   onChange={e => setFechaCompra(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-white focus:border-yellow-500 outline-none text-sm font-bold transition-all"
+                  className="w-full bg-[#121316] border border-zinc-800 rounded-xl p-3.5 text-white focus:border-[#fe5000] outline-none text-sm font-bold transition-all"
                 />
               </div>
             </div>
@@ -212,7 +212,7 @@ export default function ArrepentimientoPage() {
               <textarea
                 value={mensaje}
                 onChange={e => setMensaje(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:border-yellow-500 outline-none text-sm font-bold transition-all h-28 resize-none"
+                className="w-full bg-[#121316] border border-zinc-800 rounded-xl p-4 text-white focus:border-[#fe5000] outline-none text-sm font-bold transition-all h-28 resize-none"
                 placeholder="Indica cualquier detalle adicional relevante..."
               />
             </div>

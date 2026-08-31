@@ -1,5 +1,7 @@
 "use client";
 
+import { calcularOperacionFinanciera, FACTORES_PREDETERMINADOS, calcularTablaTodosLosPlanes } from "@/lib/financialEngine";
+import { generarFichaTecnicaIAClient } from "@/lib/aiProductDescription";
 import { useState, useEffect } from "react";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { db, storage } from "@/lib/firebase";
@@ -17,6 +19,7 @@ type UnidadStock = {
 
 type Producto = {
   id: string;
+  codigoProducto?: string;
   nombre: string;
   precioAnterior: number | null;
   cuota12: number;
@@ -30,6 +33,8 @@ type Producto = {
   imagenUrl: string;
   imagenUrls?: string[];
   stock?: UnidadStock[];
+  activo?: boolean;
+  publicado?: boolean;
 };
 
 const LOCALIDADES_STOCK = [
@@ -46,11 +51,18 @@ export default function AdminProductosPage() {
   
   const [editandoId, setEditandoId] = useState<string | null>(null);
 
+  const [codigoProducto, setCodigoProducto] = useState("");
   const [nombre, setNombre] = useState("");
   const [precioAnterior, setPrecioAnterior] = useState("");
   const [cuota12, setCuota12] = useState("");
   const [cuota8, setCuota8] = useState("");
   const [costoProducto, setCostoProducto] = useState("");
+  const [multiplicador, setMultiplicador] = useState("2.5");
+  const [generandoIA, setGenerandoIA] = useState(false);
+  const [factoresPlanes, setFactoresPlanes] = useState<Record<number, number>>(FACTORES_PREDETERMINADOS);
+  const [planesActivos, setPlanesActivos] = useState<Record<number, boolean>>({
+    1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true, 9: true, 10: true, 11: true, 12: true
+  });
   const [precioContado, setPrecioContado] = useState("");
   const [tasaInteresTna, setTasaInteresTna] = useState("");
   const [tasaMora, setTasaMora] = useState("");
@@ -276,6 +288,21 @@ export default function AdminProductosPage() {
     }
   };
 
+    const handleTogglePublicar = async (p: Producto) => {
+    const nuevoEstado = !(p.activo !== false && p.publicado !== false);
+    try {
+      await updateDoc(doc(db, "productos", p.id), {
+        activo: nuevoEstado,
+        publicado: nuevoEstado
+      });
+      setProductos(prev => prev.map(item => item.id === p.id ? { ...item, activo: nuevoEstado, publicado: nuevoEstado } : item));
+      alert(nuevoEstado ? "¡Producto publicado y visible en el sitio web!" : "Producto desactivado (Oculto del sitio web).");
+    } catch (err: any) {
+      console.error(err);
+      alert("Error al cambiar estado de publicación: " + err.message);
+    }
+  };
+
   const fetchProductos = async () => {
     const querySnapshot = await getDocs(collection(db, "productos"));
     const prods: Producto[] = [];
@@ -289,12 +316,13 @@ export default function AdminProductosPage() {
     fetchProductos();
   }, []);
 
-  const handleEditar = (p: Producto) => {
+  const handleEditar = (p: any) => {
     setEditandoId(p.id);
+    setCodigoProducto(p.codigoProducto || "");
     setNombre(p.nombre);
     setPrecioAnterior(p.precioAnterior?.toString() || "");
-    setCuota12(p.cuota12.toString());
-    setCuota8(p.cuota8.toString());
+    setCuota12(p.cuota12 ? p.cuota12.toString() : "");
+    setCuota8(p.cuota8 ? p.cuota8.toString() : "");
     setCostoProducto(p.costoProducto?.toString() || "");
     setPrecioContado(p.precioContado?.toString() || "");
     setTasaInteresTna(p.tasaInteresTna?.toString() || "");
@@ -303,11 +331,30 @@ export default function AdminProductosPage() {
     setDescripcion(p.descripcion);
     setExistingImagenUrls(p.imagenUrls || (p.imagenUrl ? [p.imagenUrl] : []));
     setImagenes([]);
+
+    if (p.factoresPlanes) {
+      setFactoresPlanes(p.factoresPlanes);
+    } else {
+      setFactoresPlanes(FACTORES_PREDETERMINADOS);
+    }
+
+    if (p.planesActivos) {
+      setPlanesActivos(p.planesActivos);
+    } else {
+      setPlanesActivos({
+        1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false,
+        8: Boolean(p.cuota8 && p.cuota8 > 0),
+        9: false, 10: false, 11: false,
+        12: Boolean(p.cuota12 && p.cuota12 > 0)
+      });
+    }
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancelarEdicion = () => {
     setEditandoId(null);
+    setCodigoProducto("");
     setNombre("");
     setPrecioAnterior("");
     setCuota12("");
@@ -320,6 +367,10 @@ export default function AdminProductosPage() {
     setDescripcion("");
     setExistingImagenUrls([]);
     setImagenes([]);
+    setFactoresPlanes(FACTORES_PREDETERMINADOS);
+    setPlanesActivos({
+      1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true, 9: true, 10: true, 11: true, 12: true
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -331,6 +382,28 @@ export default function AdminProductosPage() {
         return;
       }
       setImagenes(prev => [...prev, ...filesArray]);
+    }
+  };
+
+    const handleGenerarDescripcionIA = async () => {
+    if (!nombre.trim()) {
+      alert("⚠️ Por favor ingresá primero el Nombre del equipo arriba.");
+      return;
+    }
+
+    setGenerandoIA(true);
+    try {
+      const desc = await generarFichaTecnicaIAClient(nombre);
+      if (desc) {
+        setDescripcion(desc);
+      } else {
+        alert("❌ No se pudo generar la descripción para este producto.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert("❌ Error al generar la ficha técnica.");
+    } finally {
+      setGenerandoIA(false);
     }
   };
 
@@ -355,10 +428,11 @@ export default function AdminProductosPage() {
       const totalUrls = [...existingImagenUrls, ...nuevasUrls];
 
       const payload: any = {
+        codigoProducto: codigoProducto.trim() || null,
         nombre,
         precioAnterior: precioAnterior ? Number(precioAnterior) : null,
-        cuota12: Number(cuota12),
-        cuota8: Number(cuota8),
+        cuota12: Number(cuota12) || 0,
+        cuota8: Number(cuota8) || 0,
         costoProducto: costoProducto ? Number(costoProducto) : null,
         precioContado: precioContado ? Number(precioContado) : null,
         tasaInteresTna: tasaInteresTna ? Number(tasaInteresTna) : null,
@@ -367,6 +441,8 @@ export default function AdminProductosPage() {
         descripcion,
         imagenUrl: totalUrls[0] || "",
         imagenUrls: totalUrls,
+        factoresPlanes: factoresPlanes,
+        planesActivos: planesActivos,
       };
 
       if (editandoId) {
@@ -402,115 +478,237 @@ export default function AdminProductosPage() {
 
   return (
     <AdminProtectedRoute>
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8">
+      <div className="min-h-screen bg-[#121316] text-zinc-100 p-8">
         <div className="max-w-7xl mx-auto">
           <header className="flex justify-between items-center mb-8 border-b border-zinc-800 pb-4">
             <div className="flex items-center gap-4">
-              <img src="https://storage.googleapis.com/negocio-facil-page.firebasestorage.app/Logos/LOGO%20SIN%20NOMBRE%20-%20CUENTA%20HOGAR.png" alt="Cuenta Hogar Logo" className="h-10 w-auto object-contain" />
-              <h1 className="text-2xl font-bold text-yellow-400">Gestión de Productos e Inventario</h1>
+              <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-10 w-auto object-contain" />
+              <h1 className="text-2xl font-bold text-[#fe5000]">Gestión de Productos e Inventario</h1>
             </div>
-            <a href="/admin" className="text-sm border border-yellow-500/50 hover:bg-yellow-500 hover:text-black px-4 py-2 rounded transition-colors">
+            <a href="/admin" className="text-sm border border-[#fe5000]/50 hover:bg-yellow-500 hover:text-black px-4 py-2 rounded transition-colors">
               Volver al Panel Admin
             </a>
           </header>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-4 bg-zinc-950 border border-zinc-800 rounded-lg p-6 h-fit transition-all duration-300" style={editandoId ? {boxShadow: "0 0 30px rgba(234,179,8,0.15)", borderColor: "#eab308"} : {}}>
+            <div className="lg:col-span-4 bg-[#121316] border border-zinc-800 rounded-lg p-6 h-fit transition-all duration-300" style={editandoId ? {boxShadow: "0 0 30px rgba(234,179,8,0.15)", borderColor: "#eab308"} : {}}>
               <h2 className="text-xl mb-6 font-semibold border-b border-zinc-800 pb-2 flex items-center gap-2">
                 {editandoId ? "✏️ Modificando Producto" : "Añadir Nuevo Producto"}
               </h2>
               
               <form onSubmit={handleSubirProducto} className="space-y-5">
-                <div>
-                  <label className="block text-sm mb-1 text-yellow-200">Nombre del equipo</label>
-                  <input required value={nombre} onChange={e=>setNombre(e.target.value)} type="text" className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-amber-400 mb-1">Código de Producto (EAN / SKU)</label>
+                    <input 
+                      value={codigoProducto} 
+                      onChange={e=>setCodigoProducto(e.target.value)} 
+                      type="text" 
+                      placeholder="Ej: 7796885403083" 
+                      className="w-full bg-zinc-800/80 border border-amber-500/40 rounded p-2 text-white font-mono text-xs font-bold focus:border-[#fe5000] focus:outline-none" 
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-yellow-200 mb-1">Nombre del equipo</label>
+                    <input 
+                      required 
+                      value={nombre} 
+                      onChange={e=>setNombre(e.target.value)} 
+                      type="text" 
+                      placeholder="Ej: Samsung Galaxy A55 5G"
+                      className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white text-xs font-bold focus:border-[#fe5000] focus:outline-none" 
+                    />
+                  </div>
                 </div>
                 
-                {/* BLOQUE DATOS INTERNOS ADMINISTRATIVOS */}
-                <div className="p-4 bg-zinc-950 border border-t border-gray-700 rounded-lg space-y-4">
-                   <h3 className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-2 border-b border-gray-800 pb-2">Datos Internos (Ocultos)</h3>
-                   <div>
-                     <label className="block text-xs mb-1 text-zinc-500">Costo Base del Producto</label>
-                     <input value={costoProducto} onChange={e=>setCostoProducto(e.target.value)} type="number" placeholder="Ej: 80000" className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
+                {/* MOTOR FINANCIERO CON SELECTOR Y FACTORES MODIFICABLES DE 1 A 12 CUOTAS */}
+                <div className="p-5 bg-[#121316] border border-amber-500/30 rounded-2xl space-y-4 shadow-xl">
+                   <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
+                     <div>
+                       <h3 className="text-xs font-black text-[#fe5000] uppercase tracking-widest flex items-center gap-1.5">
+                         💰 Motor Financiero Mandato Comercial
+                       </h3>
+                       <p className="text-[11px] text-zinc-400 mt-0.5">Ingresá el Costo del Proveedor para calcular automáticamente los 12 planes.</p>
+                     </div>
+                     <span className="text-[10px] bg-[#fe5000]/10 text-[#fe5000] font-mono font-bold px-2 py-1 rounded-full border border-[#fe5000]/30">Planes 1 a 12</span>
                    </div>
-                   <div>
-                      <label className="block text-xs mb-1 text-zinc-500">Precio Venta (Contado / Efectivo)</label>
-                      <input value={precioContado} onChange={e=> {
-                        setPrecioContado(e.target.value);
-                        const pVal = Number(e.target.value) || 0;
-                        const tnaVal = Number(tasaInteresTna) || 0;
-                        if (pVal) {
-                          const c12 = calcularCuota(pVal, tnaVal, 12);
-                          const c8 = calcularCuota(pVal, tnaVal, 8);
-                          setCuota12(c12 > 0 ? c12.toString() : "");
-                          setCuota8(c8 > 0 ? c8.toString() : "");
-                        }
-                      }} type="number" placeholder="Ej: 110000" className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-xs mb-1 text-zinc-500">TNA - Tasa Nominal Anual (%)</label>
-                      <input value={tasaInteresTna} onChange={e=> {
-                        setTasaInteresTna(e.target.value);
-                        const tnaVal = Number(e.target.value) || 0;
-                        const pVal = Number(precioContado) || 0;
-                        if (pVal) {
-                          const c12 = calcularCuota(pVal, tnaVal, 12);
-                          const c8 = calcularCuota(pVal, tnaVal, 8);
-                          setCuota12(c12 > 0 ? c12.toString() : "");
-                          setCuota8(c8 > 0 ? c8.toString() : "");
-                        }
-                      }} type="number" placeholder="Ej: 60" className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
-                    </div>
-                   <div>
-                     <label className="block text-xs mb-1 text-zinc-500">Tasa de Mora Diaria (%)</label>
-                     <input value={tasaMora} onChange={e=>setTasaMora(e.target.value)} type="number" placeholder="Ej: 0.5" className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" step="0.01" />
-                   </div>
-                   <div>
-                     <label className="block text-xs mb-1 text-zinc-500">Nombre del Proveedor</label>
-                     <input value={proveedor} onChange={e=>setProveedor(e.target.value)} type="text" placeholder="Ej: Distribuidora ElectroSur" className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
+
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                     <div>
+                       <label className="block text-xs font-bold text-emerald-400 mb-1">
+                         Costo del Producto del Proveedor ($) <span className="text-emerald-500 text-[10px]">(Capital Exento)</span>
+                       </label>
+                       <input 
+                         value={costoProducto} 
+                         onChange={e=> {
+                           const cVal = Number(e.target.value) || 0;
+                           setCostoProducto(e.target.value);
+                           
+                           const f12 = factoresPlanes[12] || 2.5;
+                           const f8 = factoresPlanes[8] || 2.12;
+
+                           setCuota12(cVal > 0 ? Math.round((cVal * f12) / 12).toString() : "");
+                           setCuota8(cVal > 0 ? Math.round((cVal * f8) / 8).toString() : "");
+                           setPrecioContado(cVal > 0 ? Math.round(cVal * f12).toString() : "");
+                         }} 
+                         type="number" 
+                         placeholder="Ej: 400000" 
+                         className="w-full bg-[#181920] border border-emerald-500/50 rounded-xl p-3 text-white text-sm font-black focus:border-emerald-400 focus:outline-none shadow-inner" 
+                         required
+                       />
+                     </div>
+
+                     <div>
+                       <label className="block text-xs font-bold text-zinc-400 mb-1">Nombre del Proveedor (Opcional)</label>
+                       <input value={proveedor} onChange={e=>setProveedor(e.target.value)} type="text" placeholder="Ej: Distribuidora Oficial" className="w-full bg-[#181920] border border-zinc-800 rounded-xl p-3 text-white text-xs font-bold focus:border-[#fe5000] focus:outline-none" />
+                     </div>
                    </div>
                 </div>
 
-                {/* BLOQUE PRECIOS PUBLICOS DE OFERTA */}
-                <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg space-y-4">
-                   <h3 className="text-xs text-yellow-400 font-bold uppercase tracking-wider mb-2 border-b border-zinc-800 pb-2">Estrategia Pública (App y Web)</h3>
-                   <div>
-                     <label className="block text-xs mb-1 text-zinc-500">Precio Lista (Para mostrar tachado)</label>
-                     <input value={precioAnterior} onChange={e=>setPrecioAnterior(e.target.value)} type="number" placeholder="Ej: 150000" className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
-                   </div>
-                    <div>
-                      <label className="block text-sm font-bold mb-1 text-yellow-400">Valor Cuota (12 Meses)</label>
-                      <input required value={cuota12} onChange={e=> {
-                        setCuota12(e.target.value);
-                        const c12Val = Number(e.target.value) || 0;
-                        const pVal = Number(precioContado) || 0;
-                        if (pVal > 0 && c12Val > 0) {
-                          const calculatedTna = calcularTnaDesdeCuota(pVal, c12Val, 12);
-                          setTasaInteresTna(calculatedTna > 0 ? calculatedTna.toString() : "0");
-                          const c8 = calcularCuota(pVal, calculatedTna, 8);
-                          setCuota8(c8 > 0 ? c8.toString() : "");
-                        }
-                      }} type="number" placeholder="Ej: 12500" className="w-full bg-zinc-800/80 border border-yellow-500/50 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold mb-1 text-yellow-400">Valor Cuota (8 Meses)</label>
-                      <input required value={cuota8} onChange={e=> {
-                        setCuota8(e.target.value);
-                        const c8Val = Number(e.target.value) || 0;
-                        const pVal = Number(precioContado) || 0;
-                        if (pVal > 0 && c8Val > 0) {
-                          const calculatedTna = calcularTnaDesdeCuota(pVal, c8Val, 8);
-                          setTasaInteresTna(calculatedTna > 0 ? calculatedTna.toString() : "0");
-                          const c12 = calcularCuota(pVal, calculatedTna, 12);
-                          setCuota12(c12 > 0 ? c12.toString() : "");
-                        }
-                      }} type="number" placeholder="Ej: 18000" className="w-full bg-zinc-800/80 border border-zinc-800 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" />
-                    </div>
-                </div>
+                {/* TABLA INTERACTIVA DE PLANES DE 1 A 12 CUOTAS CON TILDE Y FACTORES MODIFICABLES */}
+                <div className="p-5 bg-[#121316] border border-zinc-800 rounded-2xl space-y-4">
+                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-zinc-800/80 pb-3 gap-2">
+                     <div>
+                       <h3 className="text-xs font-black text-[#fe5000] uppercase tracking-wider flex items-center gap-1.5">
+                         📊 Habilitación de Planes (1 a 12 Cuotas)
+                       </h3>
+                       <p className="text-[11px] text-zinc-400 mt-0.5 font-normal">Marcá con tilde (☑️) las cuotas activas que se exhibirán en el catálogo público.</p>
+                     </div>
+                     <div className="flex flex-wrap items-center gap-1.5">
+                       <button 
+                         type="button" 
+                         onClick={() => {
+                           const todos: Record<number, boolean> = {};
+                           for (let i = 1; i <= 12; i++) todos[i] = true;
+                           setPlanesActivos(todos);
+                         }}
+                         className="text-[10px] bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-500/40 font-black transition active:scale-95 flex items-center gap-1"
+                       >
+                         ☑️ Seleccionar Todos
+                       </button>
 
-                <div>
-                  <label className="block text-sm mb-1 text-yellow-200">Descripción corta</label>
-                  <textarea required value={descripcion} onChange={e=>setDescripcion(e.target.value)} className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white focus:border-yellow-500 focus:outline-none" rows={3} />
+                       <button 
+                         type="button" 
+                         onClick={() => {
+                           const ninguno: Record<number, boolean> = {};
+                           for (let i = 1; i <= 12; i++) ninguno[i] = false;
+                           setPlanesActivos(ninguno);
+                         }}
+                         className="text-[10px] bg-rose-950/80 hover:bg-rose-900 text-rose-300 px-2.5 py-1 rounded-lg border border-rose-500/40 font-black transition active:scale-95 flex items-center gap-1"
+                       >
+                         ☐ Deseleccionar Todos
+                       </button>
+
+                       <button 
+                         type="button" 
+                         onClick={() => {
+                           setFactoresPlanes(FACTORES_PREDETERMINADOS);
+                         }}
+                         className="text-[10px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded-lg border border-zinc-700 font-bold transition"
+                       >
+                         Resetear Factores
+                       </button>
+                     </div>
+                   </div>
+
+                   <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                     {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => {
+                       const isActivo = planesActivos[n] !== false;
+                       const factor = factoresPlanes[n] !== undefined ? factoresPlanes[n] : (FACTORES_PREDETERMINADOS[n] || 2.5);
+                       const cProd = Number(costoProducto) || 0;
+                       const valorTotal = Math.round(cProd * factor);
+                       const cuotaMensual = n > 0 ? Math.round(valorTotal / n) : 0;
+                       const exento = n > 0 ? Math.round(cProd / n) : 0;
+                        const gravado = n > 0 ? Math.round(Math.max(0, valorTotal - cProd) / n) : 0;
+                        const neto = n > 0 ? Math.round(gravado / 1.21) : 0;
+                        const iva21 = Math.max(0, gravado - neto);
+
+                       return (
+                         <div 
+                           key={n} 
+                           className={`p-3 rounded-xl border transition-all ${
+                             isActivo 
+                               ? "bg-[#181920] border-zinc-800 hover:border-amber-500/50 shadow-md" 
+                               : "bg-[#14151a] border-zinc-900/60 opacity-50"
+                           }`}
+                         >
+                           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                             <div className="flex items-center gap-3">
+                               <input 
+                                 type="checkbox"
+                                 checked={isActivo}
+                                 onChange={(e) => {
+                                   setPlanesActivos({ ...planesActivos, [n]: e.target.checked });
+                                 }}
+                                 className="w-4 h-4 accent-[#fe5000] rounded cursor-pointer"
+                               />
+                               <span className="text-xs font-black text-white w-20">
+                                 {n} {n === 1 ? "Cuota" : "Cuotas"}
+                               </span>
+                             </div>
+
+                             <div className="flex items-center gap-2">
+                               <span className="text-[10px] text-zinc-400 font-mono font-bold">Factor:</span>
+                               <input 
+                                 type="number"
+                                 step="0.05"
+                                 value={factor}
+                                 disabled={!isActivo}
+                                 onChange={(e) => {
+                                   const val = parseFloat(e.target.value) || 1.0;
+                                   const updated = { ...factoresPlanes, [n]: val };
+                                   setFactoresPlanes(updated);
+
+                                   if (n === 12) {
+                                     setMultiplicador(val.toString());
+                                     if (cProd > 0) setCuota12(Math.round((cProd * val) / 12).toString());
+                                   }
+                                   if (n === 8 && cProd > 0) {
+                                     setCuota8(Math.round((cProd * val) / 8).toString());
+                                   }
+                                 }}
+                                 className="w-20 bg-[#121316] border border-amber-500/40 rounded-lg p-1.5 text-center text-amber-300 font-mono text-xs font-black outline-none focus:border-amber-400"
+                               />
+                             </div>
+
+                             <div className="text-right flex-1 sm:flex-none">
+                               <span className="text-xs font-black text-[#fe5000]">
+                                 ${cuotaMensual.toLocaleString("es-AR")} <span className="text-[10px] font-normal text-zinc-400">/ mes</span>
+                               </span>
+                               <div className="text-[9px] text-zinc-400 font-mono mt-0.5">
+                                <div className="text-[9px] text-zinc-400 font-mono mt-0.5">
+                                  🟢 Recibo X: ${exento.toLocaleString("es-AR")} | 🔵 Fact B: ${gravado.toLocaleString("es-AR")} <span className="text-blue-300/80">(Neto: ${neto.toLocaleString("es-AR")} + IVA 21%: ${iva21.toLocaleString("es-AR")})</span>
+                                </div>
+                               </div>
+                             </div>
+                           </div>
+                         </div>
+                       );
+                     })}
+                   </div>
+                </div>
+                <div className="p-4 bg-[#121316] border border-purple-500/40 rounded-2xl space-y-3 shadow-xl">
+                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-zinc-800 pb-2">
+                     <label className="block text-xs font-black text-yellow-200 uppercase tracking-wider flex items-center gap-1.5">
+                       📝 Descripción corta y Ficha Técnica
+                     </label>
+                     <button
+                       type="button"
+                       onClick={handleGenerarDescripcionIA}
+                       disabled={generandoIA || !nombre.trim()}
+                       className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-500 hover:to-orange-400 text-white font-black px-3 py-2 rounded-xl text-xs transition-all shadow-lg flex items-center gap-2 disabled:opacity-50 active:scale-95 cursor-pointer border border-purple-400/30"
+                     >
+                       {generandoIA ? "🤖 Buscando y Generando Ficha..." : "✨ Autocompletar Ficha Técnica con IA"}
+                     </button>
+                   </div>
+                   <textarea 
+                     required 
+                     value={descripcion} 
+                     onChange={e=>setDescripcion(e.target.value)} 
+                     placeholder="Ej: Ficha técnica detallada del equipo, pantalla, almacenamiento, procesador y garantía..." 
+                     className="w-full bg-[#181920] border border-purple-500/30 rounded-xl p-3 text-white text-xs font-mono focus:border-purple-400 focus:outline-none leading-relaxed shadow-inner" 
+                     rows={6} 
+                   />
                 </div>
                 <div>
                   <label className="block text-sm mb-2 text-yellow-200">
@@ -519,7 +717,7 @@ export default function AdminProductosPage() {
                   
                   <div className="grid grid-cols-4 gap-2 mb-3">
                     {existingImagenUrls.map((url, idx) => (
-                      <div key={`existing-${idx}`} className="relative aspect-square bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden flex items-center justify-center group">
+                      <div key={`existing-${idx}`} className="relative aspect-square bg-[#181920] border border-zinc-800 rounded-lg overflow-hidden flex items-center justify-center group">
                         <img src={url} alt={`Imagen ${idx + 1}`} className="w-full h-full object-contain" />
                         <button
                           type="button"
@@ -536,7 +734,7 @@ export default function AdminProductosPage() {
                     {imagenes.map((file, idx) => {
                       const previewUrl = URL.createObjectURL(file);
                       return (
-                        <div key={`new-${idx}`} className="relative aspect-square bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden flex items-center justify-center group">
+                        <div key={`new-${idx}`} className="relative aspect-square bg-[#181920] border border-zinc-800 rounded-lg overflow-hidden flex items-center justify-center group">
                           <img src={previewUrl} alt={`Nueva Imagen ${idx + 1}`} className="w-full h-full object-contain" />
                           <button
                             type="button"
@@ -552,7 +750,7 @@ export default function AdminProductosPage() {
                     })}
                     
                     {Array.from({ length: Math.max(0, 4 - (existingImagenUrls.length + imagenes.length)) }).map((_, idx) => (
-                      <div key={`empty-${idx}`} className="aspect-square bg-zinc-900/40 border border-dashed border-zinc-800 rounded-lg flex items-center justify-center text-zinc-600 text-xs">
+                      <div key={`empty-${idx}`} className="aspect-square bg-[#181920]/40 border border-dashed border-zinc-800 rounded-lg flex items-center justify-center text-zinc-600 text-xs">
                         Vacío
                       </div>
                     ))}
@@ -583,7 +781,7 @@ export default function AdminProductosPage() {
               </form>
             </div>
 
-            <div className="lg:col-span-8 bg-zinc-950 border border-zinc-800 rounded-lg p-6">
+            <div className="lg:col-span-8 bg-[#121316] border border-zinc-800 rounded-lg p-6">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-zinc-800 pb-3 mb-6 gap-3">
                 <h2 className="text-xl font-semibold">Inventario General ({productos.length})</h2>
                 <button
@@ -605,6 +803,7 @@ export default function AdminProductosPage() {
                       handleEditar={handleEditar}
                       handleEliminar={handleEliminar}
                       handleOpenStockManager={setStockProducto}
+                      handleTogglePublicar={handleTogglePublicar}
                     />
                   ))}
                 </div>
@@ -616,12 +815,12 @@ export default function AdminProductosPage() {
 
       {/* MODAL GESTOR DE STOCK */}
       {stockProducto && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto space-y-6 custom-scrollbar shadow-2xl">
+        <div className="fixed inset-0 bg-[#181920]/80 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#181920] border border-zinc-800 rounded-3xl w-full max-w-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto space-y-6 custom-scrollbar shadow-2xl">
             
             <div className="flex justify-between items-center border-b border-zinc-800 pb-4">
               <div>
-                <h2 className="text-xl font-black text-yellow-400">Control de Inventario por Localidades</h2>
+                <h2 className="text-xl font-black text-[#fe5000]">Control de Inventario por Localidades</h2>
                 <p className="text-xs text-zinc-500">{stockProducto.nombre}</p>
               </div>
               <button onClick={() => setStockProducto(null)} className="text-zinc-400 hover:text-white font-black text-sm">
@@ -630,15 +829,15 @@ export default function AdminProductosPage() {
             </div>
 
             {/* Formulario de carga de unidad */}
-            <form onSubmit={handleAgregarUnidadStock} className="bg-zinc-950 border border-zinc-850 p-4 rounded-xl space-y-4">
-              <h3 className="text-xs font-black text-yellow-400 uppercase tracking-widest border-b border-zinc-850 pb-2">Ingresar Nueva Unidad Física</h3>
+            <form onSubmit={handleAgregarUnidadStock} className="bg-[#121316] border border-zinc-800 p-4 rounded-xl space-y-4">
+              <h3 className="text-xs font-black text-[#fe5000] uppercase tracking-widest border-b border-zinc-800 pb-2">Ingresar Nueva Unidad Física</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-zinc-400 mb-1">Localidad del Stock</label>
                   <select 
                     value={nuevaUnidadLocalidad} 
                     onChange={e => setNuevaUnidadLocalidad(e.target.value)} 
-                    className="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none"
+                    className="w-full bg-[#181920] border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-[#fe5000] outline-none"
                   >
                     {LOCALIDADES_STOCK.map(loc => (
                       <option key={loc} value={loc}>{loc}</option>
@@ -652,7 +851,7 @@ export default function AdminProductosPage() {
                     value={nuevaUnidadNserie} 
                     onChange={e => setNuevaUnidadNserie(e.target.value)} 
                     placeholder="Ej: SN-492849204" 
-                    className="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none font-mono" 
+                    className="w-full bg-[#181920] border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-[#fe5000] outline-none font-mono" 
                   />
                 </div>
               </div>
@@ -672,10 +871,10 @@ export default function AdminProductosPage() {
                   <p className="text-xs text-zinc-500 italic text-center py-6">No hay unidades cargadas en stock para este producto.</p>
                 ) : (
                   (stockProducto.stock || []).map((u: UnidadStock) => (
-                    <div key={u.id} className="flex justify-between items-center bg-zinc-950 p-3 rounded-lg border border-zinc-850">
+                    <div key={u.id} className="flex justify-between items-center bg-[#121316] p-3 rounded-lg border border-zinc-800">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] bg-zinc-900 text-yellow-400 px-2 py-0.5 rounded font-black border border-zinc-800">
+                          <span className="text-[10px] bg-[#181920] text-[#fe5000] px-2 py-0.5 rounded font-black border border-zinc-800">
                             {u.localidad}
                           </span>
                           <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
@@ -712,12 +911,12 @@ export default function AdminProductosPage() {
 
       {/* MODAL REMITO DE TRASLADO INTERNO MULTIPRODUCTO */}
       {mostrarTrasladoModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-4xl p-6 md:p-8 max-h-[90vh] overflow-y-auto space-y-6 custom-scrollbar shadow-2xl">
+        <div className="fixed inset-0 bg-[#181920]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#181920] border border-zinc-800 rounded-3xl w-full max-w-4xl p-6 md:p-8 max-h-[90vh] overflow-y-auto space-y-6 custom-scrollbar shadow-2xl">
             
             <div className="flex justify-between items-center border-b border-zinc-800 pb-4">
               <div>
-                <h2 className="text-xl font-black text-yellow-400">Generar Remito de Traslado Interno</h2>
+                <h2 className="text-xl font-black text-[#fe5000]">Generar Remito de Traslado Interno</h2>
                 <p className="text-xs text-zinc-500">Mover stock entre sucursales y nutrir puntos de venta</p>
               </div>
               <button 
@@ -731,7 +930,7 @@ export default function AdminProductosPage() {
             <form onSubmit={handleGenerarTrasladoYActualizarDb} className="space-y-6">
               
               {/* Origen y Destino */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-950 p-4 rounded-xl border border-zinc-850">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#121316] p-4 rounded-xl border border-zinc-800">
                 <div>
                   <label className="block text-xs font-bold text-zinc-400 mb-1">Localidad de Origen (Despacho)</label>
                   <select 
@@ -741,7 +940,7 @@ export default function AdminProductosPage() {
                       // Clear line selections since origin changed
                       setTrasladoLineas(prev => prev.map(l => ({ ...l, selectedUnitIds: [], nseries: [], cantidad: 1 })));
                     }}
-                    className="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none"
+                    className="w-full bg-[#181920] border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-[#fe5000] outline-none"
                   >
                     {LOCALIDADES_STOCK.map(loc => (
                       <option key={loc} value={loc}>{loc}</option>
@@ -753,7 +952,7 @@ export default function AdminProductosPage() {
                   <select 
                     value={trasladoDestino} 
                     onChange={e => setTrasladoDestino(e.target.value)} 
-                    className="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none"
+                    className="w-full bg-[#181920] border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-[#fe5000] outline-none"
                   >
                     {LOCALIDADES_STOCK.map(loc => (
                       <option key={loc} value={loc}>{loc}</option>
@@ -770,14 +969,14 @@ export default function AdminProductosPage() {
                     <button
                       type="button"
                       onClick={() => handleAgregarLineaTraslado(false)}
-                      className="bg-zinc-950 hover:bg-zinc-850 text-yellow-400 border border-zinc-800 hover:border-yellow-500 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors"
+                      className="bg-[#121316] hover:bg-zinc-850 text-[#fe5000] border border-zinc-800 hover:border-[#fe5000] px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors"
                     >
                       + Catálogo
                     </button>
                     <button
                       type="button"
                       onClick={() => handleAgregarLineaTraslado(true)}
-                      className="bg-zinc-950 hover:bg-zinc-850 text-blue-400 border border-zinc-800 hover:border-blue-500 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors"
+                      className="bg-[#121316] hover:bg-zinc-850 text-blue-400 border border-zinc-800 hover:border-blue-500 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors"
                     >
                       + Producto Manual
                     </button>
@@ -791,7 +990,7 @@ export default function AdminProductosPage() {
                     const availableUnits = matchedProd ? (matchedProd.stock || []).filter((u: any) => u.localidad === trasladoOrigen && u.estado === "Disponible") : [];
 
                     return (
-                      <div key={line.id} className="bg-zinc-950 p-4 rounded-xl border border-zinc-850 space-y-3 relative">
+                      <div key={line.id} className="bg-[#121316] p-4 rounded-xl border border-zinc-800 space-y-3 relative">
                         <button
                           type="button"
                           onClick={() => handleQuitarLineaTraslado(line.id)}
@@ -801,10 +1000,10 @@ export default function AdminProductosPage() {
                         </button>
 
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-[9px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded font-black uppercase">
+                          <span className="text-[9px] bg-[#181920] border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded font-black uppercase">
                             Ítem #{idx + 1}
                           </span>
-                          <span className={`text-[9px] px-2 py-0.5 rounded font-black uppercase ${line.isManual ? 'bg-blue-900/30 text-blue-400 border border-blue-900/40' : 'bg-yellow-900/30 text-yellow-400 border border-yellow-900/40'}`}>
+                          <span className={`text-[9px] px-2 py-0.5 rounded font-black uppercase ${line.isManual ? 'bg-blue-900/30 text-blue-400 border border-blue-900/40' : 'bg-yellow-900/30 text-[#fe5000] border border-yellow-900/40'}`}>
                             {line.isManual ? "Manual" : "Catálogo"}
                           </span>
                         </div>
@@ -819,7 +1018,7 @@ export default function AdminProductosPage() {
                                 value={line.manualNombre}
                                 onChange={e => handleUpdateLineaTraslado(line.id, { manualNombre: e.target.value })}
                                 placeholder="Ej: Fundas protectoras, cables, etc."
-                                className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-blue-500 font-bold"
+                                className="w-full bg-[#181920] border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-blue-500 font-bold"
                               />
                             </div>
                             <div>
@@ -830,7 +1029,7 @@ export default function AdminProductosPage() {
                                 required
                                 value={line.cantidad}
                                 onChange={e => handleUpdateLineaTraslado(line.id, { cantidad: Math.max(1, Number(e.target.value)) })}
-                                className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-blue-500 font-bold font-mono"
+                                className="w-full bg-[#181920] border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-blue-500 font-bold font-mono"
                               />
                             </div>
                             <div className="md:col-span-3">
@@ -840,7 +1039,7 @@ export default function AdminProductosPage() {
                                 value={line.manualSerialsText}
                                 onChange={e => handleUpdateLineaTraslado(line.id, { manualSerialsText: e.target.value })}
                                 placeholder="Ej: SN-9284201, SN-9284202"
-                                className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-zinc-300 outline-none focus:border-blue-500 font-mono"
+                                className="w-full bg-[#181920] border border-zinc-800 p-2 rounded text-xs text-zinc-300 outline-none focus:border-blue-500 font-mono"
                               />
                             </div>
                           </div>
@@ -859,7 +1058,7 @@ export default function AdminProductosPage() {
                                       cantidad: 1
                                     });
                                   }}
-                                  className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-yellow-500 font-bold"
+                                  className="w-full bg-[#181920] border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-[#fe5000] font-bold"
                                 >
                                   <option value="">-- Seleccionar --</option>
                                   {productos.map(p => (
@@ -869,14 +1068,14 @@ export default function AdminProductosPage() {
                               </div>
                               <div>
                                 <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Cantidad a Trasladar</label>
-                                <div className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-zinc-400 font-black font-mono">
+                                <div className="w-full bg-[#181920] border border-zinc-800 p-2 rounded text-xs text-zinc-400 font-black font-mono">
                                   {line.selectedUnitIds?.length || 0} unidades
                                 </div>
                               </div>
                             </div>
 
                             {line.productoId && (
-                              <div className="bg-zinc-900 border border-zinc-850 p-3 rounded-lg space-y-2">
+                              <div className="bg-[#181920] border border-zinc-800 p-3 rounded-lg space-y-2">
                                 <p className="text-[10px] text-zinc-400 font-bold border-b border-zinc-800 pb-1">
                                   Unidades disponibles en {trasladoOrigen} ({availableUnits.length}):
                                 </p>
@@ -891,8 +1090,8 @@ export default function AdminProductosPage() {
                                           key={u.id} 
                                           className={`flex items-center gap-2 p-1.5 rounded border transition-colors cursor-pointer text-xs ${
                                             isChecked 
-                                              ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-400' 
-                                              : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                                              ? 'bg-[#fe5000]/10 border-[#fe5000]/40 text-[#fe5000]' 
+                                              : 'bg-[#121316] border-zinc-800 text-zinc-400 hover:border-zinc-700'
                                           }`}
                                         >
                                           <input 
@@ -926,7 +1125,7 @@ export default function AdminProductosPage() {
                   value={trasladoComentario} 
                   onChange={e => setTrasladoComentario(e.target.value)} 
                   placeholder="Ej: Traslado interno para reabastecer stock de sucursal por alta demanda." 
-                  className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs focus:border-yellow-500 outline-none" 
+                  className="w-full bg-[#121316] border border-zinc-800 p-2.5 rounded-lg text-white text-xs focus:border-[#fe5000] outline-none" 
                   rows={2}
                 />
               </div>
@@ -960,13 +1159,15 @@ function AdminProductCard({
   editandoId, 
   handleEditar, 
   handleEliminar,
-  handleOpenStockManager
+  handleOpenStockManager,
+  handleTogglePublicar
 }: { 
   p: Producto; 
   editandoId: string | null; 
   handleEditar: (p: Producto) => void; 
   handleEliminar: (id: string) => void; 
   handleOpenStockManager: (p: Producto) => void; 
+  handleTogglePublicar: (p: Producto) => void;
 }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const images = p.imagenUrls && p.imagenUrls.length > 0 ? p.imagenUrls : (p.imagenUrl ? [p.imagenUrl] : []);
@@ -982,7 +1183,7 @@ function AdminProductCard({
   };
 
   return (
-    <div className={`border rounded-xl bg-zinc-900 flex flex-col shadow-2xl shadow-black/60 overflow-hidden transition-all ${editandoId === p.id ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'border-zinc-800'}`}>
+    <div className={`border rounded-xl bg-[#181920] flex flex-col shadow-2xl shadow-black/60 overflow-hidden transition-all ${editandoId === p.id ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'border-zinc-800'}`}>
       <div className="h-40 relative bg-zinc-850 p-2 flex items-center justify-center group">
         {images.length > 0 ? (
           <img src={images[activeIdx]} alt={p.nombre} className="max-w-full max-h-full object-contain" />
@@ -995,7 +1196,7 @@ function AdminProductCard({
             {/* Flecha Izquierda */}
             <button
               onClick={handlePrev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 w-6 h-6 flex items-center justify-center font-bold"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-[#181920]/60 hover:bg-[#181920]/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 w-6 h-6 flex items-center justify-center font-bold"
             >
               &larr;
             </button>
@@ -1003,7 +1204,7 @@ function AdminProductCard({
             {/* Flecha Derecha */}
             <button
               onClick={handleNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 w-6 h-6 flex items-center justify-center font-bold"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#181920]/60 hover:bg-[#181920]/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 w-6 h-6 flex items-center justify-center font-bold"
             >
               &rarr;
             </button>
@@ -1025,11 +1226,32 @@ function AdminProductCard({
         {editandoId === p.id && <div className="absolute inset-0 bg-blue-500/10 backdrop-blur-[1px] flex items-center justify-center z-10"><span className="bg-blue-600 text-white font-bold px-3 py-1 rounded-full text-xs shadow-2xl shadow-black/80">EDITANDO</span></div>}
       </div>
       <div className="p-4 flex-1 flex flex-col">
+        <div className="flex justify-between items-center mb-2">
+          <span className={`text-[10px] px-2 py-0.5 rounded font-black uppercase shadow-sm ${
+            (p.activo !== false && p.publicado !== false) 
+              ? "bg-green-500/20 text-green-400 border border-green-500/30" 
+              : "bg-red-500/20 text-red-400 border border-red-500/30"
+          }`}>
+            {(p.activo !== false && p.publicado !== false) ? "🟢 Publicado en Tienda" : "🔴 Borrador (Oculto)"}
+          </span>
+
+          <button
+            type="button"
+            onClick={() => handleTogglePublicar(p)}
+            className={`text-[10px] font-bold px-2 py-0.5 rounded transition-all ${
+              (p.activo !== false && p.publicado !== false)
+                ? "bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/50"
+                : "bg-green-950/40 hover:bg-green-900/60 text-green-300 border border-green-800/50"
+            }`}
+          >
+            {(p.activo !== false && p.publicado !== false) ? "✕ Ocultar" : "👁️ Publicar"}
+          </button>
+        </div>
         <h3 className="font-bold text-md mb-4 line-clamp-2 leading-tight">{p.nombre}</h3>
         
         {/* Datos Internos Admin */}
-        <div className="bg-zinc-950 border border-zinc-850 p-3 rounded-lg mb-3 text-xs flex flex-col gap-1">
-          <p className="text-zinc-500 font-bold uppercase mb-1 border-b border-zinc-850 pb-1">Administrativo</p>
+        <div className="bg-[#121316] border border-zinc-800 p-3 rounded-lg mb-3 text-xs flex flex-col gap-1">
+          <p className="text-zinc-500 font-bold uppercase mb-1 border-b border-zinc-800 pb-1">Administrativo</p>
           <p className="text-zinc-400">Costo: <span className="font-mono">${p.costoProducto || 0}</span></p>
           <p className="text-zinc-400">Contado: <span className="text-green-400 font-mono font-bold">${p.precioContado || 0}</span></p>
           <p className="text-zinc-400">TNA: <span className="font-mono">{p.tasaInteresTna || 0}%</span></p>
@@ -1038,15 +1260,15 @@ function AdminProductCard({
         </div>
 
         {/* Resumen de Stock por Localidad */}
-        <div className="bg-zinc-950 border border-zinc-850 p-3 rounded-lg mb-3 text-xs flex flex-col gap-1">
-          <p className="text-zinc-500 font-bold uppercase mb-1 border-b border-zinc-850 pb-1">Stock Disponible</p>
+        <div className="bg-[#121316] border border-zinc-800 p-3 rounded-lg mb-3 text-xs flex flex-col gap-1">
+          <p className="text-zinc-500 font-bold uppercase mb-1 border-b border-zinc-800 pb-1">Stock Disponible</p>
           {LOCALIDADES_STOCK.map(loc => {
             const count = (p.stock || []).filter(u => u.localidad === loc && u.estado === "Disponible").length;
             if (count === 0) return null;
             return (
               <p key={loc} className="text-zinc-300 flex justify-between">
                 <span>{loc}:</span>
-                <span className="font-bold text-yellow-400 font-mono">{count} u.</span>
+                <span className="font-bold text-[#fe5000] font-mono">{count} u.</span>
               </p>
             );
           })}
@@ -1056,16 +1278,16 @@ function AdminProductCard({
         </div>
 
         {/* Datos Publicos Cuotas */}
-        <div className="bg-zinc-900 border border-zinc-850 p-3 rounded-lg mb-5 text-xs">
-          <p className="text-yellow-400 font-bold uppercase mb-1 border-b border-zinc-850 pb-1">Público</p>
+        <div className="bg-[#181920] border border-zinc-800 p-3 rounded-lg mb-5 text-xs">
+          <p className="text-[#fe5000] font-bold uppercase mb-1 border-b border-zinc-800 pb-1">Público</p>
           {p.precioAnterior && <p className="text-zinc-500 line-through mb-1">Antes: ${p.precioAnterior}</p>}
-          <p className="text-yellow-400 font-bold text-sm mb-1">12 x ${p.cuota12}</p>
-          <p className="text-yellow-400 font-bold text-sm">8 x ${p.cuota8}</p>
+          <p className="text-[#fe5000] font-bold text-sm mb-1">12 x ${p.cuota12}</p>
+          <p className="text-[#fe5000] font-bold text-sm">8 x ${p.cuota8}</p>
         </div>
 
         <button 
           onClick={() => handleOpenStockManager(p)}
-          className="w-full text-xs bg-zinc-950 border border-zinc-850 hover:border-yellow-500 text-yellow-400 py-2 rounded-lg font-black uppercase tracking-widest transition-all mb-3 flex items-center justify-center gap-2"
+          className="w-full text-xs bg-[#121316] border border-zinc-800 hover:border-[#fe5000] text-[#fe5000] py-2 rounded-lg font-black uppercase tracking-widest transition-all mb-3 flex items-center justify-center gap-2"
         >
           📦 Gestionar Stock
         </button>

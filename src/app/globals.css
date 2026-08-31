@@ -1,72 +1,95 @@
 @import "tailwindcss";
 
 :root {
-  --background: #09090b;
+  --background: #121316;
   --foreground: #f4f4f5;
-  --accent-gold: #FFD700;
-  --deep-blue: #09090b;
+  --accent-gold: #fe5000;
+  --accent-orange: #fe5000;
+  --deep-blue: #121316;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-accent-gold: var(--accent-gold);
+  --color-accent-gold: #fe5000;
+  --color-accent-orange: #fe5000;
   --color-deep-blue: var(--deep-blue);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background-color: #09090b;
+  background-color: #121316;
   color: #f4f4f5;
   font-family: Arial, Helvetica, sans-serif;
   min-height: 100vh;
 }
 
-/* Premium 3D Yellow Button Style applied to both .bg-yellow-textured and any interactive yellow button/link */
+/* Premium 3D Electric Orange Button Style */
 .bg-yellow-textured,
+.bg-orange-textured,
 button.bg-yellow-500,
 a.bg-yellow-500,
 button.bg-yellow-400,
 a.bg-yellow-400,
+button.bg-orange-500,
+a.bg-orange-500,
+button.bg-orange-600,
+a.bg-orange-600,
 input[type="submit"].bg-yellow-500,
 input[type="button"].bg-yellow-500,
 button[class*="bg-yellow-500"],
-a[class*="bg-yellow-500"] {
+a[class*="bg-yellow-500"],
+button[class*="bg-orange-500"],
+a[class*="bg-orange-500"] {
   position: relative;
-  background: linear-gradient(180deg, #fef08a 0%, #eab308 100%) !important;
-  color: #000000 !important;
-  border: 1px solid #ca8a04 !important;
-  border-bottom: 4px solid #a16207 !important;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+  background: linear-gradient(180deg, #ff6b1a 0%, #fe5000 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #ff7b33 !important;
+  border-bottom: 4px solid #c43c00 !important;
+  box-shadow: 0 4px 20px rgba(254, 80, 0, 0.45) !important;
   transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-width 0.15s ease, box-shadow 0.15s ease !important;
 }
 
 .bg-yellow-textured:hover:not(:disabled),
+.bg-orange-textured:hover:not(:disabled),
 button.bg-yellow-500:hover:not(:disabled),
 a.bg-yellow-500:hover:not(:disabled),
 button.bg-yellow-400:hover:not(:disabled),
 a.bg-yellow-400:hover:not(:disabled),
+button.bg-orange-500:hover:not(:disabled),
+a.bg-orange-500:hover:not(:disabled),
+button.bg-orange-600:hover:not(:disabled),
+a.bg-orange-600:hover:not(:disabled),
 input[type="submit"].bg-yellow-500:hover:not(:disabled),
 input[type="button"].bg-yellow-500:hover:not(:disabled),
 button[class*="bg-yellow-500"]:hover:not(:disabled),
-a[class*="bg-yellow-500"]:hover:not(:disabled) {
-  background: linear-gradient(180deg, #fef08a 0%, #facc15 100%) !important;
+a[class*="bg-yellow-500"]:hover:not(:disabled),
+button[class*="bg-orange-500"]:hover:not(:disabled),
+a[class*="bg-orange-500"]:hover:not(:disabled) {
+  background: linear-gradient(180deg, #ff7b33 0%, #fe5000 100%) !important;
   transform: translateY(-2px) !important;
   border-bottom-width: 6px !important;
-  box-shadow: 0 6px 20px rgba(234, 179, 8, 0.4) !important;
+  box-shadow: 0 6px 25px rgba(254, 80, 0, 0.65) !important;
 }
 
 .bg-yellow-textured:active:not(:disabled),
+.bg-orange-textured:active:not(:disabled),
 button.bg-yellow-500:active:not(:disabled),
 a.bg-yellow-500:active:not(:disabled),
 button.bg-yellow-400:active:not(:disabled),
 a.bg-yellow-400:active:not(:disabled),
+button.bg-orange-500:active:not(:disabled),
+a.bg-orange-500:active:not(:disabled),
+button.bg-orange-600:active:not(:disabled),
+a.bg-orange-600:active:not(:disabled),
 input[type="submit"].bg-yellow-500:active:not(:disabled),
 input[type="button"].bg-yellow-500:active:not(:disabled),
 button[class*="bg-yellow-500"]:active:not(:disabled),
-a[class*="bg-yellow-500"]:active:not(:disabled) {
+a[class*="bg-yellow-500"]:active:not(:disabled),
+button[class*="bg-orange-500"]:active:not(:disabled),
+a[class*="bg-orange-500"]:active:not(:disabled) {
   transform: translateY(2px) !important;
   border-bottom-width: 1px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 2px 10px rgba(254, 80, 0, 0.5) !important;
 }

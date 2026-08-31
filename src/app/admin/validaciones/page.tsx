@@ -1,13 +1,14 @@
 "use client";
 
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
+import { FACTORES_PREDETERMINADOS, calcularOperacionFinanciera, calcularTablaTodosLosPlanes } from "@/lib/financialEngine";
 import { db, storage } from "@/lib/firebase";
 import { collection, getDocs, getDoc, updateDoc, deleteDoc, doc, query, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { generarContratoModelo, generarPagareModelo, generarRemitoModelo, generarPdfPresupuesto, generarComprobantePago, generarEstadoCuenta } from "@/lib/pdfGenerator";
+import { generarContratoModelo, generarPagareModelo, generarRemitoModelo, generarRemitoTipoR, generarPdfPresupuesto, generarComprobantePago, generarEstadoCuenta } from "@/lib/pdfGenerator";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Search, Filter, AlertCircle, CheckCircle2, Truck, DollarSign, Archive, UserPlus } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, Filter, AlertCircle, CheckCircle2, Truck, DollarSign, Archive, UserPlus, Trash2 } from "lucide-react";
 
 type Solicitud = {
   id: string;
@@ -67,6 +68,7 @@ const sucursalesDisponibles = [
 
 export default function AdminValidacionesPage() {
   const [solicitudes, setSolicitudes] = useState<Solicitud[]>([]);
+  const [empresaRemitosConfig, setEmpresaRemitosConfig] = useState<any>(null);
   const [cargando, setCargando] = useState(true);
 
   const [nuevosEstados, setNuevosEstados] = useState<Record<string, string>>({});
@@ -86,6 +88,8 @@ export default function AdminValidacionesPage() {
   const [budgetProd, setBudgetProd] = useState("");
   const [budgetContado, setBudgetContado] = useState("");
   const [budgetCuotas, setBudgetCuotas] = useState("12");
+  const [budgetFactor, setBudgetFactor] = useState("2.5");
+  const [mostrarTabla12Cuotas, setMostrarTabla12Cuotas] = useState(false);
   const [budgetCuotaValor, setBudgetCuotaValor] = useState("");
   const [budgetTna, setBudgetTna] = useState("60");
   const [budgetMora, setBudgetMora] = useState("0.5");
@@ -96,6 +100,48 @@ export default function AdminValidacionesPage() {
   const [draftItems, setDraftItems] = useState<any[]>([]);
   const [editandoPresupuestoId, setEditandoPresupuestoId] = useState<string | null>(null);
   const [comisionistaEditId, setComisionistaEditId] = useState<string | null>(null);
+  const [proveedorEditId, setProveedorEditId] = useState<string | null>(null);
+  const [proveedorNombre, setProveedorNombre] = useState("");
+  const [proveedorGuia, setProveedorGuia] = useState("");
+  const [proveedorCosto, setProveedorCosto] = useState("");
+  const [proveedorFechaPedido, setProveedorFechaPedido] = useState("");
+  const [proveedorFechaEstimada, setProveedorFechaEstimada] = useState("");
+  const [proveedorEstado, setProveedorEstado] = useState("SOLICITADO");
+  const [proveedorFacturaTicket, setProveedorFacturaTicket] = useState("");
+
+  // States for Etapa 2: Remito & Despacho Local / Afiliado
+  const [remitoEditId, setRemitoEditId] = useState<string | null>(null);
+  const [remitoTransporte, setRemitoTransporte] = useState("");
+  const [remitoGuiaLocal, setRemitoGuiaLocal] = useState("");
+  const [remitoCostoLocal, setRemitoCostoLocal] = useState("");
+  const [remitoFechaSalida, setRemitoFechaSalida] = useState("");
+  const [remitoEstadoEnvio, setRemitoEstadoEnvio] = useState("REMITO_EMITIDO");
+
+  // State maps for auto-populating and editing Remito Destinatario per order
+  const [remitoNombreMap, setRemitoNombreMap] = useState<Record<string, string>>({});
+  const [remitoDocMap, setRemitoDocMap] = useState<Record<string, string>>({});
+  const [remitoTelMap, setRemitoTelMap] = useState<Record<string, string>>({});
+  const [remitoDireccionMap, setRemitoDireccionMap] = useState<Record<string, string>>({});
+
+  const getDestinatarioNombre = (sol: any) => {
+    if (remitoNombreMap[sol.id] !== undefined) return remitoNombreMap[sol.id];
+    return sol.remitoDespachoDestinatario || sol.datosPersonales?.nombreCompleto || sol.nombreCompleto || "";
+  };
+
+  const getDestinatarioDoc = (sol: any) => {
+    if (remitoDocMap[sol.id] !== undefined) return remitoDocMap[sol.id];
+    return sol.remitoDespachoDoc || sol.datosPersonales?.numeroDni || sol.numeroDni || sol.dni || "";
+  };
+
+  const getDestinatarioTel = (sol: any) => {
+    if (remitoTelMap[sol.id] !== undefined) return remitoTelMap[sol.id];
+    return sol.remitoDespachoTel || sol.datosPersonales?.telefono || sol.whatsapp || "";
+  };
+
+  const getDestinatarioDireccion = (sol: any) => {
+    if (remitoDireccionMap[sol.id] !== undefined) return remitoDireccionMap[sol.id];
+    return sol.remitoDespachoDireccion || sol.datosPersonales?.direccion || sol.direccion || sol.localidad || "";
+  };
   const [comisionistaNombre, setComisionistaNombre] = useState("");
   const [comisionistaCosto, setComisionistaCosto] = useState("");
   const [comisionistaFechaEnvio, setComisionistaFechaEnvio] = useState("");
@@ -167,6 +213,82 @@ export default function AdminValidacionesPage() {
     const r = tna / 1200;
     const factor = (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
     return Math.round(contado * factor);
+  };
+
+  
+  // MOTOR DE CÁLCULO FINANCIERO UNIFICADO CON CATÁLOGO
+  const handleRecalcularDesdeCosto = (costoVal?: number, cuotasVal?: number, factorVal?: number) => {
+    const costo = costoVal !== undefined ? costoVal : (Number(budgetCostoProveedor) || 0);
+    const cuotas = cuotasVal !== undefined ? cuotasVal : (Number(budgetCuotas) || 12);
+    const factor = factorVal !== undefined ? factorVal : (Number(budgetFactor) || (FACTORES_PREDETERMINADOS[cuotas] || 2.5));
+
+    if (costo <= 0) return;
+
+    const valorTotal = Math.round(costo * factor);
+    const cuotaMensual = Math.round(valorTotal / cuotas);
+    const contadoRef = Math.round(costo * (FACTORES_PREDETERMINADOS[12] || 2.5));
+
+    setBudgetCuotaValor(cuotaMensual > 0 ? String(cuotaMensual) : "");
+    setBudgetContado(contadoRef > 0 ? String(contadoRef) : "");
+  };
+
+  const handleCambiarCostoProveedor = (costoStr: string) => {
+    setBudgetCostoProveedor(costoStr);
+    const costo = Number(costoStr) || 0;
+    const cuotas = Number(budgetCuotas) || 12;
+    const factor = Number(budgetFactor) || (FACTORES_PREDETERMINADOS[cuotas] || 2.5);
+
+    if (costo > 0) {
+      const valorTotal = Math.round(costo * factor);
+      const cuotaMensual = Math.round(valorTotal / cuotas);
+      const contadoRef = Math.round(costo * (FACTORES_PREDETERMINADOS[12] || 2.5));
+      setBudgetCuotaValor(cuotaMensual > 0 ? String(cuotaMensual) : "");
+      setBudgetContado(contadoRef > 0 ? String(contadoRef) : "");
+    } else {
+      setBudgetCuotaValor("");
+      setBudgetContado("");
+    }
+  };
+
+  const handleCambiarCuotas = (nuevasCuotasStr: string) => {
+    const nCuotas = Number(nuevasCuotasStr) || 12;
+    setBudgetCuotas(nuevasCuotasStr);
+    const nuevoFactor = FACTORES_PREDETERMINADOS[nCuotas] || (nCuotas === 18 ? 3.25 : 2.5);
+    setBudgetFactor(String(nuevoFactor));
+    
+    const costo = Number(budgetCostoProveedor) || 0;
+    if (costo > 0) {
+      const valorTotal = Math.round(costo * nuevoFactor);
+      const cuotaMensual = Math.round(valorTotal / nCuotas);
+      setBudgetCuotaValor(cuotaMensual > 0 ? String(cuotaMensual) : "");
+    }
+  };
+
+  const handleCambiarFactor = (factorStr: string) => {
+    setBudgetFactor(factorStr);
+    const factor = Number(factorStr) || 2.5;
+    const costo = Number(budgetCostoProveedor) || 0;
+    const cuotas = Number(budgetCuotas) || 12;
+    if (costo > 0) {
+      const valorTotal = Math.round(costo * factor);
+      const cuotaMensual = Math.round(valorTotal / cuotas);
+      setBudgetCuotaValor(cuotaMensual > 0 ? String(cuotaMensual) : "");
+    }
+  };
+
+  const handleCambiarCuotaDirecta = (cuotaStr: string) => {
+    setBudgetCuotaValor(cuotaStr);
+    const cuota = Number(cuotaStr) || 0;
+    const cuotas = Number(budgetCuotas) || 12;
+    const factor = Number(budgetFactor) || (FACTORES_PREDETERMINADOS[cuotas] || 2.5);
+
+    if (cuota > 0 && factor > 0) {
+      const valorTotal = cuota * cuotas;
+      const costoCalculado = Math.round(valorTotal / factor);
+      const contadoRef = Math.round(costoCalculado * (FACTORES_PREDETERMINADOS[12] || 2.5));
+      setBudgetCostoProveedor(costoCalculado > 0 ? String(costoCalculado) : "");
+      setBudgetContado(contadoRef > 0 ? String(contadoRef) : "");
+    }
   };
 
   const handleManualCalcularCuota = () => {
@@ -534,14 +656,25 @@ export default function AdminValidacionesPage() {
 
       // Generar Comprobante en PDF e iniciar descarga automática
       const receiptId = `REC-${solId.substring(0, 5).toUpperCase()}-${cuota.numero}`;
+      const numCuotasTotal = sol.planPagos?.length || parseInt(sol.planElegido || "12") || 12;
+      const cProdVal = Number((sol as any).precioContado || (sol as any).costoProducto || (sol as any).costoBien) || 0;
+      const totalFinVal = Number((sol as any).totalFinanciado) || (amountPaid * numCuotasTotal);
+      const baseGravVal = Math.max(0, totalFinVal - cProdVal);
+      
+      const mExentoCuota = numCuotasTotal > 0 ? Math.round(cProdVal / numCuotasTotal) : 0;
+      const mGravadoCuota = numCuotasTotal > 0 ? Math.round(baseGravVal / numCuotasTotal) : 0;
+
       generarComprobantePago({
+        nroContrato: (sol as any).nroContrato || `CH-${sol.id.substring(0, 8).toUpperCase()}`,
         nroRecibo: receiptId,
         fecha: new Date().toLocaleDateString("es-AR"),
-        clienteNombre: sol.datosPersonales?.nombreCompleto || "",
-        clienteDni: sol.datosPersonales?.numeroDni || "",
-        productoNombre: sol.productoDeseado || "Producto",
+        clienteNombre: sol.datosPersonales?.nombreCompleto || (sol as any).nombreCompleto || "Cliente",
+        clienteDni: sol.datosPersonales?.numeroDni || (sol as any).numeroDni || "-",
         cuotaNumero: cuota.numero,
+        cuotasTotal: numCuotasTotal,
         montoAbonado: amountPaid,
+        montoExento: mExentoCuota,
+        montoGravado: mGravadoCuota,
         metodoPago: isClientApprove ? "Aprobación Recibo Online" : metodo,
         nroComprobante: pagoComprobante.trim() || undefined,
         cuentaDestino: pagoCuentaDestino.trim() || undefined,
@@ -827,6 +960,69 @@ export default function AdminValidacionesPage() {
     }
   };
 
+  const handleGuardarEdicionContrato = async () => {
+    if (!contratoAEditar) return;
+    try {
+      const solId = contratoAEditar.solId;
+      const isAp = aperturas.some((a) => a.id === solId);
+      const colName = isAp ? "solicitudes_cuenta" : "solicitudes";
+
+      const numContado = parseFloat(contratoAEditar.precioContado?.toString().replace(/[^0-9.-]/g, "") || "0") || 0;
+      const numTotal = parseFloat(contratoAEditar.totalFinanciado?.toString().replace(/[^0-9.-]/g, "") || "0") || 0;
+      const numCuotas = parseInt(contratoAEditar.cuotas) || 12;
+      const numImp = parseFloat(contratoAEditar.importeCuota?.toString().replace(/[^0-9.-]/g, "") || "0") || 0;
+
+      const payload: any = {
+        nroContrato: contratoAEditar.nroContrato,
+        nombreCompleto: contratoAEditar.nombreComprador,
+        numeroDni: contratoAEditar.dni,
+        direccion: contratoAEditar.domicilio,
+        email: contratoAEditar.email,
+        whatsapp: contratoAEditar.whatsapp,
+        productoDeseado: contratoAEditar.producto,
+        numeroSerie: contratoAEditar.nserie,
+        precioContado: numContado,
+        costoProducto: numContado,
+        costoBien: numContado,
+        totalFinanciado: numTotal,
+        planElegido: String(numCuotas),
+        montoCuota: numImp,
+        tasaInteresTna: parseFloat(contratoAEditar.tnaComp) || 60,
+        tasaMora: parseFloat(contratoAEditar.tnaPun) || 0.5,
+        lugarFechaFirma: contratoAEditar.lugarFecha,
+        planPagos: contratoAEditar.cuotasPlan || []
+      };
+
+      await updateDoc(doc(db, colName, solId), payload);
+
+      if (isAp) {
+        const solSnap = await getDocs(collection(db, "solicitudes"));
+        solSnap.forEach((d) => {
+          if (d.data().clienteId === "aperturado_" + solId) {
+            updateDoc(doc(db, "solicitudes", d.id), payload).catch(console.error);
+          }
+        });
+      } else if (contratoAEditar.originalSolicitud?.clienteId?.startsWith("aperturado_")) {
+        const apId = contratoAEditar.originalSolicitud.clienteId.replace("aperturado_", "");
+        updateDoc(doc(db, "solicitudes_cuenta", apId), payload).catch(console.error);
+      }
+
+      setSolicitudes((prev) =>
+        prev.map((s) => (s.id === solId || s.clienteId === "aperturado_" + solId ? { ...s, ...payload } : s))
+      );
+      setAperturas((prev) =>
+        prev.map((a) => (a.id === solId || "aperturado_" + a.id === contratoAEditar.originalSolicitud?.clienteId ? { ...a, ...payload } : a))
+      );
+
+      alert("✅ Modificaciones del Contrato y Pagaré guardadas con éxito en la base de datos.");
+      await fetchSolicitudes();
+      await fetchAperturas();
+    } catch (err: any) {
+      console.error("Error al guardar cambios de contrato:", err);
+      alert("Error al guardar modificaciones: " + (err.message || err.toString()));
+    }
+  };
+
   const handleOpenContratoEditor = (sol: any) => {
     let planCuotasList = [];
     let planElegido = sol.planElegido || "12";
@@ -888,23 +1084,40 @@ export default function AdminValidacionesPage() {
       : (sol.direccion || "");
     const tel = sol.datosPersonales?.telefono || sol.whatsapp || "";
 
-    // Reverse-calculate cash price (precioContado) from TNA, plan duration, and installment amount
+    // Default "Precio Producto" to supplier product cost (Costo del Producto en Proveedor)
+    const numCuotasNum = parseInt(planElegido) || 12;
+    const totalFinanciadoVal = numCuotasNum * vc;
+
     let calculatedContado = 0;
-    if (sol.precioContado) {
+    if (sol.costoProducto && Number(sol.costoProducto) > 0) {
+      calculatedContado = Number(sol.costoProducto);
+    } else if (sol.costoProveedor && Number(sol.costoProveedor) > 0) {
+      calculatedContado = Number(sol.costoProveedor);
+    } else if (sol.precioContado && Number(sol.precioContado) > 0 && Number(sol.precioContado) < totalFinanciadoVal) {
       calculatedContado = Number(sol.precioContado);
     } else {
-      const n = parseInt(planElegido);
-      if (tna > 0) {
-        const r = tna / 1200;
-        const factor = (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-        calculatedContado = Math.round(montoCuota / factor);
-      } else {
-        calculatedContado = montoCuota * n;
+      const solProdName = (sol.productoDeseado || sol.productoNombre || "").toLowerCase().trim();
+      const prodMatch = (productos || []).find((p: any) => {
+        if (!p.nombre) return false;
+        const pName = p.nombre.toLowerCase().trim();
+        return pName === solProdName || pName.includes(solProdName) || solProdName.includes(pName);
+      });
+
+      if (prodMatch) {
+        if (prodMatch.costoProducto && Number(prodMatch.costoProducto) > 0) {
+          calculatedContado = Number(prodMatch.costoProducto);
+        } else if (prodMatch.precioContado && Number(prodMatch.precioContado) > 0 && Number(prodMatch.precioContado) < totalFinanciadoVal) {
+          calculatedContado = Number(prodMatch.precioContado);
+        }
       }
     }
 
-    const totalFinanciadoVal = parseInt(planElegido) * vc;
-    const factorVal = calculatedContado > 0 ? (totalFinanciadoVal / calculatedContado).toFixed(4) : "1.0000";
+    if (calculatedContado <= 0 || calculatedContado >= totalFinanciadoVal) {
+      const defaultFactor = numCuotasNum === 12 ? 1.5873 : (numCuotasNum === 8 ? 1.35 : 1.5);
+      calculatedContado = Math.round(totalFinanciadoVal / defaultFactor);
+    }
+
+    const factorVal = calculatedContado > 0 ? (totalFinanciadoVal / calculatedContado).toFixed(4) : "1.5873";
 
     setContratoAEditar({
       solId: sol.id,
@@ -972,6 +1185,9 @@ export default function AdminValidacionesPage() {
             servicio: ""
           },
           productoDeseado: c.producto,
+          costoProducto: Number(c.precioContado),
+          precioContado: Number(c.precioContado),
+          factorFinanciado: Number(c.factorFinanciado),
           montoCuota: numImp,
           planElegido: String(numCuotas),
           tasaInteresTna: Number(c.tnaComp),
@@ -990,6 +1206,9 @@ export default function AdminValidacionesPage() {
         // 1. Update existing request
         await updateDoc(doc(db, "solicitudes", c.solId), {
           estado: "PENDIENTE_FIRMA",
+          costoProducto: Number(c.precioContado),
+          precioContado: Number(c.precioContado),
+          factorFinanciado: Number(c.factorFinanciado),
           montoCuota: numImp,
           planElegido: String(numCuotas),
           tasaInteresTna: Number(c.tnaComp),
@@ -1030,10 +1249,14 @@ export default function AdminValidacionesPage() {
       const currentSols: any[] = [];
       solSnap.forEach(d => currentSols.push({ id: d.id, ...d.data() }));
 
-      const q = query(collection(db, "solicitudes_cuenta"), orderBy("fecha", "desc"));
-      const snap = await getDocs(q);
+      const snap = await getDocs(collection(db, "solicitudes_cuenta"));
       const results: any[] = [];
       snap.forEach(d => results.push({ id: d.id, ...d.data() }));
+      results.sort((a: any, b: any) => {
+        const timeA = a.fecha?.seconds || a.fechaCreacion?.seconds || 0;
+        const timeB = b.fecha?.seconds || b.fechaCreacion?.seconds || 0;
+        return timeB - timeA;
+      });
       setAperturas(results);
 
       // Legacy auto-migration for approved accounts that have not been replicated in solicitudes
@@ -1215,27 +1438,250 @@ export default function AdminValidacionesPage() {
       alert("Error al eliminar.");
     }
   };
+
+  const handleActualizarEstadoDespachoRemito = async (sol: any, nuevoEstado: string) => {
+    try {
+      const solId = sol.id;
+      const isAp = aperturas.some((a) => a.id === solId);
+      const colName = isAp ? "solicitudes_cuenta" : "solicitudes";
+
+      const payload: any = {
+        remitoDespachoEstado: nuevoEstado,
+        remitoDespachoTransporte: (remitoEditId === solId ? remitoTransporte : sol.remitoDespachoTransporte) || null,
+        remitoDespachoGuia: (remitoEditId === solId ? remitoGuiaLocal : sol.remitoDespachoGuia) || null,
+        remitoDespachoCosto: (remitoEditId === solId ? (parseFloat(remitoCostoLocal) || 0) : (sol.remitoDespachoCosto || 0)),
+        remitoDespachoFecha: (remitoEditId === solId ? remitoFechaSalida : sol.remitoDespachoFecha) || new Date().toISOString().split("T")[0]
+      };
+
+      await updateDoc(doc(db, colName, solId), payload);
+
+      if (isAp) {
+        const solSnap = await getDocs(collection(db, "solicitudes"));
+        solSnap.forEach((d) => {
+          if (d.data().clienteId === "aperturado_" + solId) {
+            updateDoc(doc(db, "solicitudes", d.id), payload).catch(console.error);
+          }
+        });
+      } else if (sol.clienteId && sol.clienteId.startsWith("aperturado_")) {
+        const apId = sol.clienteId.replace("aperturado_", "");
+        updateDoc(doc(db, "solicitudes_cuenta", apId), payload).catch(console.error);
+      }
+
+      setSolicitudes((prev) =>
+        prev.map((s) => (s.id === solId || s.clienteId === "aperturado_" + solId ? { ...s, ...payload } : s))
+      );
+      setAperturas((prev) =>
+        prev.map((a) => (a.id === solId || "aperturado_" + a.id === sol.clienteId ? { ...a, ...payload } : a))
+      );
+
+      alert("✅ Estado de Despacho al Destinatario actualizado correctamente.");
+      await fetchSolicitudes();
+      await fetchAperturas();
+    } catch (err: any) {
+      console.error("Error al actualizar estado de despacho:", err);
+      alert("Error al actualizar estado de despacho: " + (err.message || err.toString()));
+    }
+  };
+
+  const handleGuardarDespachoRemito = async (sol: any) => {
+    try {
+      const solId = sol.id;
+      const isAp = aperturas.some((a) => a.id === solId);
+      const colName = isAp ? "solicitudes_cuenta" : "solicitudes";
+
+      const nroRemitoGenerado = sol.remitoDespachoNro || `7777-${solId.substring(0, 8).toUpperCase()}`;
+
+      const destNombre = getDestinatarioNombre(sol);
+      const destDoc = getDestinatarioDoc(sol);
+      const destTel = getDestinatarioTel(sol);
+      const destDireccion = getDestinatarioDireccion(sol);
+
+      const payloadDespacho: any = {
+        remitoDespachoNro: nroRemitoGenerado,
+        remitoDespachoDestinatario: destNombre,
+        remitoDespachoDoc: destDoc,
+        remitoDespachoDireccion: destDireccion,
+        remitoDespachoTel: destTel,
+        remitoDespachoTransporte: (remitoEditId === solId ? remitoTransporte : sol.remitoDespachoTransporte) || null,
+        remitoDespachoGuia: (remitoEditId === solId ? remitoGuiaLocal : sol.remitoDespachoGuia) || null,
+        remitoDespachoCosto: (remitoEditId === solId ? (parseFloat(remitoCostoLocal) || 0) : (sol.remitoDespachoCosto || 0)),
+        remitoDespachoFecha: (remitoEditId === solId ? remitoFechaSalida : sol.remitoDespachoFecha) || new Date().toISOString().split("T")[0],
+        remitoDespachoEstado: (remitoEditId === solId ? remitoEstadoEnvio : (sol.remitoDespachoEstado || "REMITO_EMITIDO"))
+      };
+
+      await updateDoc(doc(db, colName, solId), payloadDespacho);
+
+      if (isAp) {
+        const solSnap = await getDocs(collection(db, "solicitudes"));
+        solSnap.forEach((d) => {
+          if (d.data().clienteId === "aperturado_" + solId) {
+            updateDoc(doc(db, "solicitudes", d.id), payloadDespacho).catch(console.error);
+          }
+        });
+      } else if (sol.clienteId && sol.clienteId.startsWith("aperturado_")) {
+        const apId = sol.clienteId.replace("aperturado_", "");
+        updateDoc(doc(db, "solicitudes_cuenta", apId), payloadDespacho).catch(console.error);
+      }
+
+      await addDoc(collection(db, "remitos"), {
+        nroRemito: nroRemitoGenerado,
+        fechaEmision: new Date().toLocaleDateString("es-AR"),
+        fechaCreacion: serverTimestamp(),
+        tipoRemito: "REMITO_TIPO_R",
+        nroContratoInterno: sol.nroContrato || `CH-${solId.substring(0, 6).toUpperCase()}`,
+        clienteNombre: payloadDespacho.remitoDespachoDestinatario,
+        clienteDni: payloadDespacho.remitoDespachoDoc,
+        clienteDomicilio: payloadDespacho.remitoDespachoDireccion,
+        clienteTelefono: payloadDespacho.remitoDespachoTel,
+        transporteLocal: payloadDespacho.remitoDespachoTransporte,
+        costoLocal: payloadDespacho.remitoDespachoCosto,
+        guiaLocal: payloadDespacho.remitoDespachoGuia,
+        estadoEnvio: payloadDespacho.remitoDespachoEstado,
+        productoDescripcion: sol.productoDeseado || sol.productoNombre || "Producto",
+        nserie: sol.numeroSerie || "",
+        cantidad: 1
+      });
+
+      alert("✅ Seguimiento de Despacho por Remito registrado y guardado exitosamente.");
+      setRemitoEditId(null);
+      await fetchSolicitudes();
+      await fetchAperturas();
+    } catch (err: any) {
+      console.error("Error al guardar despacho de remito:", err);
+      alert("Error al guardar despacho de remito: " + (err.message || err.toString()));
+    }
+  };
+
+  const handleGuardarPedidoProveedor = async (solId: string) => {
+    try {
+      const isAp = aperturas.some((a) => a.id === solId);
+      const colName = isAp ? "solicitudes_cuenta" : "solicitudes";
+
+      const payload: any = {
+        proveedorNombre: proveedorNombre.trim() || null,
+        proveedorGuia: proveedorGuia.trim() || null,
+        proveedorCosto: parseFloat(proveedorCosto) || 0,
+        proveedorFechaPedido: proveedorFechaPedido || new Date().toISOString().split("T")[0],
+        proveedorFechaEstimada: proveedorFechaEstimada || null,
+        proveedorEstado: proveedorEstado || "SOLICITADO",
+        proveedorFacturaTicket: proveedorFacturaTicket.trim() || null,
+        facturaProveedorOriginal: proveedorFacturaTicket.trim() || null
+      };
+
+      if (proveedorEstado === "RECIBIDO") {
+        payload.proveedorFechaRecepcion = new Date().toISOString();
+      }
+
+      await updateDoc(doc(db, colName, solId), payload);
+
+      if (isAp) {
+        const solSnap = await getDocs(collection(db, "solicitudes"));
+        solSnap.forEach((d) => {
+          if (d.data().clienteId === "aperturado_" + solId) {
+            updateDoc(doc(db, "solicitudes", d.id), payload).catch(console.error);
+          }
+        });
+      } else {
+        const solObj = solicitudes.find((s) => s.id === solId);
+        if (solObj?.clienteId && solObj.clienteId.startsWith("aperturado_")) {
+          const apId = solObj.clienteId.replace("aperturado_", "");
+          updateDoc(doc(db, "solicitudes_cuenta", apId), payload).catch(console.error);
+        }
+      }
+
+      alert("✅ Pedido a Proveedor registrado exitosamente.");
+      setProveedorEditId(null);
+      await fetchSolicitudes();
+      await fetchAperturas();
+    } catch (err: any) {
+      console.error("Error al guardar pedido a proveedor:", err);
+      alert("Error al guardar pedido a proveedor: " + (err.message || err.toString()));
+    }
+  };
+
+  const handleEliminarPedido = async (e: React.MouseEvent, sol: any) => {
+    e.stopPropagation();
+    const clienteNombre = sol.nombreCompleto || sol.datosPersonales?.nombreCompleto || "este cliente";
+    const productoNombre = sol.productoNombre || sol.productoDeseado || sol.producto || "Producto";
+    
+    const confirmacion = window.confirm(
+      `⚠️ ¿Estás seguro de eliminar el pedido / venta de ${clienteNombre} (${productoNombre})?\n\n` +
+      `Se borrará la solicitud de forma permanente de la base de datos en todas las colecciones.`
+    );
+    if (!confirmacion) return;
+
+    try {
+      // 1. Borrar de ambas colecciones (solicitudes y solicitudes_cuenta) para evitar que la auto-migración lo recree
+      if (sol.isApertura) {
+        await deleteDoc(doc(db, "solicitudes_cuenta", sol.id)).catch(console.error);
+
+        // Borrar cualquier réplica asociada en solicitudes (clienteId: "aperturado_" + id)
+        const solSnap = await getDocs(collection(db, "solicitudes"));
+        solSnap.forEach((d) => {
+          const data = d.data();
+          if (data.clienteId === "aperturado_" + sol.id || d.id === sol.id) {
+            deleteDoc(doc(db, "solicitudes", d.id)).catch(console.error);
+          }
+        });
+      } else {
+        await deleteDoc(doc(db, "solicitudes", sol.id)).catch(console.error);
+
+        // Si provenía de una apertura vinculada
+        if (sol.clienteId && sol.clienteId.startsWith("aperturado_")) {
+          const aperturaId = sol.clienteId.replace("aperturado_", "");
+          await deleteDoc(doc(db, "solicitudes_cuenta", aperturaId)).catch(console.error);
+        }
+        await deleteDoc(doc(db, "solicitudes_cuenta", sol.id)).catch(() => {});
+      }
+
+      // 2. Liberar reserva de stock si tenía una unidad vinculada
+      if (sol.vinculoProductoId && sol.vinculoUnidadId) {
+        try {
+          const prodRef = doc(db, "productos", sol.vinculoProductoId);
+          const prodSnap = await getDoc(prodRef);
+          if (prodSnap.exists()) {
+            const pData = prodSnap.data();
+            const stockActual = pData.stock || [];
+            const stockModificado = stockActual.map((u: any) => {
+              if (u.id === sol.vinculoUnidadId) {
+                return { ...u, estado: "Disponible", asignadoA: null, fechaAsignacion: null };
+              }
+              return u;
+            });
+            await updateDoc(prodRef, { stock: stockModificado });
+          }
+        } catch (errStock) {
+          console.error("Error al liberar stock:", errStock);
+        }
+      }
+
+      // 3. Limpiar estado local optimista
+      setSolicitudes((prev) => prev.filter((s) => s.id !== sol.id && s.clienteId !== "aperturado_" + sol.id));
+      setAperturas((prev) => prev.filter((a) => a.id !== sol.id && "aperturado_" + a.id !== sol.clienteId));
+
+      alert("✅ Pedido / Venta eliminado permanentemente.");
+      await fetchSolicitudes();
+      await fetchAperturas();
+    } catch (err: any) {
+      console.error("Error al eliminar pedido:", err);
+      alert("Error al eliminar pedido: " + (err.message || err.toString()));
+    }
+  };
   const [searchTerm, setSearchTerm] = useState("");
 
   const fetchSolicitudes = async () => {
     try {
-      const q = query(collection(db, "solicitudes"), orderBy("fechaCreacion", "desc"));
-      const snap = await getDocs(q);
+      const snap = await getDocs(collection(db, "solicitudes"));
       const results: Solicitud[] = [];
       snap.forEach(d => results.push({ id: d.id, ...d.data() } as Solicitud));
+      results.sort((a: any, b: any) => {
+        const timeA = a.fechaCreacion?.seconds || a.fechaCreacion?.toMillis?.() || 0;
+        const timeB = b.fechaCreacion?.seconds || b.fechaCreacion?.toMillis?.() || 0;
+        return timeB - timeA;
+      });
       setSolicitudes(results);
     } catch (error) {
-      console.error(error);
-      alert("Error cargando solicitudes. Asegúrate de tener los índices o reglas correctas.");
-      try {
-        const snap2 = await getDocs(collection(db, "solicitudes"));
-        const results: Solicitud[] = [];
-        snap2.forEach(d => results.push({ id: d.id, ...d.data() } as Solicitud));
-        results.sort((a,b) => b.fechaCreacion?.seconds - a.fechaCreacion?.seconds);
-        setSolicitudes(results);
-      } catch (e) {
-        console.error("Doble fallo", e);
-      }
+      console.error("Error cargando solicitudes:", error);
     } finally {
       setCargando(false);
     }
@@ -1243,6 +1689,9 @@ export default function AdminValidacionesPage() {
 
   useEffect(() => {
     fetchSolicitudes();
+    getDoc(doc(db, "configuraciones", "empresa_remitos")).then(snap => {
+      if (snap.exists()) setEmpresaRemitosConfig(snap.data());
+    }).catch(console.error);
     fetchAperturas();
     fetchProductos();
   }, []);
@@ -1425,6 +1874,12 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
     ...aperturas
       .filter((ap: any) => ap.estado === "Pendiente" || ap.estado === "Aprobado_Presupuesto")
       .map((ap: any) => {
+        let sortTime = Date.now();
+        if (ap.fecha?.seconds) sortTime = ap.fecha.seconds * 1000;
+        else if (ap.fechaCreacion?.seconds) sortTime = ap.fechaCreacion.seconds * 1000;
+        else if (ap.fechaIso) sortTime = new Date(ap.fechaIso).getTime();
+        else if (ap.fecha && typeof ap.fecha === "string") sortTime = new Date(ap.fecha).getTime();
+
         if (ap.tipo === "contacto_rapido") {
           return {
             ...ap,
@@ -1434,18 +1889,25 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
             whatsapp: ap.whatsapp,
             localidad: ap.localidad,
             productoNombre: ap.necesidad,
-            fechaSort: ap.fecha?.seconds ? ap.fecha.seconds * 1000 : 0
+            fechaSort: sortTime
           };
         }
         return { 
           ...ap, 
           isApertura: true, 
-          fechaSort: ap.fecha?.seconds ? ap.fecha.seconds * 1000 : 0 
+          fechaSort: sortTime 
         };
       }),
     ...solicitudes
       .filter((sol: any) => sol.estado === "PENDIENTE" || sol.estado === "REQUIERE_INFO" || sol.estado === "PENDIENTE_FIRMA")
-      .map((sol: any) => ({ ...sol, isApertura: false, fechaSort: sol.fechaCreacion?.seconds ? sol.fechaCreacion.seconds * 1000 : 0 }))
+      .map((sol: any) => {
+        let sortTime = Date.now();
+        if (sol.fechaCreacion?.seconds) sortTime = sol.fechaCreacion.seconds * 1000;
+        else if (sol.fecha?.seconds) sortTime = sol.fecha.seconds * 1000;
+        else if (sol.fechaIso) sortTime = new Date(sol.fechaIso).getTime();
+
+        return { ...sol, isApertura: false, fechaSort: sortTime };
+      })
   ];
   combinedRequests.sort((a, b) => b.fechaSort - a.fechaSort);
 
@@ -1594,74 +2056,163 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">WhatsApp:</strong> {req.whatsapp}</p>
                                   </div>
 
-                                  {/* Formulario para cargar nuevo presupuesto */}
+                                  {/* Formulario para cargar nuevo presupuesto con Motor Financiero Unificado */}
                                   <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-900 space-y-3">
-                                    <h4 className="text-sm font-black text-yellow-400 uppercase tracking-wider border-b border-zinc-900 pb-2">
-                                      {editandoPresupuestoId ? `Editar Presupuesto (${editandoPresupuestoId.replace("pres_", "").substring(0, 8).toUpperCase()})` : "Armar Presupuesto Combinado"}
-                                    </h4>
+                                    <div className="flex justify-between items-center border-b border-zinc-900 pb-2">
+                                      <h4 className="text-sm font-black text-yellow-400 uppercase tracking-wider">
+                                        {editandoPresupuestoId ? `Editar Presupuesto (${editandoPresupuestoId.replace("pres_", "").substring(0, 8).toUpperCase()})` : "Armar Presupuesto Combinado"}
+                                      </h4>
+                                      <span className="text-[9px] bg-amber-500/10 text-amber-400 font-mono font-bold px-2 py-0.5 rounded border border-amber-500/30">
+                                        Mismos Factores que Catálogo
+                                      </span>
+                                    </div>
+                                    
                                     <div className="grid grid-cols-2 gap-3">
                                       <div className="col-span-2">
-                                        <label className="block text-[10px] text-zinc-500 font-bold mb-1">Producto Propuesto</label>
-                                        <input type="text" value={budgetProd} onChange={e=>setBudgetProd(e.target.value)} placeholder="Ej: Samsung S24 Ultra - 256GB" className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500" />
+                                        <label className="block text-[10px] text-zinc-400 font-bold mb-1">Producto Propuesto</label>
+                                        <input 
+                                          type="text" 
+                                          value={budgetProd} 
+                                          onChange={e=>setBudgetProd(e.target.value)} 
+                                          placeholder="Ej: HELADERA GAFA 280 L" 
+                                          className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-bold" 
+                                        />
                                       </div>
+                                      
+                                      {/* COSTO PROVEEDOR - CAPITAL EXENTO (CAMPO CLAVE) */}
                                       <div>
-                                        <label className="block text-[10px] text-zinc-500 font-bold mb-1">Monto Referencia Contado ($)</label>
-                                        <input type="number" value={budgetContado} onChange={e=>setBudgetContado(e.target.value)} placeholder="Opcional" className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-mono" />
+                                        <label className="block text-[10px] text-emerald-400 font-bold mb-1">🔒 Costo Proveedor ($) <span className="text-emerald-500 text-[9px]">(Capital Exento)</span></label>
+                                        <input 
+                                          type="number" 
+                                          value={budgetCostoProveedor} 
+                                          onChange={e=>handleCambiarCostoProveedor(e.target.value)} 
+                                          placeholder="Ej: 400000" 
+                                          className="bg-zinc-900 border border-emerald-500/40 p-2 rounded text-xs text-white w-full outline-none focus:border-emerald-400 font-mono font-black" 
+                                        />
                                       </div>
+
+                                      {/* CANTIDAD DE CUOTAS (1 A 12 CUOTAS) */}
                                       <div>
-                                        <label className="block text-[10px] text-zinc-500 font-bold mb-1">Valor de la Cuota ($)</label>
-                                        <input type="number" value={budgetCuotaValor} onChange={e=>setBudgetCuotaValor(e.target.value)} placeholder="Ej: 18000" className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-bold font-mono" />
-                                      </div>
-                                      <div>
-                                        <label className="block text-[10px] text-zinc-500 font-bold mb-1">Cantidad de Cuotas</label>
-                                        <select value={budgetCuotas} onChange={e=>setBudgetCuotas(e.target.value)} className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500">
-                                          <option value="12">12 Cuotas</option>
-                                          <option value="8">8 Cuotas</option>
-                                          <option value="6">6 Cuotas</option>
-                                          <option value="18">18 Cuotas</option>
+                                        <label className="block text-[10px] text-zinc-400 font-bold mb-1">Cantidad de Cuotas</label>
+                                        <select 
+                                          value={budgetCuotas} 
+                                          onChange={e=>handleCambiarCuotas(e.target.value)} 
+                                          className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-bold"
+                                        >
+                                          {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+                                            <option key={n} value={n}>
+                                              {n} {n === 1 ? "Cuota" : "Cuotas"} (Factor {FACTORES_PREDETERMINADOS[n] || 2.5})
+                                            </option>
+                                          ))}
+                                          <option value="18">18 Cuotas (Factor 3.25)</option>
                                         </select>
                                       </div>
+
+                                      {/* FACTOR FINANCIADO APLICADO */}
                                       <div>
-                                        <label className="block text-[10px] text-zinc-500 font-bold mb-1">TNA Interés (%)</label>
-                                        <input type="number" value={budgetTna} onChange={e=>setBudgetTna(e.target.value)} className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-mono" />
+                                        <label className="block text-[10px] text-amber-400 font-bold mb-1">Factor Financiación</label>
+                                        <input 
+                                          type="number" 
+                                          step="0.01" 
+                                          value={budgetFactor} 
+                                          onChange={e=>handleCambiarFactor(e.target.value)} 
+                                          className="bg-zinc-900 border border-amber-500/40 p-2 rounded text-xs text-white w-full outline-none focus:border-amber-400 font-mono font-bold" 
+                                        />
                                       </div>
-                                      
-                                      {/* BOTONES DE CALCULO MANUAL */}
-                                      <div className="col-span-2 grid grid-cols-2 gap-2 mt-1">
-                                        <button
-                                          type="button"
-                                          onClick={handleManualCalcularCuota}
-                                          className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-1.5 px-3 rounded text-[10px] uppercase tracking-wider transition-all shadow-md active:scale-95 text-center flex items-center justify-center gap-1.5 font-sans"
-                                        >
-                                          🧮 Calcular Cuota
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={handleManualCalcularTna}
-                                          className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold py-1.5 px-3 rounded text-[10px] uppercase tracking-wider transition-all border border-zinc-700 active:scale-95 text-center flex items-center justify-center gap-1.5 font-sans"
-                                        >
-                                          🧮 Calcular TNA
-                                        </button>
-                                      </div>
-                                      
-                                      {/* NUEVOS CAMPOS EXCLUSIVOS USO INTERNO */}
+
+                                      {/* VALOR DE LA CUOTA CALCULADO */}
                                       <div>
-                                        <label className="block text-[10px] text-amber-500 font-bold mb-1">🔒 Costo Proveedor ($)</label>
-                                        <input type="number" value={budgetCostoProveedor} onChange={e=>setBudgetCostoProveedor(e.target.value)} placeholder="Ej: 80000" className="bg-zinc-900 border border-amber-950/40 p-2 rounded text-xs text-white w-full outline-none focus:border-amber-500 font-mono" />
+                                        <label className="block text-[10px] text-yellow-300 font-bold mb-1">Valor Cuota Mensual ($)</label>
+                                        <input 
+                                          type="number" 
+                                          value={budgetCuotaValor} 
+                                          onChange={e=>handleCambiarCuotaDirecta(e.target.value)} 
+                                          placeholder="Ej: 83333" 
+                                          className="bg-zinc-900 border border-yellow-500/50 p-2 rounded text-xs text-yellow-300 w-full outline-none focus:border-yellow-400 font-black font-mono shadow-inner" 
+                                        />
                                       </div>
-                                      <div>
-                                        <label className="block text-[10px] text-amber-500 font-bold mb-1">🔒 Proveedor (Uso Interno)</label>
-                                        <input type="text" value={budgetProveedor} onChange={e=>setBudgetProveedor(e.target.value)} placeholder="Ej: Distribuidora BA" className="bg-zinc-900 border border-amber-950/40 p-2 rounded text-xs text-white w-full outline-none focus:border-amber-500" />
-                                      </div>
+
+                                      {/* MONTO REFERENCIA CONTADO / TOTAL */}
                                       <div className="col-span-2">
-                                        <label className="block text-[10px] text-amber-500 font-bold mb-1">🔒 Link Proveedor (Uso Interno)</label>
-                                        <input type="text" value={budgetLinkProveedor} onChange={e=>setBudgetLinkProveedor(e.target.value)} placeholder="Ej: mercadolibre.com.ar/..." className="bg-zinc-900 border border-amber-950/40 p-2 rounded text-xs text-white w-full outline-none focus:border-amber-500" />
+                                        <label className="block text-[10px] text-zinc-500 font-bold mb-1">Monto Referencia Contado / Total Financiado ($)</label>
+                                        <div className="flex gap-2">
+                                          <input 
+                                            type="number" 
+                                            value={budgetContado} 
+                                            onChange={e=>setBudgetContado(e.target.value)} 
+                                            placeholder="Calculado automáticamente" 
+                                            className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-zinc-300 w-full outline-none focus:border-yellow-500 font-mono" 
+                                          />
+                                          <button
+                                            type="button"
+                                            onClick={() => handleRecalcularDesdeCosto()}
+                                            className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10px] font-bold px-3 py-1 rounded transition text-nowrap"
+                                          >
+                                            🔄 Recalcular
+                                          </button>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* DATOS PROVEEDOR USO INTERNO */}
+                                      <div>
+                                        <label className="block text-[10px] text-zinc-500 font-bold mb-1">🔒 Proveedor (Uso Interno)</label>
+                                        <input type="text" value={budgetProveedor} onChange={e=>setBudgetProveedor(e.target.value)} placeholder="Ej: Distribuidora BA" className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500" />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[10px] text-zinc-500 font-bold mb-1">🔒 Link Proveedor (Uso Interno)</label>
+                                        <input type="text" value={budgetLinkProveedor} onChange={e=>setBudgetLinkProveedor(e.target.value)} placeholder="Ej: mercadolibre.com.ar/..." className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500" />
                                       </div>
                                     </div>
+
+                                    {/* BOTÓN PARA DESPLEGAR DESGLOSE DE TABLA DE LOS 12 PLANES */}
+                                    {Number(budgetCostoProveedor) > 0 && (
+                                      <div className="pt-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => setMostrarTabla12Cuotas(!mostrarTabla12Cuotas)}
+                                          className="w-full bg-zinc-900 hover:bg-zinc-850 text-amber-400 border border-amber-500/30 py-1.5 px-3 rounded text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition"
+                                        >
+                                          {mostrarTabla12Cuotas ? "🙈 Ocultar Tabla de Planes 1 a 12" : "👁️ Ver Tabla Completa de Cuotas (1 a 12 Planes)"}
+                                        </button>
+
+                                        {mostrarTabla12Cuotas && (
+                                          <div className="mt-2 bg-zinc-900/90 border border-amber-500/30 p-3 rounded-xl space-y-2 max-h-60 overflow-y-auto">
+                                            <p className="text-[10px] text-zinc-400 font-bold">Planes calculados para Costo ${Number(budgetCostoProveedor).toLocaleString("es-AR")}:</p>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[10px]">
+                                              {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => {
+                                                const factor = FACTORES_PREDETERMINADOS[n] || 2.5;
+                                                const vTotal = Math.round(Number(budgetCostoProveedor) * factor);
+                                                const vCuota = Math.round(vTotal / n);
+                                                const isSelected = Number(budgetCuotas) === n;
+                                                return (
+                                                  <button
+                                                    type="button"
+                                                    key={n}
+                                                    onClick={() => {
+                                                      setBudgetCuotas(String(n));
+                                                      setBudgetFactor(String(factor));
+                                                      setBudgetCuotaValor(String(vCuota));
+                                                    }}
+                                                    className={`p-2 rounded border text-left font-mono transition ${
+                                                      isSelected ? "bg-amber-500 text-black border-amber-400 font-bold" : "bg-zinc-950 text-zinc-300 border-zinc-800 hover:border-amber-500/50"
+                                                    }`}
+                                                  >
+                                                    <span className="block font-black">{n} {n === 1 ? "Cuota" : "Cuotas"}</span>
+                                                    <span className="block font-bold text-[11px]">${vCuota.toLocaleString("es-AR")}/mes</span>
+                                                    <span className="text-[8px] opacity-80 block">Total: ${vTotal.toLocaleString("es-AR")} (F: {factor})</span>
+                                                  </button>
+                                                );
+                                              })}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
                                     <button 
                                       type="button" 
                                       onClick={handleAgregarItemAlBorrador}
-                                      className="w-full bg-zinc-800 hover:bg-zinc-700 text-yellow-400 py-2.5 rounded font-bold text-xs uppercase tracking-wider transition-colors mt-2 border border-zinc-700"
+                                      className="w-full bg-yellow-500 hover:bg-yellow-400 text-black py-2.5 rounded font-black text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 mt-2"
                                     >
                                       ＋ Agregar Producto al Presupuesto
                                     </button>
@@ -2554,6 +3105,14 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                              </span>
                           )}
                         </div>
+                        <button
+                          type="button"
+                          onClick={(e) => handleEliminarPedido(e, sol)}
+                          title="Eliminar pedido / solicitud"
+                          className="text-red-500/80 hover:text-red-400 hover:bg-red-500/10 p-2 rounded-full transition-all border border-transparent hover:border-red-500/30 mr-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                         <div className="text-zinc-500 bg-zinc-900 p-2 rounded-full">
                           {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                         </div>
@@ -2688,7 +3247,16 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                              {currentEstado === "APROBADO" && (
                                <div className="bg-blue-950/20 border-2 border-blue-500/30 p-5 rounded-xl shadow-2xl shadow-black/60 relative overflow-hidden">
                                  <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10" />
-                                 <h3 className="text-sm font-black text-blue-400 mb-4 uppercase tracking-widest flex items-center gap-2"><Truck className="w-4 h-4"/> Logística y Entrega</h3>
+                                 <div className="flex items-center justify-between mb-4 border-b border-blue-900/40 pb-3">
+                                    <h3 className="text-sm font-black text-blue-400 uppercase tracking-widest flex items-center gap-2"><Truck className="w-4 h-4"/> Logística y Entrega</h3>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => handleEliminarPedido(e, sol)}
+                                      className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" /> Eliminar Pedido
+                                    </button>
+                                  </div>
                                  
                                  <div className="space-y-4 relative z-10">
                                    {/* SECCIÓN 1: ASIGNACIÓN DE STOCK Y RUTEO */}
@@ -2732,84 +3300,193 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                  </p>
                                                </div>
 
-                                               {/* DATOS DEL DESTINATARIO PARA EL REMITO */}
-                                               <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/80 space-y-2 text-[11px] mb-2">
-                                                 <h5 className="text-[10px] font-black text-amber-500 uppercase tracking-widest">
-                                                   👤 Destinatario del Remito (Vendedor / Afiliado)
-                                                 </h5>
-                                                 <div className="space-y-2">
+                                               {/* ETAPA 2: CONFECCIÓN DE REMITO Y SEGUIMIENTO DE DESPACHO LOCAL */}
+                                               <div className="bg-zinc-900/90 p-3.5 rounded-xl border border-amber-500/30 space-y-3 text-[11px] mb-3">
+                                                 <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
+                                                   <h5 className="text-[10px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
+                                                     👤 ETAPA 2: Despacho por Remito al Destinatario (Punto de Venta ➔ Afiliado / Cliente)
+                                                   </h5>
+                                                   {sol.remitoDespachoEstado && (
+                                                     <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${
+                                                       sol.remitoDespachoEstado === "ENTREGADO_CONFORME" ? "bg-green-500/20 text-green-400 border-green-500/30" :
+                                                       sol.remitoDespachoEstado === "EN_CAMINO" ? "bg-blue-500/20 text-blue-400 border-blue-500/30" :
+                                                       "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                                                     }`}>
+                                                       {sol.remitoDespachoEstado === "ENTREGADO_CONFORME" ? "✅ Entregado" : sol.remitoDespachoEstado === "EN_CAMINO" ? "🚚 En Camino" : "📜 Remito Emitido"}
+                                                     </span>
+                                                   )}
+                                                 </div>
+
+                                                 {/* Si ya hay un seguimiento de despacho local emitido */}
+                                                 {(sol.remitoDespachoNro || sol.remitoDespachoTransporte || sol.remitoDespachoGuia) && (
+                                                   <div className="bg-zinc-950 p-3 rounded-lg border border-zinc-800 space-y-1.5 text-xs">
+                                                     <p className="text-amber-400 font-bold text-[10px] uppercase tracking-wider">
+                                                       📌 Ficha de Seguimiento del Despacho Local
+                                                     </p>
+                                                     {sol.remitoDespachoNro && <p><strong className="text-zinc-500">Nº Remito:</strong> <span className="text-white font-mono font-bold">{sol.remitoDespachoNro}</span></p>}
+                                                     {sol.remitoDespachoDestinatario && <p><strong className="text-zinc-500">Destinatario:</strong> <span className="text-zinc-200">{sol.remitoDespachoDestinatario} (DNI: {sol.remitoDespachoDoc})</span></p>}
+                                                     {sol.remitoDespachoDireccion && <p><strong className="text-zinc-500">Dirección de Entrega:</strong> <span className="text-zinc-300">{sol.remitoDespachoDireccion}</span></p>}
+                                                     {sol.remitoDespachoTransporte && <p><strong className="text-zinc-500">Flete / Transporte Local:</strong> <span className="text-blue-300 font-bold">{sol.remitoDespachoTransporte}</span></p>}
+                                                     {sol.remitoDespachoGuia && <p><strong className="text-zinc-500">Guía / Tracking Interno:</strong> <span className="text-amber-300 font-mono">{sol.remitoDespachoGuia}</span></p>}
+                                                     {sol.remitoDespachoCosto > 0 && <p><strong className="text-zinc-500">Costo Envío Local:</strong> <span className="text-green-400 font-bold">${sol.remitoDespachoCosto.toLocaleString("es-AR")}</span></p>}
+                                                     {sol.remitoDespachoFecha && <p><strong className="text-zinc-500">Fecha de Salida:</strong> {new Date(sol.remitoDespachoFecha).toLocaleDateString("es-AR")}</p>}
+
+                                                     <button
+                                                       type="button"
+                                                       onClick={() => {
+                                                         setRemitoEditId(sol.id);
+                                                         setRemitoTransporte(sol.remitoDespachoTransporte || "");
+                                                         setRemitoGuiaLocal(sol.remitoDespachoGuia || "");
+                                                         setRemitoCostoLocal(sol.remitoDespachoCosto ? String(sol.remitoDespachoCosto) : "");
+                                                         setRemitoFechaSalida(sol.remitoDespachoFecha || "");
+                                                         setRemitoEstadoEnvio(sol.remitoDespachoEstado || "REMITO_EMITIDO");
+                                                       }}
+                                                       className="text-[10px] text-amber-400 hover:text-amber-300 font-bold underline pt-1 block"
+                                                     >
+                                                       ✏️ Editar Seguimiento de Despacho Local
+                                                     </button>
+                                                   </div>
+                                                 )}
+
+                                                 {/* Formulario de Confección y Actualización de Despacho */}
+                                                 <div className="space-y-2 pt-1 border-t border-zinc-800">
+                                                   <p className="text-[9px] font-bold text-zinc-400 uppercase">1. Confeccionar Destinatario del Remito:</p>
                                                    <div>
-                                                     <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Nombre Destinatario</label>
+                                                     <label className="block text-[9px] text-amber-400 font-bold uppercase mb-0.5">Nombre Destinatario (Auto-completado / Editable)</label>
                                                      <input 
                                                        type="text"
-                                                       value={remitoDestinatarioNombre}
-                                                       onChange={e => setRemitoDestinatarioNombre(e.target.value)}
-                                                       placeholder="Nombre del Vendedor / Afiliado o Cliente"
+                                                       value={getDestinatarioNombre(sol)}
+                                                       onChange={e => setRemitoNombreMap(prev => ({ ...prev, [sol.id]: e.target.value }))}
+                                                       placeholder="Nombre del Destinatario"
                                                        className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-bold"
                                                      />
                                                    </div>
                                                    <div className="grid grid-cols-2 gap-2">
                                                      <div>
-                                                       <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">DNI / CUIT</label>
+                                                       <label className="block text-[9px] text-amber-400 font-bold uppercase mb-0.5">DNI / CUIT</label>
                                                        <input 
                                                          type="text"
-                                                         value={remitoDestinatarioDoc}
-                                                         onChange={e => setRemitoDestinatarioDoc(e.target.value)}
+                                                         value={getDestinatarioDoc(sol)}
+                                                         onChange={e => setRemitoDocMap(prev => ({ ...prev, [sol.id]: e.target.value }))}
                                                          placeholder="Documento / CUIT"
-                                                         className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500"
+                                                         className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-mono"
                                                        />
                                                      </div>
                                                      <div>
-                                                       <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Teléfono</label>
+                                                       <label className="block text-[9px] text-amber-400 font-bold uppercase mb-0.5">Teléfono</label>
                                                        <input 
                                                          type="text"
-                                                         value={remitoDestinatarioTel}
-                                                         onChange={e => setRemitoDestinatarioTel(e.target.value)}
+                                                         value={getDestinatarioTel(sol)}
+                                                         onChange={e => setRemitoTelMap(prev => ({ ...prev, [sol.id]: e.target.value }))}
                                                          placeholder="Teléfono"
                                                          className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500"
                                                        />
                                                      </div>
                                                    </div>
                                                    <div>
-                                                     <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Dirección de Entrega</label>
+                                                     <label className="block text-[9px] text-amber-400 font-bold uppercase mb-0.5">Dirección de Entrega / Sucursal</label>
                                                      <input 
                                                        type="text"
-                                                       value={remitoDestinatarioDireccion}
-                                                       onChange={e => setRemitoDestinatarioDireccion(e.target.value)}
-                                                       placeholder="Sucursal o domicilio del afiliado"
+                                                       value={getDestinatarioDireccion(sol)}
+                                                       onChange={e => setRemitoDireccionMap(prev => ({ ...prev, [sol.id]: e.target.value }))}
+                                                       placeholder="Sucursal o domicilio del cliente/afiliado"
                                                        className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500"
                                                      />
                                                    </div>
+
+                                                   <p className="text-[9px] font-bold text-zinc-400 uppercase pt-2 border-t border-zinc-850">2. Datos del Transporte / Flete Local:</p>
+                                                   <div>
+                                                     <label className="block text-[8px] text-zinc-500 font-bold uppercase mb-0.5">Chofer / Comisionista / Flete Local</label>
+                                                     <input 
+                                                       type="text"
+                                                       value={remitoEditId === sol.id ? remitoTransporte : ""}
+                                                       onChange={e => { setRemitoEditId(sol.id); setRemitoTransporte(e.target.value); }}
+                                                       placeholder="Ej: Flete Expreso Junín, Moto Mensajería, etc."
+                                                       className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500"
+                                                     />
+                                                   </div>
+                                                   <div className="grid grid-cols-2 gap-2">
+                                                     <div>
+                                                       <label className="block text-[8px] text-zinc-500 font-bold uppercase mb-0.5">Costo Envío Local ($)</label>
+                                                       <input 
+                                                         type="number"
+                                                         value={remitoEditId === sol.id ? remitoCostoLocal : ""}
+                                                         onChange={e => { setRemitoEditId(sol.id); setRemitoCostoLocal(e.target.value); }}
+                                                         placeholder="ARS"
+                                                         className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-mono"
+                                                       />
+                                                     </div>
+                                                     <div>
+                                                       <label className="block text-[8px] text-zinc-500 font-bold uppercase mb-0.5">Guía / Tracking Interno</label>
+                                                       <input 
+                                                         type="text"
+                                                         value={remitoEditId === sol.id ? remitoGuiaLocal : ""}
+                                                         onChange={e => { setRemitoEditId(sol.id); setRemitoGuiaLocal(e.target.value); }}
+                                                         placeholder="Ej: GUIA-94812"
+                                                         className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-mono"
+                                                       />
+                                                     </div>
+                                                   </div>
+                                                    <div>
+                                                      <label className="block text-[8px] text-zinc-500 font-bold uppercase mb-0.5">Estado del Despacho al Destinatario</label>
+                                                      <select
+                                                        value={remitoEditId === sol.id ? remitoEstadoEnvio : (sol.remitoDespachoEstado || "REMITO_EMITIDO")}
+                                                        onChange={e => {
+                                                          const val = e.target.value;
+                                                          setRemitoEditId(sol.id);
+                                                          setRemitoEstadoEnvio(val);
+                                                          handleActualizarEstadoDespachoRemito(sol, val);
+                                                        }}
+                                                        className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-amber-300 font-bold outline-none focus:border-amber-500 cursor-pointer"
+                                                      >
+                                                        <option value="REMITO_EMITIDO">📜 REMITO EMITIDO (EN PREPARACIÓN)</option>
+                                                        <option value="EN_CAMINO">🚚 EN CAMINO AL AFILIADO / CLIENTE</option>
+                                                        <option value="ENTREGADO_CONFORME">✅ ENTREGADO EN DESTINO (CONFORME)</option>
+                                                      </select>
+                                                    </div>
+
+                                                   <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                                                     <button
+                                                       type="button"
+                                                       onClick={() => {
+                                                         const st = remitoEditId === sol.id ? remitoEstadoEnvio : (sol.remitoDespachoEstado || "REMITO_EMITIDO");
+                                                         handleActualizarEstadoDespachoRemito(sol, st);
+                                                       }}
+                                                       className="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5 uppercase tracking-wider"
+                                                     >
+                                                       💾 Guardar Estado y Datos de Despacho
+                                                     </button>
+                                                     <button
+                                                       type="button"
+                                                       onClick={() => {
+                                                         const unit = selectedProductStock
+                                                           ? (selectedProductStock.stock || []).find((u: any) => u.id === sol.vinculoUnidadId)
+                                                           : null;
+                                                         
+                                                         generarRemitoTipoR({
+                                                           empresaConfig: empresaRemitosConfig,
+                                                           facturaProveedorOriginal: sol.proveedorFacturaTicket || sol.facturaProveedorOriginal || "",
+                                                           codigoProducto: selectedProductStock?.codigoProducto || sol.codigoProducto || "",
+                                                           nroRemito: sol.remitoDespachoNro || `7777-${sol.id.substring(0, 8).toUpperCase()}`,
+                                                           fechaEmision: new Date().toLocaleDateString("es-AR"),
+                                                           nroContratoInterno: sol.nroContrato || `CH-${sol.id.substring(0, 6).toUpperCase()}`,
+                                                           clienteNombre: remitoDestinatarioNombre || sol.datosPersonales?.nombreCompleto || sol.nombreCompleto || "Cliente",
+                                                           clienteDni: remitoDestinatarioDoc || sol.datosPersonales?.numeroDni || sol.numeroDni || "-",
+                                                           clienteDomicilio: remitoDestinatarioDireccion || sol.datosPersonales?.direccion || sol.direccion || "Lincoln",
+                                                           clienteTelefono: remitoDestinatarioTel || sol.datosPersonales?.telefono || sol.whatsapp || "-",
+                                                           productoDescripcion: sol.productoDeseado || sol.productoNombre || (selectedProductStock?.nombre || "Producto"),
+                                                           nserie: sol.numeroSerie || unit?.nserie || "",
+                                                           cantidad: 1
+                                                         });
+                                                         handleGuardarDespachoRemito(sol);
+                                                       }}
+                                                       className="flex-1 bg-[#fe5000] hover:bg-[#fe5000]/90 text-white font-black py-2.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5 shadow-md uppercase tracking-wider"
+                                                     >
+                                                       📄 Generar Remito PDF
+                                                     </button>
+                                                   </div>
                                                  </div>
                                                </div>
-
-                                               {/* BOTÓN DE GENERACIÓN DE REMITO (EN RUTEO INTERNO) */}
-                                               <button
-                                                 type="button"
-                                                 onClick={() => {
-                                                   const unit = selectedProductStock
-                                                     ? (selectedProductStock.stock || []).find((u: any) => u.id === sol.vinculoUnidadId)
-                                                     : null;
-                                                   
-                                                   const rDatos = {
-                                                     nroRemito: `R-${sol.id.substring(0, 6).toUpperCase()}`,
-                                                     fecha: new Date().toLocaleDateString("es-AR"),
-                                                     clienteNombre: remitoDestinatarioNombre || sol.afiliadoEmail || "",
-                                                     clienteDni: remitoDestinatarioDoc || "",
-                                                     clienteDireccion: remitoDestinatarioDireccion || sol.sucursalDestino || "",
-                                                     clienteTelefono: remitoDestinatarioTel || "",
-                                                     productoNombre: sol.productoDeseado || (selectedProductStock?.nombre || ""),
-                                                     nserie: sol.numeroSerie || unit?.nserie || "",
-                                                     origen: unit?.localidad || "Depósito Central",
-                                                     destino: sol.sucursalDestino || sol.datosPersonales?.localidad || "Lincoln",
-                                                     afiliadoEmail: sol.afiliadoEmail || ""
-                                                   };
-                                                   generarRemitoModelo(rDatos);
-                                                 }}
-                                                 className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 shadow-md uppercase tracking-wider mb-2"
-                                               >
-                                                 📄 Generar Remito de Envío (PDF)
-                                               </button>
 
                                                {/* RUTEO POR COMISIONISTA (SOLO SI ORIGEN !== DESTINO) */}
                                                {requiereTransito ? (
@@ -3042,6 +3719,151 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg text-xs transition-colors uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95"
                                          >
                                            📌 Confirmar Reserva y Ruteo de Stock
+                                         </button>
+                                       </div>
+                                     )}
+                                   </div>
+
+                                   {/* SECCIÓN 2: SEGUIMIENTO DE PEDIDO AL PROVEEDOR (PRODUCTO SIN STOCK) */}
+                                   <div className="bg-zinc-950 p-4 border border-zinc-850 rounded-xl space-y-3 relative z-10">
+                                     <div className="flex justify-between items-center border-b border-zinc-900 pb-2">
+                                       <h4 className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                                         🏭 Seguimiento de Pedido al Proveedor (Sin Stock Local)
+                                       </h4>
+                                       {sol.proveedorEstado && (
+                                         <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase border ${
+                                           sol.proveedorEstado === "RECIBIDO" ? "bg-green-500/20 text-green-400 border-green-500/30" :
+                                           sol.proveedorEstado === "EN_TRANSITO" ? "bg-blue-500/20 text-blue-400 border-blue-500/30" :
+                                           "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                                         }`}>
+                                           {sol.proveedorEstado === "RECIBIDO" ? "✅ Recibido" : sol.proveedorEstado === "EN_TRANSITO" ? "🚚 En Tránsito" : "🛒 Pedido Solicitado"}
+                                         </span>
+                                       )}
+                                     </div>
+
+                                     {/* Si ya hay un pedido registrado al proveedor */}
+                                     {(sol.proveedorNombre || sol.proveedorGuia || sol.proveedorCosto || sol.proveedorFechaPedido) ? (
+                                       <div className="bg-amber-950/20 border border-amber-500/20 p-3.5 rounded-lg space-y-2 text-xs">
+                                         <div className="space-y-1">
+                                           {(sol.proveedorFacturaTicket || sol.facturaProveedorOriginal) && <p><strong className="text-zinc-400">Nº Ticket / Factura Proveedor:</strong> <span className="text-amber-400 font-mono font-bold">{sol.proveedorFacturaTicket || sol.facturaProveedorOriginal}</span></p>}
+                                           {sol.proveedorNombre && <p><strong className="text-zinc-400">Proveedor / Mayorista:</strong> <span className="text-white font-bold">{sol.proveedorNombre}</span></p>}
+                                           {sol.proveedorCosto > 0 && <p><strong className="text-zinc-400">Costo de Compra:</strong> <span className="text-green-400 font-black">${sol.proveedorCosto.toLocaleString("es-AR")}</span></p>}
+                                           {sol.proveedorGuia && <p><strong className="text-zinc-400">Nº de Guía / Tracking:</strong> <span className="text-amber-300 font-mono font-bold">{sol.proveedorGuia}</span></p>}
+                                           {sol.proveedorFechaPedido && <p><strong className="text-zinc-400">Fecha del Pedido:</strong> {new Date(sol.proveedorFechaPedido).toLocaleDateString("es-AR")}</p>}
+                                           {sol.proveedorFechaEstimada && <p><strong className="text-zinc-400">Fecha Estimada Arribo (ETA):</strong> {new Date(sol.proveedorFechaEstimada).toLocaleDateString("es-AR")}</p>}
+                                         </div>
+
+                                         <div className="flex gap-2 pt-2 border-t border-zinc-900 mt-2">
+                                           <button
+                                             type="button"
+                                             onClick={() => {
+                                               setProveedorEditId(sol.id);
+                                               setProveedorNombre(sol.proveedorNombre || "");
+                                               setProveedorGuia(sol.proveedorGuia || "");
+                                               setProveedorCosto(sol.proveedorCosto ? String(sol.proveedorCosto) : "");
+                                               setProveedorFechaPedido(sol.proveedorFechaPedido || "");
+                                               setProveedorFechaEstimada(sol.proveedorFechaEstimada || "");
+                                               setProveedorEstado(sol.proveedorEstado || "SOLICITADO");
+                                             }}
+                                             className="text-[10px] text-amber-400 hover:text-amber-300 font-bold underline flex items-center gap-1"
+                                           >
+                                             ✏️ Editar Pedido a Proveedor
+                                           </button>
+                                         </div>
+                                       </div>
+                                     ) : null}
+
+                                     {/* Formulario de Alta / Edición de Pedido a Proveedor */}
+                                     {(proveedorEditId === sol.id || (!sol.proveedorNombre && !sol.proveedorGuia && !sol.proveedorCosto)) && (
+                                       <div className="bg-zinc-900 p-3 rounded-lg border border-zinc-800 space-y-2.5 text-xs">
+                                         <p className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">
+                                           📝 Registrar / Actualizar Pedido al Proveedor
+                                         </p>
+
+                                         <div>
+                                           <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Nº de Ticket / Factura de Compra del Proveedor</label>
+                                           <input 
+                                             type="text"
+                                             value={proveedorEditId === sol.id ? proveedorFacturaTicket : (sol.proveedorFacturaTicket || sol.facturaProveedorOriginal || "")}
+                                             onChange={e => { setProveedorEditId(sol.id); setProveedorFacturaTicket(e.target.value); }}
+                                             placeholder="Ej: FAC-0001-94812 / Ticket #4812"
+                                             className="w-full bg-zinc-950 border border-zinc-850 p-2 rounded text-xs text-amber-300 font-mono font-bold outline-none focus:border-amber-500 mb-2"
+                                           />
+                                         </div>
+                                         <div>
+                                           <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Nombre del Proveedor / Mayorista</label>
+                                           <input 
+                                             type="text"
+                                             value={proveedorEditId === sol.id ? proveedorNombre : ""}
+                                             onChange={e => { setProveedorEditId(sol.id); setProveedorNombre(e.target.value); }}
+                                             placeholder="Ej: Samsung Arg, Frávega Mayorista, Newsan, etc."
+                                             className="w-full bg-zinc-950 border border-zinc-850 p-2 rounded text-xs text-white outline-none focus:border-amber-500 font-bold"
+                                           />
+                                         </div>
+
+                                         <div className="grid grid-cols-2 gap-2">
+                                           <div>
+                                             <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Costo Compra ($)</label>
+                                             <input 
+                                               type="number"
+                                               value={proveedorEditId === sol.id ? proveedorCosto : ""}
+                                               onChange={e => { setProveedorEditId(sol.id); setProveedorCosto(e.target.value); }}
+                                               placeholder="Costo abonado"
+                                               className="w-full bg-zinc-950 border border-zinc-850 p-2 rounded text-xs text-white outline-none focus:border-amber-500 font-mono"
+                                             />
+                                           </div>
+                                           <div>
+                                             <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Nº de Guía / Tracking</label>
+                                             <input 
+                                               type="text"
+                                               value={proveedorEditId === sol.id ? proveedorGuia : ""}
+                                               onChange={e => { setProveedorEditId(sol.id); setProveedorGuia(e.target.value); }}
+                                               placeholder="Ej: Andreani #829148"
+                                               className="w-full bg-zinc-950 border border-zinc-850 p-2 rounded text-xs text-white outline-none focus:border-amber-500 font-mono"
+                                             />
+                                           </div>
+                                         </div>
+
+                                         <div className="grid grid-cols-2 gap-2">
+                                           <div>
+                                             <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Fecha del Pedido</label>
+                                             <input 
+                                               type="date"
+                                               value={proveedorEditId === sol.id ? proveedorFechaPedido : ""}
+                                               onChange={e => { setProveedorEditId(sol.id); setProveedorFechaPedido(e.target.value); }}
+                                               className="w-full bg-zinc-950 border border-zinc-850 p-2 rounded text-xs text-white outline-none focus:border-amber-500"
+                                             />
+                                           </div>
+                                           <div>
+                                             <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Fecha Estimada Arribo (ETA)</label>
+                                             <input 
+                                               type="date"
+                                               value={proveedorEditId === sol.id ? proveedorFechaEstimada : ""}
+                                               onChange={e => { setProveedorEditId(sol.id); setProveedorFechaEstimada(e.target.value); }}
+                                               className="w-full bg-zinc-950 border border-zinc-850 p-2 rounded text-xs text-white outline-none focus:border-amber-500"
+                                             />
+                                           </div>
+                                         </div>
+
+                                         <div>
+                                           <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Estado del Envío Proveedor</label>
+                                           <select
+                                             value={proveedorEditId === sol.id ? proveedorEstado : "SOLICITADO"}
+                                             onChange={e => { setProveedorEditId(sol.id); setProveedorEstado(e.target.value); }}
+                                             className="w-full bg-zinc-950 border border-zinc-850 p-2 rounded text-xs text-amber-300 font-bold outline-none focus:border-amber-500"
+                                           >
+                                             <option value="SOLICITADO">🛒 SOLICITADO AL PROVEEDOR</option>
+                                             <option value="EN_TRANSITO">🚚 EN TRÁNSITO (EN CAMINO)</option>
+                                             <option value="RECIBIDO">✅ RECIBIDO EN DEPÓSITO CENTRAL</option>
+                                           </select>
+                                         </div>
+
+                                         <button
+                                           type="button"
+                                           onClick={() => handleGuardarPedidoProveedor(sol.id)}
+                                           className="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-2 rounded text-xs transition-colors uppercase tracking-wider shadow-md"
+                                         >
+                                           💾 Guardar Estado del Pedido al Proveedor
                                          </button>
                                        </div>
                                      )}
@@ -3470,7 +4292,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                        <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Estructura Financiera</h3>
                      </div>
                      <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">Precio Contado ($)</label>
+                       <label className="block text-xs font-bold text-amber-400 mb-1">Precio Producto ($)</label>
                        <input type="text" value={contratoAEditar.precioContado} onChange={e => {
                           const newPC = e.target.value;
                           const numContado = parseFloat(newPC.replace(/[^0-9.-]/g, "")) || 0;
@@ -3501,45 +4323,77 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                           });
                         }} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
-                     <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">Cantidad de Cuotas</label>
-                       <input type="text" value={contratoAEditar.cuotas} onChange={e => {
-                          const newCuotas = e.target.value;
-                          const numCuotas = parseInt(newCuotas) || 0;
-                          const numImp = parseFloat(contratoAEditar.importeCuota.replace(/[^0-9.-]/g, "")) || 0;
-                          const newTotal = numCuotas * numImp;
-                          const numContado = parseFloat(contratoAEditar.precioContado.replace(/[^0-9.-]/g, "")) || 0;
-                          const factor = numContado > 0 ? (newTotal / numContado).toFixed(4) : "1.0000";
-                          
-                          let newPlan = [...contratoAEditar.cuotasPlan];
-                          if (numCuotas > 0) {
-                            if (newPlan.length < numCuotas) {
-                              const diff = numCuotas - newPlan.length;
-                              const bDate = new Date();
-                              for (let i = 1; i <= diff; i++) {
-                                const nd = new Date(bDate);
-                                nd.setMonth(nd.getMonth() + newPlan.length + i);
-                                newPlan.push({
-                                  numero: newPlan.length + 1,
-                                  vencimiento: nd.toISOString().split('T')[0],
-                                  montoOriginal: numImp,
-                                  observacion: "Cuota mensual ordinaria"
-                                });
-                              }
-                            } else if (newPlan.length > numCuotas) {
-                              newPlan = newPlan.slice(0, numCuotas);
-                            }
-                          }
-                          
-                          setContratoAEditar({
-                            ...contratoAEditar,
-                            cuotas: newCuotas,
-                            totalFinanciado: String(newTotal),
-                            factorFinanciado: factor,
-                            cuotasPlan: newPlan
-                          });
-                        }} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
-                     </div>
+                      <div>
+                        <label className="block text-xs font-bold text-zinc-400 mb-1">Cantidad de Cuotas</label>
+                        <input type="text" value={contratoAEditar.cuotas} onChange={e => {
+                           const newCuotasStr = e.target.value;
+                           const numCuotas = parseInt(newCuotasStr) || 0;
+                           const numContado = parseFloat(contratoAEditar.precioContado?.toString().replace(/[^0-9.-]/g, "") || "0") || 0;
+                           
+                           if (numCuotas > 0 && numContado > 0) {
+                             const solProdName = (contratoAEditar.producto || "").toLowerCase().trim();
+                             const prodMatch = (productos || []).find((p: any) => {
+                               if (!p.nombre) return false;
+                               const pName = p.nombre.toLowerCase().trim();
+                               return pName === solProdName || pName.includes(solProdName) || solProdName.includes(pName);
+                             });
+
+                             let factor = 0;
+                             const factores = contratoAEditar.originalSolicitud?.factoresPlanes || prodMatch?.factoresPlanes;
+                             if (factores && (factores[numCuotas] || factores[String(numCuotas)])) {
+                               factor = Number(factores[numCuotas] || factores[String(numCuotas)]);
+                             }
+
+                             if (!factor || factor <= 0) {
+                               if (numCuotas === 8 && prodMatch?.cuota8 && Number(prodMatch.cuota8) > 0 && numContado > 0) {
+                                 factor = (Number(prodMatch.cuota8) * 8) / numContado;
+                               } else if (numCuotas === 12 && prodMatch?.cuota12 && Number(prodMatch.cuota12) > 0 && numContado > 0) {
+                                 factor = (Number(prodMatch.cuota12) * 12) / numContado;
+                               }
+                             }
+
+                             if (!factor || factor <= 0) {
+                               const r = 0.60 / 12;
+                               const formulaFactor = ((r * Math.pow(1 + r, numCuotas)) / (Math.pow(1 + r, numCuotas) - 1)) * numCuotas;
+                               if (formulaFactor > 0 && !isNaN(formulaFactor)) {
+                                 factor = formulaFactor;
+                               } else {
+                                 factor = numCuotas === 12 ? 1.5873 : (numCuotas === 8 ? 1.35 : (numCuotas === 6 ? 1.25 : 1.5));
+                               }
+                             }
+
+                             const newTotal = Math.round(numContado * factor);
+                             const newImp = Math.round(newTotal / numCuotas);
+                             
+                             const bDate = new Date();
+                             const newPlan = [];
+                             for (let i = 1; i <= numCuotas; i++) {
+                               const nd = new Date(bDate);
+                               nd.setMonth(nd.getMonth() + i);
+                               newPlan.push({
+                                 numero: i,
+                                 vencimiento: nd.toISOString().split("T")[0],
+                                 montoOriginal: newImp,
+                                 observacion: "Cuota mensual ordinaria"
+                               });
+                             }
+
+                             setContratoAEditar({
+                               ...contratoAEditar,
+                               cuotas: newCuotasStr,
+                               totalFinanciado: String(newTotal),
+                               importeCuota: String(newImp),
+                               factorFinanciado: factor.toFixed(4),
+                               cuotasPlan: newPlan
+                             });
+                           } else {
+                             setContratoAEditar({
+                               ...contratoAEditar,
+                               cuotas: newCuotasStr
+                             });
+                           }
+                         }} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                      </div>
                      <div>
                        <label className="block text-xs font-bold text-zinc-400 mb-1">Importe por Cuota ($)</label>
                        <input type="text" value={contratoAEditar.importeCuota} onChange={e => {
@@ -3582,6 +4436,68 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                      </div>
                    </div>
 
+                    {/* CARD DE CLAUSULA SEGUNDA Y DIVISIÓN FISCAL AFIP (SINCRONIZADA) */}
+                    <div className="md:col-span-3 bg-[#121316] border border-amber-500/30 p-4 rounded-2xl space-y-3 mt-2 shadow-inner">
+                      {(() => {
+                        const cProd = Math.round(parseFloat(contratoAEditar.precioContado?.toString().replace(/[^0-9.-]/g, "") || "0") || 0);
+                        const totalFin = Math.round(parseFloat(contratoAEditar.totalFinanciado?.toString().replace(/[^0-9.-]/g, "") || "0") || 0);
+                        const n = Math.max(1, parseInt(contratoAEditar.cuotas) || 12);
+
+                        const montoGravadoTotal = Math.max(0, totalFin - cProd);
+                        const gastosSoporte = Math.round(montoGravadoTotal * 0.60);
+                        const costoFinanciero = Math.round(montoGravadoTotal * 0.40);
+
+                        const mExento = Math.round(cProd / n);
+                        const mGravado = Math.round(montoGravadoTotal / n);
+                        const nGravado = Math.round(mGravado / 1.21);
+                        const iva21 = Math.max(0, mGravado - nGravado);
+
+                        return (
+                          <div className="space-y-3">
+                            <div className="bg-amber-950/20 border border-amber-500/40 p-3 rounded-xl space-y-1.5 text-xs text-amber-200">
+                              <p className="text-[10px] font-black uppercase text-amber-400 tracking-wider flex items-center justify-between border-b border-amber-500/30 pb-1">
+                                <span>📜 Previsualización Cláusula Segunda (Contrato PDF)</span>
+                                <span className="text-[9px] font-mono text-zinc-400">Desglose Mandato Comercial</span>
+                              </p>
+                              <p className="flex justify-between font-mono"><span>• Valor Neto del Bien (Costo Proveedor):</span> <strong className="text-emerald-400 font-bold">${cProd.toLocaleString("es-AR")}</strong></p>
+                              <p className="flex justify-between font-mono"><span>• Gastos de logística + Servicio de Soporte técnico (60%):</span> <strong className="text-white font-bold">${gastosSoporte.toLocaleString("es-AR")}</strong></p>
+                              <p className="flex justify-between font-mono"><span>• Costo Financiero Total - CFT (40%):</span> <strong className="text-white font-bold">${costoFinanciero.toLocaleString("es-AR")}</strong></p>
+                              <p className="flex justify-between font-sans text-amber-300 font-black pt-1.5 border-t border-amber-500/30 text-sm">
+                                <span>• VALOR TOTAL A FINANCIAR:</span>
+                                <span className="font-mono text-amber-300">${totalFin.toLocaleString("es-AR")}</span>
+                              </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs pt-1">
+                              <div className="bg-[#181920] border border-emerald-500/30 p-3 rounded-xl space-y-1">
+                                <p className="text-[10px] text-emerald-400 font-bold uppercase">🟢 Monto Exento por Cuota (Devolución Capital)</p>
+                                <p className="text-base font-black text-white font-mono">
+                                  ${mExento.toLocaleString("es-AR")} <span className="text-[10px] text-zinc-400 font-normal">/ cuota</span>
+                                </p>
+                                <p className="text-[10px] text-emerald-300 font-medium">
+                                  ⚠️ Acción Alerta: Generar Recibo X (Devolución de Capital Exento por Mandato)
+                                </p>
+                              </div>
+
+                              <div className="bg-[#181920] border border-blue-500/30 p-3 rounded-xl space-y-1.5">
+                                <div className="flex justify-between items-center">
+                                  <p className="text-[10px] text-blue-400 font-bold uppercase">🔵 Factura B AFIP por Cuota (Servicios/CFT)</p>
+                                  <span className="text-[9px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20 font-bold">IVA 21% Incorporado</span>
+                                </div>
+                                <p className="text-base font-black text-white font-mono">
+                                  ${mGravado.toLocaleString("es-AR")} <span className="text-[10px] text-zinc-400 font-normal">/ cuota</span>
+                                </p>
+                                <div className="text-[10px] text-blue-300 font-medium space-y-0.5 pt-1 border-t border-zinc-800/80 font-mono">
+                                  <p className="flex justify-between"><span>📄 Base Neta (Honorarios):</span> <span className="font-bold text-white">${nGravado.toLocaleString("es-AR")}</span></p>
+                                  <p className="flex justify-between"><span>🏛️ Débito Fiscal IVA 21%:</span> <span className="font-bold text-blue-200">${iva21.toLocaleString("es-AR")}</span></p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
                    {/* Vencimiento de cuotas */}
                    <div className="space-y-3">
                      <div className="border-b border-zinc-800/80 pb-2">
@@ -3620,11 +4536,17 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                      </div>
                    </div>
 
-                   {/* Botones de acción */}
-                   <div className="flex flex-col gap-4 pt-4 border-t border-zinc-800">
-                     <button 
-                       onClick={() => handleConfirmarYEnviarWhatsApp(contratoAEditar)} 
-                       className="w-full bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-colors shadow-xl flex items-center justify-center gap-2"
+                    {/* Botones de acción */}
+                    <div className="flex flex-col gap-4 pt-4 border-t border-zinc-800">
+                      <button 
+                        type="button"
+                        onClick={handleGuardarEdicionContrato} 
+                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 rounded-xl font-black text-xs uppercase tracking-widest transition-colors shadow-xl flex items-center justify-center gap-2"
+                      >
+                        💾 Guardar Modificaciones del Contrato y Pagaré en la Base de Datos
+                      </button>
+                      <button 
+                        onClick={() => handleConfirmarYEnviarWhatsApp(contratoAEditar)}
                      >
                        💬 Confirmar Legajo, Enviar WhatsApp y pasar a "Pendiente de firma"
                      </button>

@@ -21,7 +21,7 @@ export default function ServiceModel() {
   ];
 
   return (
-    <section className="py-24 bg-zinc-900 text-[#002B5B]">
+    <section className="py-24 bg-[#121316] text-white">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-black tracking-tight mb-4">Nuestro Modelo de Mandato</h2>
@@ -31,7 +31,7 @@ export default function ServiceModel() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {steps.map((step, i) => (
             <div key={i} className="flex flex-col items-center text-center group">
-              <div className="w-20 h-20 rounded-3xl bg-[#002B5B]/5 flex items-center justify-center text-[#002B5B] mb-6 group-hover:bg-[#002B5B] group-hover:text-white transition-all duration-500">
+              <div className="w-20 h-20 rounded-3xl bg-[#fe5000]/10 border border-[#fe5000]/20 flex items-center justify-center text-[#fe5000] mb-6 group-hover:bg-[#fe5000] group-hover:text-white shadow-[0_0_15px_rgba(254,80,0,0.2)] group-hover:text-white transition-all duration-500">
                 {step.icon}
               </div>
               <h3 className="text-xl font-bold mb-3">{step.title}</h3>

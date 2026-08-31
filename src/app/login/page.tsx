@@ -99,16 +99,17 @@ export default function LoginPage() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">Cargando...</div>;
+  if (loading) return <div className="min-h-screen bg-[#121316] text-zinc-100 flex items-center justify-center">Cargando...</div>;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-4"> 
- <Link href="/" className="absolute top-8 left-6 md:left-12 text-zinc-500 hover:text-yellow-400 flex items-center gap-2 text-sm font-bold transition-colors z-50">← Volver al Catálogo</Link>
+    <div className="min-h-screen bg-[#121316] text-zinc-100 flex items-center justify-center p-4"> 
+ <Link href="/" className="absolute top-8 left-6 md:left-12 text-zinc-500 hover:text-[#fe5000] flex items-center gap-2 text-sm font-bold transition-colors z-50">← Volver al Catálogo</Link>
 
-      <div className="bg-zinc-900 border border-zinc-800 shadow-[0_0_30px_rgba(0,0,0,0.5)] p-8 rounded-lg w-full max-w-md shadow-2xl shadow-black/90">
+      <div className="bg-[#181920] border border-zinc-800 shadow-[0_0_30px_rgba(0,0,0,0.5)] p-8 rounded-lg w-full max-w-md shadow-2xl shadow-black/90">
         
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-black text-yellow-400 mb-2">Portal de Clientes</h1>
+          <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-24 w-auto mx-auto mb-6 object-contain shadow-2xl rounded-2xl" />
+          <h1 className="text-3xl font-black text-[#fe5000] mb-2">Portal de Clientes</h1>
           <p className="text-zinc-500">{isLogin ? "Accede a tu cuenta" : "Únete y solicita tu crédito hoy"}</p>
         </div>
 
@@ -126,7 +127,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full bg-zinc-800/40 border border-zinc-800 focus:border-yellow-500 rounded p-3 text-white focus:outline-none"
+              className="w-full bg-zinc-800/40 border border-zinc-800 focus:border-[#fe5000] rounded p-3 text-white focus:outline-none"
               placeholder="tu@correo.com"
             />
           </div>
@@ -138,7 +139,7 @@ export default function LoginPage() {
               required
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full bg-zinc-800/40 border border-zinc-800 focus:border-yellow-500 rounded p-3 text-white focus:outline-none"
+              className="w-full bg-zinc-800/40 border border-zinc-800 focus:border-[#fe5000] rounded p-3 text-white focus:outline-none"
               placeholder="••••••••"
             />
           </div>
@@ -151,7 +152,7 @@ export default function LoginPage() {
                 required
                 value={dni}
                 onChange={e => setDni(e.target.value.replace(/\D/g, ""))}
-                className="w-full bg-zinc-800/40 border border-zinc-800 focus:border-yellow-500 rounded p-3 text-white focus:outline-none font-bold font-mono"
+                className="w-full bg-zinc-800/40 border border-zinc-800 focus:border-[#fe5000] rounded p-3 text-white focus:outline-none font-bold font-mono"
                 placeholder="Solo números"
               />
             </div>
@@ -168,13 +169,13 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-8 text-center border-t border-zinc-850 pt-6">
+        <div className="mt-8 text-center border-t border-zinc-800 pt-6">
           <p className="text-sm text-zinc-400">
             {isLogin ? "¿Eres un cliente nuevo?" : "¿Ya tienes una cuenta validada?"}
           </p>
           <button 
             onClick={() => { setIsLogin(!isLogin); setError(""); }} 
-            className="text-yellow-400 font-bold hover:underline mt-2 text-sm"
+            className="text-[#fe5000] font-bold hover:underline mt-2 text-sm"
           >
             {isLogin ? "Crear una cuenta gratis" : "Iniciar Sesión"}
           </button>

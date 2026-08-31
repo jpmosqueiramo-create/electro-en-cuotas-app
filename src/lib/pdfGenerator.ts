@@ -1,24 +1,96 @@
+
+export const generarNumeroContratoEstructurado = (sol: any, index: number = 1): string => {
+  if (sol?.nroContrato && sol.nroContrato.startsWith("CH-")) {
+    return sol.nroContrato;
+  }
+  if (sol?.numeroContrato && sol.numeroContrato.startsWith("CH-")) {
+    return sol.numeroContrato;
+  }
+
+  const dniClean = (sol?.datosPersonales?.numeroDni || sol?.numeroDni || sol?.dni || "").toString().replace(/\D/g, "");
+  const dniPart = dniClean ? dniClean : (sol?.id ? sol.id.substring(0, 6).toUpperCase() : "000000");
+  
+  let fecha = new Date();
+  if (sol?.fechaCreacion?.toDate) {
+    fecha = sol.fechaCreacion.toDate();
+  } else if (sol?.fechaCreacion) {
+    fecha = new Date(sol.fechaCreacion);
+  } else if (sol?.fecha) {
+    fecha = new Date(sol.fecha);
+  }
+  
+  const year = fecha.getFullYear();
+  const month = String(fecha.getMonth() + 1).padStart(2, "0");
+  const seqPart = String(index).padStart(2, "0");
+  
+  return "CH-" + year + month + "-" + dniPart + "-" + seqPart;
+};
+
+import { LOGO_BASE64 } from "./logoBase64";
 import { jsPDF } from "jspdf";
 
+export const buildStandardPdfFilename = (
+  tipoDoc: string,
+  nroReferencia: string | undefined,
+  nombreCliente: string | undefined,
+  extraInfo?: string
+): string => {
+  const sanitize = (str: string) =>
+    (str || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9-]/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_+|_+$/g, "");
+
+  const cleanTipo = sanitize(tipoDoc);
+  const cleanRef = sanitize(nroReferencia || "");
+  const cleanNombre = sanitize(nombreCliente || "CLIENTE");
+  const cleanExtra = sanitize(extraInfo || "");
+
+  const parts = [cleanTipo];
+  if (cleanExtra) parts.push(cleanExtra);
+  if (cleanRef) parts.push(cleanRef);
+  if (cleanNombre) parts.push(cleanNombre);
+
+  return `${parts.join("_")}.pdf`;
+};
+
 export interface DatosContrato {
+  facturaProveedorOriginal?: string;
   nroContrato: string;
   nombreComprador: string;
   dni: string;
+  cuil?: string;
   domicilio: string;
+  localidad?: string;
+  provincia?: string;
   email: string;
   whatsapp: string;
   producto: string;
+  cantidad?: number | string;
+  estadoBien?: string;
   nserie: string;
   precioContado: string;
-  factorFinanciado: string;
+  cftTotal?: string;
+  factorFinanciado?: string;
   totalFinanciado: string;
+  montoAnticipo?: string;
+  fechaAnticipo?: string;
   cuotas: string;
   importeCuota: string;
   primeraCuota: string;
   tnaComp: string;
   tnaPun: string;
-  cftEa: string;
+  cftEa?: string;
   lugarFecha: string;
+  jurisdiccion?: string;
+  tieneGarante?: boolean;
+  garanteNombre?: string;
+  garanteDni?: string;
+  garanteDomicilio?: string;
+  garanteTelefono?: string;
   cuotasPlan: Array<{
     numero: number;
     vencimiento: string;
@@ -73,294 +145,675 @@ const drawFormBox = (doc: jsPDF, label: string, value: string, x: number, y: num
 export const generarContratoModelo = (datos: DatosContrato) => {
   const doc = new jsPDF();
   const nombre = datos.nombreComprador || "Cliente";
-  
-  // Page 1
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(15, 23, 42);
-  doc.text("CONTRATO DE COMPRAVENTA EN CUOTAS CON RESERVA DE DOMINIO", 15, 15);
-  
-  doc.setFontSize(7.5);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(71, 85, 105);
-  doc.text("Y CONSENTIMIENTO DE BLOQUEO REMOTO — ELECTRO EN CUOTAS — Juan Pablo Mosqueira Morales (CUIT 20-30137724-0) — MONEDA: ARS", 15, 20);
-  
-  drawFormBox(doc, "N° de contrato / legajo:", datos.nroContrato, 135, 25, 60, 11);
-  
-  doc.setFontSize(9.5);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(15, 23, 42);
-  doc.text("Datos del Contrato", 15, 41);
-  
-  // Row 1
-  drawFormBox(doc, "Comprador/a (Nombre y Apellido):", datos.nombreComprador, 15, 45, 180, 11);
-  // Row 2
-  drawFormBox(doc, "DNI:", datos.dni, 15, 59, 60, 11);
-  drawFormBox(doc, "Domicilio (PBA):", datos.domicilio, 78, 59, 117, 11);
-  // Row 3
-  drawFormBox(doc, "Email:", datos.email, 15, 73, 95, 11);
-  drawFormBox(doc, "WhatsApp:", datos.whatsapp, 113, 73, 82, 11);
-  // Row 4
-  drawFormBox(doc, "Producto/Bien (tipo y Marca/Modelo):", datos.producto, 15, 87, 180, 11);
-  // Row 5
-  drawFormBox(doc, "Identificación (IMEI / N° de serie):", datos.nserie, 15, 101, 180, 11);
-  // Row 6
-  drawFormBox(doc, "Precio de contado ($):", formatARS(datos.precioContado), 15, 115, 90, 11);
-  drawFormBox(doc, "Factor financiado:", datos.factorFinanciado, 108, 115, 87, 11);
-  // Row 7
-  drawFormBox(doc, "Total financiado ($):", formatARS(datos.totalFinanciado), 15, 129, 90, 11);
-  drawFormBox(doc, "Cuotas (n):", datos.cuotas, 108, 129, 87, 11);
-  // Row 8
-  drawFormBox(doc, "Importe por cuota ($):", formatARS(datos.importeCuota), 15, 143, 90, 11);
-  drawFormBox(doc, "1ª cuota:", datos.primeraCuota, 108, 143, 87, 11);
-  // Row 9
-  drawFormBox(doc, "TNA comp. (%):", datos.tnaComp, 15, 157, 58, 11);
-  drawFormBox(doc, "TNA pun. (%):", datos.tnaPun, 76, 157, 58, 11);
-  drawFormBox(doc, "CFT EA (%):", datos.cftEa, 137, 157, 58, 11);
-  // Row 10
-  drawFormBox(doc, "Lugar y fecha de firma/entrega:", datos.lugarFecha, 15, 171, 180, 11);
 
-  let y = 190;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9.5);
-  doc.setTextColor(15, 23, 42);
-  doc.text("Cláusulas", 15, y); y += 5;
+  // Margins & Dimensions
+  const marginLeft = 15;
+  const contentWidth = 180;
+  let y = 15;
 
-  const printClausula = (label: string, text: string) => {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(15, 23, 42);
-    const labelLines = doc.splitTextToSize(label, 180);
-    labelLines.forEach((line: string) => {
-      if (y > 275) {
-        doc.addPage();
-        y = 25;
-      }
-      doc.text(line, 15, y);
-      y += 4;
-    });
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(51, 65, 85);
-    const textLines = doc.splitTextToSize(text, 180);
-    textLines.forEach((line: string) => {
-      if (y > 275) {
-        doc.addPage();
-        y = 25;
-      }
-      doc.text(line, 15, y);
-      y += 3.8;
-    });
-    y += 3;
+  const checkAddPage = (needed: number = 10) => {
+    if (y + needed > 275) {
+      doc.addPage();
+      y = 20;
+    }
   };
 
-  printClausula(
-    "1) Objeto – Identificación del bien.",
-    "El Vendedor entrega al Comprador el/los bien(es) mueble(s) individualizado(s) en los datos del contrato —incluyendo, según corresponda, teléfonos celulares, electrodomésticos y/o dispositivos electrónicos— en correcto funcionamiento."
-  );
-  printClausula(
-    "2) Precio, financiación, cronograma y pagaré.",
-    `El Comprador reconoce el precio de contado indicado y el total financiado. El pago se realizará en ${datos.cuotas} cuotas conforme el Cronograma de Vencimientos (Anexo I), aceptando expresamente sus fechas e importes. Para documentar y garantizar el saldo, el Comprador suscribe un pagaré por el monto total, con vencimiento único (día fijo) indicado en dicho título. Los pagos parciales efectuados se imputarán a cuenta del total adeudado y, cancelada íntegramente la obligación, el pagaré será devuelto/cancelado. A los efectos operativos, el pago podrá efectuarse en el lugar de pago (domicilio del Deudor en PBA) y/o mediante transferencia/depósito a la cuenta informada por el Vendedor, lo que se considerará pago válido.`
-  );
-  printClausula(
-    "3) Mora y vencimiento anticipado.",
-    "La falta de pago de una cuota por más de cuarenta y cinco (45) días, o el incumplimiento de tres (3) cuotas, faculta al Vendedor a declarar el vencimiento anticipado del saldo impago y a exigir su pago inmediato, con más intereses."
-  );
-  printClausula(
-    "4) Reserva de dominio.",
-    "Hasta el pago total, la propiedad del bien queda reservada a favor del Vendedor, quedando el Comprador como poseedor. Si se resuelve la compraventa por mora, el Comprador se obliga a entregar voluntariamente el bien dentro de cinco (5) días hábiles de intimado. De no mediar entrega voluntaria, la restitución forzosa del bien sólo procederá mediante orden judicial. Se prohíbe toda forma de autotutela."
-  );
-  printClausula(
-    "5) Bloqueo remoto por software (consentimiento y preaviso).",
-    "El Comprador autoriza la instalación y uso de un mecanismo de gestión/seguridad que permita el bloqueo temporal y reversible de funcionalidades del bien cuando ello sea técnicamente posible —sin borrar datos y manteniendo llamadas de emergencia cuando aplique— exclusivamente ante mora superior a 45 días y previa notificación fehaciente con una antelación mínima de 72 horas a los domicilios constituidos. Regularizada la situación, el Vendedor desactivará el bloqueo de inmediato."
-  );
-  printClausula(
-    "6) Datos personales.",
-    "El Comprador presta consentimiento libre, expreso e informado para el tratamiento mínimo y proporcional de los datos estrictamente necesarios para la gestión del crédito y eventual activación técnica del bloqueo (p. ej., IMEI/número de serie, estado de pago, últimos contactos), conforme Ley 25.326. Podrá ejercer derechos de acceso, rectificación y supresión en la casilla del Vendedor. No se recaba geolocalización sin consentimiento adicional."
-  );
-  printClausula(
-    "7) Conservación y prohibiciones.",
-    "El Comprador debe conservar el bien, no modificar ni ocultar IMEI/número de serie (si aplica), ni enajenarlo antes del pago total sin autorización escrita del Vendedor."
-  );
-  printClausula(
-    "8) Comunicaciones y domicilios.",
-    "El Comprador constituye domicilio físico y electrónico (email/WhatsApp). Las notificaciones cursadas a dichos domicilios se tendrán por fehacientes."
-  );
-  printClausula(
-    "9) Cesión.",
-    "El Vendedor podrá ceder/endosar el crédito y el pagaré, notificándolo por los medios del punto 8."
-  );
-  printClausula(
-    "10) Garantía legal.",
-    "El bien nuevo goza de garantía legal de seis (6) meses —tres (3) si usado—, sin perjuicio de garantías comerciales adicionales que se entreguen por escrito."
-  );
-  printClausula(
-    "11) Identificación y reporte de robo/hurto.",
-    "El Vendedor no reportará el bien como robado/hurtado por mora. Cualquier gestión de bloqueo por identificadores (IMEI/serie) será la que corresponda por normativa y únicamente para los supuestos previstos para ello."
-  );
-  printClausula(
-    "12) Jurisdicción y ley aplicable.",
-    "Se aplican las leyes de la República Argentina y resultará competente el fuero del domicilio del consumidor, o el que corresponda por normativa vigente."
-  );
+  // --- ENCABEZADO Y TÍTULO PRINCIPAL SIN SOLAPAMIENTO ---
+  const nroContratoFinal = datos.nroContrato && !datos.nroContrato.includes("${") 
+    ? datos.nroContrato 
+    : generarNumeroContratoEstructurado({ dni: datos.dni });
 
-  // Signatures
-  if (y > 230) {
-    doc.addPage();
-    y = 25;
-  }
-  y += 10;
+  // Right-aligned Box for Contract Number
+  drawFormBox(doc, "N° de Contrato / Legajo:", nroContratoFinal, 130, 12, 65, 12);
+
+  // Left-aligned Title (Left margin = 15mm, width up to 125mm)
+  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(9.5);
-  doc.setTextColor(15, 23, 42);
-  doc.text("Firmas", 15, y); y += 15;
-  
-  doc.setDrawColor(148, 163, 184);
-  doc.line(15, y, 90, y);
-  doc.line(115, y, 190, y); y += 5;
-  
-  doc.setFont("helvetica", "normal");
+  doc.setTextColor(15, 23, 42); // Dark slate
+  doc.text("CONTRATO DE MANDATO COMERCIAL Y", 15, 17);
+  doc.text("GESTIÓN DE COMPRA", 15, 23);
+  y = 30;
+
+  // Parrafo Introductorio
   doc.setFontSize(8.5);
-  doc.setTextColor(71, 85, 105);
-  doc.text("Vendedor:", 15, y);
-  doc.text("Comprador/a:", 115, y); y += 15;
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(30, 41, 59);
 
-  const aclaracion = doc.splitTextToSize("Aclaración: Modelo referencial. Revise y adecúe con su asesoría legal. El retiro físico del bien sólo por entrega voluntaria o mediante orden judicial. El bloqueo remoto se aplica con consentimiento expreso y preaviso.", 180);
-  doc.text(aclaracion, 15, y);
+  const cuitSrl = "30-71829384-9";
+  const cuilCli = datos.cuil || datos.dni || "-";
+  const locCli = datos.localidad || "CABA";
+  const provCli = datos.provincia || "Buenos Aires";
+  const emailCli = datos.email || "-";
+  const telCli = datos.whatsapp || "-";
 
-  // Page 3: Anexo I
-  doc.addPage();
-  doc.setFontSize(12);
+  const textIntro = `Entre LOOP GESTIÓN INTEGRAL S.R.L. (operando comercialmente bajo su nombre de fantasía "Cuenta Hogar"), CUIT N° ${cuitSrl}, con domicilio legal en Caracas 1101, Ciudad Autónoma de Buenos Aires, representada en este acto por su Socio Gerente, Sr. Juan Pablo Mosqueira Morales, en adelante denominado el "MANDATARIO" o la "EMPRESA", por una parte; y por la otra el/la Sr./Sra. ${datos.nombreComprador.toUpperCase()}, D.N.I. N° ${datos.dni}, CUIT/CUIL N° ${cuilCli}, con domicilio en la calle ${datos.domicilio.toUpperCase()}, de la localidad de ${locCli.toUpperCase()}, provincia de ${provCli.toUpperCase()}, correo electrónico ${emailCli}, teléfono ${telCli}, en adelante denominado el "MANDANTE" o el "CLIENTE", convienen en celebrar el presente Contrato de Mandato Comercial, sujeto a las disposiciones del Código Civil y Comercial de la Nación y a las siguientes cláusulas y condiciones:`;
+
+  const linesIntro = doc.splitTextToSize(textIntro, contentWidth);
+  doc.text(linesIntro, marginLeft, y);
+  y += linesIntro.length * 4 + 4;
+
+  // --- SECCIÓN: CLÁUSULAS Y CONDICIONES ---
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 58, 138); // Dark Blue
+  doc.text("CLÁUSULAS Y CONDICIONES", marginLeft, y);
+  y += 7;
+
+  // --- CLÁUSULA PRIMERA ---
+  doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(15, 23, 42);
-  doc.text(`ANEXO I — CRONOGRAMA DE VENCIMIENTOS (${datos.cuotas} CUOTAS)`, 15, 15);
-  
+  doc.text("PRIMERA: Objeto del Contrato y Documentación de Compra", marginLeft, y);
+  y += 5;
+
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(71, 85, 105);
-  doc.text(`Completar las ${datos.cuotas} cuotas en forma continua. Moneda: ARS.`, 15, 20);
-  
-  drawFormBox(doc, "N° de contrato / legajo:", datos.nroContrato, 135, 25, 60, 11);
-  
-  // Table headers
-  let rowY = 42;
-  doc.setFillColor(219, 234, 254);
-  doc.rect(15, rowY, 180, 8, "F");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8.5);
-  doc.setTextColor(15, 23, 42);
-  doc.text("N°", 17, rowY + 5.5);
-  doc.text("Fecha vencimiento (dd/mm/aaaa)", 27, rowY + 5.5);
-  doc.text("Importe ($)", 92, rowY + 5.5);
-  doc.text("Observación", 142, rowY + 5.5);
-  
-  // Table border line
-  doc.setDrawColor(191, 219, 254);
-  doc.rect(15, rowY, 180, 8, "S");
-  rowY += 8;
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
   doc.setTextColor(51, 65, 85);
-  
-  if (datos.cuotasPlan && datos.cuotasPlan.length > 0) {
-    datos.cuotasPlan.forEach((c) => {
-      doc.setFillColor(c.numero % 2 === 0 ? 248 : 255, c.numero % 2 === 0 ? 250 : 255, c.numero % 2 === 0 ? 252 : 255);
-      doc.rect(15, rowY, 180, 8, "F");
-      
-      doc.setDrawColor(228, 228, 231);
-      doc.rect(15, rowY, 180, 8, "S");
-      
-      doc.text(String(c.numero).padStart(2, '0'), 17, rowY + 5.5);
-      
-      const formattedDate = c.vencimiento ? (c.vencimiento.includes("T") ? new Date(c.vencimiento).toLocaleDateString("es-AR") : c.vencimiento) : "";
-      doc.text(formattedDate, 27, rowY + 5.5);
-      doc.text(formatARS(c.montoOriginal), 92, rowY + 5.5);
-      doc.text(c.observacion || "Cuota mensual ordinaria", 142, rowY + 5.5);
-      rowY += 8;
-    });
-  } else {
-    const cantCuotas = Number(datos.cuotas) || 12;
-    for (let i = 1; i <= cantCuotas; i++) {
-      doc.setDrawColor(228, 228, 231);
-      doc.rect(15, rowY, 180, 8, "S");
-      doc.text(String(i).padStart(2, '0'), 17, rowY + 5.5);
-      doc.text("____ / ____ / ________", 27, rowY + 5.5);
-      doc.text(formatARS(datos.importeCuota), 92, rowY + 5.5);
-      doc.text("Cuota mensual ordinaria", 142, rowY + 5.5);
-      rowY += 8;
-    }
+  const tP1 = "El MANDANTE encomienda a la EMPRESA, y esta acepta, el mandato irrevocable para gestionar, adquirir y abonar por cuenta y orden del MANDANTE los siguientes bienes muebles (en adelante, los \"Bienes\"):";
+  const lP1 = doc.splitTextToSize(tP1, contentWidth);
+  doc.text(lP1, marginLeft, y);
+  y += lP1.length * 4 + 2;
+
+  // Tabla de Bienes (Headers)
+  doc.setFillColor(241, 245, 249);
+  doc.rect(marginLeft, y, contentWidth, 6, "F");
+  doc.setDrawColor(203, 213, 225);
+  doc.rect(marginLeft, y, contentWidth, 6, "S");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Cantidad", marginLeft + 3, y + 4.5);
+  doc.text("Descripción del Bien (Marca, Modelo, Color)", marginLeft + 30, y + 4.5);
+  doc.text("Estado (Nuevo/Usado)", marginLeft + 140, y + 4.5);
+  y += 6;
+
+  // Tabla de Bienes (Row)
+  const cantStr = String(datos.cantidad || 1);
+  const estadoStr = datos.estadoBien || "Nuevo";
+  const prodDescFull = `${datos.producto} ${datos.nserie ? "(IMEI/Serie: " + datos.nserie + ")" : ""}`;
+
+  doc.rect(marginLeft, y, contentWidth, 10, "S");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.text(cantStr, marginLeft + 8, y + 6);
+
+  doc.setFont("helvetica", "normal");
+  const pLines = doc.splitTextToSize(prodDescFull, 105);
+  doc.text(pLines, marginLeft + 30, y + 5.5);
+
+  doc.text(estadoStr, marginLeft + 142, y + 6);
+  y += 13;
+
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text("La EMPRESA actuará exclusivamente en calidad de intermediario y gestor de compra.", marginLeft, y);
+  y += 4;
+
+  let tFact = "ACLARACIÓN SOBRE FACTURACIÓN: El MANDANTE acepta y declara conocer que la adquisición de los Bienes puede ser realizada a distintos proveedores (humanos o jurídicos). Por lo tanto, la provisión de una factura de compra original emitida por el proveedor tercero estará supeditada exclusivamente a la disponibilidad de la misma según el origen y la condición del Bien (nuevo o usado). En ningún caso la falta de factura del proveedor original eximirá al MANDANTE de sus obligaciones de pago frente a la EMPRESA por el servicio de gestión y financiación aquí pactado.";
+  if (datos.facturaProveedorOriginal) {
+    tFact += `\nReferencia de Origen / Ticket de Compra Proveedor N° ${datos.facturaProveedorOriginal}.`;
   }
-  
-  rowY += 10;
+  const lFact = doc.splitTextToSize(tFact, contentWidth);
+  doc.text(lFact, marginLeft, y);
+  y += lFact.length * 3.8 + 6;
+
+  checkAddPage(20);
+
+  // --- CLÁUSULA SEGUNDA ---
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("SEGUNDA: Liquidación de Costos, Honorarios y Financiación", marginLeft, y);
+  y += 5;
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(51, 65, 85);
+  const tSeg = "El costo total de la operación, que incluye el valor del Bien, los honorarios por la gestión del mandato, los gastos logísticos y el costo financiero por el otorgamiento de facilidades de pago con capital propio de la EMPRESA, se detalla a continuación:";
+  const lSeg = doc.splitTextToSize(tSeg, contentWidth);
+  doc.text(lSeg, marginLeft, y);
+  y += lSeg.length * 3.8 + 3;
+
+  // 1. Variables Base (Input): Costo_Bien & Valor_Total_Financiar
+  const parseNum = (val: string | number | undefined) => {
+    if (typeof val === "number") return val;
+    if (!val) return 0;
+    return parseFloat(val.toString().replace(/[^0-9.-]/g, "")) || 0;
+  };
+
+  const costoBien = Math.round(parseNum(datos.precioContado));
+  const valorTotalFinanciar = Math.round(parseNum(datos.totalFinanciado));
+
+  // 2. Cálculos Internos Ocultos:
+  // - Base de ganancia: Monto_Gravado = Valor_Total_Financiar - Costo_Bien
+  const montoGravado = Math.max(0, valorTotalFinanciar - costoBien);
+  // - 60% para servicios: Gastos_Soporte = Monto_Gravado * 0.60
+  const gastosSoporte = Math.round(montoGravado * 0.60);
+  // - 40% para intereses: Costo_Financiero = Monto_Gravado * 0.40
+  const costoFinanciero = Math.round(montoGravado * 0.40);
+
+  // 3. Salida en el PDF (Cláusula Segunda del Contrato):
+  const strCostoBien = formatARS(costoBien);
+  const strGastosSoporte = formatARS(gastosSoporte);
+  const strCostoFinanciero = formatARS(costoFinanciero);
+  const strValorTotalFinanciar = formatARS(valorTotalFinanciar);
+
+  doc.setFont("helvetica", "bold");
+  doc.text(`• Valor Neto del Bien: ${strCostoBien}`, marginLeft + 5, y); y += 4.5;
+  doc.text(`• Gastos de logística + Servicio de Soporte técnico: ${strGastosSoporte}`, marginLeft + 5, y); y += 4.5;
+  doc.text(`• Costo Financiero Total (CFT): ${strCostoFinanciero}`, marginLeft + 5, y); y += 4.5;
+  doc.text(`• VALOR TOTAL A FINANCIAR: ${strValorTotalFinanciar}`, marginLeft + 5, y); y += 7;
+
+  checkAddPage(25);
+
+  // --- CLÁUSULA TERCERA ---
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("TERCERA: Forma de Pago y Garantía de Cumplimiento (Pagaré)", marginLeft, y);
+  y += 5;
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(51, 65, 85);
+  const tTer = "El MANDANTE se compromete a abonar a la EMPRESA el Valor Total indicado en la Cláusula Segunda, mediante el siguiente plan de pagos:";
+  const lTer = doc.splitTextToSize(tTer, contentWidth);
+  doc.text(lTer, marginLeft, y);
+  y += lTer.length * 3.8 + 3;
+
+  // Tabla Plan de Pagos
+  doc.setFillColor(241, 245, 249);
+  doc.rect(marginLeft, y, contentWidth, 6, "F");
+  doc.setDrawColor(203, 213, 225);
+  doc.rect(marginLeft, y, contentWidth, 6, "S");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Anticipo / Cuota N°", marginLeft + 5, y + 4.5);
+  doc.text("Monto ($)", marginLeft + 75, y + 4.5);
+  doc.text("Fecha de Vencimiento", marginLeft + 130, y + 4.5);
+  y += 6;
+
+  // Filas de Tabla
+  if (datos.montoAnticipo && Number(datos.montoAnticipo.replace(/[^0-9.-]/g, "")) > 0) {
+    doc.rect(marginLeft, y, contentWidth, 6, "S");
+    doc.setFont("helvetica", "normal");
+    doc.text("Anticipo (si lo hubiere)", marginLeft + 5, y + 4.5);
+    doc.text(formatARS(datos.montoAnticipo), marginLeft + 75, y + 4.5);
+    doc.text(datos.fechaAnticipo || "Al momento de la firma", marginLeft + 130, y + 4.5);
+    y += 6;
+  }
+
+  doc.rect(marginLeft, y, contentWidth, 6, "S");
+  doc.setFont("helvetica", "normal");
+  doc.text("Cuota 1", marginLeft + 5, y + 4.5);
+  doc.text(formatARS(datos.cuotasPlan[0]?.montoOriginal || datos.importeCuota), marginLeft + 75, y + 4.5);
+  doc.text(datos.cuotasPlan[0]?.vencimiento || datos.primeraCuota, marginLeft + 130, y + 4.5);
+  y += 6;
+
+  doc.rect(marginLeft, y, contentWidth, 6, "S");
+  doc.setFont("helvetica", "normal");
+  doc.text(`Cuota 2 a ${datos.cuotas}`, marginLeft + 5, y + 4.5);
+  doc.text(formatARS(datos.importeCuota), marginLeft + 75, y + 4.5);
+  doc.text("Del 1 al 10 de cada mes", marginLeft + 130, y + 4.5);
+  y += 8;
+
+  const tPagare = "Como garantía del fiel cumplimiento de las obligaciones de pago aquí asumidas, el MANDANTE suscribe en este acto, a favor de \"LOOP GESTIÓN INTEGRAL S.R.L.\", un (1) Pagaré \"Sin Protesto\" por la suma total financiada.";
+  const lPagare = doc.splitTextToSize(tPagare, contentWidth);
+  doc.text(lPagare, marginLeft, y);
+  y += lPagare.length * 3.8 + 6;
+
+  checkAddPage(20);
+
+  // --- CLÁUSULA CUARTA ---
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("CUARTA: Mora e Incumplimiento", marginLeft, y);
+  y += 5;
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(51, 65, 85);
+  const moraPct = datos.tnaPun || "0.5";
+  const tCua = `La mora se producirá de pleno derecho por el mero vencimiento de los plazos estipulados, sin necesidad de interpelación judicial o extrajudicial previa. La falta de pago en término de una (1) sola cuota facultará a la EMPRESA a declarar la caducidad de todos los plazos pendientes y a exigir de inmediato el pago íntegro de la totalidad del saldo adeudado, devengando un interés punitorio compensatorio del ${moraPct}% mensual sobre el saldo en mora hasta su efectivo pago.`;
+  const lCua = doc.splitTextToSize(tCua, contentWidth);
+  doc.text(lCua, marginLeft, y);
+  y += lCua.length * 3.8 + 5;
+
+  checkAddPage(20);
+
+  // --- CLÁUSULA QUINTA ---
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("QUINTA: Entregas, Logística y Aceptación", marginLeft, y);
+  y += 5;
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(51, 65, 85);
+  const tQui = "La firma del remito de entrega o acuse de recibo por parte del MANDANTE o persona autorizada en el domicilio consignado implicará la total conformidad con el estado exterior, integridad y funcionamiento inicial del Bien gestionado.";
+  const lQui = doc.splitTextToSize(tQui, contentWidth);
+  doc.text(lQui, marginLeft, y);
+  y += lQui.length * 3.8 + 5;
+
+  checkAddPage(30);
+
+  // --- CLÁUSULA SEXTA ---
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("SEXTA: Limitación de Responsabilidad, Soporte Técnico Integral y Roturas", marginLeft, y);
+  y += 5;
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(51, 65, 85);
+  const tSex = "La garantía por defectos o vicios de fabricación es otorgada exclusivamente por el fabricante y/o proveedor originario del producto según sus propios términos. La EMPRESA, como parte de sus servicios de gestión, brindará al MANDANTE un Plan de Soporte Técnico Integral, limitándose a mediar y gestionar administrativamente los reclamos ante los servicios técnicos oficiales o vendedores originarios, asumiendo exclusivamente la prestación del servicio logístico de traslado físico del bien desde la localidad del MANDANTE hasta los Centros de Servicio Técnico Oficial correspondientes ubicados en la Ciudad Autónoma de Buenos Aires (CABA), así como su posterior retorno. La EMPRESA no asume responsabilidad técnica ni reparaciones directas de fábrica bajo ninguna circunstancia. En bienes usados, el MANDANTE acepta expresamente el estado del bien \"tal como está\" al momento de la entrega, salvo pacto expreso en contrario.";
+  const lSex = doc.splitTextToSize(tSex, contentWidth);
+  doc.text(lSex, marginLeft, y);
+  y += lSex.length * 3.8 + 3;
+
+  doc.setFont("helvetica", "bold");
+  const tRotura = "Se deja expresa constancia de que cualquier rotura, desperfecto, hurto, robo, pérdida, destrucción o inutilización del Bien ocurrida con posterioridad a su entrega, por cualquier causa que fuere, no exime, suspende ni extingue bajo ninguna circunstancia la obligación del MANDANTE de cancelar la totalidad de las cuotas adeudadas a la EMPRESA por el servicio de gestión y financiación aquí formalizado.";
+  const lRotura = doc.splitTextToSize(tRotura, contentWidth);
+  doc.text(lRotura, marginLeft, y);
+  y += lRotura.length * 3.8 + 5;
+
+  checkAddPage(25);
+
+  // --- CLÁUSULA SÉPTIMA ---
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("SÉPTIMA: Autonomía de las Obligaciones", marginLeft, y);
+  y += 5;
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(51, 65, 85);
+  const tSep = "Las partes ratifican que el presente contrato constituye un mandato de compra y administración de facilidades de pago con fondos propios, revistiendo la EMPRESA el carácter exclusivo de mandataria y prestadora de servicios de gestión. Toda contingencia respecto del uso, goce o funcionamiento del bien se regirá por los canales correspondientes al soporte técnico y las garantías de origen, manteniéndose irrevocables las obligaciones de pago asumidas.";
+  const lSep = doc.splitTextToSize(tSep, contentWidth);
+  doc.text(lSep, marginLeft, y);
+  y += lSep.length * 3.8 + 5;
+
+  checkAddPage(25);
+
+  // --- CLÁUSULA OCTAVA ---
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("OCTAVA: Autorización de Información Crediticia", marginLeft, y);
+  y += 5;
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(51, 65, 85);
+  const tOct = "El MANDANTE autoriza en forma expresa, libre e irrevocable a la EMPRESA a consultar, registrar, procesar, informar y reportar información sobre su comportamiento de pago, estado de morosidad y cumplimiento de las obligaciones crediticias y de servicios aquí asumidas ante bases de datos de antecedentes comerciales y de riesgo crediticio públicas o privadas (incluyendo, sin limitación, Veraz, Nosis, Fidelitas, Banco Central de la República Argentina y entidades afines), en los términos de la Ley de Protección de Datos Personales N° 25.326 y sus normas reglamentarias.";
+  const lOct = doc.splitTextToSize(tOct, contentWidth);
+  doc.text(lOct, marginLeft, y);
+  y += lOct.length * 3.8 + 5;
+
+  checkAddPage(20);
+
+  // --- CLÁUSULA NOVENA ---
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("NOVENA: Cesión de Derechos y Créditos", marginLeft, y);
+  y += 5;
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(51, 65, 85);
+  const tNov = "La EMPRESA queda expresamente facultada para ceder, transferir, titularizar o negociar, total o parcialmente, los derechos de cobro derivados del presente contrato, los créditos emergentes y el pagaré que garantiza la operación a favor de terceros, personas humanas o jurídicas, fideicomisos financieros o entidades de inversión, sin necesidad de notificación previa por acto público ni conformidad expresa del MANDANTE, conforme a lo establecido en los artículos 1614 y subsiguientes del Código Civil y Comercial de la Nación.";
+  const lNov = doc.splitTextToSize(tNov, contentWidth);
+  doc.text(lNov, marginLeft, y);
+  y += lNov.length * 3.8 + 5;
+
+  checkAddPage(30);
+
+  // --- CLÁUSULA DÉCIMA ---
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("DÉCIMA: Jurisdicción, Competencia y Domicilios", marginLeft, y);
+  y += 5;
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(51, 65, 85);
+  const jurisStr = datos.jurisdiccion || provCli || "CABA";
+  const tDec = `Para todos los efectos judiciales o extrajudiciales derivados del presente contrato, las partes fijan sus domicilios especiales en los indicados en el encabezamiento, donde se tendrán por válidas y eficaces todas las notificaciones que se cursen, y se someten expresamente a la jurisdicción de los Tribunales Ordinarios de ${jurisStr}, renunciando a cualquier otro fuero o jurisdicción que pudiera corresponderles.`;
+  const lDec = doc.splitTextToSize(tDec, contentWidth);
+  doc.text(lDec, marginLeft, y);
+  y += lDec.length * 3.8 + 4;
+
+  const lugarStr = datos.lugarFecha || `Buenos Aires, ${new Date().toLocaleDateString("es-AR")}`;
+  const tConformidad = `En prueba de plena conformidad, se firman dos (2) ejemplares de un mismo tenor y a un solo efecto en la ciudad/provincia de ${lugarStr}.`;
+  const lConf = doc.splitTextToSize(tConformidad, contentWidth);
+  doc.text(lConf, marginLeft, y);
+  y += lConf.length * 3.8 + 15;
+
+  checkAddPage(35);
+
+  // --- BLOQUE DE FIRMAS ---
+  doc.setDrawColor(148, 163, 184);
+  doc.setLineWidth(0.3);
+  doc.line(15, y, 90, y);
+  doc.line(115, y, 190, y);
+  y += 5;
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
   doc.setTextColor(15, 23, 42);
-  doc.text("El Comprador declara haber leído y aceptado el cronograma precedente (Anexo I).", 15, rowY); rowY += 12;
-  
-  doc.setDrawColor(148, 163, 184);
-  doc.line(15, rowY, 115, rowY); rowY += 5;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(71, 85, 105);
-  doc.text("Firma/Iniciales Comprador (Anexo I):", 15, rowY); rowY += 10;
-  
-  doc.text(`Aclaración y DNI (Anexo I): __________________________________________________`, 15, rowY);
-  
-  // Footer page numbers on all pages
-  const pageCount = (doc as any).internal.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(100, 116, 139);
-    doc.text(`Página ${i} de ${pageCount}`, 105, 290, { align: "center" });
-  }
+  doc.text("Firma y Aclaración MANDANTE", 15, y);
+  doc.text("Por LOOP GESTIÓN INTEGRAL S.R.L.", 115, y);
+  y += 4.5;
 
-  doc.save(`Contrato_${nombre.replace(/\s/g,"_")}.pdf`);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`D.N.I. N°: ${datos.dni}`, 15, y);
+  doc.text("Juan Pablo Mosqueira Morales - Socio Gerente", 115, y);
+
+  const fileName = buildStandardPdfFilename("CONTRATO", datos.nroContrato, datos.nombreComprador);
+  doc.save(fileName);
+};
+
+
+export const numeroALetras = (amount: number | string): string => {
+  const num = typeof amount === "number" ? amount : parseFloat(amount.toString().replace(/[^0-9.-]/g, "")) || 0;
+  const entero = Math.floor(Math.abs(num));
+  const centavos = Math.round((Math.abs(num) - entero) * 100);
+
+  const Unidades = (n: number): string => {
+    switch (n) {
+      case 1: return "UN";
+      case 2: return "DOS";
+      case 3: return "TRES";
+      case 4: return "CUATRO";
+      case 5: return "CINCO";
+      case 6: return "SEIS";
+      case 7: return "SIETE";
+      case 8: return "OCHO";
+      case 9: return "NUEVE";
+      default: return "";
+    }
+  };
+
+  const DecenasY = (n: number): string => {
+    if (n < 10) return Unidades(n);
+    if (n >= 10 && n <= 19) {
+      switch (n) {
+        case 10: return "DIEZ";
+        case 11: return "ONCE";
+        case 12: return "DOCE";
+        case 13: return "TRECE";
+        case 14: return "CATORCE";
+        case 15: return "QUINCE";
+        case 16: return "DIECISEIS";
+        case 17: return "DIECISIETE";
+        case 18: return "DIECIOCHO";
+        case 19: return "DIECINUEVE";
+      }
+    }
+    if (n >= 20 && n <= 29) {
+      if (n === 20) return "VEINTE";
+      return "VEINTI" + Unidades(n - 20);
+    }
+    const dec = Math.floor(n / 10);
+    const uni = n % 10;
+    let name = "";
+    switch (dec) {
+      case 3: name = "TREINTA"; break;
+      case 4: name = "CUARENTA"; break;
+      case 5: name = "CINCUENTA"; break;
+      case 6: name = "SESENTA"; break;
+      case 7: name = "SETENTA"; break;
+      case 8: name = "OCHENTA"; break;
+      case 9: name = "NOVENTA"; break;
+    }
+    return uni > 0 ? `${name} Y ${Unidades(uni)}` : name;
+  };
+
+  const Centenas = (n: number): string => {
+    const cen = Math.floor(n / 100);
+    const dec = n % 100;
+    if (n === 100) return "CIEN";
+    let name = "";
+    switch (cen) {
+      case 1: name = "CIENTO"; break;
+      case 2: name = "DOSCIENTOS"; break;
+      case 3: name = "TRESCIENTOS"; break;
+      case 4: name = "CUATROCIENTOS"; break;
+      case 5: name = "QUINIENTOS"; break;
+      case 6: name = "SEISCIENTOS"; break;
+      case 7: name = "SETECIENTOS"; break;
+      case 8: name = "OCHOCIENTOS"; break;
+      case 9: name = "NOVECIENTOS"; break;
+    }
+    return dec > 0 ? `${name} ${DecenasY(dec)}` : name;
+  };
+
+  const Secciones = (n: number): string => {
+    if (n === 0) return "CERO";
+    if (n < 100) return DecenasY(n);
+    if (n < 1000) return Centenas(n);
+
+    const miles = Math.floor(n / 1000);
+    const restoMiles = n % 1000;
+    let strMiles = "";
+
+    if (miles === 1) strMiles = "UN MIL";
+    else if (miles > 1) strMiles = `${Secciones(miles)} MIL`;
+
+    if (restoMiles > 0) strMiles += ` ${Centenas(restoMiles)}`;
+    return strMiles;
+  };
+
+  const Millones = (n: number): string => {
+    if (n < 1000000) return Secciones(n);
+    const mill = Math.floor(n / 1000000);
+    const resto = n % 1000000;
+    let strMill = mill === 1 ? "UN MILLÓN" : `${Secciones(mill)} MILLONES`;
+    if (resto > 0) strMill += ` ${Secciones(resto)}`;
+    return strMill;
+  };
+
+  const strLetras = Millones(entero);
+  const centStr = centavos < 10 ? `0${centavos}` : `${centavos}`;
+  return `(Son PESOS: ${strLetras} CON ${centStr}/100 M.N.)`;
 };
 
 export const generarPagareModelo = (datos: DatosContrato) => {
   const doc = new jsPDF();
   const nombre = datos.nombreComprador || "Cliente";
-  
+  let y = 45;
+
+  const checkAddPage = (needed: number = 10) => {
+    if (y + needed > 275) {
+      doc.addPage();
+      y = 20;
+    }
+  };
+
+  const totalNum = parseFloat(datos.totalFinanciado?.toString().replace(/[^0-9.-]/g, "") || "0") || 0;
+  const strMontoLetras = numeroALetras(totalNum);
+
+  // 1. Header Box (Hardcode Title: "PAGARÉ A LA VISTA Y SIN PROTESTO")
+  doc.setFillColor(15, 23, 42);
+  doc.rect(15, 12, 180, 22, "F");
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
-  doc.text("PAGARE A LA VISTA SIN PROTESTO", 105, 20, { align: "center" });
-  
-  doc.setFontSize(14);
-  doc.text(`POR ${formatARS(datos.totalFinanciado)}`, 155, 35);
-  
+  doc.setTextColor(234, 179, 8); // Gold
+  doc.text("PAGARÉ A LA VISTA Y SIN PROTESTO", 105, 22, { align: "center" });
+  doc.setFontSize(8);
+  doc.setTextColor(226, 232, 240);
+  doc.text("Garantía Ejecutiva de Cumplimiento de Obligaciones de Mandato Comercial", 105, 28, { align: "center" });
+
+  doc.setLineWidth(0.4);
+  doc.setDrawColor(15, 23, 42);
+
+  // Box Amount Number
+  doc.setFillColor(241, 245, 249);
+  doc.rect(130, 38, 65, 12, "F");
+  doc.rect(130, 38, 65, 12, "S");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(15, 23, 42);
+  doc.text(`POR ${formatARS(totalNum)}`, 162.5, 45.5, { align: "center" });
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(30, 41, 59);
+
+  const lugarStr = datos.lugarFecha || `Buenos Aires, ${new Date().toLocaleDateString("es-AR")}`;
+  doc.text(`Lugar y fecha de emisión: ${lugarStr}`, 15, y); 
+  y += 12;
+
+  // Promesa Incondicional & Beneficiario Hardcode
+  const t1 = `Por este PAGARÉ me/nos comprometemos incondicionalmente a pagar a la vista y sin protesto a la orden de la razón social:`;
+  doc.text(t1, 15, y); y += 5;
+
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text("LOOP GESTIÓN INTEGRAL S.R.L. (CUIT 30-71829384-9)", 15, y); y += 6;
+
+  // Monto en Números y Letras
   doc.setFont("helvetica", "normal");
-  
-  let y = 55;
-  doc.text(`Lugar y fecha de emisión: ____________________, ${new Date().toLocaleDateString("es-AR")}`, 15, y); y+=12;
-  
-  doc.text(`Por este PAGARE me/nos comprometemos incondicionalmente a pagar a la orden de`, 15, y); y+=6;
+  doc.setFontSize(9);
+  doc.setTextColor(30, 41, 59);
+  const tMonto = `o a su orden, la cantidad de PESOS: ${formatARS(totalNum)} ${strMontoLetras}.`;
+  const lMonto = doc.splitTextToSize(tMonto, 180);
+  doc.text(lMonto, 15, y); y += lMonto.length * 4 + 4;
+
+  // Cláusula de Justificación (VITAL - TEXTO EXACTO MANDATORIO):
+  // "Valor recibido en servicios de gestión y financiación según mandato comercial, a mi entera satisfacción."
   doc.setFont("helvetica", "bold");
-  doc.text("ELECTRO EN CUOTAS (Juan Pablo Mosqueira Morales)", 15, y); y+=6;
+  doc.setFontSize(9);
+  doc.setTextColor(15, 23, 42);
+  const tJust = "Valor recibido en servicios de gestión y financiación según mandato comercial, a mi entera satisfacción.";
+  const lJust = doc.splitTextToSize(tJust, 180);
+  doc.text(lJust, 15, y); y += lJust.length * 4.5 + 4;
+
+  // Cláusula de Mora Automática
   doc.setFont("helvetica", "normal");
-  doc.text(`la cantidad de PESOS (ARS): ${formatARS(datos.totalFinanciado)} (Son ${datos.cuotas} cuotas de ${formatARS(datos.importeCuota)}).`, 15, y); y+=12;
-  
-  doc.text(`Por igual valor recibido en electrodomésticos (${datos.producto}) a mi entera satisfacción.`, 15, y); y+=12;
-  
-  const punitorio = datos.tnaPun ? `${datos.tnaPun}% diario` : "la tasa del 0.5% diario";
-  doc.text(`La falta de pago a su presentación producirá la mora automática. Operada la mora, la deuda`, 15, y); y+=6;
-  doc.text(`devengará en concepto de interés punitorio la tasa del ${punitorio}.`, 15, y); y+=20;
-  
+  doc.setFontSize(8.5);
+  doc.setTextColor(51, 65, 85);
+  const moraPct = datos.tnaPun || "0.5";
+  const tMora = `La falta de pago a su presentación producirá la mora automática de pleno derecho. Operada la mora, la suma adeudada devengará en concepto de interés punitorio la tasa del ${moraPct}% mensual sobre el saldo en mora hasta su efectivo pago.`;
+  const lMora = doc.splitTextToSize(tMora, 180);
+  doc.text(lMora, 15, y); y += lMora.length * 4 + 6;
+
+  // DATOS DEUDOR PRINCIPAL BOX
+  doc.setFillColor(248, 250, 252);
+  doc.rect(15, y, 180, 32, "F");
+  doc.setDrawColor(203, 213, 225);
+  doc.rect(15, y, 180, 32, "S");
+
   doc.setFont("helvetica", "bold");
-  doc.text("DATOS DEL LIBRADOR / DEUDOR:", 15, y); y+=6;
+  doc.setFontSize(9);
+  doc.setTextColor(15, 23, 42);
+  doc.text("DATOS DEL LIBRADOR / DEUDOR PRINCIPAL:", 20, y + 6);
+
   doc.setFont("helvetica", "normal");
-  doc.text(`Nombre y Apellido: ${datos.nombreComprador}`, 15, y); y+=6;
-  doc.text(`Documento de Identidad (DNI): ${datos.dni}`, 15, y); y+=6;
-  doc.text(`Domicilio: ${datos.domicilio}`, 15, y); y+=6;
-  doc.text(`Teléfono / WhatsApp: ${datos.whatsapp}`, 15, y); y+=20;
-  
-  doc.text("Firma: __________________________________________________", 15, y); y+=10;
-  doc.text("Aclaración manuscrita: _____________________________________", 15, y);
-  
-  doc.save(`Pagare_${nombre.replace(/\s/g,"_")}.pdf`);
+  doc.setFontSize(8.5);
+  doc.setTextColor(51, 65, 85);
+  doc.text(`Nombre y Apellido: ${datos.nombreComprador.toUpperCase()}`, 20, y + 13);
+  doc.text(`DNI: ${datos.dni} ${datos.cuil ? " | CUIT/CUIL: " + datos.cuil : ""}`, 120, y + 13);
+  doc.text(`Domicilio: ${datos.domicilio.toUpperCase()} (${datos.localidad || "CABA"})`, 20, y + 20);
+  doc.text(`Teléfono / WhatsApp: ${datos.whatsapp}`, 120, y + 20);
+  doc.text(`Email: ${datos.email || "-"}`, 20, y + 27);
+
+  y += 40;
+
+  // LÓGICA CONDICIONAL DE GARANTE / AVALISTA
+  const tieneGarante = datos.tieneGarante || (datos.garanteNombre && datos.garanteNombre.trim().length > 0);
+
+  if (tieneGarante) {
+    // Recuadro del Avalista con la cláusula legal obligatoria:
+    // "Firma como fiador liso, llano y principal pagador, renunciando a los beneficios de excusión y división"
+    doc.setFillColor(254, 243, 199); // Light Amber
+    doc.rect(15, y, 180, 42, "F");
+    doc.setDrawColor(245, 158, 11);
+    doc.rect(15, y, 180, 42, "S");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(146, 64, 14);
+    doc.text("AVAL Y GARANTÍA DE CUMPLIMIENTO:", 20, y + 6);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(180, 83, 9);
+    const tClausulaGarante = "Firma como fiador liso, llano y principal pagador, renunciando a los beneficios de excusión y división.";
+    doc.text(tClausulaGarante, 20, y + 12);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(120, 53, 15);
+    const tAvalDetail = `Me constituyo en fiador liso, llano y principal pagador de la totalidad de las obligaciones del presente pagaré a favor de LOOP GESTIÓN INTEGRAL S.R.L. (Art. 1583 y ss. CCyCN).`;
+    doc.text(tAvalDetail, 20, y + 18);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`Garante / Avalista: ${(datos.garanteNombre || "Garante").toUpperCase()}`, 20, y + 27);
+    doc.text(`DNI Garante: ${datos.garanteDni || "-"}`, 120, y + 27);
+    doc.text(`Domicilio Garante: ${(datos.garanteDomicilio || "-").toUpperCase()}`, 20, y + 34);
+    doc.text(`Teléfono Garante: ${datos.garanteTelefono || "-"}`, 120, y + 34);
+
+    y += 50;
+  }
+
+  // FIRMAS
+  checkAddPage(30);
+  doc.setDrawColor(148, 163, 184);
+  doc.setLineWidth(0.3);
+
+  if (tieneGarante) {
+    // 2 FIRMAS (DEUDOR + GARANTE)
+    doc.line(15, y, 90, y);
+    doc.line(115, y, 190, y);
+    y += 5;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("Firma del Deudor Principal", 15, y);
+    doc.text("Firma del Garante / Avalista", 115, y);
+    y += 4.5;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Aclaración: ${datos.nombreComprador} (DNI: ${datos.dni})`, 15, y);
+    doc.text(`Aclaración: ${datos.garanteNombre || "Garante"} (DNI: ${datos.garanteDni || "-"})`, 115, y);
+  } else {
+    // 1 FIRMA (SOLO DEUDOR PRINCIPAL)
+    doc.line(60, y, 150, y);
+    y += 5;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("Firma del Librador / Deudor Principal", 105, y, { align: "center" });
+    y += 4.5;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Aclaración Manuscrita y DNI: ${datos.nombreComprador} (DNI: ${datos.dni})`, 105, y, { align: "center" });
+  }
+
+  const fileName = buildStandardPdfFilename("PAGARE", datos.nroContrato, datos.nombreComprador);
+  doc.save(fileName);
 };
 
 export interface DatosRemito {
@@ -394,7 +847,7 @@ export const generarRemitoModelo = (datos: DatosRemito) => {
   doc.text("REMITO DE TRASLADO / ENTREGA DE MERCADERÍA", 20, 23);
   doc.setFontSize(9);
   doc.setTextColor(100, 116, 139);
-  doc.text("CUENTA HOGAR / ELECTRO EN CUOTAS", 20, 29);
+  doc.text("CUENTA HOGAR (Nombre de Fantasía de Loop Gestión Integral S.R.L. — Gerente Juan Pablo Mosqueira)", 20, 29);
 
   // Remito numbers & date
   drawFormBox(doc, "Remito N°:", datos.nroRemito, 15, 40, 90, 11);
@@ -447,7 +900,7 @@ export const generarRemitoModelo = (datos: DatosRemito) => {
   y += 5;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
-  doc.text("Firma Despachante (Central)", 15, y);
+  doc.text("Firma Despachante (Loop Gestión Integral S.R.L. — Gerente Juan Pablo Mosqueira)", 15, y);
   doc.text("Firma de Conformidad Cliente", 120, y);
 
   y += 5;
@@ -495,7 +948,7 @@ export const generarRemitoMultiProducto = (datos: DatosRemitoMulti) => {
   doc.text("REMITO DE TRASLADO INTERNO DE STOCK", 20, 23);
   doc.setFontSize(9);
   doc.setTextColor(100, 116, 139);
-  doc.text("CUENTA HOGAR / REABASTECIMIENTO DE LOCALIDADES", 20, 29);
+  doc.text("CUENTA HOGAR (Nombre de Fantasía de Loop Gestión Integral S.R.L. — Gerente Juan Pablo Mosqueira)", 20, 29);
 
   // General info
   drawFormBox(doc, "Remito N°:", datos.nroRemito, 15, 40, 90, 11);
@@ -564,10 +1017,11 @@ export const generarRemitoMultiProducto = (datos: DatosRemitoMulti) => {
   y += 5;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
-  doc.text("Despachado por (Firma y Aclaración)", 15, y);
+  doc.text("Despachado por (Loop Gestión Integral S.R.L. — Gerente Juan Pablo Mosqueira)", 15, y);
   doc.text("Recibido por (Firma y Aclaración)", 120, y);
 
-  doc.save(`Remito_Traslado_${datos.nroRemito}.pdf`);
+  const fileName = buildStandardPdfFilename("REMITO_TRASLADO", datos.nroRemito, (datos as any).choferNombre || "DEPOSITO");
+  doc.save(fileName);
 };
 
 export interface ElementoPresupuesto {
@@ -577,6 +1031,7 @@ export interface ElementoPresupuesto {
   valorCuota: number;
   proveedor?: string;
   linkProveedor?: string;
+  imagenUrl?: string;
 }
 
 export interface DatosPresupuestoPdf {
@@ -593,136 +1048,188 @@ export interface DatosPresupuestoPdf {
 export const generarPdfPresupuesto = (datos: DatosPresupuestoPdf) => {
   const doc = new jsPDF();
 
-  // Header Box with logo inclusion
-  doc.setFillColor(15, 23, 42); // Dark slate background matching premium aesthetics
-  doc.rect(15, 15, 180, 26, "F");
+  // 1. Header Box with Corporate Orange background & New Logo
+  doc.setFillColor(254, 80, 0); // Corporate Orange #FE5000
+  doc.rect(15, 10, 180, 32, "F");
   
-  // Draw modern yellow/gold Circle Logo Badge (representing Electro en Cuotas)
-  doc.setFillColor(234, 179, 8); // Gold/yellow
-  doc.circle(26, 28, 6, "F");
-  
-  // Letter "E" inside the circle
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(15, 23, 42); // Dark slate
-  doc.text("E", 24.5, 31.8);
+  // Draw Official Brand Logo Image (New Square Yellow Lightning Bolt Logo)
+  try {
+    doc.addImage(LOGO_BASE64, "PNG", 17, 12, 28, 28);
+  } catch (e) {}
   
   // Brand name and Subtitle
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.setTextColor(234, 179, 8); // Gold/yellow
-  doc.text("ELECTRO EN CUOTAS", 36, 24);
+  doc.setFontSize(16);
+  doc.setTextColor(255, 255, 255); // White text
+  doc.text("CUENTA HOGAR", 48, 20);
   
-  doc.setFontSize(10);
-  doc.setTextColor(255, 255, 255); // White
-  doc.text("PRESUPUESTO A MEDIDA DE COMPRA FINANCIADA", 36, 30);
+  doc.setFontSize(9.5);
+  doc.text("PRESUPUESTO A MEDIDA Y DETALLE DE SERVICIO", 48, 26.5);
   
-  doc.setFontSize(8);
-  doc.setTextColor(156, 163, 175); // Light gray
-  doc.text("CUENTA HOGAR — TU PLAN A TU MEDIDA", 36, 36);
+  doc.setFontSize(7.5);
+  doc.setTextColor(254, 235, 200); // Light amber
+  doc.text("LOOP GESTIÓN INTEGRAL S.R.L. | Caracas 1101, CABA", 48, 33);
   
   // Right side: Doc Number and Date (Right Aligned)
-  doc.setFontSize(8);
+  doc.setFontSize(8.5);
   doc.setTextColor(255, 255, 255);
-  doc.text(`Presupuesto N°: ${datos.nroPresupuesto}`, 190, 24, { align: "right" });
-  doc.text(`Fecha Emisión: ${datos.fecha}`, 190, 30, { align: "right" });
+  doc.text(`Presupuesto N°: ${datos.nroPresupuesto}`, 190, 20, { align: "right" });
+  doc.text(`Fecha Emisión: ${datos.fecha}`, 190, 26.5, { align: "right" });
 
-  // Customer info section
-  doc.setTextColor(15, 23, 42);
+  // 2. Customer info section
+  doc.setTextColor(18, 19, 22);
   doc.setFontSize(9.5);
   doc.setFont("helvetica", "bold");
-  doc.text("Detalles del Cliente", 15, 48);
+  doc.text("1. Datos del Cliente Solicitante", 15, 50);
 
-  drawFormBox(doc, "Cliente (Nombre y Apellido):", datos.clienteNombre, 15, 52, 110, 11);
-  drawFormBox(doc, "DNI:", datos.clienteDni, 130, 52, 65, 11);
+  drawFormBox(doc, "Cliente (Nombre y Apellido):", datos.clienteNombre, 15, 54, 110, 11);
+  drawFormBox(doc, "DNI:", datos.clienteDni, 130, 54, 65, 11);
   
-  drawFormBox(doc, "WhatsApp de Contacto:", datos.clienteWhatsapp, 15, 66, 110, 11);
-  drawFormBox(doc, "Localidad:", datos.clienteLocalidad, 130, 66, 65, 11);
+  drawFormBox(doc, "WhatsApp de Contacto:", datos.clienteWhatsapp, 15, 68, 110, 11);
+  drawFormBox(doc, "Localidad de Destino:", datos.clienteLocalidad, 130, 68, 65, 11);
 
-  // Table header
-  let y = 88;
+  // 3. Table header for items / options
+  let y = 92;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.setTextColor(255, 255, 255);
-  doc.setFillColor(30, 41, 59); // Slate 800
-  doc.rect(15, y, 180, 7, "F");
-  
-  // Table columns text alignment
-  doc.text("Producto / Modelo Propuesto", 18, y + 5);
-  doc.text("Cuotas", 120, y + 5, { align: "right" });
-  doc.text("Valor Cuota", 155, y + 5, { align: "right" });
-  doc.text("Total Financiado", 190, y + 5, { align: "right" });
+  doc.setFontSize(9.5);
+  doc.setTextColor(18, 19, 22);
+  doc.text("2. Propuesta Económica y Financiación", 15, y - 3);
 
-  y += 7;
-  doc.setTextColor(15, 23, 42);
+  doc.setTextColor(255, 255, 255);
+  doc.setFillColor(254, 80, 0); // Corporate Orange header bar
+  doc.rect(15, y, 180, 8, "F");
+  
+  doc.setFontSize(8.5);
+  doc.text("Opción / Producto Propuesto", 18, y + 5.5);
+  doc.text("Cuotas", 120, y + 5.5, { align: "right" });
+  doc.text("Valor Cuota", 155, y + 5.5, { align: "right" });
+  doc.text("Total Financiado", 190, y + 5.5, { align: "right" });
+
+  y += 8;
+  doc.setTextColor(18, 19, 22);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
 
-  let totalCombinedFinanciado = 0;
-  let totalCombinedCuotaMensual = 0;
-
-  datos.items.forEach((item) => {
+  datos.items.forEach((item, index) => {
     const totalFinanciado = item.cuotas * item.valorCuota;
-    totalCombinedFinanciado += totalFinanciado;
-    totalCombinedCuotaMensual += item.valorCuota;
+    const isMulti = datos.items.length > 1;
+    const labelProd = isMulti ? `Opción ${index + 1}: ${item.producto}` : item.producto;
 
-    doc.setDrawColor(226, 232, 240);
+    const splitProd = doc.splitTextToSize(labelProd, 85);
+    const rowHeight = Math.max(9, splitProd.length * 4.5 + 4);
+
+    doc.setDrawColor(254, 180, 120); // Soft orange border
     doc.setLineWidth(0.2);
-    doc.rect(15, y, 180, 8, "S");
+    doc.rect(15, y, 180, rowHeight, "S");
 
-    // Word-wrap long product names inside the product column
-    const splitProd = doc.splitTextToSize(item.producto, 85);
-    let tempY = y + 5;
+    let tempY = y + 5.5;
     if (splitProd.length > 1) {
-      tempY = y + 3.5;
+      tempY = y + 4.5;
     }
     doc.setFont("helvetica", "bold");
     splitProd.forEach((line: string, idx: number) => {
-      if (idx < 2) {
-        doc.text(line, 18, tempY + (idx * 3.5));
-      }
+      doc.text(line, 18, tempY + (idx * 4));
     });
     
     doc.setFont("helvetica", "normal");
-    doc.text(`${item.cuotas} cuotas`, 120, y + 5, { align: "right" });
-    doc.text(formatARS(item.valorCuota), 155, y + 5, { align: "right" });
-    doc.text(formatARS(totalFinanciado), 190, y + 5, { align: "right" });
+    doc.text(`${item.cuotas} cuotas`, 120, y + 5.5, { align: "right" });
+    doc.setFont("helvetica", "bold");
+    doc.text(formatARS(item.valorCuota), 155, y + 5.5, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.text(formatARS(totalFinanciado), 190, y + 5.5, { align: "right" });
 
-    y += 8;
+    y += rowHeight;
   });
 
-  // Summary Row with Right Alignment
-  doc.setFillColor(248, 250, 252);
-  doc.rect(15, y, 180, 8, "F");
-  doc.setDrawColor(203, 213, 225);
-  doc.setLineWidth(0.3);
-  doc.rect(15, y, 180, 8, "S");
-  
-  doc.setFont("helvetica", "bold");
-  doc.text("TOTAL PRESUPUESTO COMBINADO", 18, y + 5);
-  doc.text(formatARS(totalCombinedCuotaMensual) + " / mes", 155, y + 5, { align: "right" });
-  doc.text(formatARS(totalCombinedFinanciado), 190, y + 5, { align: "right" });
-
-  y += 15;
-
-  // Defensive Check for Pagination safety
-  if (y > 245) {
-    doc.addPage();
-    y = 25;
+  if (datos.items.length > 1) {
+    y += 4;
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text("* Las opciones indicadas son alternativas independientes. Al confirmar tu solicitud elegís la opción que mejor se adapte a tu presupuesto.", 15, y);
+    y += 6;
+  } else {
+    y += 6;
   }
+
+  // 4. DETALLE DEL SERVICIO E INFORMACIÓN DE LO QUE INCLUYE
+  if (y > 190) {
+    doc.addPage();
+    y = 20;
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.5);
+  doc.setTextColor(18, 19, 22);
+  doc.text("3. Detalle de Cobertura y Alcance del Servicio Incluido", 15, y);
+  y += 5;
+
+  // Outer Box for Service Details
+  const boxStartY = y;
+  const boxHeight = 52;
+  doc.setFillColor(248, 250, 252); // Light grayish slate
+  doc.setDrawColor(203, 213, 225);
+  doc.rect(15, boxStartY, 180, boxHeight, "FD");
+
+  doc.setFontSize(7.8);
+  let svcY = boxStartY + 7;
+
+  const servicioPuntos = [
+    {
+      titulo: "• MANDATO COMERCIAL Y FINANCIACIÓN PROPIA: ",
+      desc: "Gestión directa a sola firma sin intermediarios ni requisitos bancarios."
+    },
+    {
+      titulo: "• RECEPCIÓN Y CUSTODIA EN CABA: ",
+      desc: "Recepción, guarda y verificación del producto en nuestro local (Caracas 1101, CABA)."
+    },
+    {
+      titulo: "• CONTROL DE CALIDAD Y PRECINTADO SEGURO: ",
+      desc: "Inspección física de embalaje y emisión de remito R."
+    },
+    {
+      titulo: "• TRASLADO Y LOGÍSTICA AL INTERIOR: ",
+      desc: "Coordinación administrativa de envío protegido desde CABA hasta tu localidad."
+    },
+    {
+      titulo: "• ASISTENCIA CONTINUA VÍA WHATSAPP: ",
+      desc: "Acompañamiento post-venta y atención personalizada durante todo el plan."
+    }
+  ];
+
+  servicioPuntos.forEach(p => {
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(254, 80, 0); // Corporate Orange
+    doc.text(p.titulo, 18, svcY);
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(51, 65, 85);
+    const titleWidth = doc.getTextWidth(p.titulo);
+    doc.text(p.desc, 18 + titleWidth + 1.5, svcY);
+
+    svcY += 9.2;
+  });
+
+  y = boxStartY + boxHeight + 6;
 
   // Notes
   if (datos.notas) {
+    if (y > 235) {
+      doc.addPage();
+      y = 20;
+    }
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8.5);
-    doc.text("Detalles Adicionales y Notas del Plan:", 15, y);
+    doc.setTextColor(18, 19, 22);
+    doc.text("Detalles Adicionales y Observaciones:", 15, y);
     y += 5;
     doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
     const splitNotas = doc.splitTextToSize(datos.notas, 175);
     splitNotas.forEach((line: string) => {
-      if (y > 275) {
+      if (y > 270) {
         doc.addPage();
-        y = 25;
+        y = 20;
       }
       doc.text(line, 15, y);
       y += 4.5;
@@ -730,37 +1237,43 @@ export const generarPdfPresupuesto = (datos: DatosPresupuestoPdf) => {
     y += 5;
   }
 
-  // Defensive Check before footnotes
-  if (y > 260) {
+  if (y > 250) {
     doc.addPage();
-    y = 25;
+    y = 20;
   }
 
   // Legal and validation footnotes
   doc.setFont("helvetica", "italic");
-  doc.setFontSize(7.5);
+  doc.setFontSize(7.2);
   doc.setTextColor(100, 116, 139);
-  doc.text("Nota: Los precios y cuotas indicadas en este presupuesto están sujetos a la aprobación del legajo de scoring crediticio.", 15, y);
+  doc.text("• Nota: Los valores y cuotas de este presupuesto están sujetos a scoring crediticio y verificación documental.", 15, y);
   y += 4;
-  doc.text("Este presupuesto tiene una validez de 7 días corridos a partir de la fecha de emisión.", 15, y);
+  doc.text("• La reserva de productos queda sujeta a disponibilidad de stock al momento de la aprobación final.", 15, y);
+  y += 4;
+  doc.text("• Validez de la propuesta: 7 días corridos a partir de su fecha de emisión.", 15, y);
 
-  y += 10;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(15, 23, 42);
-  doc.text("Gracias por elegir a Cuenta Hogar. Si estás de acuerdo con esta propuesta, avisanos para iniciar tu trámite.", 15, y);
+  y += 8;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.2);
+  doc.setTextColor(254, 80, 0);
+  doc.text("Gracias por elegir a Cuenta Hogar (LOOP GESTIÓN INTEGRAL S.R.L. — Domicilio Legal: Caracas 1101, CABA).", 15, y);
 
-  doc.save(`Presupuesto_${datos.nroPresupuesto}_${datos.clienteNombre.replace(/\s/g,"_")}.pdf`);
+  const fileName = buildStandardPdfFilename("PRESUPUESTO", datos.nroPresupuesto, datos.clienteNombre);
+  doc.save(fileName);
 };
 
 export interface DatosComprobantePago {
+  nroContrato?: string;
   nroRecibo: string;
   fecha: string;
   clienteNombre: string;
   clienteDni: string;
-  productoNombre: string;
+  productoNombre?: string;
   cuotaNumero: number;
+  cuotasTotal?: number;
   montoAbonado: number;
+  montoExento?: number;
+  montoGravado?: number;
   metodoPago: string;
   nroComprobante?: string;
   cuentaDestino?: string;
@@ -773,28 +1286,29 @@ export const generarComprobantePago = (datos: DatosComprobantePago) => {
   const doc = new jsPDF();
   
   // Header box
-  doc.setFillColor(244, 244, 245);
-  doc.rect(15, 15, 180, 22, "F");
-  doc.setDrawColor(234, 179, 8); // Gold border
-  doc.setLineWidth(0.5);
-  doc.rect(15, 15, 180, 22, "S");
+  doc.setFillColor(15, 23, 42);
+  doc.rect(15, 12, 180, 28, "F");
 
-  // Logo text
+  // Official Circular Logo Image
+  try {
+    doc.addImage(LOGO_BASE64, "PNG", 17, 14, 24, 24);
+  } catch (e) {}
+
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
+  doc.setFontSize(14);
   doc.setTextColor(234, 179, 8); // Gold
-  doc.text("CUENTA HOGAR", 20, 24);
-  
+  doc.text("CUENTA HOGAR", 45, 22);
+
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(15, 23, 42);
-  doc.text("COMPROBANTE OFICIAL DE PAGO", 115, 24);
+  doc.setFontSize(10);
+  doc.setTextColor(255, 255, 255);
+  doc.text("COMPROBANTE OFICIAL DE PAGO", 190, 22, { align: "right" });
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text("Gestión de Compras y Créditos a Medida", 20, 30);
-  doc.text("ELECTRO EN CUOTAS", 115, 30);
+  doc.setFontSize(8);
+  doc.setTextColor(156, 163, 175);
+  doc.text("Lo que te haga falta, te lo llevamos y financiamos.", 45, 28);
+  doc.text(`Recibo N°: ${datos.nroRecibo}`, 190, 28, { align: "right" });
 
   // Recibo details box
   drawFormBox(doc, "Recibo N°:", datos.nroRecibo, 15, 43, 90, 11);
@@ -813,14 +1327,25 @@ export const generarComprobantePago = (datos: DatosComprobantePago) => {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text("Detalle de la Acreditación", 15, 112);
+  doc.text("Detalle de la Acreditación", 15, 110);
   
-  drawFormBox(doc, "Concepto:", `Pago Cuota N° ${datos.cuotaNumero} - ${datos.productoNombre}`, 15, 116, 180, 11);
-  drawFormBox(doc, "Monto Abonado:", `$${datos.montoAbonado}`, 15, 130, 90, 11);
-  drawFormBox(doc, "Forma de Pago:", datos.metodoPago, 105, 130, 90, 11);
+  const nroContratoStr = datos.nroContrato || `CH-${datos.nroRecibo.replace("REC-", "").substring(0, 8)}`;
+  const totalCuotasStr = datos.cuotasTotal || 12;
+  const conceptoTexto = `Pago Cuota N° ${datos.cuotaNumero}/${totalCuotasStr} - Servicios de gestión, administración de crédito y soporte técnico. (Ref. Contrato Mandato N° ${nroContratoStr})`;
 
-  drawFormBox(doc, "N° de Transacción / Comprobante:", datos.nroComprobante || "N/A", 15, 144, 90, 11);
-  drawFormBox(doc, "Cuenta de Destino:", datos.cuentaDestino || "N/A", 105, 144, 90, 11);
+  drawFormBox(doc, "Concepto:", conceptoTexto, 15, 114, 180, 13);
+
+  const mExento = datos.montoExento !== undefined ? datos.montoExento : Math.round(datos.montoAbonado * 0.70);
+  const mGravado = datos.montoGravado !== undefined ? datos.montoGravado : Math.max(0, datos.montoAbonado - mExento);
+
+  drawFormBox(doc, "Recupero de Capital (Préstamo Mandato):", formatARS(mExento), 15, 131, 90, 11);
+  drawFormBox(doc, "Honorarios e Intereses de Gestión:", formatARS(mGravado), 105, 131, 90, 11);
+
+  drawFormBox(doc, "TOTAL ABONADO:", formatARS(datos.montoAbonado), 15, 145, 90, 11);
+  drawFormBox(doc, "Forma de Pago:", datos.metodoPago, 105, 145, 90, 11);
+
+  drawFormBox(doc, "N° de Transacción / Comprobante:", datos.nroComprobante || "N/A", 15, 159, 90, 11);
+  drawFormBox(doc, "Cuenta de Destino:", datos.cuentaDestino || "N/A", 105, 159, 90, 11);
 
   // Adjustments notice if applicable
   let y = 168;
@@ -856,15 +1381,15 @@ export const generarComprobantePago = (datos: DatosComprobantePago) => {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(15, 23, 42);
-  doc.text("Firma Autorizada", 93, y);
+  doc.text("Firma Autorizada: Loop Gestión Integral S.R.L.", 75, y);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
-  doc.text("Cuenta Hogar", 96, y + 4);
+  doc.text("Gerente Juan Pablo Mosqueira", 75, y + 4);
+  doc.text("(Nombre de Fantasía: Cuenta Hogar)", 75, y + 8);
 
-  const clientClean = datos.clienteNombre.trim().replace(/[^a-zA-Z0-9\s]/g, "");
-  const productClean = datos.productoNombre.trim().replace(/[^a-zA-Z0-9\s]/g, "");
-  const suffix = datos.esPagoParcial ? " (Pago Parcial)" : "";
-  doc.save(`${clientClean} - ${productClean} - Cuota ${datos.cuotaNumero}${suffix}.pdf`);
+  const refId = datos.nroContrato || datos.nroRecibo;
+  const fileName = buildStandardPdfFilename("RECIBO_CUOTA", refId, datos.clienteNombre, String(datos.cuotaNumero));
+  doc.save(fileName);
 };
 
 export interface DatosEstadoCuenta {
@@ -915,7 +1440,7 @@ export const generarEstadoCuenta = (datos: DatosEstadoCuenta) => {
   doc.setFontSize(8.5);
   doc.setTextColor(100, 116, 139);
   doc.text("Gestión de Compras y Créditos a Medida", 20, 30);
-  doc.text("ELECTRO EN CUOTAS", 100, 30);
+  doc.text("Loop Gestión Integral S.R.L. — Gerente Juan Pablo Mosqueira", 100, 30);
 
   // Recibo details box
   drawFormBox(doc, "Legajo de Referencia:", datos.nroLegajo, 15, 43, 90, 11);
@@ -1040,6 +1565,241 @@ export const generarEstadoCuenta = (datos: DatosEstadoCuenta) => {
   y += 4;
   doc.text("Para reclamos o aclaraciones, presente los comprobantes de pago emitidos por el sistema.", 15, y);
 
-  const clientClean = datos.clienteNombre.trim().replace(/[^a-zA-Z0-9\s]/g, "");
-  doc.save(`Resumen de Cuenta - ${clientClean}.pdf`);
+  const refId = datos.nroLegajo;
+  const fileName = buildStandardPdfFilename("ESTADO_CUENTA", refId, datos.clienteNombre);
+  doc.save(fileName);
+};
+
+
+export interface DatosEmpresaRemito {
+  razonSocial?: string;
+  nombreFantasia?: string;
+  domicilioFiscal?: string;
+  cuit?: string;
+  condicionIva?: string;
+  iibb?: string;
+  fechaInicioActividades?: string;
+  emailContacto?: string;
+  telefonoContacto?: string;
+}
+
+export interface DatosRemitoTipoR {
+  codigoProducto?: string;
+  nroRemito: string;
+  fechaEmision: string;
+  nroContratoInterno: string;
+  facturaProveedorOriginal?: string;
+  clienteNombre: string;
+  clienteDni: string;
+  clienteDomicilio: string;
+  clienteTelefono?: string;
+  productoDescripcion: string;
+  nserie?: string;
+  cantidad?: number;
+  empresaConfig?: DatosEmpresaRemito;
+}
+
+export const generarRemitoTipoR = (datos: DatosRemitoTipoR) => {
+  const doc = new jsPDF();
+
+  doc.setLineWidth(0.3);
+  doc.setDrawColor(0, 0, 0);
+
+  // -------------------------------------------------------------
+  // 1. TOP HEADER BOX (X=10 to 200, Y=10 to 46)
+  // -------------------------------------------------------------
+  doc.rect(10, 10, 190, 36, "S");
+
+  // Vertical dividers for Center "R COD. 91" box (X=93 and X=117)
+  doc.line(93, 10, 93, 46);
+  doc.line(117, 10, 117, 46);
+  // Horizontal divider inside Center box
+  doc.line(93, 33, 117, 33);
+
+  const emp = datos.empresaConfig || {};
+  const razonSocial = emp.razonSocial || "LOOP GESTIÓN INTEGRAL S.R.L.";
+  const nombreFantasia = emp.nombreFantasia || "Cuenta Hogar";
+  const domicilio = emp.domicilioFiscal || "Caracas 1101, CABA";
+  const cuit = emp.cuit || "30-71829384-9";
+  const condicionIva = emp.condicionIva || "RESP. INSCRIPTO";
+  const iibb = emp.iibb || "30-71829384-9";
+  const fechaInicio = emp.fechaInicioActividades || "01/09/2018";
+  const email = emp.emailContacto || "administracion@cuentahogar.com";
+  const telefono = emp.telefonoContacto || "+54 9 11 3013-7724";
+
+  // --- LEFT COLUMN: Emisor Info ---
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  doc.text(razonSocial.toUpperCase(), 12, 16);
+
+  doc.setFontSize(7.5);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Razón Social: ${razonSocial.toUpperCase()}`, 12, 22);
+  doc.text(`Domicilio: ${domicilio.toUpperCase()}`, 12, 26);
+  doc.text(`Nombre de Fantasía: ${nombreFantasia.toUpperCase()}`, 12, 30);
+  doc.text(`E-Mail: ${email}`, 12, 34);
+  doc.text(`TE: ${telefono}`, 12, 38);
+
+  // --- CENTER BOX: "R COD. 91" ---
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(24);
+  doc.text("R", 105, 26, { align: "center" });
+
+  doc.setFontSize(7.5);
+  doc.text("COD. 91", 105, 40, { align: "center" });
+
+  // --- RIGHT COLUMN: Remito Details ---
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text("REMITO", 121, 17);
+
+  doc.setFontSize(9);
+  doc.text(`N°:     ${datos.nroRemito}`, 148, 17);
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Fecha:   ${datos.fechaEmision}`, 148, 22);
+
+  doc.text(`CUIT:   ${cuit}`, 121, 28);
+  doc.text(`Condición IVA:   ${condicionIva.toUpperCase()}`, 121, 33);
+  doc.text(`Ingresos Brutos:   ${iibb}`, 121, 38);
+  doc.text(`Fecha de Inicio de Actividades:   ${fechaInicio}`, 121, 42);
+
+  // -------------------------------------------------------------
+  // 2. DESTINATARIO (CLIENTE) BOX (Y=46 to 76)
+  // -------------------------------------------------------------
+  doc.rect(10, 46, 190, 30, "S");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.text(`Cliente: ${datos.clienteNombre.toUpperCase()} - (DNI:${datos.clienteDni})`, 12, 52);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  const domClean = (datos.clienteDomicilio || "CABA").toUpperCase();
+  doc.text(`Domicilio: ${domClean}`, 12, 58);
+  doc.text(`Teléfono: ${datos.clienteTelefono || "-"}`, 135, 58);
+
+  doc.text("Condición venta: MARKETPLACE / MANDATO COMERCIAL", 12, 65);
+  doc.text("Condición IVA: CONSUMIDOR FINAL", 135, 65);
+
+  doc.text("Transporte: -", 12, 72);
+  doc.text(`Comp.Asociado: Contrato N° ${datos.nroContratoInterno}`, 135, 72);
+
+  // -------------------------------------------------------------
+  // 3. TABLA DE MERCADERÍA (Y=76 to 100)
+  // -------------------------------------------------------------
+  // Header Row (Gray Fill)
+  doc.setFillColor(220, 225, 230);
+  doc.rect(10, 76, 190, 7, "FD");
+
+  doc.line(40, 76, 40, 100);
+  doc.line(165, 76, 165, 100);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("Código", 12, 81);
+  doc.text("Producto / Servicio", 43, 81);
+  doc.text("Cantidad", 195, 81, { align: "right" });
+
+  // Data Row Box
+  doc.rect(10, 83, 190, 17, "S");
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  const codigoProd = datos.codigoProducto || `779${datos.clienteDni.slice(0, 6) || "688540"}`;
+  doc.text(codigoProd, 12, 91);
+
+  doc.setFont("helvetica", "bold");
+  const prodDesc = `${datos.productoDescripcion.toUpperCase()} ${datos.nserie ? "(SERIE/IMEI: " + datos.nserie + ")" : ""}`;
+  const prodLines = doc.splitTextToSize(prodDesc, 120);
+  doc.text(prodLines, 43, 91);
+
+  doc.text(String(datos.cantidad || 1), 195, 91, { align: "right" });
+
+  // -------------------------------------------------------------
+  // 4. LEYENDA LEGAL DE MARCO NORMATIVO (Y=100 to 124)
+  // -------------------------------------------------------------
+  doc.setFillColor(254, 243, 199); // Light Amber
+  doc.rect(10, 100, 190, 24, "FD");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(146, 64, 14);
+  doc.text("LEYENDA LEGAL DE TRASLADO Y MARCO NORMATIVO (MANDATO COMERCIAL):", 12, 105);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(120, 53, 15);
+  const textLeyenda = `Traslado y entrega a domicilio de bien mueble adquirido por cuenta y orden de terceros. Operación respaldada bajo Contrato de Mandato de Compra N° ${datos.nroContratoInterno}.\nReferencia de origen: Factura del proveedor original N° ${datos.facturaProveedorOriginal || "S/N"}.`;
+  const linesLeyenda = doc.splitTextToSize(textLeyenda, 184);
+  doc.text(linesLeyenda, 12, 111);
+
+  // -------------------------------------------------------------
+  // 5. RESUMEN Y VALOR DECLARADO (Y=124 to 132)
+  // -------------------------------------------------------------
+  doc.setTextColor(0, 0, 0);
+  doc.rect(10, 124, 190, 8, "S");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.text("Valor Declarado: Sin Valor Comercial (Operación respaldada por Mandato)", 12, 129.5);
+  doc.text(`Cantidad Total: ${datos.cantidad || 1}`, 195, 129.5, { align: "right" });
+
+  // -------------------------------------------------------------
+  // 6. OBSERVACIONES Y CONFORMIDAD DE RECEPCIÓN (Y=132 to 184)
+  // -------------------------------------------------------------
+  doc.rect(10, 132, 190, 52, "S");
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.text(`Observaciones: Proveedor Original Ticket N° ${datos.facturaProveedorOriginal || "S/N"} | Contrato N° ${datos.nroContratoInterno}`, 12, 137);
+  doc.text("Entrega: Domicilio del cliente titular o Punto de Venta asignado.", 12, 142);
+
+  doc.line(10, 145, 200, 145);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("CONFORMIDAD DE RECEPCIÓN Y GARANTÍA TÉCNICA:", 12, 150);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  const textConformidad = "Recibí de conformidad el producto arriba detallado. Declaro haber realizado la inspección visual del mismo, constatando que se encuentra en perfectas condiciones estéticas, sin rayas ni golpes, y que incluye todos sus accesorios de fábrica. Comprendo que la garantía técnica corresponde exclusivamente al fabricante del equipo.";
+  const linesConf = doc.splitTextToSize(textConformidad, 184);
+  doc.text(linesConf, 12, 155);
+
+  // -------------------------------------------------------------
+  // 7. FIRMAS DE CONFORMIDAD (Y=195)
+  // -------------------------------------------------------------
+  let ySign = 195;
+  doc.setDrawColor(0, 0, 0);
+  doc.line(15, ySign, 85, ySign);
+  doc.line(115, ySign, 185, ySign);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("Firma del Despachante / Conductor", 15, ySign + 5);
+  doc.text("Firma del Cliente (Conformidad)", 115, ySign + 5);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.text("Loop Gestión Integral S.R.L.", 15, ySign + 9);
+  doc.text("Aclaración y DNI: ________________________", 115, ySign + 9);
+
+  // -------------------------------------------------------------
+  // 8. PIE DE PÁGINA INSTITUCIONAL (Y=280)
+  // -------------------------------------------------------------
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(100, 116, 139);
+  
+  const nowStr = new Date().toISOString().replace("T", " ").substring(0, 19);
+  doc.text(`Usuario: OPERADOR - Fecha: ${nowStr}`, 10, 282);
+  doc.text("Página 1/1   |   www.cuentahogar.com - Sistema de Gestión Logística", 105, 282, { align: "center" });
+  doc.text(`Id Remito: ${datos.nroRemito}`, 200, 282, { align: "right" });
+
+  const refCombined = datos.nroContratoInterno ? `${datos.nroRemito}_${datos.nroContratoInterno}` : datos.nroRemito;
+  const fileName = buildStandardPdfFilename("REMITO", refCombined, datos.clienteNombre);
+  doc.save(fileName);
 };
