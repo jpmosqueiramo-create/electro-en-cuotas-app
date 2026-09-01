@@ -1190,12 +1190,15 @@ export default function AdminValidacionesPage() {
       }
     }
 
+    const officialFactor = FACTORES_PREDETERMINADOS[numCuotasNum] || (numCuotasNum > 12 ? 3.25 : 2.5);
+
     if (calculatedContado <= 0 || calculatedContado >= totalFinanciadoVal) {
-      const defaultFactor = numCuotasNum === 12 ? 1.5873 : (numCuotasNum === 8 ? 1.35 : 1.5);
-      calculatedContado = Math.round(totalFinanciadoVal / defaultFactor);
+      calculatedContado = Math.round(totalFinanciadoVal / officialFactor);
     }
 
-    const factorVal = calculatedContado > 0 ? (totalFinanciadoVal / calculatedContado).toFixed(4) : "1.5873";
+    const factorVal = calculatedContado > 0 
+      ? (totalFinanciadoVal / calculatedContado).toFixed(4) 
+      : officialFactor.toFixed(4);
 
     const itemsFinalList = itemsContratoList.map((it: any) => {
       const c = Number(it.cuotas) || Number(planElegido) || 12;
@@ -4463,127 +4466,180 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                        <input type="text" value={contratoAEditar.precioContado} onChange={e => {
                           const newPC = e.target.value;
                           const numContado = parseFloat(newPC.replace(/[^0-9.-]/g, "")) || 0;
-                          const numTotal = parseFloat(contratoAEditar.totalFinanciado.replace(/[^0-9.-]/g, "")) || 0;
-                          const factor = numContado > 0 ? (numTotal / numContado).toFixed(4) : "1.0000";
-                          setContratoAEditar({
-                            ...contratoAEditar,
-                            precioContado: newPC,
-                            factorFinanciado: factor
-                          });
-                        }} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                          const numCuotas = parseInt(contratoAEditar.cuotas) || 12;
+                          const factor = parseFloat(contratoAEditar.factorFinanciado) || FACTORES_PREDETERMINADOS[numCuotas] || 2.5;
+                          
+                          if (numContado > 0 && numCuotas > 0) {
+                            const newTotal = Math.round(numContado * factor);
+                            const newImp = Math.round(newTotal / numCuotas);
+                            const newPlan = (contratoAEditar.cuotasPlan || []).map((c: any) => ({
+                              ...c,
+                              montoOriginal: newImp
+                            }));
+                            setContratoAEditar({
+                              ...contratoAEditar,
+                              precioContado: newPC,
+                              totalFinanciado: String(newTotal),
+                              importeCuota: String(newImp),
+                              cuotasPlan: newPlan
+                            });
+                          } else {
+                            setContratoAEditar({ ...contratoAEditar, precioContado: newPC });
+                          }
+                        }} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
                      </div>
                      <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">Factor Financiado</label>
-                       <input type="text" value={contratoAEditar.factorFinanciado} onChange={e => setContratoAEditar({...contratoAEditar, factorFinanciado: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-zinc-500 text-xs font-bold focus:border-yellow-500 outline-none bg-zinc-900/50" disabled />
+                       <label className="block text-xs font-bold text-amber-400 mb-1">Factor Financiado</label>
+                       <input type="text" value={contratoAEditar.factorFinanciado} onChange={e => {
+                          const newFactorStr = e.target.value;
+                          const factor = parseFloat(newFactorStr.replace(/[^0-9.-]/g, "")) || 0;
+                          const numContado = parseFloat((contratoAEditar.precioContado || "").toString().replace(/[^0-9.-]/g, "")) || 0;
+                          const numCuotas = parseInt(contratoAEditar.cuotas) || 12;
+
+                          if (factor > 0 && numContado > 0 && numCuotas > 0) {
+                            const newTotal = Math.round(numContado * factor);
+                            const newImp = Math.round(newTotal / numCuotas);
+                            const newPlan = (contratoAEditar.cuotasPlan || []).map((c: any) => ({
+                              ...c,
+                              montoOriginal: newImp
+                            }));
+                            setContratoAEditar({
+                              ...contratoAEditar,
+                              factorFinanciado: newFactorStr,
+                              totalFinanciado: String(newTotal),
+                              importeCuota: String(newImp),
+                              cuotasPlan: newPlan
+                            });
+                          } else {
+                            setContratoAEditar({ ...contratoAEditar, factorFinanciado: newFactorStr });
+                          }
+                        }} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-amber-400 text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
                      </div>
                      <div>
                        <label className="block text-xs font-bold text-zinc-400 mb-1">Total Financiado ($)</label>
                        <input type="text" value={contratoAEditar.totalFinanciado} onChange={e => {
                           const newTF = e.target.value;
                           const numTotal = parseFloat(newTF.replace(/[^0-9.-]/g, "")) || 0;
-                          const numContado = parseFloat(contratoAEditar.precioContado.replace(/[^0-9.-]/g, "")) || 0;
-                          const factor = numContado > 0 ? (numTotal / numContado).toFixed(4) : "1.0000";
-                          setContratoAEditar({
-                            ...contratoAEditar,
-                            totalFinanciado: newTF,
-                            factorFinanciado: factor
-                          });
-                        }} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                          const numContado = parseFloat((contratoAEditar.precioContado || "").toString().replace(/[^0-9.-]/g, "")) || 0;
+                          const numCuotas = parseInt(contratoAEditar.cuotas) || 12;
+
+                          if (numTotal > 0 && numCuotas > 0) {
+                            const factor = numContado > 0 ? (numTotal / numContado) : (FACTORES_PREDETERMINADOS[numCuotas] || 2.5);
+                            const newImp = Math.round(numTotal / numCuotas);
+                            const newPlan = (contratoAEditar.cuotasPlan || []).map((c: any) => ({
+                              ...c,
+                              montoOriginal: newImp
+                            }));
+                            setContratoAEditar({
+                              ...contratoAEditar,
+                              totalFinanciado: newTF,
+                              factorFinanciado: factor.toFixed(4),
+                              importeCuota: String(newImp),
+                              cuotasPlan: newPlan
+                            });
+                          } else {
+                            setContratoAEditar({ ...contratoAEditar, totalFinanciado: newTF });
+                          }
+                        }} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
                      </div>
                       <div>
-                        <label className="block text-xs font-bold text-zinc-400 mb-1">Cantidad de Cuotas</label>
-                        <input type="text" value={contratoAEditar.cuotas} onChange={e => {
-                           const newCuotasStr = e.target.value;
-                           const numCuotas = parseInt(newCuotasStr) || 0;
-                           const numContado = parseFloat(contratoAEditar.precioContado?.toString().replace(/[^0-9.-]/g, "") || "0") || 0;
-                           
-                           if (numCuotas > 0 && numContado > 0) {
-                             const solProdName = (contratoAEditar.producto || "").toLowerCase().trim();
-                             const prodMatch = (productos || []).find((p: any) => {
-                               if (!p.nombre) return false;
-                               const pName = p.nombre.toLowerCase().trim();
-                               return pName === solProdName || pName.includes(solProdName) || solProdName.includes(pName);
-                             });
+                        <label className="block text-xs font-bold text-yellow-400 mb-1">Cantidad de Cuotas</label>
+                        <select 
+                          value={contratoAEditar.cuotas} 
+                          onChange={e => {
+                            const newCuotasStr = e.target.value;
+                            const numCuotas = parseInt(newCuotasStr) || 12;
+                            const numContado = parseFloat((contratoAEditar.precioContado || "").toString().replace(/[^0-9.-]/g, "")) || 0;
+                            
+                            const solProdName = (contratoAEditar.producto || "").toLowerCase().trim();
+                            const prodMatch = (productos || []).find((p: any) => {
+                              if (!p.nombre) return false;
+                              const pName = p.nombre.toLowerCase().trim();
+                              return pName === solProdName || pName.includes(solProdName) || solProdName.includes(pName);
+                            });
 
-                             let factor = 0;
-                             const factores = contratoAEditar.originalSolicitud?.factoresPlanes || prodMatch?.factoresPlanes;
-                             if (factores && (factores[numCuotas] || factores[String(numCuotas)])) {
-                               factor = Number(factores[numCuotas] || factores[String(numCuotas)]);
-                             }
+                            let factor = 0;
+                            const factores = contratoAEditar.originalSolicitud?.factoresPlanes || prodMatch?.factoresPlanes;
+                            if (factores && (factores[numCuotas] || factores[String(numCuotas)])) {
+                              factor = Number(factores[numCuotas] || factores[String(numCuotas)]);
+                            }
 
-                             if (!factor || factor <= 0) {
-                               if (numCuotas === 8 && prodMatch?.cuota8 && Number(prodMatch.cuota8) > 0 && numContado > 0) {
-                                 factor = (Number(prodMatch.cuota8) * 8) / numContado;
-                               } else if (numCuotas === 12 && prodMatch?.cuota12 && Number(prodMatch.cuota12) > 0 && numContado > 0) {
-                                 factor = (Number(prodMatch.cuota12) * 12) / numContado;
-                               }
-                             }
+                            if (!factor || factor <= 0) {
+                              factor = FACTORES_PREDETERMINADOS[numCuotas] || (numCuotas > 12 ? 3.25 : 2.5);
+                            }
 
-                             if (!factor || factor <= 0) {
-                               const r = 0.60 / 12;
-                               const formulaFactor = ((r * Math.pow(1 + r, numCuotas)) / (Math.pow(1 + r, numCuotas) - 1)) * numCuotas;
-                               if (formulaFactor > 0 && !isNaN(formulaFactor)) {
-                                 factor = formulaFactor;
-                               } else {
-                                 factor = numCuotas === 12 ? 1.5873 : (numCuotas === 8 ? 1.35 : (numCuotas === 6 ? 1.25 : 1.5));
-                               }
-                             }
+                            if (numCuotas > 0 && numContado > 0) {
+                              const newTotal = Math.round(numContado * factor);
+                              const newImp = Math.round(newTotal / numCuotas);
+                              
+                              const bDate = new Date();
+                              const newPlan = [];
+                              for (let i = 1; i <= numCuotas; i++) {
+                                const nd = new Date(bDate);
+                                nd.setMonth(nd.getMonth() + i);
+                                newPlan.push({
+                                  numero: i,
+                                  vencimiento: nd.toISOString().split("T")[0],
+                                  montoOriginal: newImp,
+                                  observacion: "Cuota mensual ordinaria"
+                                });
+                              }
 
-                             const newTotal = Math.round(numContado * factor);
-                             const newImp = Math.round(newTotal / numCuotas);
-                             
-                             const bDate = new Date();
-                             const newPlan = [];
-                             for (let i = 1; i <= numCuotas; i++) {
-                               const nd = new Date(bDate);
-                               nd.setMonth(nd.getMonth() + i);
-                               newPlan.push({
-                                 numero: i,
-                                 vencimiento: nd.toISOString().split("T")[0],
-                                 montoOriginal: newImp,
-                                 observacion: "Cuota mensual ordinaria"
-                               });
-                             }
-
-                             setContratoAEditar({
-                               ...contratoAEditar,
-                               cuotas: newCuotasStr,
-                               totalFinanciado: String(newTotal),
-                               importeCuota: String(newImp),
-                               factorFinanciado: factor.toFixed(4),
-                               cuotasPlan: newPlan
-                             });
-                           } else {
-                             setContratoAEditar({
-                               ...contratoAEditar,
-                               cuotas: newCuotasStr
-                             });
-                           }
-                         }} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                              setContratoAEditar({
+                                ...contratoAEditar,
+                                cuotas: newCuotasStr,
+                                totalFinanciado: String(newTotal),
+                                importeCuota: String(newImp),
+                                factorFinanciado: factor.toFixed(4),
+                                cuotasPlan: newPlan
+                              });
+                            } else {
+                              setContratoAEditar({
+                                ...contratoAEditar,
+                                cuotas: newCuotasStr,
+                                factorFinanciado: factor.toFixed(4)
+                              });
+                            }
+                          }} 
+                          className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-yellow-400 text-xs font-bold focus:border-yellow-500 outline-none font-mono"
+                        >
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+                            <option key={n} value={n}>
+                              {n} {n === 1 ? "Cuota" : "Cuotas"} (Factor {FACTORES_PREDETERMINADOS[n] || 2.5})
+                            </option>
+                          ))}
+                          <option value="18">18 Cuotas (Factor 3.25)</option>
+                          <option value="24">24 Cuotas (Factor 4.00)</option>
+                        </select>
                       </div>
                      <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">Importe por Cuota ($)</label>
+                       <label className="block text-xs font-bold text-amber-300 mb-1">Importe por Cuota ($)</label>
                        <input type="text" value={contratoAEditar.importeCuota} onChange={e => {
-                          const newImp = e.target.value;
-                          const numImp = parseFloat(newImp.replace(/[^0-9.-]/g, "")) || 0;
-                          const numCuotas = parseInt(contratoAEditar.cuotas) || 0;
-                          const newTotal = numCuotas * numImp;
-                          const numContado = parseFloat(contratoAEditar.precioContado.replace(/[^0-9.-]/g, "")) || 0;
-                          const factor = numContado > 0 ? (newTotal / numContado).toFixed(4) : "1.0000";
+                          const newImpStr = e.target.value;
+                          const numImp = parseFloat(newImpStr.replace(/[^0-9.-]/g, "")) || 0;
+                          const numCuotas = parseInt(contratoAEditar.cuotas) || 12;
+                          const numContado = parseFloat((contratoAEditar.precioContado || "").toString().replace(/[^0-9.-]/g, "")) || 0;
                           
-                          const newPlan = contratoAEditar.cuotasPlan.map((c: any) => ({
-                            ...c,
-                            montoOriginal: numImp
-                          }));
-                          
-                          setContratoAEditar({
-                            ...contratoAEditar,
-                            importeCuota: newImp,
-                            totalFinanciado: String(newTotal),
-                            factorFinanciado: factor,
-                            cuotasPlan: newPlan
-                          });
-                        }} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                          if (numImp > 0 && numCuotas > 0) {
+                            const newTotal = numImp * numCuotas;
+                            const factor = numContado > 0 ? (newTotal / numContado) : (FACTORES_PREDETERMINADOS[numCuotas] || 2.5);
+                            
+                            const newPlan = (contratoAEditar.cuotasPlan || []).map((c: any) => ({
+                              ...c,
+                              montoOriginal: numImp
+                            }));
+                            
+                            setContratoAEditar({
+                              ...contratoAEditar,
+                              importeCuota: newImpStr,
+                              totalFinanciado: String(newTotal),
+                              factorFinanciado: factor.toFixed(4),
+                              cuotasPlan: newPlan
+                            });
+                          } else {
+                            setContratoAEditar({ ...contratoAEditar, importeCuota: newImpStr });
+                          }
+                        }} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
                      </div>
                      <div>
                        <label className="block text-xs font-bold text-zinc-400 mb-1">TNA Compensatoria (%)</label>
