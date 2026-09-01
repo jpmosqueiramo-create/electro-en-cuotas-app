@@ -179,10 +179,10 @@ function SolicitarForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121316] text-zinc-100 px-4 py-8 flex flex-col items-center font-sans">
-      <div className="w-full max-w-3xl bg-[#181920] border border-zinc-800 shadow-[0_0_30px_rgba(0,0,0,0.5)] rounded-3xl p-6 md:p-10 shadow-[0_0_30px_rgba(254,80,0,0.15)]">
+    <div className="min-h-screen bg-slate-100 text-zinc-900 px-4 py-8 flex flex-col items-center font-sans">
+      <div className="w-full max-w-3xl bg-white border border-zinc-200/90 shadow-2xl rounded-3xl p-6 sm:p-10">
         <div className="flex justify-between items-start mb-8">
-          <button onClick={()=>router.push("/")} className="text-zinc-400 hover:text-[#fe5000] flex items-center gap-1 text-sm transition-colors font-bold">
+          <button onClick={()=>router.push("/")} className="text-zinc-600 hover:text-[#fe5000] flex items-center gap-1 text-sm transition-colors font-bold">
             <ArrowLeft className="w-4 h-4" /> Volver
           </button>
           <div className="flex items-center gap-2">
@@ -190,17 +190,17 @@ function SolicitarForm() {
           </div>
         </div>
         
-        <h1 className="text-3xl md:text-4xl font-black text-white mb-2 leading-tight">Apertura de Cuenta de Confianza</h1>
-        <p className="text-zinc-400 mb-8">Completá este formulario para que analicemos tu perfil a sola firma y armemos tu plan.</p>
+        <h1 className="text-3xl sm:text-4xl font-black text-zinc-900 mb-2 leading-tight">Apertura de Cuenta de Confianza</h1>
+        <p className="text-zinc-600 mb-8 font-medium">Completá este formulario para que analicemos tu perfil a sola firma y armemos tu plan a medida.</p>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           
           {/* SECCIÓN PRODUCTO */}
           {productoData && (
-            <div className="bg-[#fe5000]/5 border border-zinc-800 p-6 rounded-2xl space-y-6">
+            <div className="bg-orange-50/80 border border-orange-200 p-6 rounded-2xl space-y-6 shadow-sm">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
                 <div className="flex flex-col gap-2 flex-shrink-0">
-                  <div className="w-24 h-24 bg-[#181920] rounded-xl p-1 flex items-center justify-center relative overflow-hidden">
+                  <div className="w-24 h-24 bg-white border border-zinc-200 rounded-xl p-1 flex items-center justify-center relative overflow-hidden shadow-sm">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={activeSolImage || productoData.imagenUrl} 
@@ -231,17 +231,17 @@ function SolicitarForm() {
                 </div>
                 <div className="text-center sm:text-left">
                   <p className="text-xs text-[#fe5000] font-black tracking-widest uppercase">Producto a gestionar</p>
-                  <p className="font-bold text-white text-lg">{productoData.nombre}</p>
+                  <p className="font-bold text-zinc-900 text-lg">{productoData.nombre}</p>
                 </div>
               </div>
               
-              <div className="border-t border-zinc-800 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="border-t border-orange-200/80 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-zinc-400 mb-2">ELEGIR PLAN DE CUOTAS</label>
+                  <label className="block text-xs font-black text-zinc-700 uppercase tracking-wider mb-2">Elegir Plan de Cuotas</label>
                   <select 
                     value={planElegido} 
                     onChange={e => setPlanElegido(e.target.value)}
-                    className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors font-bold"
+                    className="w-full bg-white border border-zinc-300 p-3.5 rounded-xl text-zinc-900 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 transition-all font-bold text-base shadow-sm"
                   >
                     {(() => {
                       const list = calcularTablaTodosLosPlanes(Number(productoData.costoProducto || productoData.precioContado) || 0, productoData.factoresPlanes, productoData.planesActivos).filter(pl => pl.activo && pl.cuotaMensual > 0);
@@ -261,8 +261,8 @@ function SolicitarForm() {
                     })()}
                   </select>
                 </div>
-                <div className="flex flex-col justify-center bg-[#121316] p-4 rounded-xl border border-zinc-900">
-                  <p className="text-xs text-zinc-500 font-bold uppercase">VALOR MENSUAL DE LA CUOTA</p>
+                <div className="flex flex-col justify-center bg-white p-4 rounded-xl border border-zinc-200 shadow-sm">
+                  <p className="text-xs text-zinc-600 font-black uppercase tracking-wider">Valor Mensual de la Cuota</p>
                   <p className="text-2xl font-black text-[#fe5000] mt-1">
                     ${(() => {
                       const list = calcularTablaTodosLosPlanes(Number(productoData.costoProducto || productoData.precioContado) || 0, productoData.factoresPlanes, productoData.planesActivos).filter(pl => pl.activo && pl.cuotaMensual > 0);
@@ -277,52 +277,52 @@ function SolicitarForm() {
           )}
 
           {/* DATOS PERSONALES */}
-          <div className="bg-[#121316] border border-zinc-800 p-6 md:p-8 rounded-2xl">
+          <div className="bg-slate-50/80 border border-zinc-200 p-6 sm:p-8 rounded-2xl shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               <div className="md:col-span-2">
-                <label className="block text-sm text-zinc-400 mb-2 font-bold">Nombre y Apellido</label>
-                <input required value={nombreCompleto} onChange={e=>setNombreCompleto(e.target.value)} type="text" placeholder="Ej: Juan Perez" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
+                <label className="block text-sm text-zinc-700 mb-1.5 font-bold">Nombre y Apellido</label>
+                <input required value={nombreCompleto} onChange={e=>setNombreCompleto(e.target.value)} type="text" placeholder="Ej: Juan Perez" className="w-full bg-white border border-zinc-300 p-3.5 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 transition-all font-medium text-base shadow-sm" />
               </div>
 
               <div>
-                <label className="block text-sm text-zinc-400 mb-2 font-bold">DNI</label>
-                <input required value={numeroDni} onChange={e=>setNumeroDni(e.target.value)} type="number" placeholder="Ej: 30123456" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
+                <label className="block text-sm text-zinc-700 mb-1.5 font-bold">DNI</label>
+                <input required value={numeroDni} onChange={e=>setNumeroDni(e.target.value)} type="number" placeholder="Ej: 30123456" className="w-full bg-white border border-zinc-300 p-3.5 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 transition-all font-medium text-base shadow-sm" />
               </div>
 
               <div>
-                <label className="block text-sm text-zinc-400 mb-2 font-bold">CUIL (formato con guiones)</label>
-                <input required value={cuil} onChange={e=>handleCuilChange(e.target.value)} type="text" placeholder="Ej: 20-30123456-7" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors font-mono" />
+                <label className="block text-sm text-zinc-700 mb-1.5 font-bold">CUIL (formato con guiones)</label>
+                <input required value={cuil} onChange={e=>handleCuilChange(e.target.value)} type="text" placeholder="Ej: 20-30123456-7" className="w-full bg-white border border-zinc-300 p-3.5 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 transition-all font-mono font-medium text-base shadow-sm" />
               </div>
 
               <div>
-                <label className="block text-sm text-zinc-400 mb-2 font-bold">Fecha de Nacimiento</label>
-                <input required value={fechaNacimiento} onChange={e=>setFechaNacimiento(e.target.value)} type="date" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
+                <label className="block text-sm text-zinc-700 mb-1.5 font-bold">Fecha de Nacimiento</label>
+                <input required value={fechaNacimiento} onChange={e=>setFechaNacimiento(e.target.value)} type="date" className="w-full bg-white border border-zinc-300 p-3.5 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 transition-all font-medium text-base shadow-sm" />
               </div>
 
               <div>
-                <label className="block text-sm text-zinc-400 mb-2 font-bold">WhatsApp</label>
-                <input required value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} type="tel" placeholder="Ej: +54 9 11 1234-5678" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
+                <label className="block text-sm text-zinc-700 mb-1.5 font-bold">WhatsApp</label>
+                <input required value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} type="tel" placeholder="Ej: +54 9 11 1234-5678" className="w-full bg-white border border-zinc-300 p-3.5 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 transition-all font-medium text-base shadow-sm" />
               </div>
 
               <div>
-                <label className="block text-sm text-zinc-400 mb-2 font-bold">Ocupación</label>
-                <input required value={ocupacion} onChange={e=>setOcupacion(e.target.value)} type="text" placeholder="Ej: Empleado de comercio" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
+                <label className="block text-sm text-zinc-700 mb-1.5 font-bold">Ocupación</label>
+                <input required value={ocupacion} onChange={e=>setOcupacion(e.target.value)} type="text" placeholder="Ej: Empleado de comercio" className="w-full bg-white border border-zinc-300 p-3.5 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 transition-all font-medium text-base shadow-sm" />
               </div>
 
               <div>
-                <label className="block text-sm text-zinc-400 mb-2 font-bold">Correo Electrónico (Obligatorio)</label>
-                <input required value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="Ej: juanperez@gmail.com" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
+                <label className="block text-sm text-zinc-700 mb-1.5 font-bold">Correo Electrónico (Obligatorio)</label>
+                <input required value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="Ej: juanperez@gmail.com" className="w-full bg-white border border-zinc-300 p-3.5 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 transition-all font-medium text-base shadow-sm" />
               </div>
 
               <div>
-                <label className="block text-sm text-zinc-400 mb-2 font-bold">Antigüedad Laboral (Fecha de Ingreso)</label>
-                <input required value={antiguedadLaboral} onChange={e=>setAntiguedadLaboral(e.target.value)} type="date" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
+                <label className="block text-sm text-zinc-700 mb-1.5 font-bold">Antigüedad Laboral (Fecha de Ingreso)</label>
+                <input required value={antiguedadLaboral} onChange={e=>setAntiguedadLaboral(e.target.value)} type="date" className="w-full bg-white border border-zinc-300 p-3.5 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 transition-all font-medium text-base shadow-sm" />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm text-zinc-400 mb-2 font-bold">Localidad y Dirección Exacta</label>
-                <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" placeholder="Ej: Av. San Martín 1500, Piso 2A, Junín" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
+                <label className="block text-sm text-zinc-700 mb-1.5 font-bold">Localidad y Dirección Exacta</label>
+                <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" placeholder="Ej: Av. San Martín 1500, Piso 2A, Junín" className="w-full bg-white border border-zinc-300 p-3.5 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 transition-all font-medium text-base shadow-sm" />
               </div>
 
               
@@ -330,13 +330,13 @@ function SolicitarForm() {
                 <h3 className="text-lg font-bold text-[#fe5000] mb-4">Referencias y Recomendaciones</h3>
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm text-zinc-400 mb-2 font-bold">¿Qué Afiliado Independiente te está asesorando? <span className="text-xs text-zinc-500 font-normal">(Opcional)</span></label>
-                    <input value={nombreAfiliado} onChange={e=>setNombreAfiliado(e.target.value)} type="text" placeholder="Nombre del Afiliado" className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
+                    <label className="block text-sm text-zinc-700 mb-1.5 font-bold">¿Qué Afiliado Independiente te está asesorando? <span className="text-xs text-zinc-500 font-normal">(Opcional)</span></label>
+                    <input value={nombreAfiliado} onChange={e=>setNombreAfiliado(e.target.value)} type="text" placeholder="Nombre del Afiliado" className="w-full bg-white border border-zinc-300 p-3.5 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 transition-all font-medium text-base shadow-sm" />
                     <p className="text-xs text-zinc-500 mt-2">Sirve para asignar la comisión correspondientemente.</p>
                   </div>
                   <div>
-                    <label className="block text-sm text-zinc-400 mb-2 font-bold">¿Sos referido de algún cliente actual de Cuenta Hogar? Contanos quién es. <span className="text-xs text-zinc-500 font-normal">(Opcional)</span></label>
-                    <input value={referidoPor} onChange={e=>setReferidoPor(e.target.value)} type="text" placeholder="En Cuenta Hogar valoramos la palabra de nuestros clientes. Si alguien ya tiene su plan y te recomendó, poné su nombre acá." className="w-full bg-[#181920] border border-zinc-800 p-3.5 rounded-xl text-white outline-none focus:border-[#fe5000] transition-colors" />
+                    <label className="block text-sm text-zinc-700 mb-1.5 font-bold">¿Sos referido de algún cliente actual de Cuenta Hogar? Contanos quién es. <span className="text-xs text-zinc-500 font-normal">(Opcional)</span></label>
+                    <input value={referidoPor} onChange={e=>setReferidoPor(e.target.value)} type="text" placeholder="En Cuenta Hogar valoramos la palabra de nuestros clientes. Si alguien ya tiene su plan y te recomendó, poné su nombre acá." className="w-full bg-white border border-zinc-300 p-3.5 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 transition-all font-medium text-base shadow-sm" />
                   </div>
                 </div>
               </div>
@@ -354,7 +354,7 @@ function SolicitarForm() {
             </div>
           </div>
 
-          <button type="submit" className="w-full group flex items-center justify-center gap-2 bg-yellow-textured text-black font-black text-lg py-5 rounded-xl hover:-translate-y-1 active:scale-95 transition-all duration-300 shadow-md">
+          <button type="submit" className="w-full group flex items-center justify-center gap-2 bg-gradient-to-r from-[#ff5e14] via-[#fe5000] to-[#e04600] text-white font-black text-base sm:text-lg py-4.5 sm:py-5 rounded-2xl hover:scale-[1.01] active:scale-95 transition-all duration-300 shadow-xl shadow-orange-500/25">
             Enviar Solicitud y Hablar con un Asesor <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
         </form>

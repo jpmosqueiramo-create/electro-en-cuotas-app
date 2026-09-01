@@ -99,6 +99,7 @@ export default function AdminValidacionesPage() {
   const [budgetCostoProveedor, setBudgetCostoProveedor] = useState("");
   const [draftItems, setDraftItems] = useState<any[]>([]);
   const [editandoPresupuestoId, setEditandoPresupuestoId] = useState<string | null>(null);
+  const [selectedItemsMap, setSelectedItemsMap] = useState<Record<string, number[]>>({});
   const [comisionistaEditId, setComisionistaEditId] = useState<string | null>(null);
   const [proveedorEditId, setProveedorEditId] = useState<string | null>(null);
   const [proveedorNombre, setProveedorNombre] = useState("");
@@ -868,21 +869,90 @@ export default function AdminValidacionesPage() {
     });
   };
 
+    const toggleItemSelection = (solId: string, presId: string, itemIdx: number, totalCount: number) => {
+    const key = solId + "_" + presId;
+    const current = selectedItemsMap[key] || Array.from({ length: totalCount }, (_, i) => i);
+    let updated: number[];
+    if (current.includes(itemIdx)) {
+      if (current.length === 1) {
+        alert("Debes mantener al menos un producto seleccionado.");
+        return;
+      }
+      updated = current.filter(i => i !== itemIdx);
+    } else {
+      updated = [...current, itemIdx].sort((a, b) => a - b);
+    }
+    setSelectedItemsMap(prev => ({ ...prev, [key]: updated }));
+  };
+
+  const isItemSelected = (solId: string, presId: string, itemIdx: number, totalCount: number): boolean => {
+    const key = solId + "_" + presId;
+    const current = selectedItemsMap[key];
+    if (!current) return true;
+    return current.includes(itemIdx);
+  };
+
   const handleAceptarPresupuesto = async (sol: any, presId: string) => {
-    if (!confirm("¿Marcar este presupuesto como aceptado por el cliente?")) return;
+    const targetPres = (sol.presupuestos || []).find((p: any) => p.id === presId);
+    if (!targetPres) return;
+
+    const key = sol.id + "_" + presId;
+    const rawItems = targetPres.items || [];
+    const selectedIndices = selectedItemsMap[key] || rawItems.map((_: any, i: number) => i);
+
+    const itemsSeleccionados = rawItems.length > 0 
+      ? rawItems.filter((_: any, i: number) => selectedIndices.includes(i))
+      : (targetPres.producto ? [{
+          producto: targetPres.producto,
+          contado: targetPres.contado || 0,
+          cuotas: targetPres.cuotas || 12,
+          valorCuota: targetPres.valorCuota
+        }] : []);
+
+    if (itemsSeleccionados.length === 0) {
+      return alert("Debes seleccionar al menos un producto para aceptar el presupuesto.");
+    }
+
+    const nItems = itemsSeleccionados.length;
+    const totalCuotaMensual = itemsSeleccionados.reduce((sum: number, it: any) => sum + (Number(it.valorCuota) || 0), 0);
+    const prodNames = itemsSeleccionados.map((it: any) => it.producto).join(" + ");
+    const sumContado = itemsSeleccionados.reduce((sum: number, it: any) => sum + (Number(it.contado || it.precioContado || it.costoProveedor || 0)), 0);
+    const numCuotas = itemsSeleccionados[0]?.cuotas || 12;
+    const sumTotalFinanciado = itemsSeleccionados.reduce((sum: number, it: any) => sum + ((Number(it.valorCuota) || 0) * (Number(it.cuotas) || numCuotas)), 0);
+
+    const msgConfirm = nItems > 1 
+      ? `¿Aceptar este presupuesto con las ${nItems} opciones/productos seleccionados?\n\nProductos: ${prodNames}\nCuota Mensual Combinada: $${totalCuotaMensual.toLocaleString("es-AR")}`
+      : `¿Aceptar este presupuesto con la opción seleccionada?\n\nProducto: ${prodNames}\nCuota Mensual: $${totalCuotaMensual.toLocaleString("es-AR")}`;
+
+    if (!confirm(msgConfirm)) return;
+
     const updatedPresupuestos = (sol.presupuestos || []).map((p: any) => {
       if (p.id === presId) {
-        return { ...p, estado: "Aceptado" };
+        return { ...p, estado: "Aceptado", itemsSeleccionados };
       }
       return { ...p, estado: "Rechazado" };
     });
 
+    const isAp = aperturas.some((a) => a.id === sol.id);
+    const colName = isAp ? "solicitudes_cuenta" : "solicitudes";
+
+    const payloadActualizacion: any = {
+      presupuestos: updatedPresupuestos,
+      itemsContrato: itemsSeleccionados,
+      productoDeseado: prodNames,
+      precioContado: sumContado,
+      costoProducto: sumContado,
+      costoBien: sumContado,
+      montoCuota: totalCuotaMensual,
+      totalFinanciado: sumTotalFinanciado,
+      planElegido: String(numCuotas),
+      estado: "Aprobado_Presupuesto"
+    };
+
     try {
-      await updateDoc(doc(db, "solicitudes_cuenta", sol.id), {
-        presupuestos: updatedPresupuestos,
-        estado: "Aprobado_Presupuesto" // Special state to signify it's ready for legal contract
-      });
-      alert("Presupuesto aceptado. Listo para confeccionar contrato.");
+      await updateDoc(doc(db, colName, sol.id), payloadActualizacion);
+      alert(`✅ Presupuesto Aceptado con éxito (${nItems} ${nItems === 1 ? "opción elegida" : "opciones elegidas"}).\n\n¡El sistema actualizó la estructura financiera del legajo y está listo para confeccionar el Contrato, Pagaré y Remito por los productos seleccionados!`);
+      await fetchSolicitudes();
       await fetchAperturas();
     } catch (err) {
       console.error(err);
@@ -980,6 +1050,7 @@ export default function AdminValidacionesPage() {
         email: contratoAEditar.email,
         whatsapp: contratoAEditar.whatsapp,
         productoDeseado: contratoAEditar.producto,
+        itemsContrato: contratoAEditar.itemsContrato || [],
         numeroSerie: contratoAEditar.nserie,
         precioContado: numContado,
         costoProducto: numContado,
@@ -1030,25 +1101,32 @@ export default function AdminValidacionesPage() {
     let tna = sol.tasaInteresTna || 60;
     let mora = sol.tasaMora || 0.5;
     let prod = sol.productoDeseado || sol.productoNombre || "";
+    let itemsContratoList: any[] = sol.itemsContrato || [];
 
     // If it is a quick contact request, load details from the accepted budget!
     if (sol.tipo === "contacto_rapido") {
       const acceptedBudget = (sol.presupuestos || []).find((p: any) => p.estado === "Aceptado");
       if (acceptedBudget) {
-        const items = acceptedBudget.items || [];
-        if (items.length > 0) {
-          prod = items.map((it: any) => it.producto).join(" + ");
-          planElegido = String(items[0].cuotas);
-          montoCuota = items.reduce((sum: number, it: any) => sum + it.valorCuota, 0);
+        const rawItems = acceptedBudget.itemsSeleccionados || acceptedBudget.items || [];
+        if (rawItems.length > 0) {
+          itemsContratoList = rawItems;
+          prod = itemsContratoList.map((it: any) => it.producto).join(" + ");
+          planElegido = String(itemsContratoList[0].cuotas || 12);
+          montoCuota = itemsContratoList.reduce((sum: number, it: any) => sum + (Number(it.valorCuota) || 0), 0);
           tna = acceptedBudget.tna || 60;
           mora = acceptedBudget.mora || 0.5;
         } else if (acceptedBudget.producto) {
-          // Fallback for single item budget
-          planElegido = String(acceptedBudget.cuotas);
-          montoCuota = acceptedBudget.valorCuota;
+          planElegido = String(acceptedBudget.cuotas || 12);
+          montoCuota = acceptedBudget.valorCuota || 0;
           tna = acceptedBudget.tna || 60;
           mora = acceptedBudget.mora || 0.5;
           prod = acceptedBudget.producto;
+          itemsContratoList = [{
+            producto: acceptedBudget.producto,
+            contado: acceptedBudget.contado || 0,
+            cuotas: acceptedBudget.cuotas || 12,
+            valorCuota: acceptedBudget.valorCuota
+          }];
         }
       }
     }
@@ -1119,6 +1197,29 @@ export default function AdminValidacionesPage() {
 
     const factorVal = calculatedContado > 0 ? (totalFinanciadoVal / calculatedContado).toFixed(4) : "1.5873";
 
+    const itemsFinalList = itemsContratoList.map((it: any) => {
+      const c = Number(it.cuotas) || Number(planElegido) || 12;
+      const v = Number(it.valorCuota) || (c > 0 ? Math.round((Number(it.totalFinanciado) || 0) / c) : 0);
+      const pc = Number(it.precioContado || it.contado || it.costoProveedor || 0);
+      const tf = Number(it.totalFinanciado) || (v * c);
+      return {
+        producto: it.producto,
+        nserie: it.nserie || it.numeroSerie || "",
+        cantidad: it.cantidad || 1,
+        estadoBien: it.estadoBien || "Nuevo",
+        precioContado: pc,
+        cuotas: c,
+        valorCuota: v,
+        totalFinanciado: tf
+      };
+    });
+
+    if (itemsFinalList.length > 1) {
+      const sumContado = itemsFinalList.reduce((sum, it) => sum + (it.precioContado || 0), 0);
+      const sumTotal = itemsFinalList.reduce((sum, it) => sum + (it.totalFinanciado || 0), 0);
+      if (sumContado > 0) calculatedContado = sumContado;
+    }
+
     setContratoAEditar({
       solId: sol.id,
       isApertura: true,
@@ -1130,6 +1231,7 @@ export default function AdminValidacionesPage() {
       email: sol.clienteEmail || sol.email || sol.datosPersonales?.email || "",
       whatsapp: tel,
       producto: prod,
+      itemsContrato: itemsFinalList,
       nserie: sol.numeroSerie || "",
       precioContado: String(calculatedContado),
       factorFinanciado: factorVal,
@@ -1938,9 +2040,17 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                 <p className="text-zinc-500 text-sm">Gestión de créditos, entregas y cobranzas</p>
               </div>
             </div>
-            <Link href="/admin" className="text-sm border border-yellow-500/50 hover:bg-yellow-500 hover:text-black px-4 py-2 rounded transition-colors font-bold whitespace-nowrap">
-              ← Volver Atrás
-            </Link>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Link href="/admin/presupuestos" className="text-xs bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
+                📄 Historial Presupuestos
+              </Link>
+              <Link href="/admin/clientes" className="text-xs bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
+                👥 Base Clientes
+              </Link>
+              <Link href="/admin" className="text-xs border border-zinc-800 hover:bg-zinc-800 text-zinc-300 px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
+                ← Panel Root
+              </Link>
+            </div>
           </header>
 
           {/* TABS NAVIGATION */}
@@ -2297,39 +2407,71 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                               </span>
                                             </div>
 
-                                            {p.items && p.items.length > 0 ? (
-                                              <div className="space-y-1.5 mt-1 border-l-2 border-yellow-500/30 pl-3">
-                                                {p.items.map((item: any, idx: number) => (
-                                                  <div key={idx} className="text-xs text-zinc-300">
-                                                    <span className="font-bold text-white">{item.producto}</span>: {item.cuotas} cuotas de <span className="text-yellow-400 font-mono font-bold">${item.valorCuota}</span>
-                                                    {item.contado > 0 && ` (Ref. Contado: $${item.contado})`}
-                                                    
-                                                    {/* INTERNAL USE FIELDS */}
-                                                    {(item.proveedor || item.costoProveedor || item.linkProveedor) && (
-                                                      <div className="text-[10px] text-amber-400/80 mt-0.5 bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10 inline-block block">
-                                                        🔒 Uso Interno: {item.proveedor ? `Prov: ${item.proveedor}` : "Prov: S/D"}
-                                                        {item.costoProveedor > 0 && ` (Costo: $${item.costoProveedor})`}
-                                                        {item.linkProveedor && (
-                                                          <>
-                                                            {" | "}
-                                                            <a href={item.linkProveedor.startsWith("http") ? item.linkProveedor : `https://${item.linkProveedor}`} target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-300">
-                                                              Ver Link del Proveedor ↗
-                                                            </a>
-                                                          </>
-                                                        )}
-                                                      </div>
-                                                    )}
-                                                  </div>
-                                                ))}
-                                                
-                                                {/* SUM OF SUPPLIER COST */}
-                                                {p.items.some((it: any) => it.costoProveedor > 0) && (
-                                                  <div className="text-[10px] text-amber-400 font-bold mt-2">
-                                                    🔒 Costo Proveedor Total: ${p.items.reduce((sum: number, it: any) => sum + (it.costoProveedor || 0), 0)}
-                                                  </div>
-                                                )}
-                                              </div>
-                                            ) : (
+                                             {p.items && p.items.length > 0 ? (
+                                               <div className="space-y-2 mt-2">
+                                                 {p.items.length > 1 && p.estado !== "Aceptado" && (
+                                                   <div className="bg-amber-500/10 border border-amber-500/30 p-2 rounded-lg mb-2">
+                                                     <p className="text-[11px] font-black text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                                                       ☑️ Seleccioná la/s opción/es que el cliente elija comprar:
+                                                     </p>
+                                                   </div>
+                                                 )}
+                                                 {p.items.map((item: any, idx: number) => {
+                                                   const checked = isItemSelected(req.id, p.id, idx, p.items.length);
+                                                   return (
+                                                     <div key={idx} className={`p-2.5 rounded-xl border transition ${
+                                                       checked 
+                                                         ? "bg-amber-500/10 border-amber-500/50 shadow-sm" 
+                                                         : "bg-zinc-900/60 border-zinc-800 opacity-60"
+                                                     }`}>
+                                                       <div className="flex items-start gap-2.5">
+                                                         {p.items.length > 1 && p.estado !== "Aceptado" && (
+                                                           <input
+                                                             type="checkbox"
+                                                             checked={checked}
+                                                             onChange={() => toggleItemSelection(req.id, p.id, idx, p.items.length)}
+                                                             className="w-4 h-4 mt-0.5 accent-amber-500 rounded cursor-pointer flex-shrink-0"
+                                                           />
+                                                         )}
+                                                         <div className="flex-1 text-xs">
+                                                           {p.items.length > 1 && (
+                                                             <span className="text-[9px] font-black uppercase text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 mr-1.5">
+                                                               Opción {idx + 1}
+                                                             </span>
+                                                           )}
+                                                           <span className="font-bold text-white text-xs sm:text-sm">{item.producto}</span>
+                                                           <div className="text-zinc-300 mt-1">
+                                                             {item.cuotas} cuotas de <span className="text-yellow-400 font-mono font-bold">${(item.valorCuota || 0).toLocaleString("es-AR")}</span>
+                                                             {item.contado > 0 && ` (Ref. Contado: $${(item.contado || 0).toLocaleString("es-AR")})`}
+                                                           </div>
+                                                         </div>
+                                                       </div>
+                                                       {(item.proveedor || item.costoProveedor || item.linkProveedor) && (
+                                                         <div className="text-[10px] text-amber-400/90 mt-1.5 bg-amber-500/5 px-2.5 py-1 rounded-lg border border-amber-500/10 block">
+                                                           🔒 Uso Interno: {item.proveedor ? `Prov: ${item.proveedor}` : "Prov: S/D"}
+                                                           {item.costoProveedor > 0 && ` (Costo: $${item.costoProveedor})`}
+                                                           {item.linkProveedor && (
+                                                             <>
+                                                               {" | "}
+                                                               <a href={item.linkProveedor.startsWith("http") ? item.linkProveedor : `https://${item.linkProveedor}`} target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-300">
+                                                                 Ver Link ↗
+                                                               </a>
+                                                             </>
+                                                           )}
+                                                         </div>
+                                                       )}
+                                                     </div>
+                                                   );
+                                                 })}
+                                                 
+                                                 {/* SUM OF SUPPLIER COST */}
+                                                 {p.items.some((it: any) => it.costoProveedor > 0) && (
+                                                   <div className="text-[10px] text-amber-400 font-bold mt-2">
+                                                     🔒 Costo Proveedor Total: ${p.items.reduce((sum: number, it: any) => sum + (it.costoProveedor || 0), 0).toLocaleString("es-AR")}
+                                                   </div>
+                                                 )}
+                                               </div>
+                                             ) : (
                                               // Fallback for old single budgets
                                               <div>
                                                 <div className="flex items-center gap-2 mb-1">

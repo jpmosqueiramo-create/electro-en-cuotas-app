@@ -57,7 +57,21 @@ export const buildStandardPdfFilename = (
   return `${parts.join("_")}.pdf`;
 };
 
+export interface ItemContratoDetalle {
+  producto: string;
+  nserie?: string;
+  cantidad?: number;
+  estadoBien?: string;
+  precioContado?: number | string;
+  cuotas?: number | string;
+  valorCuota?: number | string;
+  totalFinanciado?: number | string;
+  proveedor?: string;
+  linkProveedor?: string;
+}
+
 export interface DatosContrato {
+  items?: ItemContratoDetalle[];
   facturaProveedorOriginal?: string;
   nroContrato: string;
   nombreComprador: string;
@@ -228,22 +242,45 @@ export const generarContratoModelo = (datos: DatosContrato) => {
   doc.text("Estado (Nuevo/Usado)", marginLeft + 140, y + 4.5);
   y += 6;
 
-  // Tabla de Bienes (Row)
-  const cantStr = String(datos.cantidad || 1);
-  const estadoStr = datos.estadoBien || "Nuevo";
-  const prodDescFull = `${datos.producto} ${datos.nserie ? "(IMEI/Serie: " + datos.nserie + ")" : ""}`;
+  const parseNum = (val: string | number | undefined) => {
+    if (typeof val === "number") return val;
+    if (!val) return 0;
+    return parseFloat(val.toString().replace(/[^0-9.-]/g, "")) || 0;
+  };
 
-  doc.rect(marginLeft, y, contentWidth, 10, "S");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8.5);
-  doc.text(cantStr, marginLeft + 8, y + 6);
+  const rawItemsList = datos.items || (datos as any).itemsContrato;
+  const itemsList = rawItemsList && rawItemsList.length > 0 ? rawItemsList : [{
+    producto: datos.producto,
+    nserie: datos.nserie,
+    cantidad: datos.cantidad || 1,
+    estadoBien: datos.estadoBien || "Nuevo",
+    precioContado: datos.precioContado,
+    cuotas: datos.cuotas || 12,
+    valorCuota: datos.importeCuota,
+    totalFinanciado: datos.totalFinanciado
+  }];
 
-  doc.setFont("helvetica", "normal");
-  const pLines = doc.splitTextToSize(prodDescFull, 105);
-  doc.text(pLines, marginLeft + 30, y + 5.5);
+  itemsList.forEach((it: any) => {
+    const cantStr = String(it.cantidad || 1);
+    const estadoStr = it.estadoBien || datos.estadoBien || "Nuevo";
+    const prodDescFull = `${it.producto} ${it.nserie ? "(IMEI/Serie: " + it.nserie + ")" : ""}`;
 
-  doc.text(estadoStr, marginLeft + 142, y + 6);
-  y += 13;
+    const pLines = doc.splitTextToSize(prodDescFull, 105);
+    const rowH = Math.max(8, pLines.length * 4.5 + 3);
+
+    doc.rect(marginLeft, y, contentWidth, rowH, "S");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.text(cantStr, marginLeft + 8, y + 5.5);
+
+    doc.setFont("helvetica", "normal");
+    doc.text(pLines, marginLeft + 30, y + 5);
+
+    doc.text(estadoStr, marginLeft + 142, y + 5.5);
+    y += rowH;
+  });
+
+  y += 4;
 
   doc.setFontSize(7.5);
   doc.setTextColor(71, 85, 105);
@@ -270,20 +307,49 @@ export const generarContratoModelo = (datos: DatosContrato) => {
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(51, 65, 85);
-  const tSeg = "El costo total de la operación, que incluye el valor del Bien, los honorarios por la gestión del mandato, los gastos logísticos y el costo financiero por el otorgamiento de facilidades de pago con capital propio de la EMPRESA, se detalla a continuación:";
+  const tSeg = "El costo total de la operación, que incluye el valor de los Bienes, los honorarios por la gestión del mandato, los gastos logísticos y el costo financiero por el otorgamiento de facilidades de pago con capital propio de la EMPRESA, se detalla a continuación:";
   const lSeg = doc.splitTextToSize(tSeg, contentWidth);
   doc.text(lSeg, marginLeft, y);
   y += lSeg.length * 3.8 + 3;
 
-  // 1. Variables Base (Input): Costo_Bien & Valor_Total_Financiar
-  const parseNum = (val: string | number | undefined) => {
-    if (typeof val === "number") return val;
-    if (!val) return 0;
-    return parseFloat(val.toString().replace(/[^0-9.-]/g, "")) || 0;
-  };
+  if (itemsList.length > 1) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(15, 23, 42);
+    doc.text("Desglose Individual de los Bienes Adquiridos:", marginLeft, y);
+    y += 4.5;
 
-  const costoBien = Math.round(parseNum(datos.precioContado));
-  const valorTotalFinanciar = Math.round(parseNum(datos.totalFinanciado));
+    itemsList.forEach((it: any, idx: number) => {
+      const cNum = parseNum(it.precioContado);
+      const qNum = Number(it.cuotas) || 12;
+      const vNum = parseNum(it.valorCuota);
+      const tNum = parseNum(it.totalFinanciado) || (vNum * qNum);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.8);
+      doc.setTextColor(51, 65, 85);
+      doc.text(`• Bien ${idx + 1}: ${it.producto} — ${qNum} cuotas de ${formatARS(vNum)} (Total Financiado: ${formatARS(tNum)})`, marginLeft + 3, y);
+      y += 4;
+    });
+    y += 3;
+  }
+
+  // 1. Variables Base (Input): Costo_Bien & Valor_Total_Financiar acumulados
+  let costoBien = 0;
+  let valorTotalFinanciar = 0;
+
+  if (itemsList.length > 1) {
+    itemsList.forEach((it: any) => {
+      costoBien += parseNum(it.precioContado);
+      const qNum = Number(it.cuotas) || 12;
+      const vNum = parseNum(it.valorCuota);
+      const tNum = parseNum(it.totalFinanciado) || (vNum * qNum);
+      valorTotalFinanciar += tNum;
+    });
+  }
+
+  if (costoBien <= 0) costoBien = Math.round(parseNum(datos.precioContado));
+  if (valorTotalFinanciar <= 0) valorTotalFinanciar = Math.round(parseNum(datos.totalFinanciado));
 
   // 2. Cálculos Internos Ocultos:
   // - Base de ganancia: Monto_Gravado = Valor_Total_Financiar - Costo_Bien

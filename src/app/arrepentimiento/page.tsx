@@ -98,12 +98,12 @@ export default function ArrepentimientoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#121316] text-zinc-100 font-sans selection:bg-yellow-500 selection:text-black">
+    <div className="min-h-screen bg-slate-100 text-zinc-900 font-sans">
       
       {/* NAVBAR */}
-      <nav className="sticky top-0 z-50 bg-[#181920]/90 backdrop-blur-xl border-b border-zinc-800">
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-zinc-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="text-zinc-400 hover:text-[#fe5000] flex items-center gap-2 text-sm transition-colors font-bold">
+          <Link href="/" className="text-zinc-600 hover:text-[#fe5000] flex items-center gap-2 text-sm transition-colors font-bold">
             <ArrowLeft className="w-5 h-5" /> Volver al inicio
           </Link>
           <div className="flex items-center gap-2">
@@ -119,37 +119,37 @@ export default function ArrepentimientoPage() {
           <div className="inline-flex items-center gap-2 bg-yellow-500/15 text-[#fe5000] px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5" /> Defensa del Consumidor
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tight text-white leading-none">
+          <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tight text-zinc-900 leading-none">
             Botón de <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-[#fe5000] to-amber-500">Arrepentimiento</span>
           </h1>
-          <p className="text-zinc-400 text-sm max-w-xl mx-auto leading-relaxed">
+          <p className="text-zinc-600 text-sm max-w-xl mx-auto leading-relaxed font-medium">
             De acuerdo con la legislación argentina, podés revocar la aceptación del servicio dentro de los 10 días corridos contados a partir de la firma del contrato o de la entrega del producto.
           </p>
         </div>
 
         {/* FORM */}
-        <div className="bg-[#181920]/30 backdrop-blur-xl border border-zinc-800 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8">
+        <div className="bg-white border border-zinc-200/90 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8">
           <div>
-            <h2 className="text-lg font-black text-white uppercase tracking-wider">Formulario de Revocación</h2>
+            <h2 className="text-lg font-black text-zinc-900 uppercase tracking-wider">Formulario de Revocación</h2>
             <p className="text-zinc-500 text-xs mt-1">Completa los datos de tu legajo para procesar la baja inmediata.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Nombre y Apellido *</label>
+                <label className="block text-[10px] font-bold text-zinc-700 font-bold uppercase tracking-wider mb-2">Nombre y Apellido *</label>
                 <input
                   type="text"
                   required
                   value={nombreCompleto}
                   onChange={e => setNombreCompleto(e.target.value)}
-                  className="w-full bg-[#121316] border border-zinc-800 rounded-xl p-3.5 text-white focus:border-[#fe5000] outline-none text-sm font-bold transition-all"
+                  className="w-full bg-slate-50 border border-zinc-300 rounded-xl p-3.5 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 outline-none text-base font-medium shadow-sm transition-all"
                   placeholder="Ej: Juan Pérez"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Número de DNI / CUIL *</label>
+                <label className="block text-[10px] font-bold text-zinc-700 font-bold uppercase tracking-wider mb-2">Número de DNI / CUIL *</label>
                 <input
                   type="text"
                   required
@@ -161,54 +161,54 @@ export default function ArrepentimientoPage() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Correo Electrónico *</label>
+                <label className="block text-[10px] font-bold text-zinc-700 font-bold uppercase tracking-wider mb-2">Correo Electrónico *</label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full bg-[#121316] border border-zinc-800 rounded-xl p-3.5 text-white focus:border-[#fe5000] outline-none text-sm font-bold transition-all"
+                  className="w-full bg-slate-50 border border-zinc-300 rounded-xl p-3.5 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 outline-none text-base font-medium shadow-sm transition-all"
                   placeholder="tu@correo.com"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Teléfono de Contacto (WhatsApp) *</label>
+                <label className="block text-[10px] font-bold text-zinc-700 font-bold uppercase tracking-wider mb-2">Teléfono de Contacto (WhatsApp) *</label>
                 <input
                   type="tel"
                   required
                   value={telefono}
                   onChange={e => setTelefono(e.target.value)}
-                  className="w-full bg-[#121316] border border-zinc-800 rounded-xl p-3.5 text-white focus:border-[#fe5000] outline-none text-sm font-bold transition-all"
+                  className="w-full bg-slate-50 border border-zinc-300 rounded-xl p-3.5 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 outline-none text-base font-medium shadow-sm transition-all"
                   placeholder="Ej: +54 9 11 2345 6789"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Producto o Plan *</label>
+                <label className="block text-[10px] font-bold text-zinc-700 font-bold uppercase tracking-wider mb-2">Producto o Plan *</label>
                 <input
                   type="text"
                   required
                   value={producto}
                   onChange={e => setProducto(e.target.value)}
-                  className="w-full bg-[#121316] border border-zinc-800 rounded-xl p-3.5 text-white focus:border-[#fe5000] outline-none text-sm font-bold transition-all"
+                  className="w-full bg-slate-50 border border-zinc-300 rounded-xl p-3.5 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 outline-none text-base font-medium shadow-sm transition-all"
                   placeholder="Ej: Samsung Galaxy S23"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Fecha Aproximada de Compra</label>
+                <label className="block text-[10px] font-bold text-zinc-700 font-bold uppercase tracking-wider mb-2">Fecha Aproximada de Compra</label>
                 <input
                   type="date"
                   value={fechaCompra}
                   onChange={e => setFechaCompra(e.target.value)}
-                  className="w-full bg-[#121316] border border-zinc-800 rounded-xl p-3.5 text-white focus:border-[#fe5000] outline-none text-sm font-bold transition-all"
+                  className="w-full bg-slate-50 border border-zinc-300 rounded-xl p-3.5 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 outline-none text-base font-medium shadow-sm transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Comentarios Adicionales (Opcional)</label>
+              <label className="block text-[10px] font-bold text-zinc-700 font-bold uppercase tracking-wider mb-2">Comentarios Adicionales (Opcional)</label>
               <textarea
                 value={mensaje}
                 onChange={e => setMensaje(e.target.value)}

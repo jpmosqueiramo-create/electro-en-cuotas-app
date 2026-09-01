@@ -413,46 +413,44 @@ export default function PublicCatalog() {
       {/* 6. NUEVA SECCIÓN: Iniciá tu Plan Ahora (SECCIÓN BLANCA HARMONIOSA) */}
       <section id="contacto" className="py-24 bg-white border-t border-zinc-200">
         <div className="max-w-4xl mx-auto px-6">
-          <div className="bg-slate-900 text-white border border-slate-800 rounded-3xl p-8 md:p-12 shadow-2xl shadow-slate-900/30 relative overflow-hidden">
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#fe5000]/25 blur-3xl rounded-full pointer-events-none" />
-            
+          <div className="bg-slate-50 border border-zinc-200/90 rounded-3xl p-8 md:p-12 shadow-xl relative overflow-hidden">
             <div className="text-center mb-10 relative z-10">
-              <h2 className="text-3xl md:text-4xl font-black text-white mb-4">¿Buscás algo en especial? Nosotros lo gestionamos por vos.</h2>
-              <p className="text-zinc-300 text-lg font-light">Completá tus datos y contanos qué estás necesitando. Un <strong className="text-white font-bold">Afiliado Independiente</strong> de nuestra red se pondrá en contacto con vos para armar tu plan a medida.</p>
+              <h2 className="text-3xl md:text-4xl font-black text-zinc-900 mb-4">¿Buscás algo en especial? Nosotros lo gestionamos por vos.</h2>
+              <p className="text-zinc-600 text-lg font-medium">Completá tus datos y contanos qué estás necesitando. Un <strong className="text-zinc-900 font-bold">Afiliado Independiente</strong> de nuestra red se pondrá en contacto con vos para armar tu plan a medida.</p>
             </div>
 
             <form onSubmit={handleQuickFormSubmit} className="space-y-6 relative z-10">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm text-zinc-300 mb-2 font-bold">Nombre y Apellido</label>
-                  <input required value={qfNombre} onChange={e=>setQfNombre(e.target.value)} type="text" placeholder="Tu nombre" className="w-full bg-slate-950 border border-slate-700 p-4 rounded-xl text-white outline-none focus:border-[#fe5000] focus:ring-1 focus:ring-[#fe5000]/30 transition-colors" />
+                  <label className="block text-sm text-zinc-700 mb-1.5 font-bold">Nombre y Apellido</label>
+                  <input required value={qfNombre} onChange={e=>setQfNombre(e.target.value)} type="text" placeholder="Tu nombre" className="w-full bg-white border border-zinc-300 p-4 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 font-medium text-base shadow-sm transition-all" />
                 </div>
                 <div>
-                  <label className="block text-sm text-zinc-300 mb-2 font-bold">DNI</label>
-                  <input required value={qfDni} onChange={e=>setQfDni(e.target.value)} type="number" placeholder="Sin puntos" className="w-full bg-slate-950 border border-slate-700 p-4 rounded-xl text-white outline-none focus:border-[#fe5000] focus:ring-1 focus:ring-[#fe5000]/30 transition-colors" />
+                  <label className="block text-sm text-zinc-700 mb-1.5 font-bold">DNI</label>
+                  <input required value={qfDni} onChange={e=>setQfDni(e.target.value)} type="number" placeholder="Sin puntos" className="w-full bg-white border border-zinc-300 p-4 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 font-medium text-base shadow-sm transition-all" />
                 </div>
                 <div>
-                  <label className="block text-sm text-zinc-300 mb-2 font-bold">WhatsApp de contacto</label>
-                  <input required value={qfWhatsapp} onChange={e=>setQfWhatsapp(e.target.value)} type="tel" placeholder="Código de área + número" className="w-full bg-slate-950 border border-slate-700 p-4 rounded-xl text-white outline-none focus:border-[#fe5000] focus:ring-1 focus:ring-[#fe5000]/30 transition-colors" />
+                  <label className="block text-sm text-zinc-700 mb-1.5 font-bold">WhatsApp de contacto</label>
+                  <input required value={qfWhatsapp} onChange={e=>setQfWhatsapp(e.target.value)} type="tel" placeholder="Código de área + número" className="w-full bg-white border border-zinc-300 p-4 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 font-medium text-base shadow-sm transition-all" />
                 </div>
                 <div>
-                  <label className="block text-sm text-zinc-300 mb-2 font-bold">Localidad</label>
-                  <input required value={qfLocalidad} onChange={e=>setQfLocalidad(e.target.value)} type="text" placeholder="Ej: Córdoba Capital" className="w-full bg-slate-950 border border-slate-700 p-4 rounded-xl text-white outline-none focus:border-[#fe5000] focus:ring-1 focus:ring-[#fe5000]/30 transition-colors" />
+                  <label className="block text-sm text-zinc-700 mb-1.5 font-bold">Localidad</label>
+                  <input required value={qfLocalidad} onChange={e=>setQfLocalidad(e.target.value)} type="text" placeholder="Ej: Córdoba Capital" className="w-full bg-white border border-zinc-300 p-4 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 font-medium text-base shadow-sm transition-all" />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm text-zinc-300 mb-2 font-bold">¿Algún cliente de Cuenta Hogar te recomendó con nosotros? <span className="text-xs text-zinc-400 font-normal">(Opcional)</span></label>
-                  <input value={qfReferente} onChange={e=>setQfReferente(e.target.value)} type="text" placeholder="Escribí acá el nombre de quien te pasó el dato." className="w-full bg-slate-950 border border-slate-700 p-4 rounded-xl text-white outline-none focus:border-[#fe5000] focus:ring-1 focus:ring-[#fe5000]/30 transition-colors" />
+                  <label className="block text-sm text-zinc-700 mb-1.5 font-bold">¿Algún cliente de Cuenta Hogar te recomendó con nosotros? <span className="text-xs text-zinc-500 font-normal">(Opcional)</span></label>
+                  <input value={qfReferente} onChange={e=>setQfReferente(e.target.value)} type="text" placeholder="Escribí acá el nombre de quien te pasó el dato." className="w-full bg-white border border-zinc-300 p-4 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 font-medium text-base shadow-sm transition-all" />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm text-zinc-300 mb-2 font-bold">¿Qué estás necesitando?</label>
-                  <textarea required value={qfNecesidad} onChange={e=>setQfNecesidad(e.target.value)} placeholder="Describí el producto o equipo que buscás..." rows={4} className="w-full bg-slate-950 border border-slate-700 p-4 rounded-xl text-white outline-none focus:border-[#fe5000] focus:ring-1 focus:ring-[#fe5000]/30 transition-colors resize-none" />
+                  <label className="block text-sm text-zinc-700 mb-1.5 font-bold">¿Qué estás necesitando?</label>
+                  <textarea required value={qfNecesidad} onChange={e=>setQfNecesidad(e.target.value)} placeholder="Describí el producto o equipo que buscás..." rows={4} className="w-full bg-white border border-zinc-300 p-4 rounded-xl text-zinc-900 placeholder-zinc-400 outline-none focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 font-medium text-base shadow-sm transition-all resize-none" />
                 </div>
               </div>
 
             <button 
               type="submit" 
               disabled={qfSubmitting}
-              className="w-full group flex items-center justify-center gap-2 bg-yellow-textured text-black font-black text-lg py-5 rounded-xl hover:-translate-y-1 active:scale-95 transition-all duration-300 shadow-md disabled:opacity-75 disabled:cursor-not-allowed"
+              className="w-full group flex items-center justify-center gap-2 bg-gradient-to-r from-[#ff5e14] via-[#fe5000] to-[#e04600] text-white font-black text-lg py-5 rounded-2xl hover:scale-[1.01] active:scale-95 transition-all duration-300 shadow-xl shadow-orange-500/25 disabled:opacity-75 disabled:cursor-not-allowed"
             >
               <Send className="w-5 h-5" /> {qfSubmitting ? "Registrando solicitud..." : "Enviar mi solicitud de confianza"}
             </button>

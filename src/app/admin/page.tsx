@@ -120,6 +120,22 @@ export default function AdminPage() {
                 📜 Abrir Registro de Remitos
               </Link>
             </div>
+
+            <div className="p-6 bg-[#121316] border border-zinc-800 rounded-lg flex flex-col">
+              <h2 className="text-2xl mb-4 font-semibold text-white">Historial de Presupuestos</h2>
+              <p className="text-zinc-600 mb-6">Registro maestro de todas las cotizaciones confeccionadas (aprobadas, rechazadas, pendientes o eliminadas), ordenadas por fecha.</p>
+              <Link href="/admin/presupuestos" className="mt-auto bg-amber-500 text-black font-bold text-center px-4 py-3 rounded w-full transition-colors hover:bg-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]">
+                📄 Ver Historial de Presupuestos
+              </Link>
+            </div>
+
+            <div className="p-6 bg-[#121316] border border-zinc-800 rounded-lg flex flex-col">
+              <h2 className="text-2xl mb-4 font-semibold text-white">Base de Datos de Clientes</h2>
+              <p className="text-zinc-600 mb-6">Directorio maestro de perfiles de clientes, DNI, CUIL, teléfonos, direcciones, ocupación e historial de compras.</p>
+              <Link href="/admin/clientes" className="mt-auto bg-cyan-600 text-white font-bold text-center px-4 py-3 rounded w-full transition-colors hover:bg-cyan-500 shadow-[0_0_15px_rgba(8,145,178,0.4)]">
+                👥 Ver Base de Datos de Clientes
+              </Link>
+            </div>
           </div>
         </div>
       </div>
