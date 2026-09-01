@@ -477,6 +477,31 @@ export default function PublicCatalog() {
               </p>
             </div>
 
+            {/* FOTO DESTACADA DE LA CAMIONETA OFICIAL DE LA EMPRESA */}
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-zinc-800 bg-zinc-950 group">
+              <img 
+                src="/flota-cuenta-hogar.jpg" 
+                alt="Camioneta Oficial de Traslado de Compras Cuenta Hogar" 
+                className="w-full h-[300px] sm:h-[420px] object-cover group-hover:scale-105 transition-transform duration-700" 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent flex items-end p-6 md:p-8">
+                <div className="bg-slate-900/90 backdrop-blur-md border border-white/10 text-white p-4 sm:p-5 rounded-2xl w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-[#fe5000] rounded-xl flex items-center justify-center text-white font-bold flex-shrink-0 shadow-md shadow-orange-500/30">
+                      <Truck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black uppercase text-white tracking-wider">Flota Oficial Identificada de Cuenta Hogar</p>
+                      <p className="text-[11px] text-zinc-300 font-medium">Unidades acondicionadas para el traslado protegido de tecnología y electrodomésticos</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-1 rounded-full font-bold uppercase tracking-wider whitespace-nowrap">
+                    ✔ Flota en Regla
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* 2. LOS 3 PASOS RÁPIDOS */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               

@@ -2262,6 +2262,28 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                           </button>
                                         </div>
                                       </div>
+
+                                      {/* CAJA DE AUDITORÍA FISCAL DE IVA 21% Y ESTRUCTURA DE LA CUOTA */}
+                                      {Number(budgetCostoProveedor) > 0 && Number(budgetCuotaValor) > 0 && (
+                                        <div className="col-span-2 bg-zinc-900/90 border border-emerald-500/30 p-3 rounded-xl space-y-1.5 text-xs font-mono">
+                                          <div className="flex justify-between text-zinc-300 border-b border-zinc-800 pb-1">
+                                            <span>🟢 Capital Exento (Costo bien):</span>
+                                            <strong className="text-emerald-400">${Number(budgetCostoProveedor).toLocaleString("es-AR")}</strong>
+                                          </div>
+                                          <div className="flex justify-between text-zinc-300 border-b border-zinc-800 pb-1">
+                                            <span>🟡 Total Financiado ({budgetCuotas} cuotas):</span>
+                                            <strong className="text-amber-400">${(Number(budgetCuotaValor) * Number(budgetCuotas)).toLocaleString("es-AR")}</strong>
+                                          </div>
+                                          <div className="flex justify-between text-zinc-400">
+                                            <span>⚖️ Honorarios e Intereses (Gravado):</span>
+                                            <strong className="text-white">${Math.max(0, (Number(budgetCuotaValor) * Number(budgetCuotas)) - Number(budgetCostoProveedor)).toLocaleString("es-AR")}</strong>
+                                          </div>
+                                          <div className="flex justify-between text-zinc-400 text-[11px]">
+                                            <span>🧾 Débito Fiscal IVA 21% Incluido:</span>
+                                            <strong className="text-emerald-300">${Math.round(Math.max(0, (Number(budgetCuotaValor) * Number(budgetCuotas)) - Number(budgetCostoProveedor)) * (0.21 / 1.21)).toLocaleString("es-AR")}</strong>
+                                          </div>
+                                        </div>
+                                      )}
                                       
                                       {/* DATOS PROVEEDOR USO INTERNO */}
                                       <div>
