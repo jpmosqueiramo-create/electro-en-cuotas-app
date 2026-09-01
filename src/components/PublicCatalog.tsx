@@ -124,22 +124,56 @@ export default function PublicCatalog() {
         await registrarProductoBorradorSiNoExiste(qfNecesidad).catch(() => {}); 
       }
 
-      // 2. Guardar solicitud en solicitudes_cuenta
+      // 2. Guardar solicitud en solicitudes_cuenta (Completo con mapeo de campos)
+      const payloadBuscás = {
+        tipo: "contacto_rapido",
+        nombreCompleto: qfNombre,
+        nombre: qfNombre,
+        numeroDni: qfDni,
+        dni: qfDni,
+        whatsapp: qfWhatsapp,
+        telefono: qfWhatsapp,
+        direccion: qfLocalidad,
+        localidad: qfLocalidad,
+        necesidad: qfNecesidad,
+        productoNombre: qfNecesidad,
+        productoDeseado: qfNecesidad,
+        referente: qfReferente || null,
+        referidoPor: qfReferente || null,
+        fecha: serverTimestamp(),
+        fechaIso: new Date().toISOString(),
+        fechaCreacion: serverTimestamp(),
+        estado: "Pendiente"
+      };
+
       try {
-        await addDoc(collection(db, "solicitudes_cuenta"), {
-          tipo: "contacto_rapido",
-          nombre: qfNombre,
-          dni: qfDni,
-          whatsapp: qfWhatsapp,
-          localidad: qfLocalidad,
-          necesidad: qfNecesidad,
-          referente: qfReferente || null,
-          fecha: serverTimestamp(),
-          fechaIso: new Date().toISOString(),
-          estado: "Pendiente"
-        });
+        await addDoc(collection(db, "solicitudes_cuenta"), payloadBuscás);
       } catch (errDb) {
         console.warn("Aviso Firestore solicitudes_cuenta:", errDb);
+      }
+
+      // 3. Backup dual-write en solicitudes para asegurar 100% de visibilidad
+      try {
+        await addDoc(collection(db, "solicitudes"), {
+          clienteEmail: qfWhatsapp || "contacto_rapido",
+          datosPersonales: {
+            nombreCompleto: qfNombre,
+            numeroDni: qfDni,
+            telefono: qfWhatsapp,
+            direccion: qfLocalidad,
+            localidad: qfLocalidad
+          },
+          productoDeseado: qfNecesidad,
+          necesidad: qfNecesidad,
+          estado: "PENDIENTE",
+          estadoEntrega: "PENDIENTE_ENTREGA",
+          tipo: "contacto_rapido",
+          referidoPor: qfReferente || null,
+          fechaCreacion: serverTimestamp(),
+          fechaIso: new Date().toISOString()
+        });
+      } catch (errSol) {
+        console.warn("Aviso Firestore solicitudes:", errSol);
       }
 
       // 3. Crear alerta en alertas_admin para notificar al panel de control

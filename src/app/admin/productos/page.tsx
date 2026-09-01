@@ -1,7 +1,6 @@
 "use client";
 
 import { calcularOperacionFinanciera, FACTORES_PREDETERMINADOS, calcularTablaTodosLosPlanes } from "@/lib/financialEngine";
-import { generarFichaTecnicaIAClient } from "@/lib/aiProductDescription";
 import { useState, useEffect } from "react";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { db, storage } from "@/lib/firebase";
@@ -58,7 +57,6 @@ export default function AdminProductosPage() {
   const [cuota8, setCuota8] = useState("");
   const [costoProducto, setCostoProducto] = useState("");
   const [multiplicador, setMultiplicador] = useState("2.5");
-  const [generandoIA, setGenerandoIA] = useState(false);
   const [factoresPlanes, setFactoresPlanes] = useState<Record<number, number>>(FACTORES_PREDETERMINADOS);
   const [planesActivos, setPlanesActivos] = useState<Record<number, boolean>>({
     1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true, 9: true, 10: true, 11: true, 12: true
@@ -385,27 +383,7 @@ export default function AdminProductosPage() {
     }
   };
 
-    const handleGenerarDescripcionIA = async () => {
-    if (!nombre.trim()) {
-      alert("⚠️ Por favor ingresá primero el Nombre del equipo arriba.");
-      return;
-    }
 
-    setGenerandoIA(true);
-    try {
-      const desc = await generarFichaTecnicaIAClient(nombre);
-      if (desc) {
-        setDescripcion(desc);
-      } else {
-        alert("❌ No se pudo generar la descripción para este producto.");
-      }
-    } catch (err: any) {
-      console.error(err);
-      alert("❌ Error al generar la ficha técnica.");
-    } finally {
-      setGenerandoIA(false);
-    }
-  };
 
   const handleSubirProducto = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -687,26 +665,18 @@ export default function AdminProductosPage() {
                      })}
                    </div>
                 </div>
-                <div className="p-4 bg-[#121316] border border-purple-500/40 rounded-2xl space-y-3 shadow-xl">
-                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-zinc-800 pb-2">
+                <div className="p-4 bg-[#121316] border border-zinc-800 rounded-2xl space-y-3 shadow-xl">
+                   <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
                      <label className="block text-xs font-black text-yellow-200 uppercase tracking-wider flex items-center gap-1.5">
                        📝 Descripción corta y Ficha Técnica
                      </label>
-                     <button
-                       type="button"
-                       onClick={handleGenerarDescripcionIA}
-                       disabled={generandoIA || !nombre.trim()}
-                       className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-500 hover:to-orange-400 text-white font-black px-3 py-2 rounded-xl text-xs transition-all shadow-lg flex items-center gap-2 disabled:opacity-50 active:scale-95 cursor-pointer border border-purple-400/30"
-                     >
-                       {generandoIA ? "🤖 Buscando y Generando Ficha..." : "✨ Autocompletar Ficha Técnica con IA"}
-                     </button>
                    </div>
                    <textarea 
                      required 
                      value={descripcion} 
                      onChange={e=>setDescripcion(e.target.value)} 
                      placeholder="Ej: Ficha técnica detallada del equipo, pantalla, almacenamiento, procesador y garantía..." 
-                     className="w-full bg-[#181920] border border-purple-500/30 rounded-xl p-3 text-white text-xs font-mono focus:border-purple-400 focus:outline-none leading-relaxed shadow-inner" 
+                     className="w-full bg-[#181920] border border-zinc-800 rounded-xl p-3 text-white text-xs font-mono focus:border-[#fe5000] focus:outline-none leading-relaxed shadow-inner" 
                      rows={6} 
                    />
                 </div>

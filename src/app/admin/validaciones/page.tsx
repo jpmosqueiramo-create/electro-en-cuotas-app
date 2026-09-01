@@ -1974,7 +1974,10 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
   const combinedRequests = [
     ...aperturas
-      .filter((ap: any) => ap.estado === "Pendiente" || ap.estado === "Aprobado_Presupuesto")
+      .filter((ap: any) => {
+        const st = (ap.estado || "Pendiente").toLowerCase();
+        return st === "pendiente" || st === "aprobado_presupuesto" || st === "solicitante" || st === "aperturado";
+      })
       .map((ap: any) => {
         let sortTime = Date.now();
         if (ap.fecha?.seconds) sortTime = ap.fecha.seconds * 1000;

@@ -36,18 +36,36 @@ export default function PresupuestosPage() {
       snapAperturas.forEach((d) => {
         const solData = d.id ? { id: d.id, ...d.data() } : d.data();
         const presupList = (solData as any).presupuestos || [];
-        presupList.forEach((p: any) => {
+        if (presupList.length > 0) {
+          presupList.forEach((p: any) => {
+            allPresupuestos.push({
+              ...p,
+              solicitudId: d.id,
+              solicitudTipo: "apertura",
+              clienteNombre: (solData as any).nombreCompleto || (solData as any).nombre || "Cliente Sin Nombre",
+              clienteDni: (solData as any).numeroDni || (solData as any).dni || "-",
+              clienteWhatsapp: (solData as any).whatsapp || (solData as any).telefono || "-",
+              clienteLocalidad: (solData as any).direccion || (solData as any).localidad || "-",
+              fechaObjeto: parseAnyDate(p.fechaIso || p.fecha || (solData as any).fechaIso || (solData as any).fecha)
+            });
+          });
+        } else if ((solData as any).necesidad || (solData as any).productoDeseado || (solData as any).productoNombre) {
+          const prodName = (solData as any).necesidad || (solData as any).productoDeseado || (solData as any).productoNombre;
           allPresupuestos.push({
-            ...p,
+            id: "pres_pend_" + d.id,
             solicitudId: d.id,
             solicitudTipo: "apertura",
             clienteNombre: (solData as any).nombreCompleto || (solData as any).nombre || "Cliente Sin Nombre",
             clienteDni: (solData as any).numeroDni || (solData as any).dni || "-",
             clienteWhatsapp: (solData as any).whatsapp || (solData as any).telefono || "-",
             clienteLocalidad: (solData as any).direccion || (solData as any).localidad || "-",
-            fechaObjeto: parseAnyDate(p.fechaIso || p.fecha || (solData as any).fechaIso || (solData as any).fecha)
+            producto: prodName,
+            items: [{ producto: prodName, contado: 0, cuotas: 12, valorCuota: 0 }],
+            estado: "Pendiente",
+            notas: "Solicitud recibida desde portada ('Buscás algo especial'). Pendiente de armar cotización por el administrador.",
+            fechaObjeto: parseAnyDate((solData as any).fechaIso || (solData as any).fecha || (solData as any).fechaCreacion)
           });
-        });
+        }
       });
 
       // 2. Fetch de solicitudes (Solicitudes Especiales / Estándar)
