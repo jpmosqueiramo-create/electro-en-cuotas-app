@@ -17,6 +17,8 @@ export const descargarCsvExcel = (
   columns: ExportColumn[],
   data: any[]
 ) => {
+  if (typeof window === "undefined") return;
+
   if (!data || data.length === 0) {
     alert("⚠️ No hay registros disponibles para exportar.");
     return;
@@ -60,6 +62,10 @@ export const copiarParaGoogleSheets = async (
   columns: ExportColumn[],
   data: any[]
 ): Promise<boolean> => {
+  if (typeof window === "undefined" || !navigator || !navigator.clipboard) {
+    return false;
+  }
+
   if (!data || data.length === 0) {
     alert("⚠️ No hay registros disponibles para copiar.");
     return false;
