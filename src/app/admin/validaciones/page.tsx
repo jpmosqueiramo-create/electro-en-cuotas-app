@@ -2053,6 +2053,9 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
               <Link href="/admin/clientes" className="text-xs bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
                 👥 Base Clientes
               </Link>
+              <Link href="/admin/reportes" className="text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
+                📊 Reportes Excel
+              </Link>
               <Link href="/admin" className="text-xs border border-zinc-800 hover:bg-zinc-800 text-zinc-300 px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
                 ← Panel Root
               </Link>

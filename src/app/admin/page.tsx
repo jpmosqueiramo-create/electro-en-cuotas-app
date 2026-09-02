@@ -136,6 +136,14 @@ export default function AdminPage() {
                 👥 Ver Base de Datos de Clientes
               </Link>
             </div>
+
+            <div className="p-6 bg-[#121316] border border-emerald-500/40 rounded-lg flex flex-col shadow-lg shadow-emerald-950/30">
+              <h2 className="text-2xl mb-4 font-semibold text-emerald-400">Reportes y Planillas Excel</h2>
+              <p className="text-zinc-400 mb-6">Centro de planillas financieras descargables en Excel y Google Sheets: Cobros de cuotas, Gastos de Fletes y Pago de Comisiones a afiliados.</p>
+              <Link href="/admin/reportes" className="mt-auto bg-emerald-600 text-white font-bold text-center px-4 py-3 rounded w-full transition-colors hover:bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]">
+                📊 Abrir Reportes y Planillas (Excel / Sheets)
+              </Link>
+            </div>
           </div>
         </div>
       </div>
