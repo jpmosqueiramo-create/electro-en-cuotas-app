@@ -1334,6 +1334,8 @@ export interface DatosComprobantePago {
   fecha: string;
   clienteNombre: string;
   clienteDni: string;
+  clienteLocalidad?: string;
+  clienteDireccion?: string;
   productoNombre?: string;
   cuotaNumero: number;
   cuotasTotal?: number;
@@ -1351,107 +1353,325 @@ export interface DatosComprobantePago {
 export const generarComprobantePago = (datos: DatosComprobantePago) => {
   const doc = new jsPDF();
   
-  // Header box
-  doc.setFillColor(15, 23, 42);
-  doc.rect(15, 12, 180, 28, "F");
+  // 1. MARCO EXTERIOR COMPRENSIVO DE HOJA COMPLETA
+  doc.setDrawColor(30, 41, 59); // Slate-800
+  doc.setLineWidth(0.6);
+  doc.rect(10, 10, 190, 277);
 
-  // Official Circular Logo Image
+  // 2. ENCABEZADO FISCAL ARCA (ex-AFIP) - COMPROBANTE CLASE "X"
+  // Cuadro Central "X"
+  const boxX = 98;
+  const boxY = 10;
+  const boxW = 14;
+  const boxH = 14;
+
+  doc.setFillColor(255, 255, 255);
+  doc.rect(boxX, boxY, boxW, boxH, "FD");
+  doc.setLineWidth(0.8);
+  doc.setDrawColor(15, 23, 42);
+  doc.rect(boxX, boxY, boxW, boxH, "S");
+
+  // Letra "X" en grande y centrada
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(15, 23, 42);
+  doc.text("X", 105, 19.5, { align: "center" });
+
+  // Código ARCA debajo de la X
+  doc.setFontSize(6);
+  doc.setFont("helvetica", "bold");
+  doc.text("COD. 070", 105, 23, { align: "center" });
+
+  // Línea divisoria vertical central
+  doc.setLineWidth(0.5);
+  doc.setDrawColor(148, 163, 184);
+  doc.line(105, 24, 105, 52);
+
+  // LEYENDA OBLIGATORIA ARCA: "DOCUMENTO NO VÁLIDO COMO FACTURA"
+  doc.setFillColor(241, 245, 249);
+  doc.rect(48, 24.5, 114, 5.5, "F");
+  doc.setDrawColor(203, 213, 225);
+  doc.rect(48, 24.5, 114, 5.5, "S");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(185, 28, 28); // Rojo Institucional Alerta AFIP
+  doc.text("DOCUMENTO NO VÁLIDO COMO FACTURA", 105, 28.5, { align: "center" });
+
+  // LADO IZQUIERDO DE LA CABECERA (EMISOR / RAZÓN SOCIAL)
   try {
-    doc.addImage(LOGO_BASE64, "PNG", 17, 14, 24, 24);
+    doc.addImage(LOGO_BASE64, "PNG", 13, 12, 18, 18);
   } catch (e) {}
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.setTextColor(234, 179, 8); // Gold
-  doc.text("CUENTA HOGAR", 45, 22);
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text("LOOP GESTIÓN INTEGRAL S.R.L.", 34, 16);
+
+  doc.setFontSize(8.5);
+  doc.setTextColor(254, 80, 0); // Naranja Cuenta Hogar
+  doc.text("CUENTA HOGAR", 34, 20.5);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text("Caracas 1101, CABA (C1416AOS) — Buenos Aires", 13, 34);
+  doc.text("Condición IVA: IVA Responsable Inscripto", 13, 38);
+  doc.text("Actividad: Mandato Comercial y Servicios Financieros", 13, 42);
+  doc.text("Teléfono / WhatsApp: 11 2565-9686", 13, 46);
+
+  // LADO DERECHO DE LA CABECERA (DATOS DEL RECIBO Y CUIT)
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(15, 23, 42);
+  doc.text("RECIBO DE PAGO", 110, 16);
+
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text("RECUPERO DE CAPITAL Y SERVICIOS", 110, 20);
+
+  const cleanReciboNum = datos.nroRecibo ? datos.nroRecibo.replace("REC-", "").replace("rec_", "").padStart(8, "0") : "00000001";
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text(`N° 0001-${cleanReciboNum}`, 110, 34);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Fecha de Emisión: ${datos.fecha || new Date().toLocaleDateString("es-AR")}`, 110, 38);
+  doc.text(`CUIT: 30-71859402-4`, 110, 42);
+  doc.text(`Ingresos Brutos: Convenio Multilateral (CM)`, 110, 46);
+  doc.text(`Inicio de Actividades: 01/01/2024`, 110, 50);
+
+  // Línea horizontal divisoria bajo encabezado
+  doc.setLineWidth(0.6);
+  doc.setDrawColor(30, 41, 59);
+  doc.line(10, 52, 200, 52);
+
+  // 3. SECCIÓN DE DATOS DEL CLIENTE / RECEPTOR
+  doc.setFillColor(248, 250, 252);
+  doc.rect(10, 52, 190, 26, "F");
+  doc.line(10, 78, 200, 78);
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(255, 255, 255);
-  doc.text("COMPROBANTE OFICIAL DE PAGO", 190, 22, { align: "right" });
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text("DATOS DEL CLIENTE / TITULAR DEL CRÉDITO MANDATO", 13, 57);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.setTextColor(156, 163, 175);
-  doc.text("Lo que te haga falta, te lo llevamos y financiamos.", 45, 28);
-  doc.text(`Recibo N°: ${datos.nroRecibo}`, 190, 28, { align: "right" });
+  doc.setTextColor(51, 65, 85);
 
-  // Recibo details box
-  drawFormBox(doc, "Recibo N°:", datos.nroRecibo, 15, 43, 90, 11);
-  drawFormBox(doc, "Fecha Cobro:", datos.fecha, 105, 43, 90, 11);
-
-  // Client info
+  doc.text(`Apellido y Nombre / Razón Social:`, 13, 63);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text("Datos del Cliente / Titular", 15, 68);
+  doc.text(`${datos.clienteNombre || "Cliente"}`, 60, 63);
 
-  drawFormBox(doc, "Cliente (Nombre y Apellido):", datos.clienteNombre, 15, 72, 180, 11);
-  drawFormBox(doc, "DNI:", datos.clienteDni, 15, 86, 180, 11);
-
-  // Payment details
+  doc.setFont("helvetica", "normal");
+  doc.text(`DNI / CUIT:`, 13, 68);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text("Detalle de la Acreditación", 15, 110);
+  doc.text(`${datos.clienteDni || "S/D"}`, 60, 68);
+
+  doc.setFont("helvetica", "normal");
+  doc.text(`Domicilio / Localidad:`, 13, 73);
+  doc.setFont("helvetica", "bold");
+  doc.text(`${datos.clienteLocalidad || "S/D"}`, 60, 73);
+
+  doc.setFont("helvetica", "normal");
+  doc.text(`Condición ante el IVA:`, 120, 63);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Consumidor Final`, 158, 63);
+
+  doc.setFont("helvetica", "normal");
+  doc.text(`N° Legajo / Contrato Ref:`, 120, 68);
+  doc.setFont("helvetica", "bold");
+  doc.text(`${datos.nroContrato || "CH-" + cleanReciboNum}`, 158, 68);
+
+  doc.setFont("helvetica", "normal");
+  doc.text(`Producto / Referencia:`, 120, 73);
+  doc.setFont("helvetica", "bold");
+  doc.text(`${datos.productoNombre || "Crédito a Medida / Mandato"}`, 158, 73);
+
+  // 4. TABLA DE DETALLE DEL PAGO Y DESGLOSE FISCAL
+  let y = 83;
+
+  doc.setFillColor(15, 23, 42);
+  doc.rect(10, y, 190, 7, "F");
   
-  const nroContratoStr = datos.nroContrato || `CH-${datos.nroRecibo.replace("REC-", "").substring(0, 8)}`;
-  const totalCuotasStr = datos.cuotasTotal || 12;
-  const conceptoTexto = `Pago Cuota N° ${datos.cuotaNumero}/${totalCuotasStr} - Servicios de gestión, administración de crédito y soporte técnico. (Ref. Contrato Mandato N° ${nroContratoStr})`;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text("CONCEPTO / DETALLE DE LA ACREDITACIÓN", 13, y + 5);
+  doc.text("TIPO FISCAL", 125, y + 5);
+  doc.text("SUBTOTAL", 195, y + 5, { align: "right" });
 
-  drawFormBox(doc, "Concepto:", conceptoTexto, 15, 114, 180, 13);
+  y += 7;
 
+  // Fila 1: Recupero de Capital (Exento)
   const mExento = datos.montoExento !== undefined ? datos.montoExento : Math.round(datos.montoAbonado * 0.70);
   const mGravado = datos.montoGravado !== undefined ? datos.montoGravado : Math.max(0, datos.montoAbonado - mExento);
 
-  drawFormBox(doc, "Recupero de Capital (Préstamo Mandato):", formatARS(mExento), 15, 131, 90, 11);
-  drawFormBox(doc, "Honorarios e Intereses de Gestión:", formatARS(mGravado), 105, 131, 90, 11);
+  const nroContratoStr = datos.nroContrato || `CH-${cleanReciboNum}`;
+  const totalCuotasStr = datos.cuotasTotal || 12;
 
-  drawFormBox(doc, "TOTAL ABONADO:", formatARS(datos.montoAbonado), 15, 145, 90, 11);
-  drawFormBox(doc, "Forma de Pago:", datos.metodoPago, 105, 145, 90, 11);
+  doc.setFillColor(255, 255, 255);
+  doc.rect(10, y, 190, 16, "F");
+  doc.setDrawColor(226, 232, 240);
+  doc.rect(10, y, 190, 16, "S");
 
-  drawFormBox(doc, "N° de Transacción / Comprobante:", datos.nroComprobante || "N/A", 15, 159, 90, 11);
-  drawFormBox(doc, "Cuenta de Destino:", datos.cuentaDestino || "N/A", 105, 159, 90, 11);
-
-  // Adjustments notice if applicable
-  let y = 168;
-  if (datos.proximaCuotaValor !== undefined && datos.proximaCuotaNumero !== undefined) {
-    doc.setFillColor(254, 243, 199); // light amber background
-    doc.rect(15, y, 180, 12, "F");
-    doc.setDrawColor(245, 158, 11);
-    doc.rect(15, y, 180, 12, "S");
-    
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.5);
-    doc.setTextColor(146, 64, 14);
-    doc.text(`Ajuste financiero aplicado: La diferencia de pago se trasladó a la Cuota N° ${datos.proximaCuotaNumero}.`, 20, y + 5);
-    doc.text(`Nuevo valor establecido para la Cuota N° ${datos.proximaCuotaNumero}: $${datos.proximaCuotaValor}`, 20, y + 9);
-    y += 18;
-  } else {
-    y += 5;
-  }
-
-  // Legal note
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(71, 85, 105);
-  doc.text("Este comprobante posee validez administrativa como constancia de pago de la cuota mencionada.", 15, y); y += 5;
-  doc.text("Conserve este documento. Ante cualquier duda comuníquese con su vendedor oficial.", 15, y); y += 20;
-
-  // Signature
-  doc.setDrawColor(148, 163, 184);
-  doc.setLineWidth(0.3);
-  doc.line(70, y, 140, y);
-  
-  y += 5;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
-  doc.text("Firma Autorizada: Loop Gestión Integral S.R.L.", 75, y);
+  doc.text(`Pago Cuota N° ${datos.cuotaNumero} de ${totalCuotasStr} — Recupero de Capital`, 13, y + 5);
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
-  doc.text("Gerente Juan Pablo Mosqueira", 75, y + 4);
-  doc.text("(Nombre de Fantasía: Cuenta Hogar)", 75, y + 8);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Devolución de capital exento por compra a mandato (Ref. Contrato N° ${nroContratoStr})`, 13, y + 10);
+  doc.text(`(Emisión interna de Recibo X por Recupero de Capital Exento por Mandato)`, 13, y + 14);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(16, 185, 129);
+  doc.text("EXENTO (RECIBO X)", 125, y + 8);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text(formatARS(mExento), 195, y + 8, { align: "right" });
+
+  y += 16;
+
+  // Fila 2: Honorarios e Intereses de Gestión (Gravados 21% IVA)
+  const netoGravado = Math.round(mGravado / 1.21);
+  const iva21 = Math.max(0, mGravado - netoGravado);
+
+  doc.setFillColor(248, 250, 252);
+  doc.rect(10, y, 190, 18, "F");
+  doc.setDrawColor(226, 232, 240);
+  doc.rect(10, y, 190, 18, "S");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(15, 23, 42);
+  doc.text(`Servicios de Gestión, Administración de Crédito y Soporte Técnico`, 13, y + 5);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Honorarios financieros e intereses de cuota N° ${datos.cuotaNumero}`, 13, y + 10);
+  doc.text(`[Base Neta Gravada: ${formatARS(netoGravado)} | Débito Fiscal IVA 21%: ${formatARS(iva21)}]`, 13, y + 14);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(59, 130, 246);
+  doc.text("GRAVADO (IVA 21% INCL.)", 125, y + 8);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text(formatARS(mGravado), 195, y + 8, { align: "right" });
+
+  y += 18;
+
+  // 5. RESUMEN DE TOTAL Y FORMA DE PAGO
+  doc.setFillColor(15, 23, 42);
+  doc.rect(10, y, 190, 14, "F");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(254, 80, 0);
+  doc.text("TOTAL ABONADO EN CONCEPTO DE CUOTA:", 13, y + 9);
+
+  doc.setFontSize(14);
+  doc.setTextColor(234, 179, 8);
+  doc.text(formatARS(datos.montoAbonado), 195, y + 9.5, { align: "right" });
+
+  y += 18;
+
+  // 6. DETALLES DE MEDIO DE PAGO Y TRANSACCION
+  doc.setFillColor(241, 245, 249);
+  doc.rect(10, y, 92, 16, "F");
+  doc.setDrawColor(203, 213, 225);
+  doc.rect(10, y, 92, 16, "S");
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(100, 116, 139);
+  doc.text("Forma / Medio de Pago:", 13, y + 5);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text(datos.metodoPago || "Efectivo / Transferencia", 13, y + 11);
+
+  doc.setFillColor(241, 245, 249);
+  doc.rect(108, y, 92, 16, "F");
+  doc.setDrawColor(203, 213, 225);
+  doc.rect(108, y, 92, 16, "S");
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(100, 116, 139);
+  doc.text("N° Transacción / Comprobante Destino:", 111, y + 5);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text(`${datos.nroComprobante || "COMPROBANTE-OK"} (${datos.cuentaDestino || "Cta. Empresa"})`, 111, y + 11);
+
+  y += 20;
+
+  // Aviso de Ajuste si aplica
+  if (datos.proximaCuotaValor !== undefined && datos.proximaCuotaNumero !== undefined) {
+    doc.setFillColor(254, 243, 199);
+    doc.rect(10, y, 190, 12, "F");
+    doc.setDrawColor(245, 158, 11);
+    doc.rect(10, y, 190, 12, "S");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(146, 64, 14);
+    doc.text(`ℹ️ AJUSTE FINANCIERO APLICADO: La diferencia de pago fue trasladada a la Cuota N° ${datos.proximaCuotaNumero}.`, 13, y + 4.5);
+    doc.text(`Nuevo valor reajustado para la Cuota N° ${datos.proximaCuotaNumero}: ${formatARS(datos.proximaCuotaValor)}`, 13, y + 9);
+    y += 16;
+  }
+
+  // 7. NORMATIVA Y LEYENDA LEGAL ARCA / AFIP
+  doc.setFillColor(248, 250, 252);
+  doc.rect(10, y, 190, 18, "F");
+  doc.setDrawColor(226, 232, 240);
+  doc.rect(10, y, 190, 18, "S");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text("CONFORMIDAD Y NORMATIVA FISCAL ARCA (RESOLUCIONES GENERALES N° 1415 / 4004)", 13, y + 4.5);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text("• El presente Comprobante Clase X acredita de forma fehaciente la cancelación de la cuota mencionada por mandato comercial.", 13, y + 9);
+  doc.text("• Documento emitido conforme a la reglamentación de cobros y devueltos de capital de la Agencia de Regulación y Control Aduanero (ARCA).", 13, y + 13);
+  doc.text("• Conservar este recibo oficial en su poder como comprobante de pago definitivo y saldo al día.", 13, y + 16.5);
+
+  y += 26;
+
+  // 8. PIE Y FIRMA AUTORIZADA DE EMISIÓN
+  doc.setDrawColor(148, 163, 184);
+  doc.setLineWidth(0.4);
+  doc.line(65, y, 145, y);
+
+  y += 4;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text("FIRMA AUTORIZADA — EMISIÓN Y COBRANZA", 105, y, { align: "center" });
+
+  y += 4;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text("LOOP GESTIÓN INTEGRAL S.R.L. — Gerente Juan Pablo Mosqueira", 105, y, { align: "center" });
+  doc.text("Marca Registrada: CUENTA HOGAR", 105, y + 3.5, { align: "center" });
 
   const refId = datos.nroContrato || datos.nroRecibo;
   const fileName = buildStandardPdfFilename("RECIBO_CUOTA", refId, datos.clienteNombre, String(datos.cuotaNumero));
