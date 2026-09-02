@@ -2040,7 +2040,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
           
           <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-zinc-800 pb-6">
             <div className="flex items-center gap-4">
-              <img src="https://storage.googleapis.com/negocio-facil-page.firebasestorage.app/Logos/LOGO%20SIN%20NOMBRE%20-%20CUENTA%20HOGAR.png" alt="Cuenta Hogar Logo" className="h-10 w-auto object-contain" />
+              <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-14 w-auto object-contain rounded-xl border border-zinc-800/80 shadow-md bg-black/40 p-1" />
               <div>
                 <h1 className="text-2xl font-black text-yellow-400">Panel de Control General</h1>
                 <p className="text-zinc-500 text-sm">Gestión de créditos, entregas y cobranzas</p>
