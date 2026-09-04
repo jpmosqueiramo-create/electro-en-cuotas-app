@@ -917,10 +917,10 @@ export default function PublicCatalog() {
                 📝 Solicitud de Compra y Financiación
               </span>
               <h2 className="text-3xl md:text-4xl font-black text-zinc-900">
-                ¿Buscás comprar y financiar un producto?
+                Contanos qué necesitás y te ayudamos a conseguirlo
               </h2>
               <p className="text-zinc-600 text-base md:text-lg font-medium">
-                Completá tus datos y contanos qué estás necesitando. Te responderemos por WhatsApp o se contactará el <strong className="text-zinc-900 font-bold">vendedor afiliado</strong> de tu localidad para armar tu plan.
+                Completá el formulario y te enviaremos por WhatsApp distintas alternativas de producto y financiación.
               </p>
             </div>
 
@@ -957,7 +957,7 @@ export default function PublicCatalog() {
                 disabled={qfSubmitting}
                 className="w-full group flex items-center justify-center gap-2 bg-gradient-to-r from-[#ff5e14] via-[#fe5000] to-[#e04600] text-white font-black text-lg py-5 rounded-2xl hover:scale-[1.01] active:scale-95 transition-all duration-300 shadow-xl shadow-orange-500/25 disabled:opacity-75 cursor-pointer uppercase tracking-wider"
               >
-                <Send className="w-5 h-5" /> {qfSubmitting ? "Registrando solicitud..." : "Solicitar mi plan de compra y financiación"}
+                <Send className="w-5 h-5" /> {qfSubmitting ? "Enviando solicitud..." : "Recibir opciones por WhatsApp"}
               </button>
             </form>
           </div>
