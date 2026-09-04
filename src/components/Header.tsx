@@ -46,7 +46,7 @@ export default function Header() {
             Nosotros
           </Link>
           <Link href="/flete" className={getLinkStyle("/flete")}>
-            🚚 Traslado de Compras
+            🚚 Envíos Low Cost
           </Link>
           <Link href="/red-afiliados" className={getLinkStyle("/red-afiliados")}>
             Red de Afiliados
@@ -77,7 +77,7 @@ export default function Header() {
             Nosotros
           </Link>
           <Link href="/flete" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/flete")}>
-            🚚 Traslado de Compras
+            🚚 Envíos Low Cost
           </Link>
           <Link href="/red-afiliados" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/red-afiliados")}>
             Red de Afiliados

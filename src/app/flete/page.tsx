@@ -50,7 +50,7 @@ export default function FletePage() {
             </div>
             
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-zinc-900 leading-tight">
-              Servicio de Traslado de Compras: <span className="text-[#fe5000]">Cuidamos y traemos tus compras de CABA a tu hogar.</span>
+              Envíos Low Cost desde CABA al interior: <span className="text-[#fe5000]">Cuidamos y traemos tus compras de CABA a tu hogar.</span>
             </h1>
             
             <p className="text-base sm:text-lg text-zinc-600 font-normal leading-relaxed bg-white p-6 md:p-8 rounded-3xl border border-zinc-200 shadow-sm">
@@ -65,7 +65,7 @@ export default function FletePage() {
                 className="inline-flex items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black px-8 py-4 rounded-2xl shadow-xl hover:scale-105 transition-all text-sm uppercase tracking-wider w-full sm:w-auto"
               >
                 <WhatsAppIcon className="w-5 h-5" />
-                Cotizar el Traslado de mi Compra en WhatsApp
+                Cotizar el Envío Low Cost en WhatsApp
               </a>
 
               <div className="bg-emerald-50 border border-emerald-200/80 text-emerald-950 p-4 rounded-2xl flex items-start gap-3 text-xs leading-relaxed shadow-sm w-full">
@@ -97,7 +97,7 @@ export default function FletePage() {
                       <Truck className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-black uppercase text-white tracking-wide">Flota Oficial Propia</p>
+                      <p className="text-xs font-black uppercase text-white tracking-wide">Transporte propio Cuenta Hogar</p>
                       <p className="text-[11px] text-zinc-300 font-medium">Unidades acondicionadas para el cuidado de productos de alto valor</p>
                     </div>
                   </div>
@@ -279,7 +279,7 @@ export default function FletePage() {
               className="inline-flex items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black px-8 py-4 rounded-2xl shadow-xl hover:scale-105 transition-all text-sm uppercase tracking-wider w-full sm:w-auto"
             >
               <WhatsAppIcon className="w-5 h-5" />
-              Avisar de un envío / Cotizar Traslado de mi Compra
+              Avisar de un envío / Cotizar Envío Low Cost
             </a>
             <p className="text-xs text-zinc-300 font-medium">
               ⚡ Te responderemos con el presupuesto de traslado en las próximas horas vía WhatsApp.
