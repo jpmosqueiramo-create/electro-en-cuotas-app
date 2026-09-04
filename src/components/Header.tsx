@@ -3,63 +3,76 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { LogIn, Menu, X } from "lucide-react";
+import { LogIn, Menu, X, Truck, Tag, Users } from "lucide-react";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
   const getLinkStyle = (targetPath: string) => {
-    const isActive = pathname === targetPath || (targetPath === "/" && (pathname === "/" || pathname === "/#catalogo"));
+    const isActive = pathname === targetPath || (targetPath === "/" && pathname === "/");
     if (isActive) {
-      return "text-sm font-black text-zinc-900 bg-white shadow-xl shadow-orange-950/30 -translate-y-0.5 border border-white/80 rounded-xl px-4 py-2 flex items-center gap-1.5 transition-all duration-300 scale-105";
+      return "text-xs font-heading font-semibold text-white bg-zinc-800/90 border border-zinc-700/80 rounded-lg px-3.5 py-2 flex items-center gap-1.5 transition-all duration-200";
     }
-    return "text-sm font-bold text-white/90 hover:text-white transition-all duration-300 px-3.5 py-2 hover:bg-white/15 hover:-translate-y-0.5 rounded-xl flex items-center gap-1.5";
+    return "text-xs font-heading font-medium text-zinc-300 hover:text-white transition-colors duration-200 px-3 py-2 flex items-center gap-1.5 hover:bg-zinc-800/40 rounded-lg";
   };
 
   const getMobileLinkStyle = (targetPath: string) => {
-    const isActive = pathname === targetPath || (targetPath === "/" && (pathname === "/" || pathname === "/#catalogo"));
+    const isActive = pathname === targetPath || (targetPath === "/" && pathname === "/");
     if (isActive) {
-      return "text-lg font-black text-zinc-900 bg-white px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 border border-white/80";
+      return "text-base font-heading font-bold text-white bg-zinc-800 px-4 py-3 rounded-xl border border-zinc-700 flex items-center gap-2";
     }
-    return "text-lg font-bold text-white hover:text-amber-200 transition-colors flex items-center gap-2 px-2 py-1";
+    return "text-base font-heading font-medium text-zinc-300 hover:text-white transition-colors flex items-center gap-2 px-3 py-2";
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-gradient-to-r from-[#ff5e14] via-[#fe5000] to-[#e04600] border-b border-orange-600/40 shadow-xl text-white backdrop-blur-md">
+    <nav className="sticky top-0 z-50 bg-[#121316]/95 border-b border-zinc-800/80 backdrop-blur-md text-white transition-all">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        
         {/* LOGO OFICIAL */}
-        <Link href="/" className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3 shrink-0">
           <img 
             src="/logo-cuenta-hogar-oficial.png" 
             alt="Cuenta Hogar Logo" 
-            className="h-14 md:h-16 w-auto object-contain bg-slate-950 p-1.5 rounded-xl border border-zinc-800 shadow-md hover:scale-105 transition-transform" 
+            className="h-12 md:h-14 w-auto object-contain bg-zinc-950 p-1 rounded-xl border border-zinc-800 shadow-sm hover:border-zinc-700 transition-colors" 
           />
         </Link>
 
-        {/* DESKTOP MENU CON BOTÓN FLOTANTE DESTACADO PARA LA PÁGINA ACTIVA */}
-        <div className="hidden lg:flex items-center gap-3">
+        {/* DESKTOP MENU CON JERARQUÍA TIPOGRÁFICA Y ESPACIADO PROFESIONAL */}
+        <div className="hidden lg:flex items-center gap-2">
           <Link href="/#catalogo" className={getLinkStyle("/")}>
-            Planes para vos
+            <Tag className="w-3.5 h-3.5 text-[#fe5000]" />
+            <span>Planes para vos</span>
           </Link>
+
           <Link href="/nosotros" className={getLinkStyle("/nosotros")}>
-            Nosotros
+            <span>Nosotros</span>
           </Link>
+
           <Link href="/flete" className={getLinkStyle("/flete")}>
-            🚚 Envíos Low Cost
+            <Truck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Envíos Low Cost</span>
           </Link>
+
           <Link href="/red-afiliados" className={getLinkStyle("/red-afiliados")}>
-            Red de Afiliados
+            <Users className="w-3.5 h-3.5 text-amber-400" />
+            <span>Red de Afiliados</span>
           </Link>
-          <Link href="/login" className="flex items-center gap-2 text-sm font-black bg-slate-950 text-white border border-zinc-800 px-5 py-2.5 rounded-full hover:bg-zinc-900 shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all duration-300">
-            <LogIn className="w-4 h-4 text-[#fe5000]" />
-            <span>Portal de Clientes</span>
-          </Link>
+
+          <div className="pl-3 ml-2 border-l border-zinc-800">
+            <Link 
+              href="/login" 
+              className="flex items-center gap-2 text-xs font-heading font-semibold bg-[#fe5000] hover:bg-[#e04600] text-white px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Portal de Clientes</span>
+            </Link>
+          </div>
         </div>
 
         {/* MOBILE HAMBURGER BUTTON */}
         <button 
-          className="lg:hidden text-white p-2 hover:bg-white/10 rounded-xl transition-colors" 
+          className="lg:hidden text-zinc-300 hover:text-white p-2 hover:bg-zinc-800 rounded-xl transition-colors" 
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Abrir menú"
         >
@@ -69,22 +82,26 @@ export default function Header() {
 
       {/* MOBILE MENU DROPDOWN */}
       {mobileMenuOpen && (
-        <div className="lg:hidden absolute top-20 left-0 w-full bg-[#e04600] border-b border-orange-700/60 p-6 flex flex-col gap-4 shadow-2xl text-white z-50">
+        <div className="lg:hidden bg-[#181920] border-b border-zinc-800 p-6 flex flex-col gap-3 shadow-2xl text-white">
           <Link href="/#catalogo" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/")}>
-            Planes para vos
+            <Tag className="w-4 h-4 text-[#fe5000]" /> Planes para vos
           </Link>
           <Link href="/nosotros" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/nosotros")}>
             Nosotros
           </Link>
           <Link href="/flete" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/flete")}>
-            🚚 Envíos Low Cost
+            <Truck className="w-4 h-4 text-emerald-400" /> Envíos Low Cost
           </Link>
           <Link href="/red-afiliados" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/red-afiliados")}>
-            Red de Afiliados
+            <Users className="w-4 h-4 text-amber-400" /> Red de Afiliados
           </Link>
-          <div className="pt-4 border-t border-orange-700/60">
-            <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 text-lg font-black bg-slate-950 text-white border border-zinc-800 px-5 py-3 rounded-xl hover:bg-zinc-900 shadow-lg">
-              <LogIn className="w-5 h-5 text-[#fe5000]" /> Portal de Clientes
+          <div className="pt-3 border-t border-zinc-800">
+            <Link 
+              href="/login" 
+              onClick={() => setMobileMenuOpen(false)} 
+              className="flex items-center justify-center gap-2 text-sm font-heading font-semibold bg-[#fe5000] text-white px-5 py-3 rounded-xl shadow-sm"
+            >
+              <LogIn className="w-4 h-4" /> Portal de Clientes
             </Link>
           </div>
         </div>

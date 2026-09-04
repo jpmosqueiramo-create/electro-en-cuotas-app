@@ -10,13 +10,10 @@ import {
   MapPin, 
   UserCheck, 
   Sparkles, 
-  ArrowRight, 
   HelpCircle, 
   ChevronDown, 
   ChevronUp, 
-  CheckCircle2,
-  PackageCheck,
-  ShieldCheck
+  CheckCircle2
 } from "lucide-react";
 import { useState } from "react";
 
@@ -63,59 +60,57 @@ export default function NosotrosPage() {
       
       <Header />
 
-      {/* HERO INSTITUCIONAL PRINCIPAL */}
-      <section className="relative overflow-hidden pt-16 pb-20 border-b border-zinc-800/80">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#fe5000]/15 via-[#121316] to-[#121316] -z-10" />
-        
+      {/* HERO INSTITUCIONAL */}
+      <section className="relative overflow-hidden pt-16 pb-24 border-b border-zinc-800/80">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
-            {/* Columna Izquierda: Copy Principal */}
+            {/* COPY PRINCIPAL */}
             <div className="lg:col-span-7 space-y-6 text-left">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#fe5000]/10 border border-[#fe5000]/30 text-[#fe5000] shadow-[0_0_15px_rgba(254,80,0,0.15)] text-xs font-bold tracking-widest uppercase">
-                <Sparkles className="w-4 h-4" /> Sobre Cuenta Hogar
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-800/80 border border-zinc-700/80 text-zinc-300 text-xs font-heading font-medium tracking-wide">
+                <Sparkles className="w-3.5 h-3.5 text-[#fe5000]" /> Sobre Cuenta Hogar
               </div>
               
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-tight">
+              <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-heading font-bold tracking-tight leading-[1.12] text-white">
                 Acercamos Capital Federal<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-[#fe5000] to-amber-500">
                   al interior.
                 </span>
               </h1>
               
-              <p className="text-lg md:text-xl text-zinc-300 font-medium leading-relaxed">
+              <p className="text-lg lg:text-xl text-zinc-300 font-sans font-normal leading-[1.6]">
                 Cuenta Hogar nació para hacer más simple comprar, financiar y recibir productos desde Capital Federal viviendo en el interior.
               </p>
 
-              <div className="bg-[#181920] border border-zinc-800 p-6 md:p-8 rounded-3xl space-y-4 shadow-xl text-zinc-300 text-sm md:text-base leading-relaxed">
+              <div className="bg-[#181920] border border-zinc-800 p-6 lg:p-8 rounded-xl space-y-4 shadow-sm text-zinc-300 text-sm lg:text-[15px] font-sans leading-[1.6]">
                 <p>
-                  Contamos con <strong className="text-white font-bold">centro logístico propio en CABA</strong>, <strong className="text-white font-bold">transporte propio</strong> y <strong className="text-white font-bold">financiación propia</strong>. Esto nos permite acompañar todo el proceso: desde entender qué necesita cada cliente y gestionar la compra, hasta recibir el producto, organizar el traslado y realizar la entrega en su domicilio.
+                  Contamos con <strong className="text-white font-semibold">centro logístico propio en CABA</strong>, <strong className="text-white font-semibold">transporte propio</strong> y <strong className="text-white font-semibold">financiación propia</strong>. Esto nos permite acompañar todo el proceso: desde entender qué necesita cada cliente y gestionar la compra, hasta recibir el producto, organizar el traslado y realizar la entrega en su domicilio.
                 </p>
                 <p>
-                  Trabajamos junto a <strong className="text-amber-400 font-bold">vendedores afiliados</strong> de nuestras localidades, construyendo relaciones basadas en la confianza, el conocimiento del cliente y la atención cercana.
+                  Trabajamos junto a <strong className="text-amber-400 font-semibold">vendedores afiliados</strong> de nuestras localidades, construyendo relaciones basadas en la confianza, el conocimiento del cliente y la atención cercana.
                 </p>
                 <p>
-                  Además, a través de <strong className="text-emerald-400 font-bold">Envíos Low Cost</strong>, recibimos compras realizadas en Capital Federal y las trasladamos al interior aprovechando nuestros recorridos programados, tanto para particulares como para emprendedores y comerciantes.
+                  Además, a través de <strong className="text-emerald-400 font-semibold">Envíos Low Cost</strong>, recibimos compras realizadas en Capital Federal y las trasladamos al interior aprovechando nuestros recorridos programados, tanto para particulares como para emprendedores y comerciantes.
                 </p>
               </div>
             </div>
 
-            {/* Columna Derecha: Tarjeta Fotográfica de la Estructura */}
+            {/* TARJETA FOTOGRÁFICA */}
             <div className="lg:col-span-5 relative group">
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-zinc-800 bg-zinc-950">
+              <div className="relative rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950">
                 <img 
                   src="/nosotros-filosofia-hero.jpg" 
                   alt="Cuenta Hogar: Acercamos Capital Federal al interior" 
-                  className="w-full h-[420px] object-cover group-hover:scale-105 transition-transform duration-700" 
+                  className="w-full h-[400px] object-cover" 
                 />
                 
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent flex items-end p-6">
-                  <div className="bg-slate-900/90 backdrop-blur-md border border-white/10 text-white p-5 rounded-2xl w-full flex items-center justify-between shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent flex items-end p-5">
+                  <div className="bg-slate-900/90 backdrop-blur-md border border-white/10 text-white p-4 rounded-lg w-full flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-9 w-auto object-contain" />
+                      <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-8 w-auto object-contain" />
                       <div>
-                        <p className="text-xs font-black uppercase text-white tracking-wider">Infraestructura Propia</p>
-                        <p className="text-[11px] text-zinc-300 font-medium">Logística, Transporte y Financiación Directa</p>
+                        <p className="text-xs font-heading font-bold uppercase text-white tracking-wider">Infraestructura Propia</p>
+                        <p className="text-[12px] text-zinc-300 font-sans">Logística, Transporte y Financiación Directa</p>
                       </div>
                     </div>
                   </div>
@@ -128,67 +123,64 @@ export default function NosotrosPage() {
       </section>
 
       {/* BLOQUE VISUAL CON LOS TRES DIFERENCIALES CLAVE */}
-      <section className="py-20 bg-[#16171d] border-b border-zinc-800">
+      <section className="py-24 lg:py-28 bg-[#16171d] border-b border-zinc-800/80">
         <div className="max-w-7xl mx-auto px-6 space-y-12">
           
-          <div className="text-center max-w-3xl mx-auto space-y-3">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#fe5000]/10 text-[#fe5000] border border-[#fe5000]/30 text-xs font-black uppercase tracking-wider">
-              ⭐ Capacidades Propias
+          <div className="text-center max-w-2xl mx-auto space-y-3">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#fe5000]/10 text-[#fe5000] border border-[#fe5000]/20 text-xs font-heading font-semibold uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5" /> Capacidades Propias
             </span>
-            <h2 className="text-3xl md:text-5xl font-black text-white">
+            <h2 className="text-3xl lg:text-[40px] font-heading font-bold text-white leading-tight">
               Tres pilares de infraestructura propia
             </h2>
-            <p className="text-zinc-400 text-base md:text-lg">
+            <p className="text-zinc-400 text-base lg:text-[17px] font-sans leading-[1.6]">
               Estructura real para garantizar un servicio previsible, cercano y seguro.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            {/* Diferencial 1 */}
-            <div className="bg-[#181920] border border-zinc-800 p-8 rounded-3xl shadow-xl flex flex-col justify-between hover:border-[#fe5000]/50 transition group">
-              <div className="space-y-4">
-                <div className="w-14 h-14 bg-[#fe5000]/10 rounded-2xl flex items-center justify-center text-[#fe5000] border border-[#fe5000]/20 group-hover:scale-110 transition-transform">
-                  <Building2 className="w-7 h-7" />
+            <div className="bg-[#181920] border border-zinc-800 p-8 rounded-xl flex flex-col justify-between hover:border-zinc-700 transition space-y-4">
+              <div className="space-y-3">
+                <div className="w-12 h-12 bg-[#fe5000]/10 rounded-lg flex items-center justify-center text-[#fe5000] border border-[#fe5000]/20">
+                  <Building2 className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-black text-white">Centro logístico propio en CABA</h3>
-                <p className="text-zinc-300 text-sm leading-relaxed">
+                <h3 className="text-xl font-heading font-bold text-white">Centro logístico propio en CABA</h3>
+                <p className="text-zinc-300 text-xs font-sans leading-relaxed">
                   Recibimos, organizamos y almacenamos temporalmente las compras antes de cada recorrido.
                 </p>
               </div>
-              <div className="pt-6 border-t border-zinc-800/80 text-xs font-bold text-zinc-400">
+              <div className="pt-4 border-t border-zinc-800 text-xs font-heading font-semibold text-zinc-400">
                 📍 Caracas 1101, CABA
               </div>
             </div>
 
-            {/* Diferencial 2 */}
-            <div className="bg-[#181920] border border-zinc-800 p-8 rounded-3xl shadow-xl flex flex-col justify-between hover:border-emerald-500/50 transition group">
-              <div className="space-y-4">
-                <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 border border-emerald-500/20 group-hover:scale-110 transition-transform">
-                  <Truck className="w-7 h-7" />
+            <div className="bg-[#181920] border border-zinc-800 p-8 rounded-xl flex flex-col justify-between hover:border-zinc-700 transition space-y-4">
+              <div className="space-y-3">
+                <div className="w-12 h-12 bg-emerald-500/10 rounded-lg flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                  <Truck className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-black text-white">Transporte propio</h3>
-                <p className="text-zinc-300 text-sm leading-relaxed">
+                <h3 className="text-xl font-heading font-bold text-white">Transporte propio</h3>
+                <p className="text-zinc-300 text-xs font-sans leading-relaxed">
                   Controlamos directamente la carga, los tiempos y las entregas para depender menos de terceros.
                 </p>
               </div>
-              <div className="pt-6 border-t border-zinc-800/80 text-xs font-bold text-emerald-400">
+              <div className="pt-4 border-t border-zinc-800 text-xs font-heading font-semibold text-emerald-400">
                 🚚 Recorridos programados
               </div>
             </div>
 
-            {/* Diferencial 3 */}
-            <div className="bg-[#181920] border border-zinc-800 p-8 rounded-3xl shadow-xl flex flex-col justify-between hover:border-amber-500/50 transition group">
-              <div className="space-y-4">
-                <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-400 border border-amber-500/20 group-hover:scale-110 transition-transform">
-                  <CreditCard className="w-7 h-7" />
+            <div className="bg-[#181920] border border-zinc-800 p-8 rounded-xl flex flex-col justify-between hover:border-zinc-700 transition space-y-4">
+              <div className="space-y-3">
+                <div className="w-12 h-12 bg-amber-500/10 rounded-lg flex items-center justify-center text-amber-400 border border-amber-500/20">
+                  <CreditCard className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-black text-white">Financiación propia</h3>
-                <p className="text-zinc-300 text-sm leading-relaxed">
+                <h3 className="text-xl font-heading font-bold text-white">Financiación propia</h3>
+                <p className="text-zinc-300 text-xs font-sans leading-relaxed">
                   Evaluamos cada operación de manera cercana y ofrecemos alternativas simples para nuestros clientes.
                 </p>
               </div>
-              <div className="pt-6 border-t border-zinc-800/80 text-xs font-bold text-amber-400">
+              <div className="pt-4 border-t border-zinc-800 text-xs font-heading font-semibold text-amber-400">
                 💳 A sola firma sin bancos
               </div>
             </div>
@@ -198,22 +190,22 @@ export default function NosotrosPage() {
       </section>
 
       {/* BLOQUE SOBRE LA RED LOCAL */}
-      <section className="py-20 bg-[#121316] border-b border-zinc-800">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="bg-gradient-to-r from-zinc-900 via-slate-900 to-zinc-900 border border-zinc-800 p-8 md:p-12 rounded-3xl shadow-2xl space-y-6 text-center md:text-left">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#fe5000]/15 text-[#fe5000] border border-[#fe5000]/30 text-xs font-black uppercase tracking-wider">
-              <UserCheck className="w-4 h-4" /> Red de Afiliados
+      <section className="py-24 lg:py-28 bg-[#121316] border-b border-zinc-800/80">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="bg-[#181920] border border-zinc-800 p-8 lg:p-10 rounded-xl space-y-5 text-left">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-heading font-semibold uppercase tracking-wider">
+              <UserCheck className="w-3.5 h-3.5 text-[#fe5000]" /> Red de Afiliados
             </div>
             
-            <h2 className="text-3xl md:text-4xl font-black text-white">
+            <h2 className="text-3xl lg:text-[36px] font-heading font-bold text-white leading-tight">
               Cerca de nuestros clientes
             </h2>
 
-            <p className="text-zinc-300 text-base md:text-lg leading-relaxed">
-              Cuenta Hogar trabaja con <strong className="text-white font-bold">vendedores afiliados</strong> que conocen sus localidades y acompañan la relación con cada cliente. La incorporación de nuevos vendedores afiliados se realiza de manera selectiva, priorizando la confianza y las referencias.
+            <p className="text-zinc-300 text-base font-sans leading-[1.6]">
+              Cuenta Hogar trabaja con <strong className="text-white font-semibold">vendedores afiliados</strong> que conocen sus localidades y acompañan la relación con cada cliente. La incorporación de nuevos vendedores afiliados se realiza de manera selectiva, priorizando la confianza y las referencias.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 text-xs text-zinc-300 border-t border-zinc-800/80">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 text-xs text-zinc-300 font-sans border-t border-zinc-800">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-[#fe5000] shrink-0" />
                 <span>Trato directo de vecino a vecino.</span>
@@ -232,38 +224,37 @@ export default function NosotrosPage() {
       </section>
 
       {/* COBERTURA ACTUAL (SECCIÓN BLANCA HARMONIOSA) */}
-      <section className="py-24 bg-white text-zinc-900 border-b border-zinc-200">
+      <section className="py-24 lg:py-28 bg-white text-zinc-900 border-b border-zinc-200">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#fe5000]/10 text-[#fe5000] border border-[#fe5000]/30 text-xs font-black uppercase tracking-wider">
-              📍 Presencia Territorial
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#fe5000]/10 text-[#fe5000] border border-[#fe5000]/20 text-xs font-heading font-bold uppercase tracking-wider">
+              <MapPin className="w-3.5 h-3.5" /> Presencia Territorial
             </span>
             
-            <h2 className="text-3xl md:text-5xl font-black text-zinc-900 leading-tight">
+            <h2 className="text-3xl lg:text-[40px] font-heading font-bold text-zinc-900 leading-tight">
               Hoy estamos presentes en
             </h2>
             
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
               {localidades.map((ciudad, idx) => (
-                <div key={idx} className="bg-slate-50 border border-zinc-200 rounded-2xl p-4 flex items-center gap-3 hover:border-[#fe5000] hover:bg-orange-50/50 hover:shadow-md transition-all duration-300">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#fe5000] shadow-[0_0_8px_#fe5000] animate-pulse" />
-                  <span className="font-bold text-zinc-900 text-sm md:text-base">{ciudad}</span>
+                <div key={idx} className="bg-slate-50 border border-zinc-200 rounded-xl p-3.5 flex items-center gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-[#fe5000]" />
+                  <span className="font-heading font-bold text-zinc-900 text-sm">{ciudad}</span>
                 </div>
               ))}
             </div>
 
-            <p className="text-zinc-600 text-base md:text-lg leading-relaxed pt-4 border-t border-zinc-200 font-medium">
+            <p className="text-zinc-600 text-base font-sans leading-[1.6] pt-4 border-t border-zinc-200 font-medium">
               Seguimos ampliando nuestras rutas de manera progresiva, utilizando <strong className="text-zinc-900 font-bold">Envíos Low Cost</strong> como puerta de entrada a nuevas localidades.
             </p>
           </div>
           
           <div className="flex items-center justify-center lg:justify-end">
-            <div className="relative w-full max-w-[420px] aspect-square flex items-center justify-center group">
-              <div className="absolute inset-0 bg-[#fe5000]/10 blur-3xl rounded-full group-hover:bg-[#fe5000]/20 transition-colors duration-500" />
+            <div className="relative w-full max-w-[400px] aspect-square flex items-center justify-center">
               <img 
                 src="/mapa_bsas.png" 
                 alt="Mapa de Cobertura Provincia de Buenos Aires" 
-                className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_20px_rgba(254,80,0,0.3)] hover:scale-105 transition-transform duration-500 ease-out" 
+                className="w-full h-full object-contain relative z-10 drop-shadow-md" 
               />
             </div>
           </div>
@@ -271,30 +262,30 @@ export default function NosotrosPage() {
       </section>
 
       {/* PREGUNTAS FRECUENTES (FAQ ACCORDION) */}
-      <section className="py-20 max-w-4xl mx-auto px-6 space-y-4">
-        <div className="text-center mb-10 space-y-2">
-          <div className="inline-flex items-center gap-2 bg-zinc-800 text-zinc-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-            <HelpCircle className="w-4 h-4 text-[#fe5000]" /> Preguntas Frecuentes
+      <section className="py-24 lg:py-28 max-w-3xl mx-auto px-6 space-y-4">
+        <div className="text-center mb-8 space-y-2">
+          <div className="inline-flex items-center gap-2 bg-zinc-800 text-zinc-300 px-3.5 py-1.5 rounded-full text-xs font-heading font-semibold uppercase tracking-wider">
+            <HelpCircle className="w-3.5 h-3.5 text-[#fe5000]" /> Preguntas Frecuentes
           </div>
-          <h3 className="text-3xl font-black text-white">Resolvemos tus dudas sobre Cuenta Hogar</h3>
+          <h3 className="text-3xl font-heading font-bold text-white">Resolvemos tus dudas sobre Cuenta Hogar</h3>
         </div>
 
         <div className="space-y-3">
           {faqs.map((faq, idx) => (
-            <div key={idx} className="bg-[#181920] border border-zinc-800 rounded-2xl overflow-hidden shadow-lg">
+            <div key={idx} className="bg-[#181920] border border-zinc-800 rounded-xl overflow-hidden">
               <button
                 onClick={() => toggleFaq(idx)}
-                className="w-full p-5 text-left font-bold text-white flex justify-between items-center gap-4 hover:bg-zinc-800/60 transition-colors"
+                className="w-full p-5 text-left font-heading font-bold text-white flex justify-between items-center gap-4 hover:bg-zinc-800/60 transition-colors"
               >
-                <span className="text-base md:text-lg">{faq.q}</span>
+                <span className="text-base">{faq.q}</span>
                 {openFaq === idx ? (
-                  <ChevronUp className="w-5 h-5 text-[#fe5000] shrink-0" />
+                  <ChevronUp className="w-4 h-4 text-[#fe5000] shrink-0" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-zinc-400 shrink-0" />
+                  <ChevronDown className="w-4 h-4 text-zinc-400 shrink-0" />
                 )}
               </button>
               {openFaq === idx && (
-                <div className="px-5 pb-5 text-sm text-zinc-300 border-t border-zinc-800 pt-3 leading-relaxed">
+                <div className="px-5 pb-5 text-xs text-zinc-300 font-sans border-t border-zinc-800 pt-3 leading-relaxed">
                   {faq.a}
                 </div>
               )}
@@ -304,25 +295,25 @@ export default function NosotrosPage() {
       </section>
 
       {/* CALL TO ACTION FINAL */}
-      <section className="py-16 max-w-5xl mx-auto px-6">
-        <div className="bg-gradient-to-r from-[#ff5e14] via-[#fe5000] to-[#e04600] text-white p-10 md:p-14 rounded-3xl text-center shadow-2xl space-y-6">
-          <h3 className="text-3xl md:text-4xl font-black tracking-tight">
+      <section className="py-16 max-w-4xl mx-auto px-6">
+        <div className="bg-[#181920] border border-zinc-800 p-8 lg:p-12 rounded-xl text-center space-y-6">
+          <h3 className="text-3xl font-heading font-bold text-white tracking-tight">
             ¿Querés contactarte con nosotros?
           </h3>
-          <p className="text-white/90 text-base md:text-lg max-w-2xl mx-auto font-medium">
+          <p className="text-zinc-300 text-base font-sans max-w-xl mx-auto">
             Ingresá a nuestra web o comunicate por WhatsApp con el vendedor afiliado de tu localidad.
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-2">
             <Link
               href="/#contacto"
-              className="bg-white hover:bg-slate-100 text-zinc-900 font-black px-8 py-4 rounded-2xl shadow-lg hover:scale-105 transition-all text-sm uppercase tracking-wider w-full sm:w-auto"
+              className="btn-primary text-xs uppercase tracking-wider w-full sm:w-auto"
             >
               📝 Contanos qué necesitás
             </Link>
             <Link
               href="/flete"
-              className="bg-slate-950 hover:bg-slate-900 text-white font-black px-8 py-4 rounded-2xl shadow-lg hover:scale-105 transition-all text-sm uppercase tracking-wider w-full sm:w-auto border border-white/20"
+              className="bg-zinc-800 hover:bg-zinc-700 text-white font-heading font-semibold text-xs px-6 h-12 rounded-xl border border-zinc-700 flex items-center justify-center gap-2 uppercase tracking-wider w-full sm:w-auto transition-colors"
             >
               🚚 Cotizar Envíos Low Cost
             </Link>

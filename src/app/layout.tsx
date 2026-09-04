@@ -1,40 +1,34 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Manrope, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const sourceSans = Source_Sans_3({
+  variable: "--font-source-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://cuenta-hogar.web.app"),
   title: {
-    default: "Cuenta Hogar | Comisionista Capital a Provincia, Traslado de Compras y Cuotas sin Tarjeta",
+    default: "Cuenta Hogar | Envíos Low Cost CABA al Interior y Cuotas sin Tarjeta",
     template: "%s | Cuenta Hogar"
   },
-  description: "Servicio de comisionista en Buenos Aires para el interior, traslado de compras CABA, retiro de mercadería en Once y Capital Federal, mandatos de compra y financiación propia para comprar electrodomésticos y tecnología en cuotas sin tarjeta.",
+  description: "Servicio de Envíos Low Cost desde Buenos Aires hacia el interior, recepción de compras en CABA (Caracas 1101), mandatos de compra y financiación propia en cuotas sin tarjeta.",
   keywords: [
-    "comisionista capital a provincia",
-    "comisionistas en buenos aires para el interior",
-    "viajes y comisiones a capital federal",
-    "servicio de comisiones puerta a puerta",
-    "comprar en once desde el interior comisionista",
-    "comprador personal en buenos aires",
-    "quien hace mandatos de compra en caba",
-    "encargar electrodomésticos a buenos aires",
-    "enviar compras de buenos aires al interior",
-    "transporte de compras personales caba",
-    "comisionista para retirar mercadería en capital",
-    "fletes y encomiendas desde capital federal",
-    "comprar en cuotas sin tarjeta en el interior",
-    "financiamiento propio para tecnología buenos aires",
+    "Envíos Low Cost CABA",
+    "transporte propio buenos aires",
+    "compras en once envio al interior",
+    "mandato de compra caba",
+    "electrodomesticos en cuotas sin tarjeta",
+    "financiacion propia interior",
     "Cuenta Hogar",
     "Loop Gestión Integral SRL"
   ],
@@ -45,8 +39,8 @@ export const metadata: Metadata = {
     canonical: "https://cuenta-hogar.web.app"
   },
   openGraph: {
-    title: "Cuenta Hogar | Comisionista Capital a Provincia y Traslado de Compras",
-    description: "Retiro de mercadería en CABA, comisiones puerta a puerta al interior, mandatos de compra y financiación propia en cuotas sin tarjeta.",
+    title: "Cuenta Hogar | Envíos Low Cost y Cuotas sin Tarjeta",
+    description: "Recepción de compras en CABA, transporte propio a localidades de cobertura y financiación propia a sola firma.",
     url: "https://cuenta-hogar.web.app",
     siteName: "Cuenta Hogar",
     images: [
@@ -62,8 +56,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Cuenta Hogar | Comisionista CABA al Interior y Cuotas sin Tarjeta",
-    description: "Comisión puerta a puerta, retiro de compras en Once y Capital Federal, y financiamiento propio para tecnología y hogar.",
+    title: "Cuenta Hogar | Envíos Low Cost CABA al Interior",
+    description: "Recepción en CABA, transporte propio y financiación a sola firma.",
     images: ["/logo-cuenta-hogar-oficial.png"]
   },
   robots: {
@@ -106,7 +100,7 @@ const jsonLd = {
     "closes": "20:00"
   },
   "priceRange": "$$",
-  "description": "Servicio de comisionista capital a provincia, retiro de mercadería en Once y CABA, comprador personal, traslado de compras personales y financiación propia para comprar tecnología y electrodomésticos en cuotas sin tarjeta en el interior."
+  "description": "Envíos Low Cost desde CABA al interior, recepción en Caracas 1101, transporte propio y financiación a sola firma."
 };
 
 export default function RootLayout({
@@ -115,7 +109,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" className={`${manrope.variable} ${sourceSans.variable}`}>
       <head>
         <link rel="preconnect" href="https://firestore.googleapis.com" />
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" />
@@ -128,7 +122,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={geistSans.variable + " " + geistMono.variable + " antialiased bg-[#121316] text-zinc-100"}
+        className="font-sans antialiased bg-[#121316] text-zinc-100 selection:bg-[#fe5000] selection:text-white"
       >
         <AuthProvider>
           {children}
