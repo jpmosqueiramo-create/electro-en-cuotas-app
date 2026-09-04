@@ -68,6 +68,7 @@ export default function PublicCatalog() {
 
   // Modal Solicitud de Nueva Localidad
   const [modalLocalidadOpen, setModalLocalidadOpen] = useState(false);
+  const [h1Variant, setH1Variant] = useState<"A" | "B">("A");
   const [locNombre, setLocNombre] = useState("");
   const [locCiudad, setLocCiudad] = useState("");
   const [locTel, setLocTel] = useState("");
@@ -268,73 +269,115 @@ export default function PublicCatalog() {
       
       <Header />
 
-      {/* 1. HERO PRINCIPAL (#173E3B + #F7F3EC + #B44E2A) */}
-      <section className="relative overflow-hidden pt-16 pb-24 border-b border-[#DED8CF]">
-        <div className="max-w-7xl mx-auto px-6 text-center">
+      {/* 1. HERO PRINCIPAL REDISEÑADO - EDITORIAL & DE ALTO IMPACTO */}
+      <section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24 border-b border-[#DED8CF] bg-[#F7F3EC]">
+        <div className="max-w-7xl mx-auto px-6">
           
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFFDFC] border border-[#DED8CF] text-[#173E3B] text-xs font-heading font-medium tracking-wide mb-8 shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-[#B44E2A]" /> Tu puente directo entre Capital Federal y el Interior
-          </div>
-          
-          <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-heading font-bold tracking-tight leading-[1.12] mb-6 text-[#173E3B] max-w-4xl mx-auto">
-            Lo que necesitás de Capital,<br />
-            <span className="text-[#B44E2A]">
-              más cerca de tu casa.
-            </span>
-          </h1>
-          
-          <p className="text-lg lg:text-xl text-[#68706E] mb-12 max-w-2xl mx-auto font-sans font-normal leading-[1.6]">
-            Compramos, financiamos y trasladamos productos desde Capital Federal hacia nuestras localidades de cobertura.
-          </p>
-
-          {/* DOS CAMINOS CLAROS DE IGUAL IMPORTANCIA */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto text-left">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             
-            {/* CAMINO 1: COMPRA Y FINANCIACIÓN (#173E3B) */}
-            <div className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-[#173E3B]/60 p-8 rounded-xl shadow-xs relative flex flex-col justify-between group transition-all duration-180">
-              <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-[#F7F3EC] text-[#173E3B] font-heading font-semibold text-xs uppercase tracking-wider border border-[#DED8CF]">
-                  <CreditCard className="w-3.5 h-3.5 text-[#173E3B]" /> Compra y Financiación
+            {/* COLUMNA IZQUIERDA: MENSAJE PRINCIPAL & DOLOR DEL CLIENTE */}
+            <div className="lg:col-span-7 space-y-6 text-left">
+              
+              {/* EYEBROW CON INDICADOR DE VARIANTE A/B */}
+              <div className="flex items-center justify-between gap-4">
+                <div className="inline-flex items-center gap-2 text-xs font-heading font-bold uppercase tracking-widest text-[#B44E2A]">
+                  <span className="w-2 h-2 rounded-full bg-[#B44E2A]"></span>
+                  CUENTA HOGAR · CAPITAL → INTERIOR
                 </div>
-                <h2 className="text-2xl lg:text-[28px] font-heading font-bold text-[#173E3B] leading-tight">
-                  Necesito comprar y financiar
-                </h2>
-                <p className="text-[#68706E] text-[15px] font-sans leading-[1.6]">
-                  Contanos qué necesitás. Buscamos alternativas, gestionamos la compra, te lo llevamos y lo pagás en cuotas. Podés consultar por nuestra web, WhatsApp o a través del <strong className="text-[#1F2928] font-semibold">vendedor afiliado</strong> de tu localidad.
+
+                {/* BOTÓN DISCRETO PARA ALTERNAR VARIANTE A/B DEL TITULAR */}
+                <button 
+                  onClick={() => setH1Variant(h1Variant === 'A' ? 'B' : 'A')}
+                  className="text-[10px] font-heading font-semibold text-[#68706E] bg-[#FFFDFC] border border-[#DED8CF] px-2.5 py-1 rounded-md hover:border-[#173E3B] transition-colors"
+                  title="Haz clic para probar el Titular A/B"
+                >
+                  Variante {h1Variant} <span className="opacity-60 text-[9px]">(Probar A/B)</span>
+                </button>
+              </div>
+
+              {/* H1 CON PROTAGONISMO EDITORIAL Y AIRE VISUAL */}
+              <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-heading font-extrabold tracking-tight text-[#173E3B] leading-[1.08]">
+                Comprá en Capital.<br />
+                <span className="text-[#B44E2A]">
+                  {h1Variant === 'A' 
+                    ? "Sin viajar. Sin perseguir comisionistas." 
+                    : "Nosotros resolvemos lo que viene después."}
+                </span>
+              </h1>
+
+              {/* BAJADA CLARA & OPERATIVA */}
+              <p className="text-base sm:text-lg text-[#68706E] font-sans font-normal leading-relaxed max-w-2xl">
+                Si todavía no compraste, gestionamos la compra por mandato. Si ya compraste, recibimos tu mercadería en nuestro local de CABA y organizamos el traslado hasta tu domicilio en el interior.
+              </p>
+
+              {/* FRASE DE DOLOR / IDENTIFICACIÓN DIRECTA CON EL PROBLEMA */}
+              <div className="bg-[#FFFDFC] border-l-4 border-l-[#B44E2A] border border-[#DED8CF] p-4.5 rounded-xl shadow-xs">
+                <p className="text-sm sm:text-base font-sans font-semibold text-[#1F2928] leading-relaxed">
+                  Sin coordinar quién retira, qué día pasa, a qué hora llega o cuándo te lo entregan.
                 </p>
               </div>
 
-              <div className="pt-8">
+              {/* CTAS DE ACCIÓN */}
+              <div className="pt-2 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
                 <a 
                   href="#contacto" 
-                  className="w-full btn-primary uppercase tracking-wider text-xs"
+                  className="btn-primary px-8 py-4 text-xs font-heading font-bold uppercase tracking-wider justify-center shadow-md shadow-[#173E3B]/15"
                 >
-                  Quiero comprar y financiar <ArrowRight className="w-4 h-4" />
+                  Quiero solicitar una compra <ArrowRight className="w-4 h-4 ml-1" />
                 </a>
-              </div>
-            </div>
 
-            {/* CAMINO 2: ENVÍOS LOW COST (#B44E2A) */}
-            <div className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-[#B44E2A]/60 p-8 rounded-xl shadow-xs relative flex flex-col justify-between group transition-all duration-180">
-              <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-[#F7F3EC] text-[#B44E2A] font-heading font-semibold text-xs uppercase tracking-wider border border-[#DED8CF]">
-                  <Truck className="w-3.5 h-3.5 text-[#B44E2A]" /> Envíos Low Cost
-                </div>
-                <h2 className="text-2xl lg:text-[28px] font-heading font-bold text-[#B44E2A] leading-tight">
-                  Ya compré en Capital
-                </h2>
-                <p className="text-[#68706E] text-[15px] font-sans leading-[1.6]">
-                  Recibimos tu compra en nuestro centro logístico de CABA y te la llevamos al interior con nuestros <strong className="text-[#B44E2A] font-semibold">Envíos Low Cost</strong>. Para emprendedores recurrentes, la consolidación de cargas es <strong className="text-[#1F2928] font-semibold">sin cargo</strong>.
-                </p>
-              </div>
-
-              <div className="pt-8">
                 <a 
                   href="#envios-low-cost" 
-                  className="w-full btn-lowcost uppercase tracking-wider text-xs"
+                  className="btn-lowcost px-8 py-4 text-xs font-heading font-bold uppercase tracking-wider justify-center shadow-xs"
                 >
-                  Cotizar Envío Low Cost <ArrowRight className="w-4 h-4" />
+                  Ya compré · Cotizar envío <ArrowRight className="w-4 h-4 ml-1" />
                 </a>
+              </div>
+
+              {/* REFUERZO DE CONFIANZA SOBRIO (SIN TARJETAS GRANDES) */}
+              <div className="pt-6 border-t border-[#DED8CF] flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-heading font-semibold text-[#68706E]">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#173E3B]"></span>
+                  <span>Centro logístico en CABA</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#173E3B]"></span>
+                  <span>Transporte propio</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#173E3B]"></span>
+                  <span>Entrega a domicilio</span>
+                </div>
+              </div>
+
+            </div>
+
+            {/* COLUMNA DERECHA: FOTOGRAFÍA REAL DE LA OPERACIÓN (FORD TRANSIT / LOGÍSTICA) */}
+            <div className="lg:col-span-5 relative">
+              <div className="relative rounded-2xl overflow-hidden border border-[#DED8CF] bg-[#FFFDFC] shadow-lg group">
+                <img 
+                  src="/flota-cuenta-hogar.jpg" 
+                  alt="Logística real y transporte propio de Cuenta Hogar" 
+                  className="w-full h-[360px] sm:h-[440px] lg:h-[480px] object-cover group-hover:scale-102 transition-transform duration-700" 
+                />
+                
+                <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B]/90 via-[#173E3B]/20 to-transparent flex items-end p-6">
+                  <div className="bg-[#FFFDFC]/95 backdrop-blur-md border border-[#DED8CF] text-[#1F2928] p-4 rounded-xl w-full shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-[#173E3B] rounded-lg flex items-center justify-center text-white shrink-0">
+                        <Truck className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-heading font-bold uppercase text-[#173E3B] tracking-wider">
+                          Operación Logística Real
+                        </p>
+                        <p className="text-xs text-[#68706E] font-sans">
+                          Centro CABA → Recorridos programados directo a tu casa
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
