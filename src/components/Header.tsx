@@ -54,10 +54,7 @@ export default function Header() {
             <span>Envíos Low Cost</span>
           </Link>
 
-          <Link href="/red-afiliados" className={getLinkStyle("/red-afiliados")}>
-            <Users className="w-3.5 h-3.5 text-[#173E3B]" />
-            <span>Red de Afiliados</span>
-          </Link>
+
 
           <div className="pl-3 ml-2 border-l border-[#DED8CF]">
             <Link 
@@ -92,9 +89,7 @@ export default function Header() {
           <Link href="/flete" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/flete")}>
             <Truck className="w-4 h-4 text-[#B44E2A]" /> Envíos Low Cost
           </Link>
-          <Link href="/red-afiliados" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/red-afiliados")}>
-            <Users className="w-4 h-4 text-[#173E3B]" /> Red de Afiliados
-          </Link>
+
           <div className="pt-3 border-t border-[#DED8CF]">
             <Link 
               href="/login" 

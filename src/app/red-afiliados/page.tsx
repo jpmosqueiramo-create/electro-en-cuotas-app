@@ -45,8 +45,8 @@ export default function RedAfiliadosPage() {
                 <Users className="w-4 h-4 text-[#E7B86A]" /> RED DE VENDEDORES AFILIADOS
               </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-heading font-extrabold tracking-tight leading-[1.08] text-[#FFFDFC]">
-                La confianza local también forma parte de Cuenta Hogar.
+              <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-heading font-extrabold tracking-tight leading-[1.08] text-white">
+                La confianza local también forma parte de <span className="text-[#E7B86A]">Cuenta Hogar.</span>
               </h1>
 
               <p className="text-base sm:text-lg text-[#F7F3EC]/90 font-sans font-normal leading-relaxed max-w-2xl">
