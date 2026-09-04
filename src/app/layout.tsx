@@ -122,7 +122,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className="font-sans antialiased bg-[#121316] text-zinc-100 selection:bg-[#fe5000] selection:text-white"
+        className="font-sans antialiased bg-[#F7F3EC] text-[#1F2928] selection:bg-[#173E3B] selection:text-white"
       >
         <AuthProvider>
           {children}

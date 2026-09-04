@@ -1,24 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  --background: #121316;
-  --foreground: #f4f4f5;
-  --accent-orange: #fe5000;
-  --deep-blue: #121316;
+  --brand-primary: #173E3B;
+  --brand-secondary: #B44E2A;
+  --brand-accent: #E7B86A;
+  --background-main: #F7F3EC;
+  --surface: #FFFDFC;
+  --text-primary: #1F2928;
+  --text-secondary: #68706E;
+  --border-color: #DED8CF;
+  --success: #2F7D5C;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-accent-orange: #fe5000;
-  --color-deep-blue: var(--deep-blue);
+  --color-brand-primary: #173E3B;
+  --color-brand-secondary: #B44E2A;
+  --color-brand-accent: #E7B86A;
+  --color-background-main: #F7F3EC;
+  --color-surface: #FFFDFC;
+  --color-text-primary: #1F2928;
+  --color-text-secondary: #68706E;
+  --color-border-color: #DED8CF;
+  --color-success: #2F7D5C;
   --font-sans: var(--font-source-sans), system-ui, -apple-system, sans-serif;
   --font-heading: var(--font-manrope), system-ui, -apple-system, sans-serif;
 }
 
 body {
-  background-color: #121316;
-  color: #f4f4f5;
+  background-color: #F7F3EC;
+  color: #1F2928;
   font-family: var(--font-source-sans), system-ui, -apple-system, sans-serif;
   min-height: 100vh;
   line-height: 1.6;
@@ -26,14 +36,15 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-manrope), system-ui, -apple-system, sans-serif;
+  color: #173E3B;
   letter-spacing: -0.02em;
 }
 
-/* Professional Primary Button Style */
+/* Primary CTA Button (#173E3B) */
 .btn-primary {
   font-family: var(--font-manrope), sans-serif;
   font-weight: 600;
-  background-color: #fe5000;
+  background-color: #173E3B;
   color: #ffffff;
   height: 50px;
   padding-left: 1.75rem;
@@ -44,16 +55,68 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  box-shadow: 0 4px 14px rgba(254, 80, 0, 0.25);
+  box-shadow: 0 4px 12px rgba(23, 62, 59, 0.2);
   cursor: pointer;
 }
 
 .btn-primary:hover {
-  background-color: #e04600;
+  background-color: #112F2D;
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(254, 80, 0, 0.35);
+  box-shadow: 0 6px 16px rgba(23, 62, 59, 0.3);
 }
 
 .btn-primary:active {
   transform: translateY(0);
+}
+
+/* Envíos Low Cost Button (#B44E2A) */
+.btn-lowcost {
+  font-family: var(--font-manrope), sans-serif;
+  font-weight: 600;
+  background-color: #B44E2A;
+  color: #ffffff;
+  height: 50px;
+  padding-left: 1.75rem;
+  padding-right: 1.75rem;
+  border-radius: 0.75rem;
+  transition: all 180ms ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(180, 78, 42, 0.2);
+  cursor: pointer;
+}
+
+.btn-lowcost:hover {
+  background-color: #984021;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(180, 78, 42, 0.3);
+}
+
+.btn-lowcost:active {
+  transform: translateY(0);
+}
+
+/* Secondary / Outline Button */
+.btn-secondary {
+  font-family: var(--font-manrope), sans-serif;
+  font-weight: 600;
+  background-color: transparent;
+  color: #173E3B;
+  border: 1px solid #173E3B;
+  height: 50px;
+  padding-left: 1.75rem;
+  padding-right: 1.75rem;
+  border-radius: 0.75rem;
+  transition: all 180ms ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: rgba(23, 62, 59, 0.05);
 }

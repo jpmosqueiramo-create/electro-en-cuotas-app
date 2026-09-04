@@ -51,44 +51,44 @@ export default function ArrepentimientoPage() {
 
   if (ticketId) {
     return (
-      <div className="min-h-screen bg-[#121316] text-zinc-100 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-[#181920]/50 border border-[#fe5000]/30 p-8 rounded-3xl text-center space-y-6 shadow-2xl backdrop-blur-md">
+      <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] flex items-center justify-center p-6 font-sans">
+        <div className="max-w-md w-full bg-[#FFFDFC] border border-[#DED8CF] p-8 rounded-3xl text-center space-y-6 shadow-xl">
           <div className="text-6xl">📥</div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-[#fe5000] to-amber-500 uppercase tracking-wide">
+            <h2 className="text-2xl font-bold text-[#173E3B] uppercase tracking-wide font-heading">
               Solicitud Recibida
             </h2>
-            <p className="text-zinc-400 text-xs leading-relaxed">
+            <p className="text-[#68706E] text-xs leading-relaxed">
               De conformidad con el Art. 34 de la Ley N° 24.240 de Defensa del Consumidor, se ha registrado formalmente tu revocación de aceptación.
             </p>
           </div>
 
-          <div className="bg-[#121316]/80 p-4 rounded-xl border border-zinc-800 font-mono text-xs text-left space-y-2.5">
+          <div className="bg-[#F7F3EC] p-4 rounded-xl border border-[#DED8CF] font-mono text-xs text-left space-y-2.5">
             <div className="flex justify-between border-b border-zinc-900 pb-2">
-              <span className="text-zinc-500">Nro. de Gestión:</span>
-              <span className="text-[#fe5000] font-bold">{ticketId}</span>
+              <span className="text-[#68706E]">Nro. de Gestión:</span>
+              <span className="text-[#173E3B] font-bold">{ticketId}</span>
             </div>
             <div className="flex justify-between border-b border-zinc-900 pb-2">
-              <span className="text-zinc-500">Cliente:</span>
-              <span className="text-white font-bold">{nombreCompleto}</span>
+              <span className="text-[#68706E]">Cliente:</span>
+              <span className="text-[#1F2928] font-bold">{nombreCompleto}</span>
             </div>
             <div className="flex justify-between border-b border-zinc-900 pb-2">
-              <span className="text-zinc-500">DNI:</span>
-              <span className="text-white font-bold">{dni}</span>
+              <span className="text-[#68706E]">DNI:</span>
+              <span className="text-[#1F2928] font-bold">{dni}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-zinc-500">Producto:</span>
+              <span className="text-[#68706E]">Producto:</span>
               <span className="text-white font-bold truncate max-w-[180px]">{producto}</span>
             </div>
           </div>
 
-          <div className="text-xs text-zinc-500 italic bg-[#fe5000]/5 p-3.5 rounded-lg border border-[#fe5000]/10 text-left">
+          <div className="text-xs text-[#68706E] italic bg-[#173E3B]/10 p-3.5 rounded-lg border border-[#173E3B]/20 text-left">
             🚩 <strong>Información importante:</strong> Nos contactaremos con vos dentro de las próximas 24 a 48 horas hábiles para coordinar la rescisión del plan y la entrega/devolución del equipo sin cargo.
           </div>
 
           <button
             onClick={() => router.push("/")}
-            className="w-full bg-yellow-500 hover:bg-yellow-400 text-black py-3.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-300 hover:shadow-lg"
+            className="w-full bg-[#173E3B] hover:bg-[#123230] text-white py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-md"
           >
             Volver al inicio
           </button>

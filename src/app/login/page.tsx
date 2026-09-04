@@ -99,18 +99,18 @@ export default function LoginPage() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-slate-100 text-zinc-900 flex items-center justify-center">Cargando...</div>;
+  if (loading) return <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] flex items-center justify-center font-sans">Cargando...</div>;
 
   return (
-    <div className="min-h-screen bg-slate-100 text-zinc-900 flex items-center justify-center p-4 font-sans"> 
- <Link href="/" className="absolute top-8 left-6 md:left-12 text-zinc-600 hover:text-[#fe5000] flex items-center gap-2 text-sm font-bold transition-colors z-50">← Volver al Catálogo</Link>
+    <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] flex items-center justify-center p-4 font-sans"> 
+ <Link href="/" className="absolute top-8 left-6 md:left-12 text-[#68706E] hover:text-[#173E3B] flex items-center gap-2 text-sm font-bold transition-colors z-50">← Volver al Catálogo</Link>
 
-      <div className="bg-white border border-zinc-200/90 p-8 sm:p-10 rounded-3xl w-full max-w-md shadow-2xl">
+      <div className="bg-[#FFFDFC] border border-[#DED8CF] p-8 sm:p-10 rounded-3xl w-full max-w-md shadow-xl">
         
         <div className="text-center mb-8">
           <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-24 w-auto mx-auto mb-6 object-contain shadow-2xl rounded-2xl" />
-          <h1 className="text-3xl font-black text-[#fe5000] mb-2">Portal de Clientes</h1>
-          <p className="text-zinc-600 font-medium">{isLogin ? "Accede a tu cuenta" : "Únete y solicita tu crédito hoy"}</p>
+          <h1 className="text-3xl font-bold text-[#173E3B] mb-2 font-heading">Portal de Clientes</h1>
+          <p className="text-[#68706E] font-normal">{isLogin ? "Accede a tu cuenta" : "Únete y solicita tu crédito hoy"}</p>
         </div>
 
         {error && (
@@ -121,38 +121,38 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm mb-1 text-zinc-700 font-bold">Correo Electrónico</label>
+            <label className="block text-sm mb-1 text-[#1F2928] font-bold">Correo Electrónico</label>
             <input 
               type="email" 
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full bg-slate-50 border border-zinc-300 focus:bg-white focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 rounded-xl p-3.5 text-zinc-900 placeholder-zinc-400 focus:outline-none font-medium text-base shadow-sm transition-all"
+              className="w-full bg-[#F7F3EC] border border-[#DED8CF] focus:bg-[#FFFDFC] focus:border-[#173E3B] focus:ring-2 focus:ring-[#173E3B]/20 rounded-xl p-3.5 text-[#1F2928] placeholder-[#68706E] focus:outline-none font-medium text-base shadow-sm transition-all"
               placeholder="tu@correo.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm mb-1 text-zinc-700 font-bold">Contraseña</label>
+            <label className="block text-sm mb-1 text-[#1F2928] font-bold">Contraseña</label>
             <input 
               type="password" 
               required
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full bg-slate-50 border border-zinc-300 focus:bg-white focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 rounded-xl p-3.5 text-zinc-900 placeholder-zinc-400 focus:outline-none font-medium text-base shadow-sm transition-all"
+              className="w-full bg-[#F7F3EC] border border-[#DED8CF] focus:bg-[#FFFDFC] focus:border-[#173E3B] focus:ring-2 focus:ring-[#173E3B]/20 rounded-xl p-3.5 text-[#1F2928] placeholder-[#68706E] focus:outline-none font-medium text-base shadow-sm transition-all"
               placeholder="••••••••"
             />
           </div>
 
           {!isLogin && (
             <div>
-              <label className="block text-sm mb-1 text-zinc-700 font-bold">DNI del Cliente</label>
+              <label className="block text-sm mb-1 text-[#1F2928] font-bold">DNI del Cliente</label>
               <input 
                 type="text" 
                 required
                 value={dni}
                 onChange={e => setDni(e.target.value.replace(/\D/g, ""))}
-                className="w-full bg-slate-50 border border-zinc-300 focus:bg-white focus:border-[#fe5000] focus:ring-2 focus:ring-[#fe5000]/20 rounded-xl p-3.5 text-zinc-900 placeholder-zinc-400 focus:outline-none font-mono font-medium text-base shadow-sm transition-all"
+                className="w-full bg-[#F7F3EC] border border-[#DED8CF] focus:bg-[#FFFDFC] focus:border-[#173E3B] focus:ring-2 focus:ring-[#173E3B]/20 rounded-xl p-3.5 text-[#1F2928] placeholder-[#68706E] focus:outline-none font-mono font-medium text-base shadow-sm transition-all"
                 placeholder="Solo números"
               />
             </div>
@@ -163,19 +163,19 @@ export default function LoginPage() {
           <button 
             type="submit" 
             disabled={cargando}
-            className="w-full bg-gradient-to-r from-[#ff5e14] via-[#fe5000] to-[#e04600] text-white py-4 rounded-xl font-black text-base uppercase tracking-wider transition-all disabled:opacity-50 mt-4 shadow-xl shadow-orange-500/25 active:scale-95"
+            className="w-full bg-[#173E3B] hover:bg-[#123230] text-white py-4 rounded-xl font-bold text-base uppercase tracking-wider transition-all disabled:opacity-50 mt-4 shadow-md shadow-[#173E3B]/20 active:scale-95"
           >
             {cargando ? "Autenticando..." : (isLogin ? "Ingresar" : "Registrarme Ahora")}
           </button>
         </form>
 
-        <div className="mt-8 text-center border-t border-zinc-800 pt-6">
-          <p className="text-sm text-zinc-400">
+        <div className="mt-8 text-center border-t border-[#DED8CF] pt-6">
+          <p className="text-sm text-[#68706E]">
             {isLogin ? "¿Eres un cliente nuevo?" : "¿Ya tienes una cuenta validada?"}
           </p>
           <button 
             onClick={() => { setIsLogin(!isLogin); setError(""); }} 
-            className="text-[#fe5000] font-bold hover:underline mt-2 text-sm"
+            className="text-[#173E3B] font-bold hover:underline mt-2 text-sm"
           >
             {isLogin ? "Crear una cuenta gratis" : "Iniciar Sesión"}
           </button>
