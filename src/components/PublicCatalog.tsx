@@ -437,34 +437,76 @@ export default function PublicCatalog() {
 
             {/* 3 PASOS SIMPLES */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-[#F7F3EC] border border-[#DED8CF] p-6 rounded-xl space-y-2.5">
-                <div className="w-10 h-10 bg-[#FFFDFC] rounded-lg flex items-center justify-center text-[#B44E2A] font-heading font-bold border border-[#DED8CF] text-base shadow-xs">
-                  1
+              <div className="bg-[#F7F3EC] border border-[#DED8CF] p-6 rounded-xl space-y-3 flex flex-col justify-between overflow-hidden group hover:border-[#173E3B] transition-all">
+                <div className="space-y-2.5">
+                  <div className="w-10 h-10 bg-[#FFFDFC] rounded-lg flex items-center justify-center text-[#B44E2A] font-heading font-bold border border-[#DED8CF] text-base shadow-xs">
+                    1
+                  </div>
+                  <h3 className="text-lg font-heading font-bold text-[#173E3B]">Despachás a CABA</h3>
+                  <p className="text-xs text-[#68706E] font-sans leading-relaxed">
+                    Tus compras se entregan en nuestro centro logístico en <strong className="text-[#1F2928] font-semibold">Caracas 1101, CABA</strong>.
+                  </p>
                 </div>
-                <h3 className="text-lg font-heading font-bold text-[#173E3B]">Despachás a CABA</h3>
-                <p className="text-xs text-[#68706E] font-sans leading-relaxed">
-                  Tus compras se entregan en nuestro centro logístico en <strong className="text-[#1F2928] font-medium">Caracas 1101, CABA</strong>.
-                </p>
+                <div className="relative h-44 w-full rounded-xl overflow-hidden border border-[#DED8CF] mt-2">
+                  <img 
+                    src="/paso1-local-afuera.jpg" 
+                    alt="Local Cuenta Hogar desde afuera CABA Caracas 1101" 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B]/80 via-transparent to-transparent flex items-end p-2.5">
+                    <span className="text-[10px] font-heading font-bold text-[#FFFDFC] uppercase tracking-wider">
+                      Centro CABA · Caracas 1101
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="bg-[#F7F3EC] border border-[#DED8CF] p-6 rounded-xl space-y-2.5">
-                <div className="w-10 h-10 bg-[#FFFDFC] rounded-lg flex items-center justify-center text-[#B44E2A] font-heading font-bold border border-[#DED8CF] text-base shadow-xs">
-                  2
+              <div className="bg-[#F7F3EC] border border-[#DED8CF] p-6 rounded-xl space-y-3 flex flex-col justify-between overflow-hidden group hover:border-[#173E3B] transition-all">
+                <div className="space-y-2.5">
+                  <div className="w-10 h-10 bg-[#FFFDFC] rounded-lg flex items-center justify-center text-[#B44E2A] font-heading font-bold border border-[#DED8CF] text-base shadow-xs">
+                    2
+                  </div>
+                  <h3 className="text-lg font-heading font-bold text-[#173E3B]">Organizamos la carga</h3>
+                  <p className="text-xs text-[#68706E] font-sans leading-relaxed">
+                    Recibimos, acopiamos y consolidamos tus paquetes para la partida programada.
+                  </p>
                 </div>
-                <h3 className="text-lg font-heading font-bold text-[#173E3B]">Organizamos la carga</h3>
-                <p className="text-xs text-[#68706E] font-sans leading-relaxed">
-                  Recibimos, acopiamos y consolidamos tus paquetes para la partida programada.
-                </p>
+                <div className="relative h-44 w-full rounded-xl overflow-hidden border border-[#DED8CF] mt-2">
+                  <img 
+                    src="/paso2-local-adentro.jpg" 
+                    alt="Centro de acopio y recepción interior Cuenta Hogar" 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B]/80 via-transparent to-transparent flex items-end p-2.5">
+                    <span className="text-[10px] font-heading font-bold text-[#FFFDFC] uppercase tracking-wider">
+                      Centro de Acopio Interior
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="bg-[#F7F3EC] border border-[#DED8CF] p-6 rounded-xl space-y-2.5">
-                <div className="w-10 h-10 bg-[#FFFDFC] rounded-lg flex items-center justify-center text-[#B44E2A] font-heading font-bold border border-[#DED8CF] text-base shadow-xs">
-                  3
+              <div className="bg-[#F7F3EC] border border-[#DED8CF] p-6 rounded-xl space-y-3 flex flex-col justify-between overflow-hidden group hover:border-[#173E3B] transition-all">
+                <div className="space-y-2.5">
+                  <div className="w-10 h-10 bg-[#FFFDFC] rounded-lg flex items-center justify-center text-[#B44E2A] font-heading font-bold border border-[#DED8CF] text-base shadow-xs">
+                    3
+                  </div>
+                  <h3 className="text-lg font-heading font-bold text-[#173E3B]">Entrega en tu domicilio</h3>
+                  <p className="text-xs text-[#68706E] font-sans leading-relaxed">
+                    Nuestro transporte propio lleva tus productos directo a la puerta de tu casa o comercio.
+                  </p>
                 </div>
-                <h3 className="text-lg font-heading font-bold text-[#173E3B]">Entrega en tu domicilio</h3>
-                <p className="text-xs text-[#68706E] font-sans leading-relaxed">
-                  Nuestro transporte propio lleva tus productos directo a la puerta de tu casa o comercio.
-                </p>
+                <div className="relative h-44 w-full rounded-xl overflow-hidden border border-[#DED8CF] mt-2">
+                  <img 
+                    src="/paso3-camioneta.jpg" 
+                    alt="Transporte propio Cuenta Hogar entrega en domicilio" 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B]/80 via-transparent to-transparent flex items-end p-2.5">
+                    <span className="text-[10px] font-heading font-bold text-[#FFFDFC] uppercase tracking-wider">
+                      Transporte Propio · Entrega
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 

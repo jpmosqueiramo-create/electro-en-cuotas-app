@@ -216,15 +216,29 @@ Si podés, adjuntá una foto o link del producto.`;
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 relative z-10">
               
-              <div className="bg-[#F7F3EC] border border-[#DED8CF] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors">
-                <div className="w-9 h-9 rounded-full bg-[#173E3B] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0">
-                  1
+              <div className="bg-[#F7F3EC] border border-[#DED8CF] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors overflow-hidden group">
+                <div className="space-y-2">
+                  <div className="w-9 h-9 rounded-full bg-[#173E3B] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0">
+                    1
+                  </div>
+                  <div>
+                    <h4 className="font-heading font-bold text-[#173E3B] text-sm mb-1">Despachás a CABA</h4>
+                    <p className="text-xs text-[#68706E] font-sans leading-relaxed">
+                      Tus compras se entregan en nuestro centro logístico en <strong className="text-[#1F2928] font-semibold">Caracas 1101, CABA</strong>.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-heading font-bold text-[#173E3B] text-sm mb-1">Comprás en Capital</h4>
-                  <p className="text-xs text-[#68706E] font-sans leading-relaxed">
-                    Adquirís el producto en la tienda de CABA que elijas.
-                  </p>
+                <div className="relative h-32 w-full rounded-xl overflow-hidden border border-[#DED8CF] mt-1">
+                  <img 
+                    src="/paso1-local-afuera.jpg" 
+                    alt="Centro logístico Cuenta Hogar CABA Caracas 1101" 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B]/80 via-transparent to-transparent flex items-end p-2">
+                    <span className="text-[9px] font-heading font-bold text-[#FFFDFC] uppercase tracking-wider">
+                      Caracas 1101 CABA
+                    </span>
+                  </div>
                 </div>
                 <div className="text-[10px] font-mono text-[#B44E2A] font-bold">CABA ●────</div>
               </div>
@@ -328,32 +342,52 @@ Si podés, adjuntá una foto o link del producto.`;
               Tu compra debe ser entregada por el vendedor o proveedor en nuestro centro de recepción de CABA.
             </p>
 
-            {/* DIRECCIÓN DESTACADA */}
-            <div className="bg-[#F7F3EC] border border-[#DED8CF] p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#173E3B] text-white rounded-xl flex items-center justify-center shrink-0 font-bold">
-                  <Navigation className="w-5 h-5" />
+            {/* DIRECCIÓN & FOTO REAL DEL CENTRO LOGÍSTICO CABA */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              <div className="space-y-4">
+                <div className="bg-[#F7F3EC] border border-[#DED8CF] p-6 rounded-2xl flex items-center gap-3">
+                  <div className="w-10 h-10 bg-[#173E3B] text-white rounded-xl flex items-center justify-center shrink-0 font-bold">
+                    <Navigation className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase font-bold text-[#68706E] tracking-wider">Dirección de Recepción CABA:</p>
+                    <p className="text-lg font-heading font-bold text-[#173E3B]">Caracas 1101, CABA, Argentina</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs uppercase font-bold text-[#68706E] tracking-wider">Dirección de Recepción CABA:</p>
-                  <p className="text-lg font-heading font-bold text-[#173E3B]">Caracas 1101, CABA, Argentina</p>
+
+                <div className="w-full rounded-2xl overflow-hidden border border-[#DED8CF]">
+                  <iframe
+                    title="Ubicación Centro de Recepción CABA - Caracas 1101"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3283.473539827663!2d-58.46820522346083!3d-34.61747805822394!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bcc9f3a61c572b%3A0x6b2e35a1408018e6!2sCaracas%201101%2C%20C1416AOS%20CABA!5e0!3m2!1ses!2sar!4v1700000000000!5m2!1ses!2sar"
+                    width="100%"
+                    height="220"
+                    style={{ border: 0 }}
+                    allowFullScreen={true}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    className="w-full h-[220px] rounded-2xl"
+                  />
                 </div>
               </div>
-            </div>
 
-            {/* MAPA EMBEDDED */}
-            <div className="w-full rounded-2xl overflow-hidden border border-[#DED8CF]">
-              <iframe
-                title="Ubicación Centro de Recepción CABA - Caracas 1101"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3283.473539827663!2d-58.46820522346083!3d-34.61747805822394!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bcc9f3a61c572b%3A0x6b2e35a1408018e6!2sCaracas%201101%2C%20C1416AOS%20CABA!5e0!3m2!1ses!2sar!4v1700000000000!5m2!1ses!2sar"
-                width="100%"
-                height="280"
-                style={{ border: 0 }}
-                allowFullScreen={true}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="w-full h-[280px] rounded-2xl"
-              />
+              {/* FOTOGRAFÍA REAL DEL LOCAL / CENTRO LOGÍSTICO CABA */}
+              <div className="relative rounded-2xl overflow-hidden border border-[#DED8CF] shadow-md h-full min-h-[300px] group">
+                <img 
+                  src="/paso1-local-afuera.jpg" 
+                  alt="Centro logístico real Cuenta Hogar CABA Caracas 1101" 
+                  className="w-full h-full object-cover min-h-[300px] group-hover:scale-105 transition-transform duration-700" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B]/90 via-transparent to-transparent flex items-end p-5">
+                  <div>
+                    <p className="text-xs font-heading font-bold uppercase text-[#E7B86A] tracking-wider">
+                      Centro Logístico CABA
+                    </p>
+                    <p className="text-xs text-[#FFFDFC]/90 font-sans">
+                      Caracas 1101, Capital Federal
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* ACLARACIÓN OBLIGATORIA */}
