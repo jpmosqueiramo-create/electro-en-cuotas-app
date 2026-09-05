@@ -114,55 +114,55 @@ export default function ClientesPage() {
 
   return (
     <AdminProtectedRoute>
-      <div className="min-h-screen bg-[#121316] text-zinc-100 p-4 md:p-8 font-sans">
+      <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] p-4 md:p-8 font-sans selection:bg-[#173E3B] selection:text-white">
         <div className="max-w-7xl mx-auto space-y-6">
 
           {/* HEADER */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#181920] border border-zinc-800 p-6 rounded-3xl shadow-xl">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#FFFDFC] border border-[#DED8CF] p-6 rounded-2xl shadow-xs">
             <div className="flex items-center gap-4">
-              <Link href="/admin" className="p-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-xl border border-zinc-800 transition">
+              <Link href="/admin" className="p-2.5 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#173E3B] rounded-xl border border-[#DED8CF] transition shadow-xs">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
               <div>
-                <h1 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-[#fe5000] to-amber-500">
+                <h1 className="text-2xl md:text-3xl font-heading font-extrabold text-[#173E3B]">
                   Base de Datos de Clientes
                 </h1>
-                <p className="text-xs text-zinc-400 font-medium mt-0.5">
+                <p className="text-xs text-[#68706E] font-sans mt-0.5">
                   Directorio unificado de clientes registrados, datos personales, laborales e historial comercial
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-zinc-900/80 px-4 py-2 rounded-2xl border border-zinc-800">
-              <Users className="w-4 h-4 text-[#fe5000]" />
-              <span className="text-xs font-bold text-zinc-300">Total: <strong className="text-white font-mono">{clientes.length}</strong> Clientes</span>
+            <div className="flex items-center gap-2 bg-[#F7F3EC] px-4 py-2 rounded-xl border border-[#DED8CF]">
+              <Users className="w-4 h-4 text-[#B44E2A]" />
+              <span className="text-xs font-heading font-bold text-[#68706E]">Total: <strong className="text-[#173E3B] font-mono">{clientes.length}</strong> Clientes</span>
             </div>
           </div>
 
           {/* BARRA DE BÚSQUEDA */}
-          <div className="bg-[#181920] border border-zinc-800 p-4 rounded-2xl shadow-lg">
+          <div className="bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-2xl shadow-xs">
             <div className="relative">
-              <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3.5" />
+              <Search className="w-4 h-4 text-[#68706E] absolute left-3.5 top-3.5" />
               <input
                 type="text"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 placeholder="Buscar cliente por Nombre, DNI, CUIL, WhatsApp, Email o Localidad..."
-                className="w-full bg-zinc-950 border border-zinc-800 pl-10 pr-4 py-3 rounded-xl text-xs text-white placeholder-zinc-500 outline-none focus:border-[#fe5000] transition"
+                className="w-full bg-[#FFFDFC] border border-[#DED8CF] pl-10 pr-4 py-3 rounded-xl text-xs text-white placeholder-zinc-500 outline-none focus:border-[#fe5000] transition"
               />
             </div>
           </div>
 
           {/* LISTADO DE CLIENTES */}
           {loading ? (
-            <div className="bg-[#181920] border border-zinc-800 p-12 rounded-3xl text-center">
-              <p className="text-sm text-zinc-400 animate-pulse font-medium">Cargando base de datos de clientes...</p>
+            <div className="bg-[#FFFDFC] border border-[#DED8CF] p-12 rounded-3xl text-center">
+              <p className="text-sm text-[#68706E] animate-pulse font-medium">Cargando base de datos de clientes...</p>
             </div>
           ) : clientesFiltrados.length === 0 ? (
-            <div className="bg-[#181920] border border-zinc-800 p-12 rounded-3xl text-center space-y-3">
+            <div className="bg-[#FFFDFC] border border-[#DED8CF] p-12 rounded-3xl text-center space-y-3">
               <Users className="w-12 h-12 text-zinc-600 mx-auto" />
-              <p className="text-base text-zinc-300 font-bold">No se encontraron clientes</p>
-              <p className="text-xs text-zinc-500 max-w-md mx-auto">
+              <p className="text-base text-[#1F2928] font-bold">No se encontraron clientes</p>
+              <p className="text-xs text-[#68706E] max-w-md mx-auto">
                 No hay registros que coincidan con la búsqueda.
               </p>
             </div>
@@ -173,18 +173,18 @@ export default function ClientesPage() {
                 const waUrl = cleanPhone ? `https://wa.me/549${cleanPhone}?text=${encodeURIComponent(`Hola ${c.nombreCompleto}, te contactamos de Cuenta Hogar.`)}` : null;
 
                 return (
-                  <div key={idx} className="bg-[#181920] border border-zinc-850 hover:border-zinc-750 p-6 rounded-3xl space-y-4 shadow-lg transition-all">
+                  <div key={idx} className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-zinc-750 p-6 rounded-3xl space-y-4 shadow-xs transition-all">
                     
                     {/* ENCABEZADO CLIENTE */}
-                    <div className="flex justify-between items-start border-b border-zinc-850 pb-3">
+                    <div className="flex justify-between items-start border-b border-[#DED8CF] pb-3">
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="text-base font-black text-white">{c.nombreCompleto}</h3>
-                          <span className="text-[10px] bg-amber-500/10 text-amber-400 font-bold px-2 py-0.5 rounded border border-amber-500/20">
+                          <span className="text-[10px] bg-amber-500/10 text-[#B44E2A] font-bold px-2 py-0.5 rounded border border-amber-500/20">
                             {c.estado}
                           </span>
                         </div>
-                        <p className="text-xs text-zinc-400 font-medium mt-0.5">
+                        <p className="text-xs text-[#68706E] font-sans mt-0.5">
                           Alta: {c.fechaAlta ? new Date(c.fechaAlta).toLocaleDateString("es-AR") : "No disp."}
                         </p>
                       </div>
@@ -194,7 +194,7 @@ export default function ClientesPage() {
                           href={waUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
+                          className="bg-emerald-600/20 hover:bg-emerald-600/30 text-[#2F7D5C] border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
                         >
                           <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
                         </a>
@@ -203,55 +203,55 @@ export default function ClientesPage() {
 
                     {/* DATOS DE IDENTIFICACIÓN */}
                     <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div className="bg-zinc-950/80 p-2.5 rounded-xl border border-zinc-850">
-                        <span className="text-[10px] text-zinc-500 font-bold uppercase block">DNI / CUIL</span>
-                        <span className="font-mono font-bold text-zinc-200">{c.dni}</span>
-                        {c.cuil && c.cuil !== "S/D" && <span className="block text-[10px] text-zinc-400 font-mono">{c.cuil}</span>}
+                      <div className="bg-[#FFFDFC]/80 p-2.5 rounded-xl border border-[#DED8CF]">
+                        <span className="text-[10px] text-[#68706E] font-bold uppercase block">DNI / CUIL</span>
+                        <span className="font-mono font-bold text-[#1F2928]">{c.dni}</span>
+                        {c.cuil && c.cuil !== "S/D" && <span className="block text-[10px] text-[#68706E] font-mono">{c.cuil}</span>}
                       </div>
 
-                      <div className="bg-zinc-950/80 p-2.5 rounded-xl border border-zinc-850">
-                        <span className="text-[10px] text-zinc-500 font-bold uppercase block">Teléfono / WhatsApp</span>
-                        <span className="font-mono font-bold text-zinc-200">{c.whatsapp}</span>
+                      <div className="bg-[#FFFDFC]/80 p-2.5 rounded-xl border border-[#DED8CF]">
+                        <span className="text-[10px] text-[#68706E] font-bold uppercase block">Teléfono / WhatsApp</span>
+                        <span className="font-mono font-bold text-[#1F2928]">{c.whatsapp}</span>
                       </div>
 
-                      <div className="bg-zinc-950/80 p-2.5 rounded-xl border border-zinc-850 col-span-2">
-                        <span className="text-[10px] text-zinc-500 font-bold uppercase block flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-[#fe5000]" /> Domicilio / Localidad
+                      <div className="bg-[#FFFDFC]/80 p-2.5 rounded-xl border border-[#DED8CF] col-span-2">
+                        <span className="text-[10px] text-[#68706E] font-bold uppercase block flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-[#B44E2A]" /> Domicilio / Localidad
                         </span>
-                        <span className="font-medium text-zinc-200">{c.direccion}</span>
+                        <span className="font-medium text-[#1F2928]">{c.direccion}</span>
                       </div>
                     </div>
 
                     {/* INFORMACIÓN LABORAL Y ASESOR */}
-                    <div className="bg-zinc-950/40 p-3 rounded-2xl border border-zinc-850/80 text-xs space-y-1.5">
-                      <div className="flex items-center justify-between text-zinc-400">
+                    <div className="bg-[#FFFDFC]/40 p-3 rounded-2xl border border-[#DED8CF]/80 text-xs space-y-1.5">
+                      <div className="flex items-center justify-between text-[#68706E]">
                         <span className="flex items-center gap-1">
-                          <Briefcase className="w-3 h-3 text-amber-400" /> Ocupación:
+                          <Briefcase className="w-3 h-3 text-[#B44E2A]" /> Ocupación:
                         </span>
-                        <strong className="text-zinc-200">{c.ocupacion}</strong>
+                        <strong className="text-[#1F2928]">{c.ocupacion}</strong>
                       </div>
 
-                      <div className="flex items-center justify-between text-zinc-400">
+                      <div className="flex items-center justify-between text-[#68706E]">
                         <span>Antigüedad Laboral:</span>
-                        <strong className="text-zinc-200">{c.antiguedadLaboral}</strong>
+                        <strong className="text-[#1F2928]">{c.antiguedadLaboral}</strong>
                       </div>
 
-                      <div className="flex items-center justify-between text-zinc-400 pt-1 border-t border-zinc-850">
+                      <div className="flex items-center justify-between text-[#68706E] pt-1 border-t border-[#DED8CF]">
                         <span>Asesor / Referente:</span>
-                        <strong className="text-amber-400 font-bold">{c.nombreAfiliado}</strong>
+                        <strong className="text-[#B44E2A] font-bold">{c.nombreAfiliado}</strong>
                       </div>
                     </div>
 
                     {/* RESUMEN COMERCIAL Y BOTÓN LEGAJO */}
                     <div className="flex justify-between items-center pt-1 text-xs">
-                      <div className="flex gap-3 text-zinc-400 text-[11px]">
+                      <div className="flex gap-3 text-[#68706E] text-[11px]">
                         <span>Solicitudes: <strong className="text-white font-mono">{c.solicitudesCount}</strong></span>
-                        <span>Presupuestos: <strong className="text-amber-400 font-mono">{c.presupuestosCount}</strong></span>
+                        <span>Presupuestos: <strong className="text-[#B44E2A] font-mono">{c.presupuestosCount}</strong></span>
                       </div>
 
                       <Link
                         href={`/admin/validaciones`}
-                        className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-bold px-3 py-1.5 rounded-xl text-xs border border-zinc-800 transition"
+                        className="bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#1F2928] font-bold px-3 py-1.5 rounded-xl text-xs border border-[#DED8CF] transition"
                       >
                         📋 Ver Legajo
                       </Link>

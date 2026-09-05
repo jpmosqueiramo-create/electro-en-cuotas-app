@@ -456,12 +456,12 @@ export default function AdminProductosPage() {
 
   return (
     <AdminProtectedRoute>
-      <div className="min-h-screen bg-[#121316] text-zinc-100 p-8">
+      <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] p-8">
         <div className="max-w-7xl mx-auto">
-          <header className="flex justify-between items-center mb-8 border-b border-zinc-800 pb-4">
+          <header className="flex justify-between items-center mb-8 border-b border-[#DED8CF] pb-4">
             <div className="flex items-center gap-4">
-              <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-10 w-auto object-contain" />
-              <h1 className="text-2xl font-bold text-[#fe5000]">Gestión de Productos e Inventario</h1>
+              <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-12 w-auto object-contain bg-[#173E3B] p-1.5 rounded-xl shadow-xs" />
+              <h1 className="text-2xl font-bold text-[#B44E2A]">Gestión de Productos e Inventario</h1>
             </div>
             <a href="/admin" className="text-sm border border-[#fe5000]/50 hover:bg-yellow-500 hover:text-black px-4 py-2 rounded transition-colors">
               Volver al Panel Admin
@@ -469,21 +469,21 @@ export default function AdminProductosPage() {
           </header>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-4 bg-[#121316] border border-zinc-800 rounded-lg p-6 h-fit transition-all duration-300" style={editandoId ? {boxShadow: "0 0 30px rgba(234,179,8,0.15)", borderColor: "#eab308"} : {}}>
-              <h2 className="text-xl mb-6 font-semibold border-b border-zinc-800 pb-2 flex items-center gap-2">
+            <div className="lg:col-span-4 bg-[#121316] border border-[#DED8CF] rounded-lg p-6 h-fit transition-all duration-300" style={editandoId ? {boxShadow: "0 0 30px rgba(234,179,8,0.15)", borderColor: "#eab308"} : {}}>
+              <h2 className="text-xl mb-6 font-semibold border-b border-[#DED8CF] pb-2 flex items-center gap-2">
                 {editandoId ? "✏️ Modificando Producto" : "Añadir Nuevo Producto"}
               </h2>
               
               <form onSubmit={handleSubirProducto} className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-amber-400 mb-1">Código de Producto (EAN / SKU)</label>
+                    <label className="block text-xs font-bold text-[#B44E2A] mb-1">Código de Producto (EAN / SKU)</label>
                     <input 
                       value={codigoProducto} 
                       onChange={e=>setCodigoProducto(e.target.value)} 
                       type="text" 
                       placeholder="Ej: 7796885403083" 
-                      className="w-full bg-zinc-800/80 border border-amber-500/40 rounded p-2 text-white font-mono text-xs font-bold focus:border-[#fe5000] focus:outline-none" 
+                      className="w-full bg-[#F7F3EC]/80 border border-amber-500/40 rounded p-2 text-white font-mono text-xs font-bold focus:border-[#fe5000] focus:outline-none" 
                     />
                   </div>
                   <div className="sm:col-span-2">
@@ -494,26 +494,26 @@ export default function AdminProductosPage() {
                       onChange={e=>setNombre(e.target.value)} 
                       type="text" 
                       placeholder="Ej: Samsung Galaxy A55 5G"
-                      className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white text-xs font-bold focus:border-[#fe5000] focus:outline-none" 
+                      className="w-full bg-[#F7F3EC]/80 border border-[#DED8CF] rounded p-2 text-white text-xs font-bold focus:border-[#fe5000] focus:outline-none" 
                     />
                   </div>
                 </div>
                 
                 {/* MOTOR FINANCIERO CON SELECTOR Y FACTORES MODIFICABLES DE 1 A 12 CUOTAS */}
-                <div className="p-5 bg-[#121316] border border-amber-500/30 rounded-2xl space-y-4 shadow-xl">
-                   <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
+                <div className="p-5 bg-[#121316] border border-amber-500/30 rounded-2xl space-y-4 shadow-xs">
+                   <div className="flex justify-between items-center border-b border-[#DED8CF] pb-3">
                      <div>
-                       <h3 className="text-xs font-black text-[#fe5000] uppercase tracking-widest flex items-center gap-1.5">
+                       <h3 className="text-xs font-black text-[#B44E2A] uppercase tracking-widest flex items-center gap-1.5">
                          💰 Motor Financiero Mandato Comercial
                        </h3>
-                       <p className="text-[11px] text-zinc-400 mt-0.5">Ingresá el Costo del Proveedor para calcular automáticamente los 12 planes.</p>
+                       <p className="text-[11px] text-[#68706E] mt-0.5">Ingresá el Costo del Proveedor para calcular automáticamente los 12 planes.</p>
                      </div>
-                     <span className="text-[10px] bg-[#fe5000]/10 text-[#fe5000] font-mono font-bold px-2 py-1 rounded-full border border-[#fe5000]/30">Planes 1 a 12</span>
+                     <span className="text-[10px] bg-[#fe5000]/10 text-[#B44E2A] font-mono font-bold px-2 py-1 rounded-full border border-[#fe5000]/30">Planes 1 a 12</span>
                    </div>
 
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                      <div>
-                       <label className="block text-xs font-bold text-emerald-400 mb-1">
+                       <label className="block text-xs font-bold text-[#2F7D5C] mb-1">
                          Costo del Producto del Proveedor ($) <span className="text-emerald-500 text-[10px]">(Capital Exento)</span>
                        </label>
                        <input 
@@ -531,26 +531,26 @@ export default function AdminProductosPage() {
                          }} 
                          type="number" 
                          placeholder="Ej: 400000" 
-                         className="w-full bg-[#181920] border border-emerald-500/50 rounded-xl p-3 text-white text-sm font-black focus:border-emerald-400 focus:outline-none shadow-inner" 
+                         className="w-full bg-[#FFFDFC] border border-emerald-500/50 rounded-xl p-3 text-white text-sm font-black focus:border-emerald-400 focus:outline-none shadow-inner" 
                          required
                        />
                      </div>
 
                      <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">Nombre del Proveedor (Opcional)</label>
-                       <input value={proveedor} onChange={e=>setProveedor(e.target.value)} type="text" placeholder="Ej: Distribuidora Oficial" className="w-full bg-[#181920] border border-zinc-800 rounded-xl p-3 text-white text-xs font-bold focus:border-[#fe5000] focus:outline-none" />
+                       <label className="block text-xs font-bold text-[#68706E] mb-1">Nombre del Proveedor (Opcional)</label>
+                       <input value={proveedor} onChange={e=>setProveedor(e.target.value)} type="text" placeholder="Ej: Distribuidora Oficial" className="w-full bg-[#FFFDFC] border border-[#DED8CF] rounded-xl p-3 text-white text-xs font-bold focus:border-[#fe5000] focus:outline-none" />
                      </div>
                    </div>
                 </div>
 
                 {/* TABLA INTERACTIVA DE PLANES DE 1 A 12 CUOTAS CON TILDE Y FACTORES MODIFICABLES */}
-                <div className="p-5 bg-[#121316] border border-zinc-800 rounded-2xl space-y-4">
-                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-zinc-800/80 pb-3 gap-2">
+                <div className="p-5 bg-[#121316] border border-[#DED8CF] rounded-2xl space-y-4">
+                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#DED8CF] pb-3 gap-2">
                      <div>
-                       <h3 className="text-xs font-black text-[#fe5000] uppercase tracking-wider flex items-center gap-1.5">
+                       <h3 className="text-xs font-black text-[#B44E2A] uppercase tracking-wider flex items-center gap-1.5">
                          📊 Habilitación de Planes (1 a 12 Cuotas)
                        </h3>
-                       <p className="text-[11px] text-zinc-400 mt-0.5 font-normal">Marcá con tilde (☑️) las cuotas activas que se exhibirán en el catálogo público.</p>
+                       <p className="text-[11px] text-[#68706E] mt-0.5 font-normal">Marcá con tilde (☑️) las cuotas activas que se exhibirán en el catálogo público.</p>
                      </div>
                      <div className="flex flex-wrap items-center gap-1.5">
                        <button 
@@ -582,7 +582,7 @@ export default function AdminProductosPage() {
                          onClick={() => {
                            setFactoresPlanes(FACTORES_PREDETERMINADOS);
                          }}
-                         className="text-[10px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded-lg border border-zinc-700 font-bold transition"
+                         className="text-[10px] bg-[#F7F3EC] hover:bg-[#FFFDFC] text-[#1F2928] px-2 py-1 rounded-lg border border-[#DED8CF] font-bold transition"
                        >
                          Resetear Factores
                        </button>
@@ -606,8 +606,8 @@ export default function AdminProductosPage() {
                            key={n} 
                            className={`p-3 rounded-xl border transition-all ${
                              isActivo 
-                               ? "bg-[#181920] border-zinc-800 hover:border-amber-500/50 shadow-md" 
-                               : "bg-[#14151a] border-zinc-900/60 opacity-50"
+                               ? "bg-[#FFFDFC] border-[#DED8CF] hover:border-amber-500/50 shadow-md" 
+                               : "bg-[#14151a] border-[#DED8CF]/60 opacity-50"
                            }`}
                          >
                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -626,7 +626,7 @@ export default function AdminProductosPage() {
                              </div>
 
                              <div className="flex items-center gap-2">
-                               <span className="text-[10px] text-zinc-400 font-mono font-bold">Factor:</span>
+                               <span className="text-[10px] text-[#68706E] font-mono font-bold">Factor:</span>
                                <input 
                                  type="number"
                                  step="0.05"
@@ -650,11 +650,11 @@ export default function AdminProductosPage() {
                              </div>
 
                              <div className="text-right flex-1 sm:flex-none">
-                               <span className="text-xs font-black text-[#fe5000]">
-                                 ${cuotaMensual.toLocaleString("es-AR")} <span className="text-[10px] font-normal text-zinc-400">/ mes</span>
+                               <span className="text-xs font-black text-[#B44E2A]">
+                                 ${cuotaMensual.toLocaleString("es-AR")} <span className="text-[10px] font-normal text-[#68706E]">/ mes</span>
                                </span>
-                               <div className="text-[9px] text-zinc-400 font-mono mt-0.5">
-                                <div className="text-[9px] text-zinc-400 font-mono mt-0.5">
+                               <div className="text-[9px] text-[#68706E] font-mono mt-0.5">
+                                <div className="text-[9px] text-[#68706E] font-mono mt-0.5">
                                   🟢 Recibo X: ${exento.toLocaleString("es-AR")} | 🔵 Fact B: ${gravado.toLocaleString("es-AR")} <span className="text-blue-300/80">(Neto: ${neto.toLocaleString("es-AR")} + IVA 21%: ${iva21.toLocaleString("es-AR")})</span>
                                 </div>
                                </div>
@@ -665,8 +665,8 @@ export default function AdminProductosPage() {
                      })}
                    </div>
                 </div>
-                <div className="p-4 bg-[#121316] border border-zinc-800 rounded-2xl space-y-3 shadow-xl">
-                   <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
+                <div className="p-4 bg-[#121316] border border-[#DED8CF] rounded-2xl space-y-3 shadow-xs">
+                   <div className="flex justify-between items-center border-b border-[#DED8CF] pb-2">
                      <label className="block text-xs font-black text-yellow-200 uppercase tracking-wider flex items-center gap-1.5">
                        📝 Descripción corta y Ficha Técnica
                      </label>
@@ -676,7 +676,7 @@ export default function AdminProductosPage() {
                      value={descripcion} 
                      onChange={e=>setDescripcion(e.target.value)} 
                      placeholder="Ej: Ficha técnica detallada del equipo, pantalla, almacenamiento, procesador y garantía..." 
-                     className="w-full bg-[#181920] border border-zinc-800 rounded-xl p-3 text-white text-xs font-mono focus:border-[#fe5000] focus:outline-none leading-relaxed shadow-inner" 
+                     className="w-full bg-[#FFFDFC] border border-[#DED8CF] rounded-xl p-3 text-white text-xs font-mono focus:border-[#fe5000] focus:outline-none leading-relaxed shadow-inner" 
                      rows={6} 
                    />
                 </div>
@@ -687,7 +687,7 @@ export default function AdminProductosPage() {
                   
                   <div className="grid grid-cols-4 gap-2 mb-3">
                     {existingImagenUrls.map((url, idx) => (
-                      <div key={`existing-${idx}`} className="relative aspect-square bg-[#181920] border border-zinc-800 rounded-lg overflow-hidden flex items-center justify-center group">
+                      <div key={`existing-${idx}`} className="relative aspect-square bg-[#FFFDFC] border border-[#DED8CF] rounded-lg overflow-hidden flex items-center justify-center group">
                         <img src={url} alt={`Imagen ${idx + 1}`} className="w-full h-full object-contain" />
                         <button
                           type="button"
@@ -704,7 +704,7 @@ export default function AdminProductosPage() {
                     {imagenes.map((file, idx) => {
                       const previewUrl = URL.createObjectURL(file);
                       return (
-                        <div key={`new-${idx}`} className="relative aspect-square bg-[#181920] border border-zinc-800 rounded-lg overflow-hidden flex items-center justify-center group">
+                        <div key={`new-${idx}`} className="relative aspect-square bg-[#FFFDFC] border border-[#DED8CF] rounded-lg overflow-hidden flex items-center justify-center group">
                           <img src={previewUrl} alt={`Nueva Imagen ${idx + 1}`} className="w-full h-full object-contain" />
                           <button
                             type="button"
@@ -720,7 +720,7 @@ export default function AdminProductosPage() {
                     })}
                     
                     {Array.from({ length: Math.max(0, 4 - (existingImagenUrls.length + imagenes.length)) }).map((_, idx) => (
-                      <div key={`empty-${idx}`} className="aspect-square bg-[#181920]/40 border border-dashed border-zinc-800 rounded-lg flex items-center justify-center text-zinc-600 text-xs">
+                      <div key={`empty-${idx}`} className="aspect-square bg-[#FFFDFC]/40 border border-dashed border-[#DED8CF] rounded-lg flex items-center justify-center text-zinc-600 text-xs">
                         Vacío
                       </div>
                     ))}
@@ -732,18 +732,18 @@ export default function AdminProductosPage() {
                       multiple
                       accept="image/*"
                       onChange={handleFileChange}
-                      className="w-full bg-zinc-800/80 border border-gray-700 rounded p-2 text-white file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:bg-yellow-500 file:text-black hover:file:bg-yellow-400 transition-colors cursor-pointer text-xs"
+                      className="w-full bg-[#F7F3EC]/80 border border-[#DED8CF] rounded p-2 text-white file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:bg-yellow-500 file:text-black hover:file:bg-yellow-400 transition-colors cursor-pointer text-xs"
                     />
                   )}
                 </div>
                 
                 <div className="pt-4 flex flex-col gap-3">
-                  <button disabled={loading} type="submit" className={`w-full text-black py-4 rounded font-bold transition-colors shadow-2xl shadow-black/60 ${editandoId ? 'bg-blue-500 hover:bg-blue-400' : 'bg-yellow-500 hover:bg-yellow-400'} disabled:opacity-50`}>
+                  <button disabled={loading} type="submit" className={`w-full text-black py-4 rounded font-bold transition-colors shadow-xs ${editandoId ? 'bg-blue-500 hover:bg-blue-400' : 'bg-yellow-500 hover:bg-yellow-400'} disabled:opacity-50`}>
                     {loading ? "Guardando..." : (editandoId ? "💾 Guardar Cambios" : "Crear Producto")}
                   </button>
                   
                   {editandoId && (
-                    <button type="button" onClick={handleCancelarEdicion} className="w-full bg-transparent border border-gray-600 text-zinc-500 py-2 rounded hover:text-white hover:bg-gray-800 transition-colors text-sm">
+                    <button type="button" onClick={handleCancelarEdicion} className="w-full bg-transparent border border-gray-600 text-[#68706E] py-2 rounded hover:text-white hover:bg-gray-800 transition-colors text-sm">
                       Cancelar Edición
                     </button>
                   )}
@@ -751,8 +751,8 @@ export default function AdminProductosPage() {
               </form>
             </div>
 
-            <div className="lg:col-span-8 bg-[#121316] border border-zinc-800 rounded-lg p-6">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-zinc-800 pb-3 mb-6 gap-3">
+            <div className="lg:col-span-8 bg-[#121316] border border-[#DED8CF] rounded-lg p-6">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-[#DED8CF] pb-3 mb-6 gap-3">
                 <h2 className="text-xl font-semibold">Inventario General ({productos.length})</h2>
                 <button
                   onClick={() => setMostrarTrasladoModal(true)}
@@ -785,29 +785,29 @@ export default function AdminProductosPage() {
 
       {/* MODAL GESTOR DE STOCK */}
       {stockProducto && (
-        <div className="fixed inset-0 bg-[#181920]/80 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-[#181920] border border-zinc-800 rounded-3xl w-full max-w-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto space-y-6 custom-scrollbar shadow-2xl">
+        <div className="fixed inset-0 bg-[#FFFDFC]/80 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#FFFDFC] border border-[#DED8CF] rounded-3xl w-full max-w-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto space-y-6 custom-scrollbar shadow-xs">
             
-            <div className="flex justify-between items-center border-b border-zinc-800 pb-4">
+            <div className="flex justify-between items-center border-b border-[#DED8CF] pb-4">
               <div>
-                <h2 className="text-xl font-black text-[#fe5000]">Control de Inventario por Localidades</h2>
-                <p className="text-xs text-zinc-500">{stockProducto.nombre}</p>
+                <h2 className="text-xl font-black text-[#B44E2A]">Control de Inventario por Localidades</h2>
+                <p className="text-xs text-[#68706E]">{stockProducto.nombre}</p>
               </div>
-              <button onClick={() => setStockProducto(null)} className="text-zinc-400 hover:text-white font-black text-sm">
+              <button onClick={() => setStockProducto(null)} className="text-[#68706E] hover:text-white font-black text-sm">
                 ✕ Cerrar
               </button>
             </div>
 
             {/* Formulario de carga de unidad */}
-            <form onSubmit={handleAgregarUnidadStock} className="bg-[#121316] border border-zinc-800 p-4 rounded-xl space-y-4">
-              <h3 className="text-xs font-black text-[#fe5000] uppercase tracking-widest border-b border-zinc-800 pb-2">Ingresar Nueva Unidad Física</h3>
+            <form onSubmit={handleAgregarUnidadStock} className="bg-[#121316] border border-[#DED8CF] p-4 rounded-xl space-y-4">
+              <h3 className="text-xs font-black text-[#B44E2A] uppercase tracking-widest border-b border-[#DED8CF] pb-2">Ingresar Nueva Unidad Física</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-zinc-400 mb-1">Localidad del Stock</label>
+                  <label className="block text-xs font-bold text-[#68706E] mb-1">Localidad del Stock</label>
                   <select 
                     value={nuevaUnidadLocalidad} 
                     onChange={e => setNuevaUnidadLocalidad(e.target.value)} 
-                    className="w-full bg-[#181920] border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-[#fe5000] outline-none"
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-[#fe5000] outline-none"
                   >
                     {LOCALIDADES_STOCK.map(loc => (
                       <option key={loc} value={loc}>{loc}</option>
@@ -815,19 +815,19 @@ export default function AdminProductosPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-zinc-400 mb-1">N° de Serie / IMEI (Opcional)</label>
+                  <label className="block text-xs font-bold text-[#68706E] mb-1">N° de Serie / IMEI (Opcional)</label>
                   <input 
                     type="text" 
                     value={nuevaUnidadNserie} 
                     onChange={e => setNuevaUnidadNserie(e.target.value)} 
                     placeholder="Ej: SN-492849204" 
-                    className="w-full bg-[#181920] border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-[#fe5000] outline-none font-mono" 
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-[#fe5000] outline-none font-mono" 
                   />
                 </div>
               </div>
               <button 
                 type="submit" 
-                className="w-full bg-yellow-500 hover:bg-yellow-400 text-black py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors shadow-lg"
+                className="w-full bg-yellow-500 hover:bg-yellow-400 text-black py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors shadow-xs"
               >
                 + Agregar Unidad a Stock
               </button>
@@ -835,20 +835,20 @@ export default function AdminProductosPage() {
 
             {/* Listado de unidades actuales */}
             <div className="space-y-3">
-              <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest border-b border-zinc-800 pb-2">Legajos de Unidades Registradas</h3>
+              <h3 className="text-xs font-black text-[#68706E] uppercase tracking-widest border-b border-[#DED8CF] pb-2">Legajos de Unidades Registradas</h3>
               <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                 {(stockProducto.stock || []).length === 0 ? (
-                  <p className="text-xs text-zinc-500 italic text-center py-6">No hay unidades cargadas en stock para este producto.</p>
+                  <p className="text-xs text-[#68706E] italic text-center py-6">No hay unidades cargadas en stock para este producto.</p>
                 ) : (
                   (stockProducto.stock || []).map((u: UnidadStock) => (
-                    <div key={u.id} className="flex justify-between items-center bg-[#121316] p-3 rounded-lg border border-zinc-800">
+                    <div key={u.id} className="flex justify-between items-center bg-[#121316] p-3 rounded-lg border border-[#DED8CF]">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] bg-[#181920] text-[#fe5000] px-2 py-0.5 rounded font-black border border-zinc-800">
+                          <span className="text-[10px] bg-[#FFFDFC] text-[#B44E2A] px-2 py-0.5 rounded font-black border border-[#DED8CF]">
                             {u.localidad}
                           </span>
                           <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
-                            u.estado === "Disponible" ? "bg-green-500/10 text-green-400 border border-green-500/20" :
+                            u.estado === "Disponible" ? "bg-green-500/10 text-[#2F7D5C] border border-green-500/20" :
                             u.estado === "Vendido" ? "bg-red-500/10 text-red-400 border-red-500/20" :
                             "bg-blue-500/10 text-blue-400 border-blue-500/20"
                           }`}>
@@ -856,9 +856,9 @@ export default function AdminProductosPage() {
                           </span>
                         </div>
                         {u.nserie && (
-                          <p className="text-xs text-zinc-400 font-mono">IMEI/Serie: {u.nserie}</p>
+                          <p className="text-xs text-[#68706E] font-mono">IMEI/Serie: {u.nserie}</p>
                         )}
-                        <p className="text-[9px] text-zinc-500">Ingreso: {new Date(u.fechaIngreso).toLocaleString("es-AR")}</p>
+                        <p className="text-[9px] text-[#68706E]">Ingreso: {new Date(u.fechaIngreso).toLocaleString("es-AR")}</p>
                       </div>
                       {u.estado === "Disponible" && (
                         <button 
@@ -881,17 +881,17 @@ export default function AdminProductosPage() {
 
       {/* MODAL REMITO DE TRASLADO INTERNO MULTIPRODUCTO */}
       {mostrarTrasladoModal && (
-        <div className="fixed inset-0 bg-[#181920]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-[#181920] border border-zinc-800 rounded-3xl w-full max-w-4xl p-6 md:p-8 max-h-[90vh] overflow-y-auto space-y-6 custom-scrollbar shadow-2xl">
+        <div className="fixed inset-0 bg-[#FFFDFC]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#FFFDFC] border border-[#DED8CF] rounded-3xl w-full max-w-4xl p-6 md:p-8 max-h-[90vh] overflow-y-auto space-y-6 custom-scrollbar shadow-xs">
             
-            <div className="flex justify-between items-center border-b border-zinc-800 pb-4">
+            <div className="flex justify-between items-center border-b border-[#DED8CF] pb-4">
               <div>
-                <h2 className="text-xl font-black text-[#fe5000]">Generar Remito de Traslado Interno</h2>
-                <p className="text-xs text-zinc-500">Mover stock entre sucursales y nutrir puntos de venta</p>
+                <h2 className="text-xl font-black text-[#B44E2A]">Generar Remito de Traslado Interno</h2>
+                <p className="text-xs text-[#68706E]">Mover stock entre sucursales y nutrir puntos de venta</p>
               </div>
               <button 
                 onClick={() => setMostrarTrasladoModal(false)} 
-                className="text-zinc-400 hover:text-white font-black text-sm"
+                className="text-[#68706E] hover:text-white font-black text-sm"
               >
                 ✕ Cerrar
               </button>
@@ -900,9 +900,9 @@ export default function AdminProductosPage() {
             <form onSubmit={handleGenerarTrasladoYActualizarDb} className="space-y-6">
               
               {/* Origen y Destino */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#121316] p-4 rounded-xl border border-zinc-800">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#121316] p-4 rounded-xl border border-[#DED8CF]">
                 <div>
-                  <label className="block text-xs font-bold text-zinc-400 mb-1">Localidad de Origen (Despacho)</label>
+                  <label className="block text-xs font-bold text-[#68706E] mb-1">Localidad de Origen (Despacho)</label>
                   <select 
                     value={trasladoOrigen} 
                     onChange={e => {
@@ -910,7 +910,7 @@ export default function AdminProductosPage() {
                       // Clear line selections since origin changed
                       setTrasladoLineas(prev => prev.map(l => ({ ...l, selectedUnitIds: [], nseries: [], cantidad: 1 })));
                     }}
-                    className="w-full bg-[#181920] border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-[#fe5000] outline-none"
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-[#fe5000] outline-none"
                   >
                     {LOCALIDADES_STOCK.map(loc => (
                       <option key={loc} value={loc}>{loc}</option>
@@ -918,11 +918,11 @@ export default function AdminProductosPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-zinc-400 mb-1">Localidad de Destino (Recepción)</label>
+                  <label className="block text-xs font-bold text-[#68706E] mb-1">Localidad de Destino (Recepción)</label>
                   <select 
                     value={trasladoDestino} 
                     onChange={e => setTrasladoDestino(e.target.value)} 
-                    className="w-full bg-[#181920] border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-[#fe5000] outline-none"
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-[#fe5000] outline-none"
                   >
                     {LOCALIDADES_STOCK.map(loc => (
                       <option key={loc} value={loc}>{loc}</option>
@@ -933,20 +933,20 @@ export default function AdminProductosPage() {
 
               {/* Listado de Productos */}
               <div className="space-y-4">
-                <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
-                  <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest">Productos a Enviar</h3>
+                <div className="flex justify-between items-center border-b border-[#DED8CF] pb-2">
+                  <h3 className="text-xs font-black text-[#68706E] uppercase tracking-widest">Productos a Enviar</h3>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => handleAgregarLineaTraslado(false)}
-                      className="bg-[#121316] hover:bg-zinc-850 text-[#fe5000] border border-zinc-800 hover:border-[#fe5000] px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors"
+                      className="bg-[#121316] hover:bg-[#F7F3EC] text-[#B44E2A] border border-[#DED8CF] hover:border-[#fe5000] px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors"
                     >
                       + Catálogo
                     </button>
                     <button
                       type="button"
                       onClick={() => handleAgregarLineaTraslado(true)}
-                      className="bg-[#121316] hover:bg-zinc-850 text-blue-400 border border-zinc-800 hover:border-blue-500 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors"
+                      className="bg-[#121316] hover:bg-[#F7F3EC] text-blue-400 border border-[#DED8CF] hover:border-blue-500 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors"
                     >
                       + Producto Manual
                     </button>
@@ -960,7 +960,7 @@ export default function AdminProductosPage() {
                     const availableUnits = matchedProd ? (matchedProd.stock || []).filter((u: any) => u.localidad === trasladoOrigen && u.estado === "Disponible") : [];
 
                     return (
-                      <div key={line.id} className="bg-[#121316] p-4 rounded-xl border border-zinc-800 space-y-3 relative">
+                      <div key={line.id} className="bg-[#121316] p-4 rounded-xl border border-[#DED8CF] space-y-3 relative">
                         <button
                           type="button"
                           onClick={() => handleQuitarLineaTraslado(line.id)}
@@ -970,10 +970,10 @@ export default function AdminProductosPage() {
                         </button>
 
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-[9px] bg-[#181920] border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded font-black uppercase">
+                          <span className="text-[9px] bg-[#FFFDFC] border border-[#DED8CF] text-[#68706E] px-2 py-0.5 rounded font-black uppercase">
                             Ítem #{idx + 1}
                           </span>
-                          <span className={`text-[9px] px-2 py-0.5 rounded font-black uppercase ${line.isManual ? 'bg-blue-900/30 text-blue-400 border border-blue-900/40' : 'bg-yellow-900/30 text-[#fe5000] border border-yellow-900/40'}`}>
+                          <span className={`text-[9px] px-2 py-0.5 rounded font-black uppercase ${line.isManual ? 'bg-blue-900/30 text-blue-400 border border-blue-900/40' : 'bg-yellow-900/30 text-[#B44E2A] border border-yellow-900/40'}`}>
                             {line.isManual ? "Manual" : "Catálogo"}
                           </span>
                         </div>
@@ -981,35 +981,35 @@ export default function AdminProductosPage() {
                         {line.isManual ? (
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div className="md:col-span-2">
-                              <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Nombre del Producto / Insumo</label>
+                              <label className="block text-[10px] text-[#68706E] mb-1 font-bold">Nombre del Producto / Insumo</label>
                               <input 
                                 type="text"
                                 required
                                 value={line.manualNombre}
                                 onChange={e => handleUpdateLineaTraslado(line.id, { manualNombre: e.target.value })}
                                 placeholder="Ej: Fundas protectoras, cables, etc."
-                                className="w-full bg-[#181920] border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-blue-500 font-bold"
+                                className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none focus:border-blue-500 font-bold"
                               />
                             </div>
                             <div>
-                              <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Cantidad</label>
+                              <label className="block text-[10px] text-[#68706E] mb-1 font-bold">Cantidad</label>
                               <input 
                                 type="number"
                                 min={1}
                                 required
                                 value={line.cantidad}
                                 onChange={e => handleUpdateLineaTraslado(line.id, { cantidad: Math.max(1, Number(e.target.value)) })}
-                                className="w-full bg-[#181920] border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-blue-500 font-bold font-mono"
+                                className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none focus:border-blue-500 font-bold font-mono"
                               />
                             </div>
                             <div className="md:col-span-3">
-                              <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Números de Serie / IMEIs (Opcional, separados por comas)</label>
+                              <label className="block text-[10px] text-[#68706E] mb-1 font-bold">Números de Serie / IMEIs (Opcional, separados por comas)</label>
                               <input 
                                 type="text"
                                 value={line.manualSerialsText}
                                 onChange={e => handleUpdateLineaTraslado(line.id, { manualSerialsText: e.target.value })}
                                 placeholder="Ej: SN-9284201, SN-9284202"
-                                className="w-full bg-[#181920] border border-zinc-800 p-2 rounded text-xs text-zinc-300 outline-none focus:border-blue-500 font-mono"
+                                className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] outline-none focus:border-blue-500 font-mono"
                               />
                             </div>
                           </div>
@@ -1017,7 +1017,7 @@ export default function AdminProductosPage() {
                           <div className="space-y-3">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                               <div className="md:col-span-2">
-                                <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Seleccionar Producto del Catálogo</label>
+                                <label className="block text-[10px] text-[#68706E] mb-1 font-bold">Seleccionar Producto del Catálogo</label>
                                 <select 
                                   value={line.productoId}
                                   onChange={e => {
@@ -1028,7 +1028,7 @@ export default function AdminProductosPage() {
                                       cantidad: 1
                                     });
                                   }}
-                                  className="w-full bg-[#181920] border border-zinc-800 p-2 rounded text-xs text-white outline-none focus:border-[#fe5000] font-bold"
+                                  className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none focus:border-[#fe5000] font-bold"
                                 >
                                   <option value="">-- Seleccionar --</option>
                                   {productos.map(p => (
@@ -1037,16 +1037,16 @@ export default function AdminProductosPage() {
                                 </select>
                               </div>
                               <div>
-                                <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Cantidad a Trasladar</label>
-                                <div className="w-full bg-[#181920] border border-zinc-800 p-2 rounded text-xs text-zinc-400 font-black font-mono">
+                                <label className="block text-[10px] text-[#68706E] mb-1 font-bold">Cantidad a Trasladar</label>
+                                <div className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#68706E] font-black font-mono">
                                   {line.selectedUnitIds?.length || 0} unidades
                                 </div>
                               </div>
                             </div>
 
                             {line.productoId && (
-                              <div className="bg-[#181920] border border-zinc-800 p-3 rounded-lg space-y-2">
-                                <p className="text-[10px] text-zinc-400 font-bold border-b border-zinc-800 pb-1">
+                              <div className="bg-[#FFFDFC] border border-[#DED8CF] p-3 rounded-lg space-y-2">
+                                <p className="text-[10px] text-[#68706E] font-bold border-b border-[#DED8CF] pb-1">
                                   Unidades disponibles en {trasladoOrigen} ({availableUnits.length}):
                                 </p>
                                 {availableUnits.length === 0 ? (
@@ -1060,8 +1060,8 @@ export default function AdminProductosPage() {
                                           key={u.id} 
                                           className={`flex items-center gap-2 p-1.5 rounded border transition-colors cursor-pointer text-xs ${
                                             isChecked 
-                                              ? 'bg-[#fe5000]/10 border-[#fe5000]/40 text-[#fe5000]' 
-                                              : 'bg-[#121316] border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                                              ? 'bg-[#fe5000]/10 border-[#fe5000]/40 text-[#B44E2A]' 
+                                              : 'bg-[#121316] border-[#DED8CF] text-[#68706E] hover:border-[#DED8CF]'
                                           }`}
                                         >
                                           <input 
@@ -1090,27 +1090,27 @@ export default function AdminProductosPage() {
 
               {/* Observaciones */}
               <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1">Observaciones / Comentario</label>
+                <label className="block text-xs font-bold text-[#68706E] mb-1">Observaciones / Comentario</label>
                 <textarea 
                   value={trasladoComentario} 
                   onChange={e => setTrasladoComentario(e.target.value)} 
                   placeholder="Ej: Traslado interno para reabastecer stock de sucursal por alta demanda." 
-                  className="w-full bg-[#121316] border border-zinc-800 p-2.5 rounded-lg text-white text-xs focus:border-[#fe5000] outline-none" 
+                  className="w-full bg-[#121316] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs focus:border-[#fe5000] outline-none" 
                   rows={2}
                 />
               </div>
 
-              <div className="flex gap-3 pt-3 border-t border-zinc-800">
+              <div className="flex gap-3 pt-3 border-t border-[#DED8CF]">
                 <button 
                   type="button" 
                   onClick={() => setMostrarTrasladoModal(false)}
-                  className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-3 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors"
+                  className="flex-1 bg-[#F7F3EC] hover:bg-[#FFFDFC] text-[#1F2928] py-3 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors"
                 >
                   Cancelar
                 </button>
                 <button 
                   type="submit" 
-                  className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black py-3 rounded-lg font-black text-xs uppercase tracking-wider transition-colors shadow-lg"
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black py-3 rounded-lg font-black text-xs uppercase tracking-wider transition-colors shadow-xs"
                 >
                   🚚 Generar Remito y Procesar Traslado
                 </button>
@@ -1153,8 +1153,8 @@ function AdminProductCard({
   };
 
   return (
-    <div className={`border rounded-xl bg-[#181920] flex flex-col shadow-2xl shadow-black/60 overflow-hidden transition-all ${editandoId === p.id ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'border-zinc-800'}`}>
-      <div className="h-40 relative bg-zinc-850 p-2 flex items-center justify-center group">
+    <div className={`border rounded-xl bg-[#FFFDFC] flex flex-col shadow-xs overflow-hidden transition-all ${editandoId === p.id ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'border-[#DED8CF]'}`}>
+      <div className="h-40 relative bg-[#F7F3EC] p-2 flex items-center justify-center group">
         {images.length > 0 ? (
           <img src={images[activeIdx]} alt={p.nombre} className="max-w-full max-h-full object-contain" />
         ) : (
@@ -1166,7 +1166,7 @@ function AdminProductCard({
             {/* Flecha Izquierda */}
             <button
               onClick={handlePrev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-[#181920]/60 hover:bg-[#181920]/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 w-6 h-6 flex items-center justify-center font-bold"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-[#FFFDFC]/60 hover:bg-[#FFFDFC]/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 w-6 h-6 flex items-center justify-center font-bold"
             >
               &larr;
             </button>
@@ -1174,7 +1174,7 @@ function AdminProductCard({
             {/* Flecha Derecha */}
             <button
               onClick={handleNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#181920]/60 hover:bg-[#181920]/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 w-6 h-6 flex items-center justify-center font-bold"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#FFFDFC]/60 hover:bg-[#FFFDFC]/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 w-6 h-6 flex items-center justify-center font-bold"
             >
               &rarr;
             </button>
@@ -1193,13 +1193,13 @@ function AdminProductCard({
           </>
         )}
 
-        {editandoId === p.id && <div className="absolute inset-0 bg-blue-500/10 backdrop-blur-[1px] flex items-center justify-center z-10"><span className="bg-blue-600 text-white font-bold px-3 py-1 rounded-full text-xs shadow-2xl shadow-black/80">EDITANDO</span></div>}
+        {editandoId === p.id && <div className="absolute inset-0 bg-blue-500/10 backdrop-blur-[1px] flex items-center justify-center z-10"><span className="bg-blue-600 text-white font-bold px-3 py-1 rounded-full text-xs shadow-xs">EDITANDO</span></div>}
       </div>
       <div className="p-4 flex-1 flex flex-col">
         <div className="flex justify-between items-center mb-2">
           <span className={`text-[10px] px-2 py-0.5 rounded font-black uppercase shadow-sm ${
             (p.activo !== false && p.publicado !== false) 
-              ? "bg-green-500/20 text-green-400 border border-green-500/30" 
+              ? "bg-green-500/20 text-[#2F7D5C] border border-green-500/30" 
               : "bg-red-500/20 text-red-400 border border-red-500/30"
           }`}>
             {(p.activo !== false && p.publicado !== false) ? "🟢 Publicado en Tienda" : "🔴 Borrador (Oculto)"}
@@ -1220,25 +1220,25 @@ function AdminProductCard({
         <h3 className="font-bold text-md mb-4 line-clamp-2 leading-tight">{p.nombre}</h3>
         
         {/* Datos Internos Admin */}
-        <div className="bg-[#121316] border border-zinc-800 p-3 rounded-lg mb-3 text-xs flex flex-col gap-1">
-          <p className="text-zinc-500 font-bold uppercase mb-1 border-b border-zinc-800 pb-1">Administrativo</p>
-          <p className="text-zinc-400">Costo: <span className="font-mono">${p.costoProducto || 0}</span></p>
-          <p className="text-zinc-400">Contado: <span className="text-green-400 font-mono font-bold">${p.precioContado || 0}</span></p>
-          <p className="text-zinc-400">TNA: <span className="font-mono">{p.tasaInteresTna || 0}%</span></p>
-          <p className="text-zinc-400">Mora: <span className="font-mono">{p.tasaMora || 0}% diaria</span></p>
-          <p className="text-zinc-400 line-clamp-1">Provee: <span className="text-yellow-100">{p.proveedor || "No indicado"}</span></p>
+        <div className="bg-[#121316] border border-[#DED8CF] p-3 rounded-lg mb-3 text-xs flex flex-col gap-1">
+          <p className="text-[#68706E] font-bold uppercase mb-1 border-b border-[#DED8CF] pb-1">Administrativo</p>
+          <p className="text-[#68706E]">Costo: <span className="font-mono">${p.costoProducto || 0}</span></p>
+          <p className="text-[#68706E]">Contado: <span className="text-[#2F7D5C] font-mono font-bold">${p.precioContado || 0}</span></p>
+          <p className="text-[#68706E]">TNA: <span className="font-mono">{p.tasaInteresTna || 0}%</span></p>
+          <p className="text-[#68706E]">Mora: <span className="font-mono">{p.tasaMora || 0}% diaria</span></p>
+          <p className="text-[#68706E] line-clamp-1">Provee: <span className="text-yellow-100">{p.proveedor || "No indicado"}</span></p>
         </div>
 
         {/* Resumen de Stock por Localidad */}
-        <div className="bg-[#121316] border border-zinc-800 p-3 rounded-lg mb-3 text-xs flex flex-col gap-1">
-          <p className="text-zinc-500 font-bold uppercase mb-1 border-b border-zinc-800 pb-1">Stock Disponible</p>
+        <div className="bg-[#121316] border border-[#DED8CF] p-3 rounded-lg mb-3 text-xs flex flex-col gap-1">
+          <p className="text-[#68706E] font-bold uppercase mb-1 border-b border-[#DED8CF] pb-1">Stock Disponible</p>
           {LOCALIDADES_STOCK.map(loc => {
             const count = (p.stock || []).filter(u => u.localidad === loc && u.estado === "Disponible").length;
             if (count === 0) return null;
             return (
-              <p key={loc} className="text-zinc-300 flex justify-between">
+              <p key={loc} className="text-[#1F2928] flex justify-between">
                 <span>{loc}:</span>
-                <span className="font-bold text-[#fe5000] font-mono">{count} u.</span>
+                <span className="font-bold text-[#B44E2A] font-mono">{count} u.</span>
               </p>
             );
           })}
@@ -1248,25 +1248,25 @@ function AdminProductCard({
         </div>
 
         {/* Datos Publicos Cuotas */}
-        <div className="bg-[#181920] border border-zinc-800 p-3 rounded-lg mb-5 text-xs">
-          <p className="text-[#fe5000] font-bold uppercase mb-1 border-b border-zinc-800 pb-1">Público</p>
-          {p.precioAnterior && <p className="text-zinc-500 line-through mb-1">Antes: ${p.precioAnterior}</p>}
-          <p className="text-[#fe5000] font-bold text-sm mb-1">12 x ${p.cuota12}</p>
-          <p className="text-[#fe5000] font-bold text-sm">8 x ${p.cuota8}</p>
+        <div className="bg-[#FFFDFC] border border-[#DED8CF] p-3 rounded-lg mb-5 text-xs">
+          <p className="text-[#B44E2A] font-bold uppercase mb-1 border-b border-[#DED8CF] pb-1">Público</p>
+          {p.precioAnterior && <p className="text-[#68706E] line-through mb-1">Antes: ${p.precioAnterior}</p>}
+          <p className="text-[#B44E2A] font-bold text-sm mb-1">12 x ${p.cuota12}</p>
+          <p className="text-[#B44E2A] font-bold text-sm">8 x ${p.cuota8}</p>
         </div>
 
         <button 
           onClick={() => handleOpenStockManager(p)}
-          className="w-full text-xs bg-[#121316] border border-zinc-800 hover:border-[#fe5000] text-[#fe5000] py-2 rounded-lg font-black uppercase tracking-widest transition-all mb-3 flex items-center justify-center gap-2"
+          className="w-full text-xs bg-[#121316] border border-[#DED8CF] hover:border-[#fe5000] text-[#B44E2A] py-2 rounded-lg font-black uppercase tracking-widest transition-all mb-3 flex items-center justify-center gap-2"
         >
           📦 Gestionar Stock
         </button>
         
         <div className="mt-auto flex gap-2 w-full">
-          <button onClick={() => handleEditar(p)} className="flex-1 text-sm bg-zinc-800/80 text-blue-400 border border-zinc-800 hover:bg-gray-200 hover:text-blue-300 hover:border-blue-500 py-2.5 rounded-lg text-center transition-all font-bold tracking-widest uppercase">
+          <button onClick={() => handleEditar(p)} className="flex-1 text-sm bg-[#F7F3EC]/80 text-blue-400 border border-[#DED8CF] hover:bg-gray-200 hover:text-blue-300 hover:border-blue-500 py-2.5 rounded-lg text-center transition-all font-bold tracking-widest uppercase">
             Editar
           </button>
-          <button onClick={() => handleEliminar(p.id)} className="flex-1 text-sm bg-zinc-800/80 text-red-500/80 border border-zinc-800 hover:bg-red-900/50 hover:text-red-400 hover:border-red-900 py-2.5 rounded-lg text-center transition-all font-bold tracking-widest uppercase">
+          <button onClick={() => handleEliminar(p.id)} className="flex-1 text-sm bg-[#F7F3EC]/80 text-red-500/80 border border-[#DED8CF] hover:bg-red-900/50 hover:text-red-400 hover:border-red-900 py-2.5 rounded-lg text-center transition-all font-bold tracking-widest uppercase">
             Borrar
           </button>
         </div>

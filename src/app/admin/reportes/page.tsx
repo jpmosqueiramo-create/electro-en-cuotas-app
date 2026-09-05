@@ -271,20 +271,20 @@ export default function ReportesPage() {
 
   return (
     <AdminProtectedRoute>
-      <div className="min-h-screen bg-[#121316] text-zinc-100 p-4 md:p-8 font-sans">
+      <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] p-4 md:p-8 font-sans">
         <div className="max-w-7xl mx-auto space-y-6">
 
           {/* HEADER */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#181920] border border-zinc-800 p-6 rounded-3xl shadow-xl">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#FFFDFC] border border-[#DED8CF] p-6 rounded-3xl shadow-xs">
             <div className="flex items-center gap-4">
-              <Link href="/admin" className="p-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-xl border border-zinc-800 transition">
+              <Link href="/admin" className="p-2.5 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#68706E] hover:text-white rounded-xl border border-[#DED8CF] transition">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
               <div>
-                <h1 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-[#fe5000] to-amber-500">
+                <h1 className="text-2xl md:text-3xl font-black text-[#173E3B] font-heading font-extrabold">
                   Reportes y Planillas Financieras
                 </h1>
-                <p className="text-xs text-zinc-400 font-medium mt-0.5">
+                <p className="text-xs text-[#68706E] font-medium mt-0.5">
                   Planillas contables descargables en Excel y compatibles con Google Sheets (Cobros, Fletes y Comisiones)
                 </p>
               </div>
@@ -300,9 +300,9 @@ export default function ReportesPage() {
               </button>
               <button
                 onClick={handleCopiarSheets}
-                className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-amber-400 border border-amber-500/30 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#B44E2A] border border-amber-500/30 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
               >
-                {copiado ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                {copiado ? <CheckCircle2 className="w-4 h-4 text-[#2F7D5C]" /> : <Copy className="w-4 h-4" />}
                 {copiado ? "¡Copiado para Google Sheets!" : "📋 Copiar p/ Google Sheets"}
               </button>
             </div>
@@ -316,21 +316,21 @@ export default function ReportesPage() {
               onClick={() => setTabActiva("cobros")}
               className={`p-5 rounded-2xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
                 tabActiva === "cobros"
-                  ? "bg-amber-500/10 border-amber-500 shadow-lg shadow-amber-500/10"
-                  : "bg-[#181920] border-zinc-800 hover:border-zinc-700"
+                  ? "bg-amber-500/10 border-amber-500 shadow-xs shadow-amber-500/10"
+                  : "bg-[#FFFDFC] border-[#DED8CF] hover:border-[#DED8CF]"
               }`}
             >
               <div className="flex justify-between items-start mb-3">
-                <span className="p-2.5 bg-amber-500/20 text-amber-400 rounded-xl">
+                <span className="p-2.5 bg-amber-500/20 text-[#B44E2A] rounded-xl">
                   <DollarSign className="w-5 h-5" />
                 </span>
-                <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded uppercase">Planilla 1</span>
+                <span className="text-[10px] font-bold text-[#B44E2A] bg-amber-500/10 px-2 py-0.5 rounded uppercase">Planilla 1</span>
               </div>
               <div>
                 <h3 className="text-base font-bold text-white">Cobros de Cuotas</h3>
-                <p className="text-xs text-zinc-400 mt-0.5">Registro contable de cobranzas de clientes</p>
-                <p className="text-lg font-black text-amber-400 font-mono mt-2">
-                  ${totalCobrado.toLocaleString("es-AR")} <span className="text-xs font-normal text-zinc-500">({cobrosFiltrados.length} reg.)</span>
+                <p className="text-xs text-[#68706E] mt-0.5">Registro contable de cobranzas de clientes</p>
+                <p className="text-lg font-black text-[#B44E2A] font-mono mt-2">
+                  ${totalCobrado.toLocaleString("es-AR")} <span className="text-xs font-normal text-[#68706E]">({cobrosFiltrados.length} reg.)</span>
                 </p>
               </div>
             </button>
@@ -340,8 +340,8 @@ export default function ReportesPage() {
               onClick={() => setTabActiva("fletes")}
               className={`p-5 rounded-2xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
                 tabActiva === "fletes"
-                  ? "bg-blue-500/10 border-blue-500 shadow-lg shadow-blue-500/10"
-                  : "bg-[#181920] border-zinc-800 hover:border-zinc-700"
+                  ? "bg-blue-500/10 border-blue-500 shadow-xs shadow-blue-500/10"
+                  : "bg-[#FFFDFC] border-[#DED8CF] hover:border-[#DED8CF]"
               }`}
             >
               <div className="flex justify-between items-start mb-3">
@@ -352,9 +352,9 @@ export default function ReportesPage() {
               </div>
               <div>
                 <h3 className="text-base font-bold text-white">Gastos de Fletes y Logística</h3>
-                <p className="text-xs text-zinc-400 mt-0.5">Control de costos de viajes y despachos</p>
+                <p className="text-xs text-[#68706E] mt-0.5">Control de costos de viajes y despachos</p>
                 <p className="text-lg font-black text-blue-400 font-mono mt-2">
-                  ${totalFletes.toLocaleString("es-AR")} <span className="text-xs font-normal text-zinc-500">({fletesFiltrados.length} reg.)</span>
+                  ${totalFletes.toLocaleString("es-AR")} <span className="text-xs font-normal text-[#68706E]">({fletesFiltrados.length} reg.)</span>
                 </p>
               </div>
             </button>
@@ -364,21 +364,21 @@ export default function ReportesPage() {
               onClick={() => setTabActiva("comisiones")}
               className={`p-5 rounded-2xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
                 tabActiva === "comisiones"
-                  ? "bg-emerald-500/10 border-emerald-500 shadow-lg shadow-emerald-500/10"
-                  : "bg-[#181920] border-zinc-800 hover:border-zinc-700"
+                  ? "bg-emerald-500/10 border-emerald-500 shadow-xs shadow-emerald-500/10"
+                  : "bg-[#FFFDFC] border-[#DED8CF] hover:border-[#DED8CF]"
               }`}
             >
               <div className="flex justify-between items-start mb-3">
-                <span className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-xl">
+                <span className="p-2.5 bg-emerald-500/20 text-[#2F7D5C] rounded-xl">
                   <Users className="w-5 h-5" />
                 </span>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded uppercase">Planilla 3</span>
+                <span className="text-[10px] font-bold text-[#2F7D5C] bg-emerald-500/10 px-2 py-0.5 rounded uppercase">Planilla 3</span>
               </div>
               <div>
                 <h3 className="text-base font-bold text-white">Pago de Comisiones</h3>
-                <p className="text-xs text-zinc-400 mt-0.5">Liquidaciones a vendedores y afiliados</p>
-                <p className="text-lg font-black text-emerald-400 font-mono mt-2">
-                  ${totalComisiones.toLocaleString("es-AR")} <span className="text-xs font-normal text-zinc-500">({comisionesFiltradas.length} reg.)</span>
+                <p className="text-xs text-[#68706E] mt-0.5">Liquidaciones a vendedores y afiliados</p>
+                <p className="text-lg font-black text-[#2F7D5C] font-mono mt-2">
+                  ${totalComisiones.toLocaleString("es-AR")} <span className="text-xs font-normal text-[#68706E]">({comisionesFiltradas.length} reg.)</span>
                 </p>
               </div>
             </button>
@@ -386,32 +386,32 @@ export default function ReportesPage() {
           </div>
 
           {/* BUSCADOR */}
-          <div className="bg-[#181920] border border-zinc-800 p-4 rounded-2xl shadow-lg">
+          <div className="bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-2xl shadow-xs">
             <div className="relative">
-              <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3.5" />
+              <Search className="w-4 h-4 text-[#68706E] absolute left-3.5 top-3.5" />
               <input
                 type="text"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 placeholder="Buscar por Cliente, DNI, Recibo N°, Remito N°, Afiliado o Contrato..."
-                className="w-full bg-zinc-950 border border-zinc-800 pl-10 pr-4 py-2.5 rounded-xl text-xs text-white placeholder-zinc-500 outline-none focus:border-[#fe5000] transition"
+                className="w-full bg-[#FFFDFC] border border-[#DED8CF] pl-10 pr-4 py-2.5 rounded-xl text-xs text-white placeholder-zinc-500 outline-none focus:border-[#fe5000] transition"
               />
             </div>
           </div>
 
           {/* TABLA DINÁMICA DE LA PLANILLA SELECCIONADA */}
           {loading ? (
-            <div className="bg-[#181920] border border-zinc-800 p-12 rounded-3xl text-center">
-              <p className="text-sm text-zinc-400 animate-pulse font-medium">Cargando datos contables e historial de registros...</p>
+            <div className="bg-[#FFFDFC] border border-[#DED8CF] p-12 rounded-3xl text-center">
+              <p className="text-sm text-[#68706E] animate-pulse font-medium">Cargando datos contables e historial de registros...</p>
             </div>
           ) : (
-            <div className="bg-[#181920] border border-zinc-800 rounded-3xl overflow-hidden shadow-xl">
+            <div className="bg-[#FFFDFC] border border-[#DED8CF] rounded-3xl overflow-hidden shadow-xs">
               
               {/* VISTA PLANILLA 1: COBROS */}
               {tabActiva === "cobros" && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs font-sans">
-                    <thead className="bg-zinc-950 text-zinc-400 uppercase text-[10px] font-bold border-b border-zinc-800">
+                    <thead className="bg-[#FFFDFC] text-[#68706E] uppercase text-[10px] font-bold border-b border-[#DED8CF]">
                       <tr>
                         <th className="p-4">Fecha</th>
                         <th className="p-4">Recibo N°</th>
@@ -425,27 +425,27 @@ export default function ReportesPage() {
                         <th className="p-4">Medio Pago</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-850 text-zinc-300">
+                    <tbody className="divide-y divide-zinc-850 text-[#1F2928]">
                       {cobrosFiltrados.length === 0 ? (
                         <tr>
-                          <td colSpan={10} className="p-8 text-center text-zinc-500">No se encontraron registros de cobros.</td>
+                          <td colSpan={10} className="p-8 text-center text-[#68706E]">No se encontraron registros de cobros.</td>
                         </tr>
                       ) : (
                         cobrosFiltrados.map((c) => (
-                          <tr key={c.id} className="hover:bg-zinc-900/50 transition">
+                          <tr key={c.id} className="hover:bg-[#F7F3EC] transition">
                             <td className="p-4 font-mono">{c.fecha}</td>
-                            <td className="p-4 font-mono font-bold text-amber-400">{c.reciboNo}</td>
+                            <td className="p-4 font-mono font-bold text-[#B44E2A]">{c.reciboNo}</td>
                             <td className="p-4">
                               <span className="font-bold text-white block">{c.clienteNombre}</span>
-                              <span className="text-[10px] text-zinc-500 font-mono">DNI: {c.clienteDni}</span>
+                              <span className="text-[10px] text-[#68706E] font-mono">DNI: {c.clienteDni}</span>
                             </td>
-                            <td className="p-4 font-mono text-zinc-400">{c.contratoLegajo}</td>
+                            <td className="p-4 font-mono text-[#68706E]">{c.contratoLegajo}</td>
                             <td className="p-4 font-bold text-white">{c.cuotaNo}</td>
-                            <td className="p-4 text-right font-mono font-bold text-amber-400">${c.montoAbonado.toLocaleString("es-AR")}</td>
-                            <td className="p-4 text-right font-mono text-emerald-400">${c.montoExento.toLocaleString("es-AR")}</td>
+                            <td className="p-4 text-right font-mono font-bold text-[#B44E2A]">${c.montoAbonado.toLocaleString("es-AR")}</td>
+                            <td className="p-4 text-right font-mono text-[#2F7D5C]">${c.montoExento.toLocaleString("es-AR")}</td>
                             <td className="p-4 text-right font-mono text-blue-400">${c.montoGravado.toLocaleString("es-AR")}</td>
                             <td className="p-4 text-right font-mono text-cyan-300">${c.iva21.toLocaleString("es-AR")}</td>
-                            <td className="p-4 text-zinc-400">{c.metodoPago}</td>
+                            <td className="p-4 text-[#68706E]">{c.metodoPago}</td>
                           </tr>
                         ))
                       )}
@@ -458,7 +458,7 @@ export default function ReportesPage() {
               {tabActiva === "fletes" && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs font-sans">
-                    <thead className="bg-zinc-950 text-zinc-400 uppercase text-[10px] font-bold border-b border-zinc-800">
+                    <thead className="bg-[#FFFDFC] text-[#68706E] uppercase text-[10px] font-bold border-b border-[#DED8CF]">
                       <tr>
                         <th className="p-4">Fecha Remito</th>
                         <th className="p-4">Remito N°</th>
@@ -470,32 +470,32 @@ export default function ReportesPage() {
                         <th className="p-4">Fletero / Transportista</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-850 text-zinc-300">
+                    <tbody className="divide-y divide-zinc-850 text-[#1F2928]">
                       {fletesFiltrados.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="p-8 text-center text-zinc-500">No se encontraron registros de fletes.</td>
+                          <td colSpan={8} className="p-8 text-center text-[#68706E]">No se encontraron registros de fletes.</td>
                         </tr>
                       ) : (
                         fletesFiltrados.map((f) => (
-                          <tr key={f.id} className="hover:bg-zinc-900/50 transition">
+                          <tr key={f.id} className="hover:bg-[#F7F3EC] transition">
                             <td className="p-4 font-mono">{f.fecha}</td>
                             <td className="p-4 font-mono font-bold text-blue-400">{f.remitoNo}</td>
                             <td className="p-4">
                               <span className="font-bold text-white block">{f.clienteNombre}</span>
-                              <span className="text-[10px] text-zinc-500 font-mono">DNI: {f.clienteDni}</span>
+                              <span className="text-[10px] text-[#68706E] font-mono">DNI: {f.clienteDni}</span>
                             </td>
                             <td className="p-4">
-                              <span className="text-zinc-400 block text-[11px]">{f.origen}</span>
+                              <span className="text-[#68706E] block text-[11px]">{f.origen}</span>
                               <span className="font-bold text-white block">➔ {f.destino}</span>
                             </td>
-                            <td className="p-4 text-zinc-300 font-medium">{f.mercaderia}</td>
+                            <td className="p-4 text-[#1F2928] font-medium">{f.mercaderia}</td>
                             <td className="p-4 text-right font-mono font-bold text-blue-400">${f.costoFlete.toLocaleString("es-AR")}</td>
                             <td className="p-4">
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                                 {f.estadoEntrega}
                               </span>
                             </td>
-                            <td className="p-4 text-zinc-400">{f.fletero}</td>
+                            <td className="p-4 text-[#68706E]">{f.fletero}</td>
                           </tr>
                         ))
                       )}
@@ -508,7 +508,7 @@ export default function ReportesPage() {
               {tabActiva === "comisiones" && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs font-sans">
-                    <thead className="bg-zinc-950 text-zinc-400 uppercase text-[10px] font-bold border-b border-zinc-800">
+                    <thead className="bg-[#FFFDFC] text-[#68706E] uppercase text-[10px] font-bold border-b border-[#DED8CF]">
                       <tr>
                         <th className="p-4">Fecha Pago</th>
                         <th className="p-4">N° Liquidación</th>
@@ -521,29 +521,29 @@ export default function ReportesPage() {
                         <th className="p-4">N° Comprobante</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-850 text-zinc-300">
+                    <tbody className="divide-y divide-zinc-850 text-[#1F2928]">
                       {comisionesFiltradas.length === 0 ? (
                         <tr>
-                          <td colSpan={9} className="p-8 text-center text-zinc-500">No se encontraron registros de comisiones.</td>
+                          <td colSpan={9} className="p-8 text-center text-[#68706E]">No se encontraron registros de comisiones.</td>
                         </tr>
                       ) : (
                         comisionesFiltradas.map((m) => (
-                          <tr key={m.id} className="hover:bg-zinc-900/50 transition">
+                          <tr key={m.id} className="hover:bg-[#F7F3EC] transition">
                             <td className="p-4 font-mono">{m.fechaPago}</td>
-                            <td className="p-4 font-mono font-bold text-emerald-400">{m.nroLiquidacion}</td>
+                            <td className="p-4 font-mono font-bold text-[#2F7D5C]">{m.nroLiquidacion}</td>
                             <td className="p-4">
                               <span className="font-bold text-white block">{m.afiliadoNombre}</span>
-                              <span className="text-[10px] text-zinc-500">{m.afiliadoEmail}</span>
+                              <span className="text-[10px] text-[#68706E]">{m.afiliadoEmail}</span>
                             </td>
                             <td className="p-4">
-                              <span className="font-bold text-zinc-200 block">{m.clienteReferido}</span>
-                              <span className="text-[10px] text-zinc-500 font-mono">DNI: {m.clienteDni}</span>
+                              <span className="font-bold text-[#1F2928] block">{m.clienteReferido}</span>
+                              <span className="text-[10px] text-[#68706E] font-mono">DNI: {m.clienteDni}</span>
                             </td>
-                            <td className="p-4 font-mono text-zinc-400">{m.contratoRef}</td>
-                            <td className="p-4 text-right font-mono font-bold text-zinc-300">${m.montoVenta.toLocaleString("es-AR")}</td>
-                            <td className="p-4 text-right font-mono font-bold text-emerald-400">${m.comisionPagada.toLocaleString("es-AR")}</td>
-                            <td className="p-4 text-zinc-400">{m.metodoLiquidacion}</td>
-                            <td className="p-4 font-mono text-zinc-400">{m.nroComprobante}</td>
+                            <td className="p-4 font-mono text-[#68706E]">{m.contratoRef}</td>
+                            <td className="p-4 text-right font-mono font-bold text-[#1F2928]">${m.montoVenta.toLocaleString("es-AR")}</td>
+                            <td className="p-4 text-right font-mono font-bold text-[#2F7D5C]">${m.comisionPagada.toLocaleString("es-AR")}</td>
+                            <td className="p-4 text-[#68706E]">{m.metodoLiquidacion}</td>
+                            <td className="p-4 font-mono text-[#68706E]">{m.nroComprobante}</td>
                           </tr>
                         ))
                       )}

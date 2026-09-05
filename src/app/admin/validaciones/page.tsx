@@ -1972,7 +1972,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
   };
 
   if (cargando) {
-    return <div className="min-h-screen flex items-center justify-center bg-zinc-900/80 text-zinc-100">Cargando base de datos...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-[#F7F3EC] text-[#1F2928]">Cargando base de datos...</div>;
   }
 
   const combinedRequests = [
@@ -2035,58 +2035,58 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
   return (
     <AdminProtectedRoute>
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8">
+      <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           
-          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-zinc-800 pb-6">
+          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-[#DED8CF] pb-6">
             <div className="flex items-center gap-4">
-              <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-14 w-auto object-contain rounded-xl border border-zinc-800/80 shadow-md bg-black/40 p-1" />
+              <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-14 w-auto object-contain rounded-xl border border-[#DED8CF] shadow-md bg-[#173E3B] p-1.5 rounded-xl shadow-xs p-1" />
               <div>
-                <h1 className="text-2xl font-black text-yellow-400">Panel de Control General</h1>
-                <p className="text-zinc-500 text-sm">Gestión de créditos, entregas y cobranzas</p>
+                <h1 className="text-2xl font-black text-[#B44E2A]">Panel de Control General</h1>
+                <p className="text-[#68706E] text-sm">Gestión de créditos, entregas y cobranzas</p>
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <Link href="/admin/presupuestos" className="text-xs bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
+              <Link href="/admin/presupuestos" className="text-xs bg-amber-500/10 hover:bg-amber-500/20 text-[#B44E2A] border border-amber-500/30 px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
                 📄 Historial Presupuestos
               </Link>
               <Link href="/admin/clientes" className="text-xs bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
                 👥 Base Clientes
               </Link>
-              <Link href="/admin/reportes" className="text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
+              <Link href="/admin/reportes" className="text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-[#2F7D5C] border border-emerald-500/30 px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
                 📊 Reportes Excel
               </Link>
-              <Link href="/admin" className="text-xs border border-zinc-800 hover:bg-zinc-800 text-zinc-300 px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
+              <Link href="/admin" className="text-xs border border-[#DED8CF] hover:bg-[#F7F3EC] text-[#1F2928] px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
                 ← Panel Root
               </Link>
             </div>
           </header>
 
           {/* TABS NAVIGATION */}
-          <div className="flex flex-wrap gap-2 mb-6 bg-zinc-950/50 p-2 rounded-xl border border-zinc-850">
-            <button onClick={() => setActiveTab('analisis')} className={`flex-1 min-w-[150px] py-3 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'analisis' ? 'bg-yellow-500 text-black shadow-2xl shadow-black/60 scale-[1.02]' : 'text-zinc-500 hover:bg-zinc-800/80'}`}>
+          <div className="flex flex-wrap gap-2 mb-6 bg-[#F7F3EC] p-2 rounded-xl border border-[#DED8CF]">
+            <button onClick={() => setActiveTab('analisis')} className={`flex-1 min-w-[150px] py-3 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'analisis' ? 'bg-[#173E3B] text-white font-heading font-bold shadow-xs scale-[1.02]' : 'text-[#68706E] hover:bg-[#F7F3EC]/80'}`}>
               <AlertCircle className="w-4 h-4" /> Análisis Crediticio y Solicitudes
             </button>
-            <button onClick={() => setActiveTab('logistica')} className={`flex-1 min-w-[150px] py-3 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'logistica' ? 'bg-blue-600 text-white shadow-2xl shadow-black/60 scale-[1.02]' : 'text-zinc-500 hover:bg-zinc-800/80'}`}>
+            <button onClick={() => setActiveTab('logistica')} className={`flex-1 min-w-[150px] py-3 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'logistica' ? 'bg-[#173E3B] text-white font-heading font-bold shadow-xs scale-[1.02]' : 'text-[#68706E] hover:bg-[#F7F3EC]/80'}`}>
               <Truck className="w-4 h-4" /> Logística y Entregas
             </button>
-            <button onClick={() => setActiveTab('cobranzas')} className={`flex-1 min-w-[150px] py-3 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'cobranzas' ? 'bg-green-600 text-white shadow-2xl shadow-black/60 scale-[1.02]' : 'text-zinc-500 hover:bg-zinc-800/80'}`}>
+            <button onClick={() => setActiveTab('cobranzas')} className={`flex-1 min-w-[150px] py-3 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'cobranzas' ? 'bg-[#2F7D5C] text-white font-heading font-bold shadow-xs scale-[1.02]' : 'text-[#68706E] hover:bg-[#F7F3EC]/80'}`}>
               <DollarSign className="w-4 h-4" /> Cobranza de Cuotas
             </button>
-            <button onClick={() => setActiveTab('historial')} className={`flex-1 min-w-[150px] py-3 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'historial' ? 'bg-zinc-700 text-white shadow-2xl shadow-black/60 scale-[1.02]' : 'text-zinc-500 hover:bg-zinc-800/80'}`}>
+            <button onClick={() => setActiveTab('historial')} className={`flex-1 min-w-[150px] py-3 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'historial' ? 'bg-[#FFFDFC] text-white shadow-xs scale-[1.02]' : 'text-[#68706E] hover:bg-[#F7F3EC]/80'}`}>
               <Archive className="w-4 h-4" /> Archivo Completo
             </button>
           </div>
 
           {/* SEARCH BAR */}
           <div className="mb-6 relative">
-             <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
+             <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#68706E]" />
              <input 
                type="text" 
                placeholder="Buscar por DNI, Nombre o Email del cliente..." 
                value={searchTerm}
                onChange={(e) => setSearchTerm(e.target.value)}
-               className="w-full bg-zinc-950 border border-zinc-800 text-white pl-12 pr-4 py-4 rounded-xl focus:outline-none focus:border-yellow-500 transition-colors font-medium shadow-inner"
+               className="w-full bg-[#FFFDFC] border border-[#DED8CF] text-white pl-12 pr-4 py-4 rounded-xl focus:outline-none focus:border-yellow-500 transition-colors font-medium shadow-inner"
              />
           </div>
 
@@ -2094,7 +2094,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
           <div className="space-y-4">
             {activeTab === 'analisis' ? (
               groupSolicitudes(filteredCombined).length === 0 ? (
-                <p className="text-zinc-500 italic text-center py-10">No se encontraron solicitudes pendientes en evaluación.</p>
+                <p className="text-[#68706E] italic text-center py-10">No se encontraron solicitudes pendientes en evaluación.</p>
               ) : (
                 groupSolicitudes(filteredCombined).map((group: any) => {
                   const isExpanded = expandedId === group.key;
@@ -2104,7 +2104,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                   if (req.isApertura) {
                     // Render Apertura Accordion Item
                     return (
-                      <div key={group.key} className={`bg-zinc-950 border ${isExpanded ? 'border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'border-zinc-800 hover:border-amber-500/40'} rounded-xl transition-all overflow-hidden`}>
+                      <div key={group.key} className={`bg-[#FFFDFC] border ${isExpanded ? 'border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'border-[#DED8CF] hover:border-amber-500/40'} rounded-xl transition-all overflow-hidden`}>
                         <div 
                           onClick={() => { setExpandedId(isExpanded ? null : group.key); setDraftItems([]); }}
                           className="p-4 md:p-6 cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative"
@@ -2116,29 +2116,29 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                   Producto Especial
                                 </span>
                               ) : (
-                                <span className="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded font-black uppercase tracking-wider">
+                                <span className="text-[10px] bg-amber-500/10 text-[#B44E2A] border border-amber-500/20 px-2 py-0.5 rounded font-black uppercase tracking-wider">
                                   Apertura de Cuenta
                                 </span>
                               )}
                               <h3 className="font-bold text-white text-lg">{req.nombreCompleto || "Cliente Sin Nombre"}</h3>
                             </div>
-                            <p className="text-sm text-zinc-400 mt-1">DNI: {req.numeroDni || "S/D"} | WhatsApp: {req.whatsapp || "S/D"}</p>
+                            <p className="text-sm text-[#68706E] mt-1">DNI: {req.numeroDni || "S/D"} | WhatsApp: {req.whatsapp || "S/D"}</p>
                             {req.fecha && (
-                              <p className="text-xs text-zinc-500 mt-1">Recibido el {req.fecha.toDate ? req.fecha.toDate().toLocaleString("es-AR") : new Date(req.fecha?.seconds * 1000).toLocaleString()}</p>
+                              <p className="text-xs text-[#68706E] mt-1">Recibido el {req.fecha.toDate ? req.fecha.toDate().toLocaleString("es-AR") : new Date(req.fecha?.seconds * 1000).toLocaleString()}</p>
                             )}
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/50">
+                            <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-[#B44E2A] border border-amber-500/50">
                               {req.estado || "Pendiente"}
                             </span>
-                            {isExpanded ? <ChevronUp className="w-5 h-5 text-zinc-400" /> : <ChevronDown className="w-5 h-5 text-zinc-400" />}
+                            {isExpanded ? <ChevronUp className="w-5 h-5 text-[#68706E]" /> : <ChevronDown className="w-5 h-5 text-[#68706E]" />}
                           </div>
                         </div>
                         {isExpanded && (
-                          <div className="p-6 border-t border-zinc-900 bg-zinc-900/20 space-y-6">
+                          <div className="p-6 border-t border-[#DED8CF] bg-[#FFFDFC]/20 space-y-6">
                             {group.items.length > 1 && (
-                              <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-4 mb-4">
-                                <span className="text-zinc-500 text-[10px] font-black uppercase self-center mr-2">Ver Producto:</span>
+                              <div className="flex flex-wrap gap-2 border-b border-[#DED8CF] pb-4 mb-4">
+                                <span className="text-[#68706E] text-[10px] font-black uppercase self-center mr-2">Ver Producto:</span>
                                 {group.items.map((item: any) => {
                                    const isActive = item.id === req.id;
                                    return (
@@ -2149,7 +2149,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                          e.stopPropagation();
                                          setActiveProductSolId(prev => ({ ...prev, [group.key]: item.id }));
                                        }}
-                                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${isActive ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-zinc-950 text-zinc-400 border border-zinc-850 hover:bg-zinc-900'}`}
+                                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${isActive ? 'bg-amber-500 text-black shadow-xs shadow-amber-500/20' : 'bg-[#FFFDFC] text-[#68706E] border border-[#DED8CF] hover:bg-[#FFFDFC]'}`}
                                      >
                                        🛍️ {item.productoDeseado || item.producto || "Apertura"} ({item.estado})
                                      </button>
@@ -2160,63 +2160,63 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                             {req.estado === "Rechazado" && (
                               <div className="bg-red-950/30 border border-red-500/30 p-4 rounded-xl text-red-400 text-xs flex flex-col gap-1 w-full">
                                 <span className="font-black text-red-500 uppercase tracking-widest text-[10px]">❌ Solicitud de Apertura Rechazada</span>
-                                <p className="font-mono text-zinc-300">{req.motivoRechazo || "No se especificó un motivo."}</p>
+                                <p className="font-mono text-[#1F2928]">{req.motivoRechazo || "No se especificó un motivo."}</p>
                               </div>
                             )}
                             {req.tipo === "contacto_rapido" ? (
                               // RENDER SECCIÓN ESPECIAL CONTACTO RÁPIDO / PRESUPUESTOS A MEDIDA
                               <div className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                  <div className="space-y-3 bg-zinc-950 p-4 rounded-xl border border-zinc-900">
-                                    <h4 className="text-sm font-black text-yellow-400 uppercase tracking-wider border-b border-zinc-900 pb-2 mb-2">Producto Solicitado (Especial)</h4>
-                                    <p className="text-sm text-zinc-300 font-bold bg-zinc-900 p-3 rounded-lg border border-zinc-850"><strong className="text-zinc-500 block text-xs uppercase mb-1 font-black">Necesidad del cliente:</strong> {req.necesidad}</p>
-                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Localidad:</strong> {req.localidad}</p>
-                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Referido por:</strong> {req.referente || "Ninguno"}</p>
-                                    <p className="text-sm text-zinc-300"><strong className="text-zinc-500">WhatsApp:</strong> {req.whatsapp}</p>
+                                  <div className="space-y-3 bg-[#FFFDFC] p-4 rounded-xl border border-[#DED8CF]">
+                                    <h4 className="text-sm font-black text-[#B44E2A] uppercase tracking-wider border-b border-[#DED8CF] pb-2 mb-2">Producto Solicitado (Especial)</h4>
+                                    <p className="text-sm text-[#1F2928] font-bold bg-[#FFFDFC] p-3 rounded-lg border border-[#DED8CF]"><strong className="text-[#68706E] block text-xs uppercase mb-1 font-black">Necesidad del cliente:</strong> {req.necesidad}</p>
+                                    <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Localidad:</strong> {req.localidad}</p>
+                                    <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Referido por:</strong> {req.referente || "Ninguno"}</p>
+                                    <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">WhatsApp:</strong> {req.whatsapp}</p>
                                   </div>
 
                                   {/* Formulario para cargar nuevo presupuesto con Motor Financiero Unificado */}
-                                  <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-900 space-y-3">
-                                    <div className="flex justify-between items-center border-b border-zinc-900 pb-2">
-                                      <h4 className="text-sm font-black text-yellow-400 uppercase tracking-wider">
+                                  <div className="bg-[#FFFDFC] p-4 rounded-xl border border-[#DED8CF] space-y-3">
+                                    <div className="flex justify-between items-center border-b border-[#DED8CF] pb-2">
+                                      <h4 className="text-sm font-black text-[#B44E2A] uppercase tracking-wider">
                                         {editandoPresupuestoId ? `Editar Presupuesto (${editandoPresupuestoId.replace("pres_", "").substring(0, 8).toUpperCase()})` : "Armar Presupuesto Combinado"}
                                       </h4>
-                                      <span className="text-[9px] bg-amber-500/10 text-amber-400 font-mono font-bold px-2 py-0.5 rounded border border-amber-500/30">
+                                      <span className="text-[9px] bg-amber-500/10 text-[#B44E2A] font-mono font-bold px-2 py-0.5 rounded border border-amber-500/30">
                                         Mismos Factores que Catálogo
                                       </span>
                                     </div>
                                     
                                     <div className="grid grid-cols-2 gap-3">
                                       <div className="col-span-2">
-                                        <label className="block text-[10px] text-zinc-400 font-bold mb-1">Producto Propuesto</label>
+                                        <label className="block text-[10px] text-[#68706E] font-bold mb-1">Producto Propuesto</label>
                                         <input 
                                           type="text" 
                                           value={budgetProd} 
                                           onChange={e=>setBudgetProd(e.target.value)} 
                                           placeholder="Ej: HELADERA GAFA 280 L" 
-                                          className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-bold" 
+                                          className="bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-bold" 
                                         />
                                       </div>
                                       
                                       {/* COSTO PROVEEDOR - CAPITAL EXENTO (CAMPO CLAVE) */}
                                       <div>
-                                        <label className="block text-[10px] text-emerald-400 font-bold mb-1">🔒 Costo Proveedor ($) <span className="text-emerald-500 text-[9px]">(Capital Exento)</span></label>
+                                        <label className="block text-[10px] text-[#2F7D5C] font-bold mb-1">🔒 Costo Proveedor ($) <span className="text-emerald-500 text-[9px]">(Capital Exento)</span></label>
                                         <input 
                                           type="number" 
                                           value={budgetCostoProveedor} 
                                           onChange={e=>handleCambiarCostoProveedor(e.target.value)} 
                                           placeholder="Ej: 400000" 
-                                          className="bg-zinc-900 border border-emerald-500/40 p-2 rounded text-xs text-white w-full outline-none focus:border-emerald-400 font-mono font-black" 
+                                          className="bg-[#FFFDFC] border border-emerald-500/40 p-2 rounded text-xs text-white w-full outline-none focus:border-emerald-400 font-mono font-black" 
                                         />
                                       </div>
 
                                       {/* CANTIDAD DE CUOTAS (1 A 12 CUOTAS) */}
                                       <div>
-                                        <label className="block text-[10px] text-zinc-400 font-bold mb-1">Cantidad de Cuotas</label>
+                                        <label className="block text-[10px] text-[#68706E] font-bold mb-1">Cantidad de Cuotas</label>
                                         <select 
                                           value={budgetCuotas} 
                                           onChange={e=>handleCambiarCuotas(e.target.value)} 
-                                          className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-bold"
+                                          className="bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-bold"
                                         >
                                           {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
                                             <option key={n} value={n}>
@@ -2229,13 +2229,13 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                                       {/* FACTOR FINANCIADO APLICADO */}
                                       <div>
-                                        <label className="block text-[10px] text-amber-400 font-bold mb-1">Factor Financiación</label>
+                                        <label className="block text-[10px] text-[#B44E2A] font-bold mb-1">Factor Financiación</label>
                                         <input 
                                           type="number" 
                                           step="0.01" 
                                           value={budgetFactor} 
                                           onChange={e=>handleCambiarFactor(e.target.value)} 
-                                          className="bg-zinc-900 border border-amber-500/40 p-2 rounded text-xs text-white w-full outline-none focus:border-amber-400 font-mono font-bold" 
+                                          className="bg-[#FFFDFC] border border-amber-500/40 p-2 rounded text-xs text-white w-full outline-none focus:border-amber-400 font-mono font-bold" 
                                         />
                                       </div>
 
@@ -2247,20 +2247,20 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                           value={budgetCuotaValor} 
                                           onChange={e=>handleCambiarCuotaDirecta(e.target.value)} 
                                           placeholder="Ej: 83333" 
-                                          className="bg-zinc-900 border border-yellow-500/50 p-2 rounded text-xs text-yellow-300 w-full outline-none focus:border-yellow-400 font-black font-mono shadow-inner" 
+                                          className="bg-[#FFFDFC] border border-yellow-500/50 p-2 rounded text-xs text-yellow-300 w-full outline-none focus:border-yellow-400 font-black font-mono shadow-inner" 
                                         />
                                       </div>
 
                                       {/* MONTO REFERENCIA CONTADO / TOTAL */}
                                       <div className="col-span-2">
-                                        <label className="block text-[10px] text-zinc-500 font-bold mb-1">Monto Referencia Contado / Total Financiado ($)</label>
+                                        <label className="block text-[10px] text-[#68706E] font-bold mb-1">Monto Referencia Contado / Total Financiado ($)</label>
                                         <div className="flex gap-2">
                                           <input 
                                             type="number" 
                                             value={budgetContado} 
                                             onChange={e=>setBudgetContado(e.target.value)} 
                                             placeholder="Calculado automáticamente" 
-                                            className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-zinc-300 w-full outline-none focus:border-yellow-500 font-mono" 
+                                            className="bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] w-full outline-none focus:border-yellow-500 font-mono" 
                                           />
                                           <button
                                             type="button"
@@ -2274,20 +2274,20 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                                       {/* CAJA DE AUDITORÍA FISCAL DE IVA 21% Y ESTRUCTURA DE LA CUOTA */}
                                       {Number(budgetCostoProveedor) > 0 && Number(budgetCuotaValor) > 0 && (
-                                        <div className="col-span-2 bg-zinc-900/90 border border-emerald-500/30 p-3 rounded-xl space-y-1.5 text-xs font-mono">
-                                          <div className="flex justify-between text-zinc-300 border-b border-zinc-800 pb-1">
+                                        <div className="col-span-2 bg-[#FFFDFC]/90 border border-emerald-500/30 p-3 rounded-xl space-y-1.5 text-xs font-mono">
+                                          <div className="flex justify-between text-[#1F2928] border-b border-[#DED8CF] pb-1">
                                             <span>🟢 Capital Exento (Costo bien):</span>
-                                            <strong className="text-emerald-400">${Number(budgetCostoProveedor).toLocaleString("es-AR")}</strong>
+                                            <strong className="text-[#2F7D5C]">${Number(budgetCostoProveedor).toLocaleString("es-AR")}</strong>
                                           </div>
-                                          <div className="flex justify-between text-zinc-300 border-b border-zinc-800 pb-1">
+                                          <div className="flex justify-between text-[#1F2928] border-b border-[#DED8CF] pb-1">
                                             <span>🟡 Total Financiado ({budgetCuotas} cuotas):</span>
-                                            <strong className="text-amber-400">${(Number(budgetCuotaValor) * Number(budgetCuotas)).toLocaleString("es-AR")}</strong>
+                                            <strong className="text-[#B44E2A]">${(Number(budgetCuotaValor) * Number(budgetCuotas)).toLocaleString("es-AR")}</strong>
                                           </div>
-                                          <div className="flex justify-between text-zinc-400">
+                                          <div className="flex justify-between text-[#68706E]">
                                             <span>⚖️ Honorarios e Intereses (Gravado):</span>
                                             <strong className="text-white">${Math.max(0, (Number(budgetCuotaValor) * Number(budgetCuotas)) - Number(budgetCostoProveedor)).toLocaleString("es-AR")}</strong>
                                           </div>
-                                          <div className="flex justify-between text-zinc-400 text-[11px]">
+                                          <div className="flex justify-between text-[#68706E] text-[11px]">
                                             <span>🧾 Débito Fiscal IVA 21% Incluido:</span>
                                             <strong className="text-emerald-300">${Math.round(Math.max(0, (Number(budgetCuotaValor) * Number(budgetCuotas)) - Number(budgetCostoProveedor)) * (0.21 / 1.21)).toLocaleString("es-AR")}</strong>
                                           </div>
@@ -2296,12 +2296,12 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                       
                                       {/* DATOS PROVEEDOR USO INTERNO */}
                                       <div>
-                                        <label className="block text-[10px] text-zinc-500 font-bold mb-1">🔒 Proveedor (Uso Interno)</label>
-                                        <input type="text" value={budgetProveedor} onChange={e=>setBudgetProveedor(e.target.value)} placeholder="Ej: Distribuidora BA" className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500" />
+                                        <label className="block text-[10px] text-[#68706E] font-bold mb-1">🔒 Proveedor (Uso Interno)</label>
+                                        <input type="text" value={budgetProveedor} onChange={e=>setBudgetProveedor(e.target.value)} placeholder="Ej: Distribuidora BA" className="bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500" />
                                       </div>
                                       <div>
-                                        <label className="block text-[10px] text-zinc-500 font-bold mb-1">🔒 Link Proveedor (Uso Interno)</label>
-                                        <input type="text" value={budgetLinkProveedor} onChange={e=>setBudgetLinkProveedor(e.target.value)} placeholder="Ej: mercadolibre.com.ar/..." className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500" />
+                                        <label className="block text-[10px] text-[#68706E] font-bold mb-1">🔒 Link Proveedor (Uso Interno)</label>
+                                        <input type="text" value={budgetLinkProveedor} onChange={e=>setBudgetLinkProveedor(e.target.value)} placeholder="Ej: mercadolibre.com.ar/..." className="bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500" />
                                       </div>
                                     </div>
 
@@ -2311,14 +2311,14 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                         <button
                                           type="button"
                                           onClick={() => setMostrarTabla12Cuotas(!mostrarTabla12Cuotas)}
-                                          className="w-full bg-zinc-900 hover:bg-zinc-850 text-amber-400 border border-amber-500/30 py-1.5 px-3 rounded text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition"
+                                          className="w-full bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#B44E2A] border border-amber-500/30 py-1.5 px-3 rounded text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition"
                                         >
                                           {mostrarTabla12Cuotas ? "🙈 Ocultar Tabla de Planes 1 a 12" : "👁️ Ver Tabla Completa de Cuotas (1 a 12 Planes)"}
                                         </button>
 
                                         {mostrarTabla12Cuotas && (
-                                          <div className="mt-2 bg-zinc-900/90 border border-amber-500/30 p-3 rounded-xl space-y-2 max-h-60 overflow-y-auto">
-                                            <p className="text-[10px] text-zinc-400 font-bold">Planes calculados para Costo ${Number(budgetCostoProveedor).toLocaleString("es-AR")}:</p>
+                                          <div className="mt-2 bg-[#FFFDFC]/90 border border-amber-500/30 p-3 rounded-xl space-y-2 max-h-60 overflow-y-auto">
+                                            <p className="text-[10px] text-[#68706E] font-bold">Planes calculados para Costo ${Number(budgetCostoProveedor).toLocaleString("es-AR")}:</p>
                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[10px]">
                                               {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => {
                                                 const factor = FACTORES_PREDETERMINADOS[n] || 2.5;
@@ -2335,7 +2335,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                       setBudgetCuotaValor(String(vCuota));
                                                     }}
                                                     className={`p-2 rounded border text-left font-mono transition ${
-                                                      isSelected ? "bg-amber-500 text-black border-amber-400 font-bold" : "bg-zinc-950 text-zinc-300 border-zinc-800 hover:border-amber-500/50"
+                                                      isSelected ? "bg-amber-500 text-black border-amber-400 font-bold" : "bg-[#FFFDFC] text-[#1F2928] border-[#DED8CF] hover:border-amber-500/50"
                                                     }`}
                                                   >
                                                     <span className="block font-black">{n} {n === 1 ? "Cuota" : "Cuotas"}</span>
@@ -2359,17 +2359,17 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                     </button>
 
                                     {/* LISTADO DE ITEMS AGREGADOS (BORRADOR) */}
-                                    <div className="mt-4 border-t border-zinc-900 pt-3 space-y-2">
-                                      <h5 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Borrador del Presupuesto ({draftItems.length})</h5>
+                                    <div className="mt-4 border-t border-[#DED8CF] pt-3 space-y-2">
+                                      <h5 className="text-[10px] font-black text-[#68706E] uppercase tracking-widest">Borrador del Presupuesto ({draftItems.length})</h5>
                                       {draftItems.length === 0 ? (
                                         <p className="text-[11px] text-zinc-600 italic">No hay productos en el borrador.</p>
                                       ) : (
                                         <div className="space-y-2">
                                           {draftItems.map((item) => (
-                                            <div key={item.id} className="flex justify-between items-center bg-zinc-900/60 p-2.5 rounded-lg border border-zinc-850">
+                                            <div key={item.id} className="flex justify-between items-center bg-[#F7F3EC] p-2.5 rounded-lg border border-[#DED8CF]">
                                               <div className="flex-1">
                                                 <p className="text-xs text-white font-bold">{item.producto}</p>
-                                                <p className="text-[10px] text-zinc-400">{item.cuotas} cuotas de ${item.valorCuota}</p>
+                                                <p className="text-[10px] text-[#68706E]">{item.cuotas} cuotas de ${item.valorCuota}</p>
                                                 {(item.proveedor || item.costoProveedor) && (
                                                   <p className="text-[9px] text-amber-500 italic mt-0.5">🔒 Prov: {item.proveedor || "S/D"} (Costo: ${item.costoProveedor || 0})</p>
                                                 )}
@@ -2381,8 +2381,8 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                           ))}
 
                                           <div className="pt-2">
-                                            <label className="block text-[10px] text-zinc-500 font-bold mb-1">Notas / Detalles Adicionales</label>
-                                            <input type="text" value={budgetNotas} onChange={e=>setBudgetNotas(e.target.value)} placeholder="Ej: Vidrio templado y funda de regalo." className="bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500" />
+                                            <label className="block text-[10px] text-[#68706E] font-bold mb-1">Notas / Detalles Adicionales</label>
+                                            <input type="text" value={budgetNotas} onChange={e=>setBudgetNotas(e.target.value)} placeholder="Ej: Vidrio templado y funda de regalo." className="bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500" />
                                           </div>
 
                                           <div className="grid grid-cols-2 gap-2 pt-2">
@@ -2405,7 +2405,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                               <button 
                                                 type="button" 
                                                 onClick={() => handleDescargarPdfPresupuestoBorrador(req)}
-                                                className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2 rounded font-black text-[10px] uppercase tracking-wider transition-colors border border-zinc-700"
+                                                className="bg-[#F7F3EC] hover:bg-[#FFFDFC] text-[#1F2928] py-2 rounded font-black text-[10px] uppercase tracking-wider transition-colors border border-[#DED8CF]"
                                               >
                                                 📄 Descargar PDF
                                               </button>
@@ -2419,20 +2419,20 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                                 {/* Historial de presupuestos enviados */}
                                 <div className="space-y-3">
-                                  <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest border-b border-zinc-800 pb-2">Historial de Presupuestos Enviados</h4>
+                                  <h4 className="text-xs font-black text-[#68706E] uppercase tracking-widest border-b border-[#DED8CF] pb-2">Historial de Presupuestos Enviados</h4>
                                   <div className="space-y-2">
                                     {(!req.presupuestos || req.presupuestos.length === 0) ? (
-                                      <p className="text-xs text-zinc-500 italic text-center py-4">No se han enviado presupuestos todavía para esta solicitud especial.</p>
+                                      <p className="text-xs text-[#68706E] italic text-center py-4">No se han enviado presupuestos todavía para esta solicitud especial.</p>
                                     ) : (
                                       req.presupuestos.map((p: any) => (
-                                        <div key={p.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-zinc-950 p-4 rounded-xl border border-zinc-850 gap-4">
+                                        <div key={p.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#FFFDFC] p-4 rounded-xl border border-[#DED8CF] gap-4">
                                           <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-1">
                                               <span className="font-bold text-sm text-white">Presupuesto {p.id.replace("pres_", "").substring(0, 8).toUpperCase()}</span>
                                               <span className={`text-[9px] px-2 py-0.5 rounded font-black uppercase ${
-                                                p.estado === "Aceptado" ? "bg-green-500/10 text-green-400 border border-green-500/20" :
+                                                p.estado === "Aceptado" ? "bg-green-500/10 text-[#2F7D5C] border border-green-500/20" :
                                                 p.estado === "Rechazado" ? "bg-red-500/10 text-red-400 border border-red-500/20" :
-                                                "bg-zinc-850 text-zinc-400 border border-zinc-800"
+                                                "bg-[#F7F3EC] text-[#68706E] border border-[#DED8CF]"
                                               }`}>
                                                 {p.estado}
                                               </span>
@@ -2442,7 +2442,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                <div className="space-y-2 mt-2">
                                                  {p.items.length > 1 && p.estado !== "Aceptado" && (
                                                    <div className="bg-amber-500/10 border border-amber-500/30 p-2 rounded-lg mb-2">
-                                                     <p className="text-[11px] font-black text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                                                     <p className="text-[11px] font-black text-[#B44E2A] uppercase tracking-wider flex items-center gap-1">
                                                        ☑️ Seleccioná la/s opción/es que el cliente elija comprar:
                                                      </p>
                                                    </div>
@@ -2453,7 +2453,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                      <div key={idx} className={`p-2.5 rounded-xl border transition ${
                                                        checked 
                                                          ? "bg-amber-500/10 border-amber-500/50 shadow-sm" 
-                                                         : "bg-zinc-900/60 border-zinc-800 opacity-60"
+                                                         : "bg-[#F7F3EC] border-[#DED8CF] opacity-60"
                                                      }`}>
                                                        <div className="flex items-start gap-2.5">
                                                          {p.items.length > 1 && p.estado !== "Aceptado" && (
@@ -2466,19 +2466,19 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                          )}
                                                          <div className="flex-1 text-xs">
                                                            {p.items.length > 1 && (
-                                                             <span className="text-[9px] font-black uppercase text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 mr-1.5">
+                                                             <span className="text-[9px] font-black uppercase text-[#B44E2A] bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 mr-1.5">
                                                                Opción {idx + 1}
                                                              </span>
                                                            )}
                                                            <span className="font-bold text-white text-xs sm:text-sm">{item.producto}</span>
-                                                           <div className="text-zinc-300 mt-1">
-                                                             {item.cuotas} cuotas de <span className="text-yellow-400 font-mono font-bold">${(item.valorCuota || 0).toLocaleString("es-AR")}</span>
+                                                           <div className="text-[#1F2928] mt-1">
+                                                             {item.cuotas} cuotas de <span className="text-[#B44E2A] font-mono font-bold">${(item.valorCuota || 0).toLocaleString("es-AR")}</span>
                                                              {item.contado > 0 && ` (Ref. Contado: $${(item.contado || 0).toLocaleString("es-AR")})`}
                                                            </div>
                                                          </div>
                                                        </div>
                                                        {(item.proveedor || item.costoProveedor || item.linkProveedor) && (
-                                                         <div className="text-[10px] text-amber-400/90 mt-1.5 bg-amber-500/5 px-2.5 py-1 rounded-lg border border-amber-500/10 block">
+                                                         <div className="text-[10px] text-[#B44E2A]/90 mt-1.5 bg-amber-500/5 px-2.5 py-1 rounded-lg border border-amber-500/10 block">
                                                            🔒 Uso Interno: {item.proveedor ? `Prov: ${item.proveedor}` : "Prov: S/D"}
                                                            {item.costoProveedor > 0 && ` (Costo: $${item.costoProveedor})`}
                                                            {item.linkProveedor && (
@@ -2497,7 +2497,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                  
                                                  {/* SUM OF SUPPLIER COST */}
                                                  {p.items.some((it: any) => it.costoProveedor > 0) && (
-                                                   <div className="text-[10px] text-amber-400 font-bold mt-2">
+                                                   <div className="text-[10px] text-[#B44E2A] font-bold mt-2">
                                                      🔒 Costo Proveedor Total: ${p.items.reduce((sum: number, it: any) => sum + (it.costoProveedor || 0), 0).toLocaleString("es-AR")}
                                                    </div>
                                                  )}
@@ -2508,24 +2508,24 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                 <div className="flex items-center gap-2 mb-1">
                                                   <span className="font-bold text-sm text-white">{p.producto}</span>
                                                 </div>
-                                                <p className="text-xs text-zinc-400">
-                                                  Plan: <span className="font-black text-yellow-400 font-mono">{p.cuotas} cuotas de ${p.valorCuota}</span>
+                                                <p className="text-xs text-[#68706E]">
+                                                  Plan: <span className="font-black text-[#B44E2A] font-mono">{p.cuotas} cuotas de ${p.valorCuota}</span>
                                                   {p.contado > 0 && ` | Ref. Contado: $${p.contado}`}
                                                 </p>
                                               </div>
                                             )}
 
-                                            <p className="text-xs text-zinc-400 mt-2 font-bold">
+                                            <p className="text-xs text-[#68706E] mt-2 font-bold">
                                               TNA: {p.tna}% | Mora: {p.mora || 0.5}% diaria
                                             </p>
-                                            {p.notas && <p className="text-[11px] text-zinc-500 italic mt-1">Notas: {p.notas}</p>}
+                                            {p.notas && <p className="text-[11px] text-[#68706E] italic mt-1">Notas: {p.notas}</p>}
                                             <p className="text-[9px] text-zinc-600 mt-1">Enviado: {new Date(p.fecha).toLocaleString("es-AR")}</p>
                                           </div>
                                           
                                           <div className="flex items-center gap-2">
                                             <button 
                                               onClick={() => handleDescargarPdfPresupuestoHistorial(req, p)}
-                                              className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold px-3 py-1.5 rounded text-xs transition-colors flex items-center gap-1"
+                                              className="bg-[#F7F3EC] hover:bg-[#FFFDFC] text-[#1F2928] font-bold px-3 py-1.5 rounded text-xs transition-colors flex items-center gap-1"
                                             >
                                               📄 PDF
                                             </button>
@@ -2559,7 +2559,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                 </div>
 
                                 {/* Acciones de cierre del asesoramiento */}
-                                <div className="border-t border-zinc-900 pt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                <div className="border-t border-[#DED8CF] pt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                   <div>
                                     <a href={`https://wa.me/${req.whatsapp.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2.5 rounded-lg text-xs transition-colors inline-flex items-center gap-2">
                                       💬 Continuar Asesoramiento WhatsApp
@@ -2569,12 +2569,12 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                     {(req.presupuestos || []).some((p: any) => p.estado === "Aceptado") ? (
                                       <button 
                                         onClick={() => handleOpenContratoEditor(req)} 
-                                        className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-lg"
+                                        className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-xs"
                                       >
                                         ✍️ Confeccionar Contrato y Pagaré
                                       </button>
                                     ) : (
-                                      <span className="text-zinc-500 italic text-xs">Espera a que el cliente acepte un presupuesto para confeccionar formularios.</span>
+                                      <span className="text-[#68706E] italic text-xs">Espera a que el cliente acepte un presupuesto para confeccionar formularios.</span>
                                     )}
                                     <button 
                                       onClick={() => handleEliminarApertura(req.id)}
@@ -2589,13 +2589,13 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                               // RENDER SECCIÓN ESTÁNDAR DE APERTURA DE CUENTA
                               <>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                   <div className="space-y-3 bg-zinc-900/30 border border-zinc-850 p-4 rounded-xl shadow-inner">
-                                     <div className="flex justify-between items-center border-b border-zinc-800 pb-2 mb-2">
-                                       <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Datos Personales</h4>
+                                   <div className="space-y-3 bg-[#FFFDFC]/30 border border-[#DED8CF] p-4 rounded-xl shadow-inner">
+                                     <div className="flex justify-between items-center border-b border-[#DED8CF] pb-2 mb-2">
+                                       <h4 className="text-sm font-bold text-[#B44E2A] uppercase tracking-wider">Datos Personales</h4>
                                        {editingId !== req.id && (
                                          <button 
                                            onClick={() => startEditing(req)}
-                                           className="text-[10px] bg-zinc-850 hover:bg-zinc-800 text-yellow-500 font-bold px-2 py-0.5 rounded transition-all border border-zinc-800"
+                                           className="text-[10px] bg-[#F7F3EC] hover:bg-[#F7F3EC] text-[#B44E2A] font-bold px-2 py-0.5 rounded transition-all border border-[#DED8CF]"
                                          >
                                            ✏️ Editar
                                          </button>
@@ -2603,63 +2603,63 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                      </div>
 
                                      {editingId === req.id ? (
-                                       <div className="space-y-3 text-xs text-zinc-300">
+                                       <div className="space-y-3 text-xs text-[#1F2928]">
                                          <div>
-                                           <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Nombre Completo</label>
-                                           <input type="text" value={editFields.nombreCompleto} onChange={e => setEditFields({...editFields, nombreCompleto: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                           <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Nombre Completo</label>
+                                           <input type="text" value={editFields.nombreCompleto} onChange={e => setEditFields({...editFields, nombreCompleto: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
                                          </div>
                                          <div className="grid grid-cols-2 gap-2">
                                            <div>
-                                             <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">DNI</label>
-                                             <input type="text" value={editFields.numeroDni} onChange={e => setEditFields({...editFields, numeroDni: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                             <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">DNI</label>
+                                             <input type="text" value={editFields.numeroDni} onChange={e => setEditFields({...editFields, numeroDni: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
                                            </div>
                                            <div>
-                                             <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">CUIL</label>
-                                             <input type="text" value={editFields.cuil} onChange={e => handleEditCuilChange(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500 font-mono" />
+                                             <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">CUIL</label>
+                                             <input type="text" value={editFields.cuil} onChange={e => handleEditCuilChange(e.target.value)} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500 font-mono" />
                                            </div>
                                          </div>
                                          <div>
-                                           <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Email</label>
-                                           <input type="email" value={editFields.email} onChange={e => setEditFields({...editFields, email: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                           <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Email</label>
+                                           <input type="email" value={editFields.email} onChange={e => setEditFields({...editFields, email: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
                                          </div>
                                          <div>
-                                           <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Teléfono (WhatsApp)</label>
-                                           <input type="text" value={editFields.telefono} onChange={e => setEditFields({...editFields, telefono: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                           <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Teléfono (WhatsApp)</label>
+                                           <input type="text" value={editFields.telefono} onChange={e => setEditFields({...editFields, telefono: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
                                          </div>
                                          <div>
-                                           <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Dirección y Localidad</label>
-                                           <input type="text" value={editFields.direccion} onChange={e => setEditFields({...editFields, direccion: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                           <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Dirección y Localidad</label>
+                                           <input type="text" value={editFields.direccion} onChange={e => setEditFields({...editFields, direccion: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
                                          </div>
                                          <div className="flex gap-2 pt-2">
                                            <button onClick={() => handleGuardarDatosEditados(req)} className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded text-xs transition-all uppercase tracking-wider">💾 Guardar</button>
-                                           <button onClick={() => setEditingId(null)} className="bg-transparent border border-zinc-700 hover:text-white text-zinc-400 font-bold py-2 px-4 rounded text-xs transition-all">✕ Cancelar</button>
+                                           <button onClick={() => setEditingId(null)} className="bg-transparent border border-[#DED8CF] hover:text-white text-[#68706E] font-bold py-2 px-4 rounded text-xs transition-all">✕ Cancelar</button>
                                          </div>
                                        </div>
                                      ) : (
-                                       <div className="space-y-2 text-sm text-zinc-400">
-                                         <p className="text-sm text-zinc-300"><strong className="text-zinc-500">DNI:</strong> {req.numeroDni || req.dni || "S/D"}</p>
-                                         {req.cuil && <p className="text-sm text-zinc-300"><strong className="text-zinc-500">CUIL:</strong> {req.cuil}</p>}
-                                         <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Fecha Nacimiento:</strong> {req.fechaNacimiento || "S/D"}</p>
-                                         <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Ocupación:</strong> {req.ocupacion || "S/D"}</p>
-                                         <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Dirección y Localidad:</strong> {req.direccion || "S/D"}</p>
+                                       <div className="space-y-2 text-sm text-[#68706E]">
+                                         <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">DNI:</strong> {req.numeroDni || req.dni || "S/D"}</p>
+                                         {req.cuil && <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">CUIL:</strong> {req.cuil}</p>}
+                                         <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Fecha Nacimiento:</strong> {req.fechaNacimiento || "S/D"}</p>
+                                         <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Ocupación:</strong> {req.ocupacion || "S/D"}</p>
+                                         <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Dirección y Localidad:</strong> {req.direccion || "S/D"}</p>
                                        </div>
                                      )}
                                    </div>
                                    <div className="space-y-3">
-                                     <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Detalles de Scoring</h4>
-                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Producto Interés:</strong> {req.productoNombre || "S/D"}</p>
-                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">TNA Asociada:</strong> {req.tasaInteresTna ? `${req.tasaInteresTna}%` : "No especificada"}</p>
-                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Mora Asociada:</strong> {req.tasaMora ? `${req.tasaMora}% diaria` : "No especificada"}</p>
-                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Asesor/Afiliado:</strong> {req.nombreAfiliado || "S/D"}</p>
-                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Referido por:</strong> {req.referidoPor || "S/D"}</p>
-                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Email:</strong> {req.email || "S/D"}</p>
-                                     <p className="text-sm text-zinc-300"><strong className="text-zinc-500">Antigüedad Laboral:</strong> {req.antiguedadLaboral ? new Date(req.antiguedadLaboral).toLocaleDateString("es-AR") : "S/D"}</p>
+                                     <h4 className="text-sm font-bold text-[#B44E2A] uppercase tracking-wider">Detalles de Scoring</h4>
+                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Producto Interés:</strong> {req.productoNombre || "S/D"}</p>
+                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">TNA Asociada:</strong> {req.tasaInteresTna ? `${req.tasaInteresTna}%` : "No especificada"}</p>
+                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Mora Asociada:</strong> {req.tasaMora ? `${req.tasaMora}% diaria` : "No especificada"}</p>
+                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Asesor/Afiliado:</strong> {req.nombreAfiliado || "S/D"}</p>
+                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Referido por:</strong> {req.referidoPor || "S/D"}</p>
+                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Email:</strong> {req.email || "S/D"}</p>
+                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Antigüedad Laboral:</strong> {req.antiguedadLaboral ? new Date(req.antiguedadLaboral).toLocaleDateString("es-AR") : "S/D"}</p>
                                    </div>
                                    <div className="space-y-3">
                                      <BcraScoringPanel cuit={req.cuil || req.numeroDni || req.dni || ""} />
-                                     <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Consultas Scoring Crediticio</h4>
-                                     <div className="bg-zinc-900 border border-zinc-850 p-4 rounded-xl space-y-3 shadow-inner">
-                                       <p className="text-[11px] text-zinc-400">Acciones rápidas para investigar comportamiento financiero:</p>
+                                     <h4 className="text-sm font-bold text-[#B44E2A] uppercase tracking-wider">Consultas Scoring Crediticio</h4>
+                                     <div className="bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-xl space-y-3 shadow-inner">
+                                       <p className="text-[11px] text-[#68706E]">Acciones rápidas para investigar comportamiento financiero:</p>
                                        <div className="grid grid-cols-1 gap-2">
                                          <button
                                            onClick={() => {
@@ -2670,10 +2670,10 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                              }
                                              window.open("https://www.bcra.gob.ar/BCRAyVos/Situacion_Crediticia.asp", "_blank");
                                           }}
-                                           className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-800 transition-all flex items-center justify-between"
+                                           className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
                                          >
                                            <span>🏦 Central de Deudores BCRA</span>
-                                           <span className="text-[9px] text-zinc-500 font-mono">Pegar (Ctrl+V)</span>
+                                           <span className="text-[9px] text-[#68706E] font-mono">Pegar (Ctrl+V)</span>
                                          </button>
                                          <button
                                             onClick={() => {
@@ -2685,40 +2685,40 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                               }
                                               window.open("https://www.padron.gob.ar/", "_blank");
                                             }}
-                                            className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-800 transition-all flex items-center justify-between"
+                                            className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
                                           >
                                             <span>🗳️ Padrón Electoral CNE</span>
-                                            <span className="text-[9px] text-zinc-500 font-mono">Pegar (Ctrl+V)</span>
+                                            <span className="text-[9px] text-[#68706E] font-mono">Pegar (Ctrl+V)</span>
                                           </button>
                                          {(req.cuil || "").replace(/\D/g, "") && (
                                            <a
                                              href={`https://www.cuitonline.com/detalle/${(req.cuil || "").replace(/\D/g, "")}/cuit-online.html`}
                                              target="_blank"
                                              rel="noopener noreferrer"
-                                             className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-800 transition-all flex items-center justify-between"
+                                             className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
                                            >
                                              <span>📄 CUIT Online</span>
-                                             <span className="text-[10px] text-yellow-500 font-black">→</span>
+                                             <span className="text-[10px] text-[#B44E2A] font-black">→</span>
                                            </a>
                                          )}
                                          <a
                                            href={`https://www.google.com/search?q=${(req.cuil || req.numeroDni || req.dni || "").replace(/\D/g, "")}`}
                                            target="_blank"
                                            rel="noopener noreferrer"
-                                           className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-800 transition-all flex items-center justify-between"
+                                           className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
                                          >
                                            <span>🌐 Buscar en Google</span>
-                                           <span className="text-[10px] text-zinc-500">→</span>
+                                           <span className="text-[10px] text-[#68706E]">→</span>
                                          </a>
                                          {(req.cuil || "").replace(/\D/g, "") && (
                                            <a
                                              href={`https://www.dateas.com/es/consulta_cuit_cuil?cuit=${(req.cuil || "").replace(/\D/g, "")}`}
                                              target="_blank"
                                              rel="noopener noreferrer"
-                                             className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-800 transition-all flex items-center justify-between"
+                                             className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
                                            >
                                              <span>📊 Consultar Dateas</span>
-                                             <span className="text-[10px] text-zinc-500">→</span>
+                                             <span className="text-[10px] text-[#68706E]">→</span>
                                            </a>
                                          )}
                                        </div>
@@ -2726,26 +2726,26 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                    </div>
                                  </div>
 
-                                <div className="border-t border-zinc-900 pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                  <div className="flex flex-col gap-2 bg-zinc-900 border border-zinc-850 p-4 rounded-xl shadow-inner mt-4 w-full md:w-auto min-w-[280px]">
-                                    <span className="text-[10px] text-zinc-500 font-bold uppercase border-b border-zinc-800 pb-1 mb-1">Legajo de Documentos</span>
+                                <div className="border-t border-[#DED8CF] pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                  <div className="flex flex-col gap-2 bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-xl shadow-inner mt-4 w-full md:w-auto min-w-[280px]">
+                                    <span className="text-[10px] text-[#68706E] font-bold uppercase border-b border-[#DED8CF] pb-1 mb-1">Legajo de Documentos</span>
                                     {req.dniFrenteURL && req.dniFrenteURL !== "Pendiente envío WhatsApp" ? (
-                                      <a href={req.dniFrenteURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
+                                      <a href={req.dniFrenteURL} target="_blank" rel="noopener noreferrer" className="text-[#B44E2A] hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
                                         📷 DNI Frente
                                       </a>
                                     ) : null}
                                     {req.dniDorsoURL && req.dniDorsoURL !== "Pendiente envío WhatsApp" ? (
-                                      <a href={req.dniDorsoURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
+                                      <a href={req.dniDorsoURL} target="_blank" rel="noopener noreferrer" className="text-[#B44E2A] hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
                                         📷 DNI Dorso
                                       </a>
                                     ) : null}
                                     {req.comprobanteURL && req.comprobanteURL !== "Pendiente envío WhatsApp" && (
-                                      <a href={req.comprobanteURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
+                                      <a href={req.comprobanteURL} target="_blank" rel="noopener noreferrer" className="text-[#B44E2A] hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
                                         📄 Comprobante de Ingresos
                                       </a>
                                     )}
                                     {req.comprobanteDomicilioURL && req.comprobanteDomicilioURL !== "Pendiente envío WhatsApp" && (
-                                      <a href={req.comprobanteDomicilioURL} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
+                                      <a href={req.comprobanteDomicilioURL} target="_blank" rel="noopener noreferrer" className="text-[#B44E2A] hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
                                         📄 Comprobante de Domicilio
                                       </a>
                                     )}
@@ -2754,10 +2754,10 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                       <span className="text-zinc-650 italic text-[10px]">Sin archivos (Pendiente WhatsApp)</span>
                                     ) : null}
 
-                                    <div className="border-t border-zinc-800 pt-2.5 mt-1 space-y-1.5">
-                                      <span className="text-[9px] text-zinc-500 font-black uppercase">Cargar Manualmente</span>
+                                    <div className="border-t border-[#DED8CF] pt-2.5 mt-1 space-y-1.5">
+                                      <span className="text-[9px] text-[#68706E] font-black uppercase">Cargar Manualmente</span>
                                       <div className="flex flex-col gap-1.5">
-                                        <label className="flex items-center justify-between bg-zinc-950 border border-zinc-800 hover:border-yellow-500/50 p-1.5 rounded text-[9px] font-bold text-zinc-400 cursor-pointer transition-colors">
+                                        <label className="flex items-center justify-between bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500/50 p-1.5 rounded text-[9px] font-bold text-[#68706E] cursor-pointer transition-colors">
                                           <span>🏠 Domicilio (Servicio)</span>
                                           <input 
                                             type="file" 
@@ -2770,7 +2770,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                             className="hidden" 
                                           />
                                         </label>
-                                        <label className="flex items-center justify-between bg-zinc-950 border border-zinc-800 hover:border-yellow-500/50 p-1.5 rounded text-[9px] font-bold text-zinc-400 cursor-pointer transition-colors">
+                                        <label className="flex items-center justify-between bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500/50 p-1.5 rounded text-[9px] font-bold text-[#68706E] cursor-pointer transition-colors">
                                           <span>💵 Ingresos (Recibo)</span>
                                           <input 
                                             type="file" 
@@ -2793,13 +2793,13 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                     <select 
                                       value={req.estado || "Pendiente"} 
                                       onChange={(e) => handleActualizarEstadoApertura(req.id, e.target.value)}
-                                      className="bg-zinc-800 text-white border border-zinc-700 px-3 py-1.5 rounded-lg text-xs font-bold outline-none focus:border-yellow-500"
+                                      className="bg-[#F7F3EC] text-white border border-[#DED8CF] px-3 py-1.5 rounded-lg text-xs font-bold outline-none focus:border-yellow-500"
                                     >
                                       <option value="Pendiente">Pendiente</option>
                                       <option value="Aprobado">Aprobado</option>
                                       <option value="Rechazado">Rechazado</option>
                                     </select>
-                                    <button onClick={() => handleOpenContratoEditor(req)} className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-lg">
+                                    <button onClick={() => handleOpenContratoEditor(req)} className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-xs">
                                       ✍️ Confeccionar Contrato
                                     </button>
                                     <button onClick={() => handleEliminarApertura(req.id)} className="text-red-500 hover:text-red-400 text-xs font-bold px-3 py-2 rounded hover:bg-red-950/20 transition-all">
@@ -2819,7 +2819,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                     const currentMensaje = nuevosMensajes[req.id] !== undefined ? nuevosMensajes[req.id] : (req.mensajeAdmin || "");
                     
                     return (
-                      <div key={group.key} className={`bg-zinc-950 border ${isExpanded ? 'border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)]' : 'border-zinc-800 hover:border-yellow-500/40'} rounded-xl transition-all overflow-hidden`}>
+                      <div key={group.key} className={`bg-[#FFFDFC] border ${isExpanded ? 'border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)]' : 'border-[#DED8CF] hover:border-yellow-500/40'} rounded-xl transition-all overflow-hidden`}>
                         {/* CARD HEADER */}
                         <div 
                           onClick={() => setExpandedId(isExpanded ? null : group.key)}
@@ -2837,15 +2837,15 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                 Solicitud de Producto
                               </span>
                               <h2 className="text-xl font-bold text-white">{req.datosPersonales?.nombreCompleto || "Cliente Sin Nombre"}</h2>
-                              <span className="text-sm text-zinc-500 font-medium">DNI: {req.datosPersonales?.numeroDni || "N/A"}</span>
+                              <span className="text-sm text-[#68706E] font-medium">DNI: {req.datosPersonales?.numeroDni || "N/A"}</span>
                             </div>
-                            <p className="text-yellow-400 font-bold flex flex-wrap items-center gap-2">
+                            <p className="text-[#B44E2A] font-bold flex flex-wrap items-center gap-2">
                               {group.items.map((x: any) => x.productoDeseado || x.producto || "Apertura").join(" + ")}
-                              <span className="text-xs font-normal text-zinc-500 px-2 py-0.5 bg-zinc-900 rounded">
+                              <span className="text-xs font-normal text-[#68706E] px-2 py-0.5 bg-[#FFFDFC] rounded">
                                 {req.fechaCreacion ? new Date(req.fechaCreacion.seconds * 1000).toLocaleDateString() : ''}
                               </span>
                               {group.items.length > 1 && (
-                                <span className="text-[9px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-2 py-0.5 rounded font-black uppercase tracking-wider">
+                                <span className="text-[9px] bg-yellow-500/10 text-[#B44E2A] border border-yellow-500/20 px-2 py-0.5 rounded font-black uppercase tracking-wider">
                                   📦 {group.items.length} Productos
                                 </span>
                               )}
@@ -2857,19 +2857,19 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                               <span className={`px-3 py-1 rounded-full text-xs font-black tracking-widest uppercase border ${
                                   req.estado === "PENDIENTE" ? "bg-blue-500/20 text-blue-400 border-blue-500/50" :
                                   req.estado === "PENDIENTE_FIRMA" ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/50" :
-                                  req.estado === "APROBADO" ? "bg-green-500/20 text-green-400 border-green-500/50" :
+                                  req.estado === "APROBADO" ? "bg-green-500/20 text-[#2F7D5C] border-green-500/50" :
                                   req.estado === "RECHAZADO" ? "bg-red-500/20 text-red-400 border-red-500/50" :
-                                  "bg-orange-500/20 text-orange-400 border-orange-500/50"
+                                  "bg-orange-500/20 text-[#B44E2A] border-orange-500/50"
                                 }`}>
                                 {req.estado === "PENDIENTE_FIRMA" ? "Pendiente de Firma" : req.estado}
                               </span>
                               {req.estado === 'APROBADO' && (
-                                 <span className="text-[10px] text-zinc-500 mt-1">
+                                 <span className="text-[10px] text-[#68706E] mt-1">
                                    Logística: {req.estadoEntrega === 'ENTREGADO' ? '✅ Entregado' : '⏳ Pendiente'}
                                  </span>
                               )}
                             </div>
-                            <div className="text-zinc-500 bg-zinc-900 p-2 rounded-full">
+                            <div className="text-[#68706E] bg-[#FFFDFC] p-2 rounded-full">
                               {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                             </div>
                           </div>
@@ -2877,10 +2877,10 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                         {/* CARD BODY */}
                         {isExpanded && (
-                          <div className="p-4 md:p-6 border-t border-zinc-800 bg-zinc-900/40">
+                          <div className="p-4 md:p-6 border-t border-[#DED8CF] bg-[#FFFDFC]">
                             {group.items.length > 1 && (
-                              <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-4 mb-4">
-                                <span className="text-zinc-500 text-[10px] font-black uppercase self-center mr-2">Ver Producto:</span>
+                              <div className="flex flex-wrap gap-2 border-b border-[#DED8CF] pb-4 mb-4">
+                                <span className="text-[#68706E] text-[10px] font-black uppercase self-center mr-2">Ver Producto:</span>
                                 {group.items.map((item: any) => {
                                    const isActive = item.id === req.id;
                                    return (
@@ -2891,7 +2891,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                          e.stopPropagation();
                                          setActiveProductSolId(prev => ({ ...prev, [group.key]: item.id }));
                                        }}
-                                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${isActive ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' : 'bg-zinc-950 text-zinc-400 border border-zinc-850 hover:bg-zinc-900'}`}
+                                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${isActive ? 'bg-yellow-500 text-black shadow-xs shadow-yellow-500/20' : 'bg-[#FFFDFC] text-[#68706E] border border-[#DED8CF] hover:bg-[#FFFDFC]'}`}
                                      >
                                        🛍️ {item.productoDeseado || item.producto || "Solicitud"} ({item.estado})
                                      </button>
@@ -2902,20 +2902,20 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                             {req.estado === "RECHAZADO" && (
                               <div className="mb-6 bg-red-950/30 border border-red-500/30 p-4 rounded-xl text-red-400 text-xs flex flex-col gap-1 w-full">
                                 <span className="font-black text-red-500 uppercase tracking-widest text-[10px]">❌ Solicitud de Producto Rechazada</span>
-                                <p className="font-mono text-zinc-300">{req.mensajeAdmin || "No se especificó un motivo."}</p>
+                                <p className="font-mono text-[#1F2928]">{req.mensajeAdmin || "No se especificó un motivo."}</p>
                               </div>
                             )}
                             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                               
                               {/* COLUMNA 1 */}
                               <div className="flex flex-col gap-6">
-                                 <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-inner space-y-4">
-                                   <div className="flex justify-between items-center border-b border-zinc-800 pb-2 mb-1">
-                                     <h3 className="text-sm font-black text-yellow-400 uppercase tracking-widest">Perfil Crediticio</h3>
+                                 <div className="bg-[#FFFDFC] border border-[#DED8CF] p-5 rounded-xl shadow-inner space-y-4">
+                                   <div className="flex justify-between items-center border-b border-[#DED8CF] pb-2 mb-1">
+                                     <h3 className="text-sm font-black text-[#B44E2A] uppercase tracking-widest">Perfil Crediticio</h3>
                                      {editingId !== req.id && (
                                        <button 
                                          onClick={() => startEditing(req)}
-                                         className="text-xs bg-zinc-850 hover:bg-zinc-800 text-yellow-500 font-bold px-2 py-1 rounded transition-all border border-zinc-800"
+                                         className="text-xs bg-[#F7F3EC] hover:bg-[#F7F3EC] text-[#B44E2A] font-bold px-2 py-1 rounded transition-all border border-[#DED8CF]"
                                        >
                                          ✏️ Editar Datos
                                        </button>
@@ -2923,46 +2923,46 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                    </div>
 
                                    {editingId === req.id ? (
-                                     <div className="space-y-3 text-xs text-zinc-300">
+                                     <div className="space-y-3 text-xs text-[#1F2928]">
                                        <div>
-                                         <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Nombre Completo</label>
-                                         <input type="text" value={editFields.nombreCompleto} onChange={e => setEditFields({...editFields, nombreCompleto: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                         <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Nombre Completo</label>
+                                         <input type="text" value={editFields.nombreCompleto} onChange={e => setEditFields({...editFields, nombreCompleto: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
                                        </div>
                                        <div className="grid grid-cols-2 gap-2">
                                          <div>
-                                           <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">DNI</label>
-                                           <input type="text" value={editFields.numeroDni} onChange={e => setEditFields({...editFields, numeroDni: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                           <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">DNI</label>
+                                           <input type="text" value={editFields.numeroDni} onChange={e => setEditFields({...editFields, numeroDni: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
                                          </div>
                                          <div>
-                                           <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">CUIL</label>
-                                           <input type="text" value={editFields.cuil} onChange={e => handleEditCuilChange(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500 font-mono" />
+                                           <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">CUIL</label>
+                                           <input type="text" value={editFields.cuil} onChange={e => handleEditCuilChange(e.target.value)} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500 font-mono" />
                                          </div>
                                        </div>
                                        <div>
-                                         <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Email</label>
-                                         <input type="email" value={editFields.email} onChange={e => setEditFields({...editFields, email: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                         <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Email</label>
+                                         <input type="email" value={editFields.email} onChange={e => setEditFields({...editFields, email: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
                                        </div>
                                        <div>
-                                         <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Teléfono</label>
-                                         <input type="text" value={editFields.telefono} onChange={e => setEditFields({...editFields, telefono: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                         <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Teléfono</label>
+                                         <input type="text" value={editFields.telefono} onChange={e => setEditFields({...editFields, telefono: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
                                        </div>
                                        <div className="grid grid-cols-2 gap-2">
                                          <div>
-                                           <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Dirección</label>
-                                           <input type="text" value={editFields.direccion} onChange={e => setEditFields({...editFields, direccion: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                           <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Dirección</label>
+                                           <input type="text" value={editFields.direccion} onChange={e => setEditFields({...editFields, direccion: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
                                          </div>
                                          <div>
-                                           <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Localidad</label>
-                                           <input type="text" value={editFields.localidad} onChange={e => setEditFields({...editFields, localidad: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                           <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Localidad</label>
+                                           <input type="text" value={editFields.localidad} onChange={e => setEditFields({...editFields, localidad: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
                                          </div>
                                        </div>
                                        <div className="flex gap-2 pt-2">
                                          <button onClick={() => handleGuardarDatosEditados(req)} className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded text-xs transition-all uppercase tracking-wider">💾 Guardar</button>
-                                         <button onClick={() => setEditingId(null)} className="bg-transparent border border-zinc-700 hover:text-white text-zinc-400 font-bold py-2 px-4 rounded text-xs transition-all">✕ Cancelar</button>
+                                         <button onClick={() => setEditingId(null)} className="bg-transparent border border-[#DED8CF] hover:text-white text-[#68706E] font-bold py-2 px-4 rounded text-xs transition-all">✕ Cancelar</button>
                                        </div>
                                      </div>
                                    ) : (
-                                     <div className="space-y-2 text-sm text-zinc-400">
+                                     <div className="space-y-2 text-sm text-[#68706E]">
                                        <p><strong className="text-white">DNI:</strong> {req.datosPersonales?.numeroDni || "S/D"}</p>
                                        {req.datosPersonales?.cuil && <p><strong className="text-white">CUIL:</strong> {req.datosPersonales.cuil}</p>}
                                        <p><strong className="text-white">Email:</strong> {req.clienteEmail}</p>
@@ -2976,8 +2976,8 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                                  <BcraScoringPanel cuit={req.datosPersonales?.cuil || req.datosPersonales?.numeroDni || ""} />
 
-                                 <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-inner space-y-3">
-                                   <h3 className="text-xs font-black text-yellow-500 uppercase tracking-widest border-b border-zinc-800 pb-2">Consultas Crediticias</h3>
+                                 <div className="bg-[#FFFDFC] border border-[#DED8CF] p-5 rounded-xl shadow-inner space-y-3">
+                                   <h3 className="text-xs font-black text-[#B44E2A] uppercase tracking-widest border-b border-[#DED8CF] pb-2">Consultas Crediticias</h3>
                                    <div className="grid grid-cols-1 gap-2">
                                      <button
                                        onClick={() => {
@@ -2988,10 +2988,10 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                          }
                                          window.open("https://www.bcra.gob.ar/BCRAyVos/Situacion_Crediticia.asp", "_blank");
                                        }}
-                                       className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-850 transition-all flex items-center justify-between"
+                                       className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
                                      >
                                        <span>🏦 Central BCRA</span>
-                                       <span className="text-[9px] text-zinc-500 font-mono">Pegar (Ctrl+V)</span>
+                                       <span className="text-[9px] text-[#68706E] font-mono">Pegar (Ctrl+V)</span>
                                      </button>
                                      <button
                                        onClick={() => {
@@ -3003,66 +3003,66 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                          }
                                          window.open("https://www.padron.gob.ar/", "_blank");
                                        }}
-                                       className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-850 transition-all flex items-center justify-between"
+                                       className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
                                      >
                                        <span>🗳️ Padrón Electoral CNE</span>
-                                       <span className="text-[9px] text-zinc-500 font-mono">Pegar (Ctrl+V)</span>
+                                       <span className="text-[9px] text-[#68706E] font-mono">Pegar (Ctrl+V)</span>
                                      </button>
                                      {(req.datosPersonales?.cuil || "").replace(/\D/g, "") && (
                                        <a
                                          href={`https://www.cuitonline.com/detalle/${(req.datosPersonales?.cuil || "").replace(/\D/g, "")}/cuit-online.html`}
                                          target="_blank"
                                          rel="noopener noreferrer"
-                                         className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-850 transition-all flex items-center justify-between"
+                                         className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
                                        >
                                          <span>📄 CUIT Online</span>
-                                         <span className="text-[10px] text-yellow-500">→</span>
+                                         <span className="text-[10px] text-[#B44E2A]">→</span>
                                        </a>
                                      )}
                                      <a
                                        href={`https://www.google.com/search?q=${(req.datosPersonales?.cuil || req.datosPersonales?.numeroDni || "").replace(/\D/g, "")}`}
                                        target="_blank"
                                        rel="noopener noreferrer"
-                                       className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-850 transition-all flex items-center justify-between"
+                                       className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
                                      >
                                        <span>🌐 Buscar Google</span>
-                                       <span className="text-[10px] text-zinc-500">→</span>
+                                       <span className="text-[10px] text-[#68706E]">→</span>
                                      </a>
                                      {(req.datosPersonales?.cuil || "").replace(/\D/g, "") && (
                                        <a
                                          href={`https://www.dateas.com/es/consulta_cuit_cuil?cuit=${(req.datosPersonales?.cuil || "").replace(/\D/g, "")}`}
                                          target="_blank"
                                          rel="noopener noreferrer"
-                                         className="bg-zinc-950 hover:bg-zinc-900 text-zinc-300 p-2.5 rounded text-xs font-bold text-left border border-zinc-850 transition-all flex items-center justify-between"
+                                         className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
                                        >
                                          <span>📊 Consultar Dateas</span>
-                                         <span className="text-[10px] text-zinc-500">→</span>
+                                         <span className="text-[10px] text-[#68706E]">→</span>
                                        </a>
                                      )}
                                    </div>
                                  </div>
 
-                                 <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-inner space-y-4">
-                                   <h3 className="text-sm font-black text-yellow-400 mb-3 uppercase tracking-widest border-b border-zinc-800 pb-2">Documentos Adjuntos</h3>
+                                 <div className="bg-[#FFFDFC] border border-[#DED8CF] p-5 rounded-xl shadow-inner space-y-4">
+                                   <h3 className="text-sm font-black text-[#B44E2A] mb-3 uppercase tracking-widest border-b border-[#DED8CF] pb-2">Documentos Adjuntos</h3>
                                    <div className="grid grid-cols-2 gap-3">
                                      {req.documentos?.dniFrente ? (
-                                       <a href={req.documentos.dniFrente} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-yellow-400 p-2 rounded-lg text-xs font-bold transition-colors">📷 DNI Frente</a>
-                                     ) : <span className="text-[10px] text-zinc-600 italic text-center p-2 border border-zinc-850 rounded">Sin DNI Frente</span>}
+                                       <a href={req.documentos.dniFrente} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500 text-[#B44E2A] p-2 rounded-lg text-xs font-bold transition-colors">📷 DNI Frente</a>
+                                     ) : <span className="text-[10px] text-zinc-600 italic text-center p-2 border border-[#DED8CF] rounded">Sin DNI Frente</span>}
                                      {req.documentos?.dniDorso ? (
-                                       <a href={req.documentos.dniDorso} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-yellow-400 p-2 rounded-lg text-xs font-bold transition-colors">📷 DNI Dorso</a>
-                                     ) : <span className="text-[10px] text-zinc-600 italic text-center p-2 border border-zinc-850 rounded">Sin DNI Dorso</span>}
+                                       <a href={req.documentos.dniDorso} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500 text-[#B44E2A] p-2 rounded-lg text-xs font-bold transition-colors">📷 DNI Dorso</a>
+                                     ) : <span className="text-[10px] text-zinc-600 italic text-center p-2 border border-[#DED8CF] rounded">Sin DNI Dorso</span>}
                                      {req.documentos?.reciboSueldo ? (
-                                       <a href={req.documentos.reciboSueldo} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-yellow-400 p-2 rounded-lg text-xs font-bold transition-colors">📄 Recibo Sueldo</a>
-                                     ) : <span className="text-[10px] text-zinc-600 italic text-center p-2 border border-zinc-850 rounded">Sin Recibo</span>}
+                                       <a href={req.documentos.reciboSueldo} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500 text-[#B44E2A] p-2 rounded-lg text-xs font-bold transition-colors">📄 Recibo Sueldo</a>
+                                     ) : <span className="text-[10px] text-zinc-600 italic text-center p-2 border border-[#DED8CF] rounded">Sin Recibo</span>}
                                      {req.documentos?.servicio ? (
-                                       <a href={req.documentos.servicio} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-yellow-400 p-2 rounded-lg text-xs font-bold transition-colors">📄 Impuesto/Serv.</a>
-                                     ) : <span className="text-[10px] text-zinc-600 italic text-center p-2 border border-zinc-850 rounded">Sin Impuesto</span>}
+                                       <a href={req.documentos.servicio} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500 text-[#B44E2A] p-2 rounded-lg text-xs font-bold transition-colors">📄 Impuesto/Serv.</a>
+                                     ) : <span className="text-[10px] text-zinc-600 italic text-center p-2 border border-[#DED8CF] rounded">Sin Impuesto</span>}
                                    </div>
                                    
-                                   <div className="border-t border-zinc-800 pt-3 space-y-3">
-                                     <p className="text-[10px] text-zinc-500 font-bold uppercase">Subir Documentación (Manual)</p>
+                                   <div className="border-t border-[#DED8CF] pt-3 space-y-3">
+                                     <p className="text-[10px] text-[#68706E] font-bold uppercase">Subir Documentación (Manual)</p>
                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                       <label className="flex items-center justify-between bg-zinc-950 border border-zinc-800 hover:border-yellow-500/50 p-2 rounded-lg text-[10px] font-bold text-zinc-400 cursor-pointer transition-colors">
+                                       <label className="flex items-center justify-between bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500/50 p-2 rounded-lg text-[10px] font-bold text-[#68706E] cursor-pointer transition-colors">
                                          <span>🏠 Cargar Domicilio (Servicio)</span>
                                          <input 
                                            type="file" 
@@ -3075,7 +3075,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                            className="hidden" 
                                          />
                                        </label>
-                                       <label className="flex items-center justify-between bg-zinc-950 border border-zinc-800 hover:border-yellow-500/50 p-2 rounded-lg text-[10px] font-bold text-zinc-400 cursor-pointer transition-colors">
+                                       <label className="flex items-center justify-between bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500/50 p-2 rounded-lg text-[10px] font-bold text-[#68706E] cursor-pointer transition-colors">
                                          <span>💵 Cargar Ingresos (Recibo)</span>
                                          <input 
                                            type="file" 
@@ -3092,20 +3092,20 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                    </div>
                                  </div>
 
-                                 <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-inner">
-                                    <h3 className="text-sm font-black text-yellow-400 mb-3 uppercase tracking-widest border-b border-zinc-800 pb-2">Asignación de Afiliado</h3>
+                                 <div className="bg-[#FFFDFC] border border-[#DED8CF] p-5 rounded-xl shadow-inner">
+                                    <h3 className="text-sm font-black text-[#B44E2A] mb-3 uppercase tracking-widest border-b border-[#DED8CF] pb-2">Asignación de Afiliado</h3>
                                     {req.afiliadoEmail ? (
                                       <div className="flex flex-col gap-2">
-                                        <p className="text-sm text-white font-bold bg-zinc-950 p-2 rounded border border-zinc-850">👤 {req.afiliadoEmail}</p>
+                                        <p className="text-sm text-white font-bold bg-[#FFFDFC] p-2 rounded border border-[#DED8CF]">👤 {req.afiliadoEmail}</p>
                                         <button onClick={() => handleAsignarAfiliado(req.id, "")} className="text-xs text-red-500 hover:text-red-400 font-bold self-start mt-1">✕ Remover Asignación</button>
                                       </div>
                                     ) : (
                                       <div className="flex flex-col gap-2">
-                                        <p className="text-xs text-zinc-500 mb-2">Ningún afiliado está a cargo del seguimiento de este cliente.</p>
-                                        <select id={`seller_${req.id}`} className="bg-zinc-950 border border-zinc-800 text-xs p-2.5 rounded text-white focus:border-yellow-500 w-full outline-none">
+                                        <p className="text-xs text-[#68706E] mb-2">Ningún afiliado está a cargo del seguimiento de este cliente.</p>
+                                        <select id={`seller_${req.id}`} className="bg-[#FFFDFC] border border-[#DED8CF] text-xs p-2.5 rounded text-white focus:border-yellow-500 w-full outline-none">
                                           <option value="">-- Asignar Afiliado --</option>
                                           {afiliadoesActivos.map(v => <option key={v} value={v}>{v}</option>)}
-                                          <option value="NUEVO" className="font-bold text-yellow-400">+ Escribir correo manualmente...</option>
+                                          <option value="NUEVO" className="font-bold text-[#B44E2A]">+ Escribir correo manualmente...</option>
                                         </select>
                                         <button onClick={() => {
                                            const el = document.getElementById(`seller_${req.id}`) as HTMLSelectElement;
@@ -3120,40 +3120,40 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                               {/* COLUMNA 2 */}
                               <div className="flex flex-col gap-6">
-                                 <div className="bg-zinc-950 border-2 border-zinc-800 p-5 rounded-xl shadow-2xl shadow-black/60">
-                                   <h3 className="text-sm font-black text-yellow-400 mb-4 uppercase tracking-widest flex items-center gap-2"><CheckCircle2 className="w-4 h-4"/> Dictamen Crediticio</h3>
+                                 <div className="bg-[#FFFDFC] border-2 border-[#DED8CF] p-5 rounded-xl shadow-xs">
+                                   <h3 className="text-sm font-black text-[#B44E2A] mb-4 uppercase tracking-widest flex items-center gap-2"><CheckCircle2 className="w-4 h-4"/> Dictamen Crediticio</h3>
                                    <div className="space-y-4">
                                      <div>
-                                       <label className="block text-xs font-bold text-zinc-500 mb-2">Resolución Oficial:</label>
+                                       <label className="block text-xs font-bold text-[#68706E] mb-2">Resolución Oficial:</label>
                                        <select 
                                         value={currentEstado} 
                                         onChange={(e) => handleEstadoChange(req.id, e.target.value)}
-                                        className={`w-full bg-zinc-900 border-2 rounded-lg p-3 text-sm font-bold focus:outline-none transition-colors ${
+                                        className={`w-full bg-[#FFFDFC] border-2 rounded-lg p-3 text-sm font-bold focus:outline-none transition-colors ${
                                           currentEstado === 'PENDIENTE' ? 'border-blue-500/50 text-blue-400' :
-                                          currentEstado === 'APROBADO' ? 'border-green-500 text-green-400' :
+                                          currentEstado === 'APROBADO' ? 'border-green-500 text-[#2F7D5C]' :
                                           currentEstado === 'RECHAZADO' ? 'border-red-500 text-red-500' :
-                                          'border-orange-500 text-orange-400'
+                                          'border-orange-500 text-[#B44E2A]'
                                         }`}
                                        >
                                         <option value="PENDIENTE" className="text-blue-400 font-bold">● PENDIENTE</option>
-                                        <option value="APROBADO" className="text-green-400 font-bold">● APROBAR VENTA</option>
+                                        <option value="APROBADO" className="text-[#2F7D5C] font-bold">● APROBAR VENTA</option>
                                         <option value="RECHAZADO" className="text-red-500 font-bold">● RECHAZAR SOLICITUD</option>
-                                        <option value="REQUIERE_INFO" className="text-orange-400 font-bold">● REQUERIR NUEVA INFO</option>
+                                        <option value="REQUIERE_INFO" className="text-[#B44E2A] font-bold">● REQUERIR NUEVA INFO</option>
                                        </select>
                                      </div>
                                      <div>
-                                       <label className="block text-xs font-bold text-zinc-500 mb-2">Devolución / Mensaje al Usuario:</label>
+                                       <label className="block text-xs font-bold text-[#68706E] mb-2">Devolución / Mensaje al Usuario:</label>
                                        <textarea 
                                         value={currentMensaje}
                                         onChange={(e) => handleMensajeChange(req.id, e.target.value)}
-                                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none text-sm resize-none min-h-[80px]"
+                                        className="w-full bg-[#FFFDFC] border border-[#DED8CF] rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none text-sm resize-none min-h-[80px]"
                                         placeholder="Escribe un comentario..."
                                        />
                                      </div>
                                      <button 
                                       onClick={() => guardarCambios(req)}
                                       disabled={guardandoId === req.id || (currentEstado === req.estado && currentMensaje === (req.mensajeAdmin||""))}
-                                      className="w-full bg-yellow-500 text-black py-3 rounded-lg font-black uppercase tracking-widest text-xs hover:bg-yellow-400 transition-colors shadow-2xl shadow-black/60 disabled:opacity-50 disabled:shadow-none"
+                                      className="w-full bg-yellow-500 text-black py-3 rounded-lg font-black uppercase tracking-widest text-xs hover:bg-yellow-400 transition-colors shadow-xs disabled:opacity-50 disabled:shadow-none"
                                      >
                                       {guardandoId === req.id ? "Guardando..." : "Registrar Dictamen"}
                                      </button>
@@ -3161,19 +3161,19 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                  </div>
 
                                  {/* DOCUMENTACIÓN LEGAL */}
-                                 <div className="bg-zinc-950 border border-zinc-850 p-4 rounded-xl">
-                                   <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest text-center mb-3">Generación Legal (PDF)</h3>
+                                 <div className="bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-xl">
+                                   <h3 className="text-xs font-bold text-[#68706E] uppercase tracking-widest text-center mb-3">Generación Legal (PDF)</h3>
                                    <div className="grid grid-cols-2 gap-3">
-                                     <button onClick={() => handleOpenContratoEditor(req)} className="bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-zinc-400 hover:text-yellow-400 py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">📄 Editar Contrato</button>
-                                     <button onClick={() => handleOpenContratoEditor(req)} className="bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-zinc-400 hover:text-yellow-400 py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">📄 Editar Pagaré</button>
+                                     <button onClick={() => handleOpenContratoEditor(req)} className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500 text-[#68706E] hover:text-[#B44E2A] py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">📄 Editar Contrato</button>
+                                     <button onClick={() => handleOpenContratoEditor(req)} className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500 text-[#68706E] hover:text-[#B44E2A] py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">📄 Editar Pagaré</button>
                                    </div>
                                  </div>
                               </div>
 
                               {/* COLUMNA 3 */}
                               <div className="flex flex-col gap-6">
-                                 <div className="bg-zinc-950 border border-zinc-850 p-6 rounded-xl flex items-center justify-center text-center h-full">
-                                    <p className="text-zinc-500 text-sm">El plan de cuotas y la logística se habilitan una vez firmado el contrato.</p>
+                                 <div className="bg-[#FFFDFC] border border-[#DED8CF] p-6 rounded-xl flex items-center justify-center text-center h-full">
+                                    <p className="text-[#68706E] text-sm">El plan de cuotas y la logística se habilitan una vez firmado el contrato.</p>
                                  </div>
                               </div>
                               
@@ -3185,7 +3185,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                 <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl -mr-10 -mt-10" />
                                 <div className="relative z-10">
                                   <h4 className="font-black text-cyan-400 text-base uppercase tracking-wider flex items-center gap-2">✍️ Pendiente de firma del contrato</h4>
-                                  <p className="text-xs text-zinc-400 mt-1 max-w-xl">El Contrato y Pagaré fueron generados y la notificación enviada al cliente. Una vez firmados, confirmá la recepción para derivar automáticamente a Logística y despacho del producto.</p>
+                                  <p className="text-xs text-[#68706E] mt-1 max-w-xl">El Contrato y Pagaré fueron generados y la notificación enviada al cliente. Una vez firmados, confirmá la recepción para derivar automáticamente a Logística y despacho del producto.</p>
                                 </div>
                                 <button 
                                   onClick={async () => {
@@ -3198,7 +3198,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                       alert("Error al confirmar firma.");
                                     }
                                   }}
-                                  className="relative z-10 bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xs uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all shadow-xl hover:-translate-y-0.5 active:scale-95"
+                                  className="relative z-10 bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xs uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all shadow-xs hover:-translate-y-0.5 active:scale-95"
                                 >
                                   ✓ Confirmar Firma y Enviar a Logística
                                 </button>
@@ -3230,7 +3230,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                 const currentMensaje = nuevosMensajes[sol.id] !== undefined ? nuevosMensajes[sol.id] : (sol.mensajeAdmin || "");
                 
                 return (
-                  <div key={group.key} className={`bg-zinc-950 border ${isExpanded ? 'border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)]' : 'border-zinc-800 hover:border-yellow-500/40'} rounded-xl transition-all overflow-hidden`}>
+                  <div key={group.key} className={`bg-[#FFFDFC] border ${isExpanded ? 'border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)]' : 'border-[#DED8CF] hover:border-yellow-500/40'} rounded-xl transition-all overflow-hidden`}>
                     
                     {/* CARD HEADER (COMPACT VIEW) */}
                     <div 
@@ -3246,15 +3246,15 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                       <div className="flex-1 mt-2 md:mt-0">
                         <div className="flex items-center gap-3 mb-1">
                           <h2 className="text-xl font-bold text-white">{sol.datosPersonales?.nombreCompleto || "Cliente Sin Nombre"}</h2>
-                          <span className="text-sm text-zinc-500 font-medium">DNI: {sol.datosPersonales?.numeroDni || "N/A"}</span>
+                          <span className="text-sm text-[#68706E] font-medium">DNI: {sol.datosPersonales?.numeroDni || "N/A"}</span>
                         </div>
-                        <p className="text-yellow-400 font-bold flex flex-wrap items-center gap-2">
+                        <p className="text-[#B44E2A] font-bold flex flex-wrap items-center gap-2">
                           {group.items.map((x: any) => x.productoDeseado || x.producto || "Apertura").join(" + ")}
-                          <span className="text-xs font-normal text-zinc-500 px-2 py-0.5 bg-zinc-900 rounded">
+                          <span className="text-xs font-normal text-[#68706E] px-2 py-0.5 bg-[#FFFDFC] rounded">
                             {sol.fechaCreacion ? new Date(sol.fechaCreacion.seconds * 1000).toLocaleDateString() : ''}
                           </span>
                           {group.items.length > 1 && (
-                            <span className="text-[9px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-2 py-0.5 rounded font-black uppercase tracking-wider">
+                            <span className="text-[9px] bg-yellow-500/10 text-[#B44E2A] border border-yellow-500/20 px-2 py-0.5 rounded font-black uppercase tracking-wider">
                               📦 {group.items.length} Productos
                             </span>
                           )}
@@ -3266,14 +3266,14 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                           <span className={`px-3 py-1 rounded-full text-xs font-black tracking-widest uppercase border ${
                               currentEstado === "PENDIENTE" ? "bg-blue-500/20 text-blue-400 border-blue-500/50" :
                               currentEstado === "PENDIENTE_FIRMA" ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/50" :
-                              currentEstado === "APROBADO" ? "bg-green-500/20 text-green-400 border-green-500/50" :
+                              currentEstado === "APROBADO" ? "bg-green-500/20 text-[#2F7D5C] border-green-500/50" :
                               currentEstado === "RECHAZADO" ? "bg-red-500/20 text-red-400 border-red-500/50" :
-                              "bg-orange-500/20 text-orange-400 border-orange-500/50"
+                              "bg-orange-500/20 text-[#B44E2A] border-orange-500/50"
                             }`}>
                             {currentEstado === "PENDIENTE_FIRMA" ? "Pendiente de Firma" : currentEstado}
                           </span>
                           {currentEstado === 'APROBADO' && (
-                             <span className="text-[10px] text-zinc-500 mt-1">
+                             <span className="text-[10px] text-[#68706E] mt-1">
                                Logística: {sol.estadoEntrega === 'ENTREGADO' ? '✅ Entregado' : '⏳ Pendiente'}
                              </span>
                           )}
@@ -3286,7 +3286,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                        <div className="text-zinc-500 bg-zinc-900 p-2 rounded-full">
+                        <div className="text-[#68706E] bg-[#FFFDFC] p-2 rounded-full">
                           {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                         </div>
                       </div>
@@ -3294,10 +3294,10 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                     {/* CARD BODY (EXPANDED VIEW) */}
                     {isExpanded && (
-                      <div className="p-4 md:p-6 border-t border-zinc-800 bg-zinc-900/40">
+                      <div className="p-4 md:p-6 border-t border-[#DED8CF] bg-[#FFFDFC]">
                         {group.items.length > 1 && (
-                          <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-4 mb-4">
-                            <span className="text-zinc-500 text-[10px] font-black uppercase self-center mr-2">Ver Producto:</span>
+                          <div className="flex flex-wrap gap-2 border-b border-[#DED8CF] pb-4 mb-4">
+                            <span className="text-[#68706E] text-[10px] font-black uppercase self-center mr-2">Ver Producto:</span>
                             {group.items.map((item: any) => {
                                const isActive = item.id === sol.id;
                                return (
@@ -3308,7 +3308,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                      e.stopPropagation();
                                      setActiveProductSolId(prev => ({ ...prev, [group.key]: item.id }));
                                    }}
-                                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${isActive ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' : 'bg-zinc-950 text-zinc-400 border border-zinc-850 hover:bg-zinc-900'}`}
+                                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${isActive ? 'bg-yellow-500 text-black shadow-xs shadow-yellow-500/20' : 'bg-[#FFFDFC] text-[#68706E] border border-[#DED8CF] hover:bg-[#FFFDFC]'}`}
                                  >
                                    🛍️ {item.productoDeseado || item.producto || "Solicitud"} ({item.estado})
                                  </button>
@@ -3321,9 +3321,9 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                           
                           {/* COLUMNA 1: PERFIL Y DOCS */}
                           <div className="flex flex-col gap-6">
-                             <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-inner">
-                               <h3 className="text-sm font-black text-yellow-400 mb-3 uppercase tracking-widest border-b border-zinc-800 pb-2">Perfil Crediticio</h3>
-                               <div className="space-y-2 text-sm text-zinc-400">
+                             <div className="bg-[#FFFDFC] border border-[#DED8CF] p-5 rounded-xl shadow-inner">
+                               <h3 className="text-sm font-black text-[#B44E2A] mb-3 uppercase tracking-widest border-b border-[#DED8CF] pb-2">Perfil Crediticio</h3>
+                               <div className="space-y-2 text-sm text-[#68706E]">
                                  <p><strong className="text-white">Email:</strong> {sol.clienteEmail}</p>
                                  <p><strong className="text-white">Teléfono:</strong> {sol.datosPersonales?.telefono}</p>
                                  <p><strong className="text-white">Domicilio:</strong> {sol.datosPersonales?.direccion}, {sol.datosPersonales?.localidad}</p>
@@ -3336,30 +3336,30 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                </div>
                              </div>
 
-                             <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-inner">
-                               <h3 className="text-sm font-black text-yellow-400 mb-3 uppercase tracking-widest border-b border-zinc-800 pb-2">Documentos Adjuntos</h3>
+                             <div className="bg-[#FFFDFC] border border-[#DED8CF] p-5 rounded-xl shadow-inner">
+                               <h3 className="text-sm font-black text-[#B44E2A] mb-3 uppercase tracking-widest border-b border-[#DED8CF] pb-2">Documentos Adjuntos</h3>
                                <div className="grid grid-cols-2 gap-3">
-                                 <a href={sol.documentos?.dniFrente} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-yellow-400 p-2 rounded-lg text-xs font-bold transition-colors">📷 DNI Frente</a>
-                                 <a href={sol.documentos?.dniDorso} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-yellow-400 p-2 rounded-lg text-xs font-bold transition-colors">📷 DNI Dorso</a>
-                                 <a href={sol.documentos?.reciboSueldo} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-yellow-400 p-2 rounded-lg text-xs font-bold transition-colors">📄 Recibo Sueldo</a>
-                                 <a href={sol.documentos?.servicio} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-yellow-400 p-2 rounded-lg text-xs font-bold transition-colors">📄 Impuesto/Serv.</a>
+                                 <a href={sol.documentos?.dniFrente} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500 text-[#B44E2A] p-2 rounded-lg text-xs font-bold transition-colors">📷 DNI Frente</a>
+                                 <a href={sol.documentos?.dniDorso} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500 text-[#B44E2A] p-2 rounded-lg text-xs font-bold transition-colors">📷 DNI Dorso</a>
+                                 <a href={sol.documentos?.reciboSueldo} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500 text-[#B44E2A] p-2 rounded-lg text-xs font-bold transition-colors">📄 Recibo Sueldo</a>
+                                 <a href={sol.documentos?.servicio} target="_blank" rel="noreferrer" className="flex items-center justify-center bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500 text-[#B44E2A] p-2 rounded-lg text-xs font-bold transition-colors">📄 Impuesto/Serv.</a>
                                </div>
                              </div>
 
-                             <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-inner">
-                                <h3 className="text-sm font-black text-yellow-400 mb-3 uppercase tracking-widest border-b border-zinc-800 pb-2">Asignación de Afiliado</h3>
+                             <div className="bg-[#FFFDFC] border border-[#DED8CF] p-5 rounded-xl shadow-inner">
+                                <h3 className="text-sm font-black text-[#B44E2A] mb-3 uppercase tracking-widest border-b border-[#DED8CF] pb-2">Asignación de Afiliado</h3>
                                 {sol.afiliadoEmail ? (
                                   <div className="flex flex-col gap-2">
-                                    <p className="text-sm text-white font-bold bg-zinc-950 p-2 rounded border border-zinc-850">👤 {sol.afiliadoEmail}</p>
+                                    <p className="text-sm text-white font-bold bg-[#FFFDFC] p-2 rounded border border-[#DED8CF]">👤 {sol.afiliadoEmail}</p>
                                     <button onClick={() => handleAsignarAfiliado(sol.id, "")} className="text-xs text-red-500 hover:text-red-400 font-bold self-start mt-1">✕ Remover Asignación</button>
                                   </div>
                                 ) : (
                                   <div className="flex flex-col gap-2">
-                                    <p className="text-xs text-zinc-500 mb-2">Ningún afiliado está a cargo del seguimiento de este cliente.</p>
-                                    <select id={`seller_${sol.id}`} className="bg-zinc-950 border border-zinc-800 text-xs p-2.5 rounded text-white focus:border-yellow-500 w-full outline-none">
+                                    <p className="text-xs text-[#68706E] mb-2">Ningún afiliado está a cargo del seguimiento de este cliente.</p>
+                                    <select id={`seller_${sol.id}`} className="bg-[#FFFDFC] border border-[#DED8CF] text-xs p-2.5 rounded text-white focus:border-yellow-500 w-full outline-none">
                                       <option value="">-- Asignar Afiliado --</option>
                                       {afiliadoesActivos.map(v => <option key={v as string} value={v as string}>{v as string}</option>)}
-                                      <option value="NUEVO" className="font-bold text-yellow-400">+ Escribir correo manualmente...</option>
+                                      <option value="NUEVO" className="font-bold text-[#B44E2A]">+ Escribir correo manualmente...</option>
                                     </select>
                                     <button onClick={() => {
                                        const el = document.getElementById(`seller_${sol.id}`) as HTMLSelectElement;
@@ -3376,40 +3376,40 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                           <div className="flex flex-col gap-6">
                              
                              {/* DICTAMEN CREDITICIO */}
-                             <div className="bg-zinc-950 border-2 border-zinc-800 p-5 rounded-xl shadow-2xl shadow-black/60">
-                               <h3 className="text-sm font-black text-yellow-400 mb-4 uppercase tracking-widest flex items-center gap-2"><CheckCircle2 className="w-4 h-4"/> Dictamen Crediticio</h3>
+                             <div className="bg-[#FFFDFC] border-2 border-[#DED8CF] p-5 rounded-xl shadow-xs">
+                               <h3 className="text-sm font-black text-[#B44E2A] mb-4 uppercase tracking-widest flex items-center gap-2"><CheckCircle2 className="w-4 h-4"/> Dictamen Crediticio</h3>
                                <div className="space-y-4">
                                  <div>
-                                   <label className="block text-xs font-bold text-zinc-500 mb-2">Resolución Oficial:</label>
+                                   <label className="block text-xs font-bold text-[#68706E] mb-2">Resolución Oficial:</label>
                                    <select 
                                     value={currentEstado} 
                                     onChange={(e) => handleEstadoChange(sol.id, e.target.value)}
-                                    className={`w-full bg-zinc-900 border-2 rounded-lg p-3 text-sm font-bold focus:outline-none transition-colors ${
+                                    className={`w-full bg-[#FFFDFC] border-2 rounded-lg p-3 text-sm font-bold focus:outline-none transition-colors ${
                                       currentEstado === 'PENDIENTE' ? 'border-blue-500/50 text-blue-400' :
-                                      currentEstado === 'APROBADO' ? 'border-green-500 text-green-400' :
+                                      currentEstado === 'APROBADO' ? 'border-green-500 text-[#2F7D5C]' :
                                       currentEstado === 'RECHAZADO' ? 'border-red-500 text-red-500' :
-                                      'border-orange-500 text-orange-400'
+                                      'border-orange-500 text-[#B44E2A]'
                                     }`}
                                    >
                                     <option value="PENDIENTE" className="text-blue-400 font-bold">● PENDIENTE</option>
-                                    <option value="APROBADO" className="text-green-400 font-bold">● APROBAR VENTA</option>
+                                    <option value="APROBADO" className="text-[#2F7D5C] font-bold">● APROBAR VENTA</option>
                                     <option value="RECHAZADO" className="text-red-500 font-bold">● RECHAZAR SOLICITUD</option>
-                                    <option value="REQUIERE_INFO" className="text-orange-400 font-bold">● REQUERIR NUEVA INFO</option>
+                                    <option value="REQUIERE_INFO" className="text-[#B44E2A] font-bold">● REQUERIR NUEVA INFO</option>
                                    </select>
                                  </div>
                                  <div>
-                                   <label className="block text-xs font-bold text-zinc-500 mb-2">Devolución / Mensaje al Usuario:</label>
+                                   <label className="block text-xs font-bold text-[#68706E] mb-2">Devolución / Mensaje al Usuario:</label>
                                    <textarea 
                                     value={currentMensaje}
                                     onChange={(e) => handleMensajeChange(sol.id, e.target.value)}
-                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none text-sm resize-none min-h-[80px]"
+                                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none text-sm resize-none min-h-[80px]"
                                     placeholder="Escribe un comentario si rechazás o pedís más info..."
                                    />
                                  </div>
                                  <button 
                                   onClick={() => guardarCambios(sol)}
                                   disabled={guardandoId === sol.id || (currentEstado === sol.estado && currentMensaje === (sol.mensajeAdmin||""))}
-                                  className="w-full bg-yellow-500 text-black py-3 rounded-lg font-black uppercase tracking-widest text-xs hover:bg-yellow-400 transition-colors shadow-2xl shadow-black/60 disabled:opacity-50 disabled:shadow-none"
+                                  className="w-full bg-yellow-500 text-black py-3 rounded-lg font-black uppercase tracking-widest text-xs hover:bg-yellow-400 transition-colors shadow-xs disabled:opacity-50 disabled:shadow-none"
                                  >
                                   {guardandoId === sol.id ? "Guardando..." : "Registrar Dictamen"}
                                  </button>
@@ -3418,7 +3418,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                              {/* LOGÍSTICA (SOLO SI ESTÁ APROBADO) */}
                              {currentEstado === "APROBADO" && (
-                               <div className="bg-blue-950/20 border-2 border-blue-500/30 p-5 rounded-xl shadow-2xl shadow-black/60 relative overflow-hidden">
+                               <div className="bg-blue-950/20 border-2 border-blue-500/30 p-5 rounded-xl shadow-xs relative overflow-hidden">
                                  <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10" />
                                  <div className="flex items-center justify-between mb-4 border-b border-blue-900/40 pb-3">
                                     <h3 className="text-sm font-black text-blue-400 uppercase tracking-widest flex items-center gap-2"><Truck className="w-4 h-4"/> Logística y Entrega</h3>
@@ -3433,8 +3433,8 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                  
                                  <div className="space-y-4 relative z-10">
                                    {/* SECCIÓN 1: ASIGNACIÓN DE STOCK Y RUTEO */}
-                                   <div className="bg-zinc-950 p-4 border border-zinc-850 rounded-xl space-y-3 relative z-10">
-                                     <h4 className="text-xs font-black text-blue-400 uppercase tracking-wider flex items-center gap-1.5 border-b border-zinc-900 pb-2">
+                                   <div className="bg-[#FFFDFC] p-4 border border-[#DED8CF] rounded-xl space-y-3 relative z-10">
+                                     <h4 className="text-xs font-black text-blue-400 uppercase tracking-wider flex items-center gap-1.5 border-b border-[#DED8CF] pb-2">
                                        📦 Asignación de Stock y Reserva
                                      </h4>
 
@@ -3453,37 +3453,37 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                            return (
                                              <div className="space-y-3">
                                                <div className="bg-blue-950/30 border border-blue-500/30 p-3 rounded-lg text-xs space-y-1.5">
-                                                 <p className="text-zinc-300 font-bold flex items-center gap-1.5 text-blue-300">
+                                                 <p className="text-[#1F2928] font-bold flex items-center gap-1.5 text-blue-300">
                                                    📌 ¡Stock Reservado con éxito!
                                                  </p>
-                                                 <p className="text-zinc-400">
-                                                   <strong className="text-zinc-500">Producto:</strong> {sol.productoDeseado}
+                                                 <p className="text-[#68706E]">
+                                                   <strong className="text-[#68706E]">Producto:</strong> {sol.productoDeseado}
                                                  </p>
-                                                 <p className="text-zinc-400 font-mono">
-                                                   <strong className="text-zinc-500 font-sans">IMEI/Serie:</strong> {sol.numeroSerie || "Sin serie registrada"}
+                                                 <p className="text-[#68706E] font-mono">
+                                                   <strong className="text-[#68706E] font-sans">IMEI/Serie:</strong> {sol.numeroSerie || "Sin serie registrada"}
                                                  </p>
-                                                 <p className="text-zinc-400">
-                                                   <strong className="text-zinc-500">Origen (Stock):</strong> <span className="bg-zinc-900 text-zinc-300 px-2 py-0.5 rounded text-[10px] font-bold border border-zinc-800">{origen}</span>
+                                                 <p className="text-[#68706E]">
+                                                   <strong className="text-[#68706E]">Origen (Stock):</strong> <span className="bg-[#FFFDFC] text-[#1F2928] px-2 py-0.5 rounded text-[10px] font-bold border border-[#DED8CF]">{origen}</span>
                                                  </p>
-                                                 <p className="text-zinc-400">
-                                                   <strong className="text-zinc-500">Destino (Entrega):</strong> <span className="bg-zinc-900 text-zinc-300 px-2 py-0.5 rounded text-[10px] font-bold border border-zinc-800">{destino}</span>
+                                                 <p className="text-[#68706E]">
+                                                   <strong className="text-[#68706E]">Destino (Entrega):</strong> <span className="bg-[#FFFDFC] text-[#1F2928] px-2 py-0.5 rounded text-[10px] font-bold border border-[#DED8CF]">{destino}</span>
                                                  </p>
-                                                 <p className="text-zinc-400">
-                                                   <strong className="text-zinc-500">Estado de Ruteo:</strong> <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${requiereTransito ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" : "bg-green-500/20 text-green-400 border border-green-500/30"}`}>{requiereTransito ? "Tránsito Requerido" : "Listo para entrega"}</span>
+                                                 <p className="text-[#68706E]">
+                                                   <strong className="text-[#68706E]">Estado de Ruteo:</strong> <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${requiereTransito ? "bg-amber-500/20 text-[#B44E2A] border border-amber-500/30" : "bg-green-500/20 text-[#2F7D5C] border border-green-500/30"}`}>{requiereTransito ? "Tránsito Requerido" : "Listo para entrega"}</span>
                                                  </p>
                                                </div>
 
                                                {/* ETAPA 2: CONFECCIÓN DE REMITO Y SEGUIMIENTO DE DESPACHO LOCAL */}
-                                               <div className="bg-zinc-900/90 p-3.5 rounded-xl border border-amber-500/30 space-y-3 text-[11px] mb-3">
-                                                 <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
-                                                   <h5 className="text-[10px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
+                                               <div className="bg-[#FFFDFC]/90 p-3.5 rounded-xl border border-amber-500/30 space-y-3 text-[11px] mb-3">
+                                                 <div className="flex justify-between items-center border-b border-[#DED8CF] pb-2">
+                                                   <h5 className="text-[10px] font-black text-[#B44E2A] uppercase tracking-widest flex items-center gap-1.5">
                                                      👤 ETAPA 2: Despacho por Remito al Destinatario (Punto de Venta ➔ Afiliado / Cliente)
                                                    </h5>
                                                    {sol.remitoDespachoEstado && (
                                                      <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${
-                                                       sol.remitoDespachoEstado === "ENTREGADO_CONFORME" ? "bg-green-500/20 text-green-400 border-green-500/30" :
+                                                       sol.remitoDespachoEstado === "ENTREGADO_CONFORME" ? "bg-green-500/20 text-[#2F7D5C] border-green-500/30" :
                                                        sol.remitoDespachoEstado === "EN_CAMINO" ? "bg-blue-500/20 text-blue-400 border-blue-500/30" :
-                                                       "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                                                       "bg-amber-500/20 text-[#B44E2A] border-amber-500/30"
                                                      }`}>
                                                        {sol.remitoDespachoEstado === "ENTREGADO_CONFORME" ? "✅ Entregado" : sol.remitoDespachoEstado === "EN_CAMINO" ? "🚚 En Camino" : "📜 Remito Emitido"}
                                                      </span>
@@ -3492,17 +3492,17 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                                                  {/* Si ya hay un seguimiento de despacho local emitido */}
                                                  {(sol.remitoDespachoNro || sol.remitoDespachoTransporte || sol.remitoDespachoGuia) && (
-                                                   <div className="bg-zinc-950 p-3 rounded-lg border border-zinc-800 space-y-1.5 text-xs">
-                                                     <p className="text-amber-400 font-bold text-[10px] uppercase tracking-wider">
+                                                   <div className="bg-[#FFFDFC] p-3 rounded-lg border border-[#DED8CF] space-y-1.5 text-xs">
+                                                     <p className="text-[#B44E2A] font-bold text-[10px] uppercase tracking-wider">
                                                        📌 Ficha de Seguimiento del Despacho Local
                                                      </p>
-                                                     {sol.remitoDespachoNro && <p><strong className="text-zinc-500">Nº Remito:</strong> <span className="text-white font-mono font-bold">{sol.remitoDespachoNro}</span></p>}
-                                                     {sol.remitoDespachoDestinatario && <p><strong className="text-zinc-500">Destinatario:</strong> <span className="text-zinc-200">{sol.remitoDespachoDestinatario} (DNI: {sol.remitoDespachoDoc})</span></p>}
-                                                     {sol.remitoDespachoDireccion && <p><strong className="text-zinc-500">Dirección de Entrega:</strong> <span className="text-zinc-300">{sol.remitoDespachoDireccion}</span></p>}
-                                                     {sol.remitoDespachoTransporte && <p><strong className="text-zinc-500">Flete / Transporte Local:</strong> <span className="text-blue-300 font-bold">{sol.remitoDespachoTransporte}</span></p>}
-                                                     {sol.remitoDespachoGuia && <p><strong className="text-zinc-500">Guía / Tracking Interno:</strong> <span className="text-amber-300 font-mono">{sol.remitoDespachoGuia}</span></p>}
-                                                     {sol.remitoDespachoCosto > 0 && <p><strong className="text-zinc-500">Costo Envío Local:</strong> <span className="text-green-400 font-bold">${sol.remitoDespachoCosto.toLocaleString("es-AR")}</span></p>}
-                                                     {sol.remitoDespachoFecha && <p><strong className="text-zinc-500">Fecha de Salida:</strong> {new Date(sol.remitoDespachoFecha).toLocaleDateString("es-AR")}</p>}
+                                                     {sol.remitoDespachoNro && <p><strong className="text-[#68706E]">Nº Remito:</strong> <span className="text-white font-mono font-bold">{sol.remitoDespachoNro}</span></p>}
+                                                     {sol.remitoDespachoDestinatario && <p><strong className="text-[#68706E]">Destinatario:</strong> <span className="text-[#1F2928]">{sol.remitoDespachoDestinatario} (DNI: {sol.remitoDespachoDoc})</span></p>}
+                                                     {sol.remitoDespachoDireccion && <p><strong className="text-[#68706E]">Dirección de Entrega:</strong> <span className="text-[#1F2928]">{sol.remitoDespachoDireccion}</span></p>}
+                                                     {sol.remitoDespachoTransporte && <p><strong className="text-[#68706E]">Flete / Transporte Local:</strong> <span className="text-blue-300 font-bold">{sol.remitoDespachoTransporte}</span></p>}
+                                                     {sol.remitoDespachoGuia && <p><strong className="text-[#68706E]">Guía / Tracking Interno:</strong> <span className="text-amber-300 font-mono">{sol.remitoDespachoGuia}</span></p>}
+                                                     {sol.remitoDespachoCosto > 0 && <p><strong className="text-[#68706E]">Costo Envío Local:</strong> <span className="text-[#2F7D5C] font-bold">${sol.remitoDespachoCosto.toLocaleString("es-AR")}</span></p>}
+                                                     {sol.remitoDespachoFecha && <p><strong className="text-[#68706E]">Fecha de Salida:</strong> {new Date(sol.remitoDespachoFecha).toLocaleDateString("es-AR")}</p>}
 
                                                      <button
                                                        type="button"
@@ -3514,7 +3514,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                          setRemitoFechaSalida(sol.remitoDespachoFecha || "");
                                                          setRemitoEstadoEnvio(sol.remitoDespachoEstado || "REMITO_EMITIDO");
                                                        }}
-                                                       className="text-[10px] text-amber-400 hover:text-amber-300 font-bold underline pt-1 block"
+                                                       className="text-[10px] text-[#B44E2A] hover:text-amber-300 font-bold underline pt-1 block"
                                                      >
                                                        ✏️ Editar Seguimiento de Despacho Local
                                                      </button>
@@ -3522,86 +3522,86 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                  )}
 
                                                  {/* Formulario de Confección y Actualización de Despacho */}
-                                                 <div className="space-y-2 pt-1 border-t border-zinc-800">
-                                                   <p className="text-[9px] font-bold text-zinc-400 uppercase">1. Confeccionar Destinatario del Remito:</p>
+                                                 <div className="space-y-2 pt-1 border-t border-[#DED8CF]">
+                                                   <p className="text-[9px] font-bold text-[#68706E] uppercase">1. Confeccionar Destinatario del Remito:</p>
                                                    <div>
-                                                     <label className="block text-[9px] text-amber-400 font-bold uppercase mb-0.5">Nombre Destinatario (Auto-completado / Editable)</label>
+                                                     <label className="block text-[9px] text-[#B44E2A] font-bold uppercase mb-0.5">Nombre Destinatario (Auto-completado / Editable)</label>
                                                      <input 
                                                        type="text"
                                                        value={getDestinatarioNombre(sol)}
                                                        onChange={e => setRemitoNombreMap(prev => ({ ...prev, [sol.id]: e.target.value }))}
                                                        placeholder="Nombre del Destinatario"
-                                                       className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-bold"
+                                                       className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-bold"
                                                      />
                                                    </div>
                                                    <div className="grid grid-cols-2 gap-2">
                                                      <div>
-                                                       <label className="block text-[9px] text-amber-400 font-bold uppercase mb-0.5">DNI / CUIT</label>
+                                                       <label className="block text-[9px] text-[#B44E2A] font-bold uppercase mb-0.5">DNI / CUIT</label>
                                                        <input 
                                                          type="text"
                                                          value={getDestinatarioDoc(sol)}
                                                          onChange={e => setRemitoDocMap(prev => ({ ...prev, [sol.id]: e.target.value }))}
                                                          placeholder="Documento / CUIT"
-                                                         className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-mono"
+                                                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-mono"
                                                        />
                                                      </div>
                                                      <div>
-                                                       <label className="block text-[9px] text-amber-400 font-bold uppercase mb-0.5">Teléfono</label>
+                                                       <label className="block text-[9px] text-[#B44E2A] font-bold uppercase mb-0.5">Teléfono</label>
                                                        <input 
                                                          type="text"
                                                          value={getDestinatarioTel(sol)}
                                                          onChange={e => setRemitoTelMap(prev => ({ ...prev, [sol.id]: e.target.value }))}
                                                          placeholder="Teléfono"
-                                                         className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500"
+                                                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500"
                                                        />
                                                      </div>
                                                    </div>
                                                    <div>
-                                                     <label className="block text-[9px] text-amber-400 font-bold uppercase mb-0.5">Dirección de Entrega / Sucursal</label>
+                                                     <label className="block text-[9px] text-[#B44E2A] font-bold uppercase mb-0.5">Dirección de Entrega / Sucursal</label>
                                                      <input 
                                                        type="text"
                                                        value={getDestinatarioDireccion(sol)}
                                                        onChange={e => setRemitoDireccionMap(prev => ({ ...prev, [sol.id]: e.target.value }))}
                                                        placeholder="Sucursal o domicilio del cliente/afiliado"
-                                                       className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500"
+                                                       className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500"
                                                      />
                                                    </div>
 
-                                                   <p className="text-[9px] font-bold text-zinc-400 uppercase pt-2 border-t border-zinc-850">2. Datos del Transporte / Flete Local:</p>
+                                                   <p className="text-[9px] font-bold text-[#68706E] uppercase pt-2 border-t border-[#DED8CF]">2. Datos del Transporte / Flete Local:</p>
                                                    <div>
-                                                     <label className="block text-[8px] text-zinc-500 font-bold uppercase mb-0.5">Chofer / Comisionista / Flete Local</label>
+                                                     <label className="block text-[8px] text-[#68706E] font-bold uppercase mb-0.5">Chofer / Comisionista / Flete Local</label>
                                                      <input 
                                                        type="text"
                                                        value={remitoEditId === sol.id ? remitoTransporte : ""}
                                                        onChange={e => { setRemitoEditId(sol.id); setRemitoTransporte(e.target.value); }}
                                                        placeholder="Ej: Flete Expreso Junín, Moto Mensajería, etc."
-                                                       className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500"
+                                                       className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500"
                                                      />
                                                    </div>
                                                    <div className="grid grid-cols-2 gap-2">
                                                      <div>
-                                                       <label className="block text-[8px] text-zinc-500 font-bold uppercase mb-0.5">Costo Envío Local ($)</label>
+                                                       <label className="block text-[8px] text-[#68706E] font-bold uppercase mb-0.5">Costo Envío Local ($)</label>
                                                        <input 
                                                          type="number"
                                                          value={remitoEditId === sol.id ? remitoCostoLocal : ""}
                                                          onChange={e => { setRemitoEditId(sol.id); setRemitoCostoLocal(e.target.value); }}
                                                          placeholder="ARS"
-                                                         className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-mono"
+                                                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-mono"
                                                        />
                                                      </div>
                                                      <div>
-                                                       <label className="block text-[8px] text-zinc-500 font-bold uppercase mb-0.5">Guía / Tracking Interno</label>
+                                                       <label className="block text-[8px] text-[#68706E] font-bold uppercase mb-0.5">Guía / Tracking Interno</label>
                                                        <input 
                                                          type="text"
                                                          value={remitoEditId === sol.id ? remitoGuiaLocal : ""}
                                                          onChange={e => { setRemitoEditId(sol.id); setRemitoGuiaLocal(e.target.value); }}
                                                          placeholder="Ej: GUIA-94812"
-                                                         className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-mono"
+                                                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-mono"
                                                        />
                                                      </div>
                                                    </div>
                                                     <div>
-                                                      <label className="block text-[8px] text-zinc-500 font-bold uppercase mb-0.5">Estado del Despacho al Destinatario</label>
+                                                      <label className="block text-[8px] text-[#68706E] font-bold uppercase mb-0.5">Estado del Despacho al Destinatario</label>
                                                       <select
                                                         value={remitoEditId === sol.id ? remitoEstadoEnvio : (sol.remitoDespachoEstado || "REMITO_EMITIDO")}
                                                         onChange={e => {
@@ -3610,7 +3610,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                           setRemitoEstadoEnvio(val);
                                                           handleActualizarEstadoDespachoRemito(sol, val);
                                                         }}
-                                                        className="w-full bg-zinc-950 border border-zinc-850 p-1.5 rounded text-[11px] text-amber-300 font-bold outline-none focus:border-amber-500 cursor-pointer"
+                                                        className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-amber-300 font-bold outline-none focus:border-amber-500 cursor-pointer"
                                                       >
                                                         <option value="REMITO_EMITIDO">📜 REMITO EMITIDO (EN PREPARACIÓN)</option>
                                                         <option value="EN_CAMINO">🚚 EN CAMINO AL AFILIADO / CLIENTE</option>
@@ -3663,21 +3663,21 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                                                {/* RUTEO POR COMISIONISTA (SOLO SI ORIGEN !== DESTINO) */}
                                                {requiereTransito ? (
-                                                 <div className="bg-zinc-900 border border-blue-900/30 p-3.5 rounded-lg space-y-3">
+                                                 <div className="bg-[#FFFDFC] border border-blue-900/30 p-3.5 rounded-lg space-y-3">
                                                    <h5 className="text-[10px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-1">
                                                      🚚 Ruteo Interno (Comisionista a Sucursal)
                                                    </h5>
-                                                   <p className="text-[9px] text-zinc-500 italic">
+                                                   <p className="text-[9px] text-[#68706E] italic">
                                                      El comisionista transportará la unidad asignada desde {origen} y la entregará al afiliado local en {destino}.
                                                    </p>
 
                                                    {sol.comisionistaNombre || sol.comisionistaCosto || sol.comisionistaFechaEnvio ? (
-                                                     <div className="bg-zinc-950 p-2.5 rounded border border-zinc-850 text-[11px] space-y-1">
-                                                       {sol.comisionistaNombre && <p className="text-zinc-300"><strong className="text-zinc-500">Comisionista:</strong> {sol.comisionistaNombre}</p>}
-                                                       {sol.comisionistaCosto !== undefined && <p className="text-zinc-300"><strong className="text-zinc-500">Costo Envío:</strong> <span className="text-green-400 font-bold">${sol.comisionistaCosto}</span></p>}
-                                                       {sol.comisionistaFechaEnvio && <p className="text-zinc-300"><strong className="text-zinc-500">Fecha Salida:</strong> {new Date(sol.comisionistaFechaEnvio).toLocaleDateString("es-AR")}</p>}
+                                                     <div className="bg-[#FFFDFC] p-2.5 rounded border border-[#DED8CF] text-[11px] space-y-1">
+                                                       {sol.comisionistaNombre && <p className="text-[#1F2928]"><strong className="text-[#68706E]">Comisionista:</strong> {sol.comisionistaNombre}</p>}
+                                                       {sol.comisionistaCosto !== undefined && <p className="text-[#1F2928]"><strong className="text-[#68706E]">Costo Envío:</strong> <span className="text-[#2F7D5C] font-bold">${sol.comisionistaCosto}</span></p>}
+                                                       {sol.comisionistaFechaEnvio && <p className="text-[#1F2928]"><strong className="text-[#68706E]">Fecha Salida:</strong> {new Date(sol.comisionistaFechaEnvio).toLocaleDateString("es-AR")}</p>}
                                                        
-                                                       <div className="flex gap-2 pt-2 border-t border-zinc-900 mt-2">
+                                                       <div className="flex gap-2 pt-2 border-t border-[#DED8CF] mt-2">
                                                          <button 
                                                            onClick={() => {
                                                              setComisionistaNombre(sol.comisionistaNombre || "");
@@ -3685,7 +3685,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                              setComisionistaFechaEnvio(sol.comisionistaFechaEnvio || "");
                                                              setComisionistaEditId(sol.id);
                                                            }}
-                                                           className="text-[9px] text-yellow-500 hover:text-yellow-400 font-bold underline"
+                                                           className="text-[9px] text-[#B44E2A] hover:text-[#B44E2A] font-bold underline"
                                                          >
                                                            ✏️ Editar envío
                                                          </button>
@@ -3701,35 +3701,35 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                    ) : null}
 
                                                    {(comisionistaEditId === sol.id || (!sol.comisionistaNombre && !sol.comisionistaCosto && !sol.comisionistaFechaEnvio)) && (
-                                                     <div className="bg-zinc-950 p-2.5 border border-zinc-850 rounded-lg space-y-2">
+                                                     <div className="bg-[#FFFDFC] p-2.5 border border-[#DED8CF] rounded-lg space-y-2">
                                                        <div>
-                                                         <label className="block text-[8px] text-zinc-500 font-bold uppercase mb-0.5">Nombre Comisionista</label>
+                                                         <label className="block text-[8px] text-[#68706E] font-bold uppercase mb-0.5">Nombre Comisionista</label>
                                                          <input 
                                                            type="text" 
                                                            value={comisionistaEditId === sol.id ? comisionistaNombre : ""} 
                                                            onChange={e => { setComisionistaEditId(sol.id); setComisionistaNombre(e.target.value); }} 
                                                            placeholder="Ej: Comisionista Junín" 
-                                                           className="w-full bg-zinc-900 border border-zinc-800 p-1.5 rounded text-[11px] text-white outline-none focus:border-blue-500" 
+                                                           className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-blue-500" 
                                                          />
                                                        </div>
                                                        <div className="grid grid-cols-2 gap-2">
                                                          <div>
-                                                           <label className="block text-[8px] text-zinc-500 font-bold uppercase mb-0.5">Costo ($)</label>
+                                                           <label className="block text-[8px] text-[#68706E] font-bold uppercase mb-0.5">Costo ($)</label>
                                                            <input 
                                                              type="number" 
                                                              value={comisionistaEditId === sol.id ? comisionistaCosto : ""} 
                                                              onChange={e => { setComisionistaEditId(sol.id); setComisionistaCosto(e.target.value); }} 
                                                              placeholder="ARS" 
-                                                             className="w-full bg-zinc-900 border border-zinc-800 p-1.5 rounded text-[11px] text-white outline-none focus:border-blue-500" 
+                                                             className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-blue-500" 
                                                            />
                                                          </div>
                                                          <div>
-                                                           <label className="block text-[8px] text-zinc-500 font-bold uppercase mb-0.5">Fecha Envío</label>
+                                                           <label className="block text-[8px] text-[#68706E] font-bold uppercase mb-0.5">Fecha Envío</label>
                                                            <input 
                                                              type="date" 
                                                              value={comisionistaEditId === sol.id ? comisionistaFechaEnvio : ""} 
                                                              onChange={e => { setComisionistaEditId(sol.id); setComisionistaFechaEnvio(e.target.value); }} 
-                                                             className="w-full bg-zinc-900 border border-zinc-800 p-1.5 rounded text-[11px] text-white outline-none focus:border-blue-500" 
+                                                             className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-blue-500" 
                                                            />
                                                          </div>
                                                        </div>
@@ -3745,7 +3745,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                ) : (
                                                  <div className="bg-green-950/20 border border-green-500/20 p-3 rounded-lg text-xs flex items-start gap-2">
                                                    <span className="text-base">🟢</span>
-                                                   <p className="text-green-400">
+                                                   <p className="text-[#2F7D5C]">
                                                      <strong>Local listo para entrega:</strong> El producto ya está en sucursal {destino}. El afiliado local puede entregárselo al cliente en el paso final.
                                                    </p>
                                                  </div>
@@ -3753,29 +3753,29 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                                                {/* HISTORIAL / AUDITORÍA DE LOGÍSTICA PERSISTENTE */}
                                                {(sol.comisionistaNombre || sol.comisionistaCosto || sol.comisionistaFechaEnvio || sol.comisionistaFechaRecepcion) ? (
-                                                 <div className="bg-zinc-900 border border-zinc-800 p-3.5 rounded-lg space-y-2 text-[11px]">
-                                                   <h5 className="text-[10px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-1.5 border-b border-zinc-950 pb-1 mb-2">
+                                                 <div className="bg-[#FFFDFC] border border-[#DED8CF] p-3.5 rounded-lg space-y-2 text-[11px]">
+                                                   <h5 className="text-[10px] font-black text-[#B44E2A] uppercase tracking-widest flex items-center gap-1.5 border-b border-[#DED8CF] pb-1 mb-2">
                                                      📋 Registro de Envío e Internación (Auditoría)
                                                    </h5>
-                                                   <div className="space-y-1 text-zinc-300">
+                                                   <div className="space-y-1 text-[#1F2928]">
                                                      {sol.comisionistaNombre && (
                                                        <p>
-                                                         <strong className="text-zinc-500">Comisionista:</strong> {sol.comisionistaNombre}
+                                                         <strong className="text-[#68706E]">Comisionista:</strong> {sol.comisionistaNombre}
                                                        </p>
                                                      )}
                                                      {sol.comisionistaCosto !== undefined && (
                                                        <p>
-                                                         <strong className="text-zinc-500">Costo de Envío:</strong> <span className="text-green-400 font-bold">${sol.comisionistaCosto}</span>
+                                                         <strong className="text-[#68706E]">Costo de Envío:</strong> <span className="text-[#2F7D5C] font-bold">${sol.comisionistaCosto}</span>
                                                        </p>
                                                      )}
                                                      {sol.comisionistaFechaEnvio && (
                                                        <p>
-                                                         <strong className="text-zinc-500">Fecha de Envío:</strong> {new Date(sol.comisionistaFechaEnvio).toLocaleDateString("es-AR")}
+                                                         <strong className="text-[#68706E]">Fecha de Envío:</strong> {new Date(sol.comisionistaFechaEnvio).toLocaleDateString("es-AR")}
                                                        </p>
                                                      )}
                                                      {sol.comisionistaFechaRecepcion && (
                                                        <p>
-                                                         <strong className="text-zinc-500">Fecha de Arribo a Sucursal:</strong> {new Date(sol.comisionistaFechaRecepcion).toLocaleDateString("es-AR")}
+                                                         <strong className="text-[#68706E]">Fecha de Arribo a Sucursal:</strong> {new Date(sol.comisionistaFechaRecepcion).toLocaleDateString("es-AR")}
                                                        </p>
                                                      )}
                                                    </div>
@@ -3783,7 +3783,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                ) : null}
 
                                                {sol.historialRecepcion && (
-                                                 <p className="text-[10px] text-green-400 mt-2 bg-green-900/20 px-2.5 py-1.5 rounded-md border border-green-500/10 flex items-center gap-1.5 font-mono">
+                                                 <p className="text-[10px] text-[#2F7D5C] mt-2 bg-green-900/20 px-2.5 py-1.5 rounded-md border border-green-500/10 flex items-center gap-1.5 font-mono">
                                                    <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0"/> {sol.historialRecepcion}
                                                  </p>
                                                )}
@@ -3804,11 +3804,11 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                        <div className="space-y-3">
                                          {/* Selector de Sucursal de Entrega (Destino) */}
                                          <div>
-                                           <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Sucursal de Destino / Entrega</label>
+                                           <label className="block text-[10px] text-[#68706E] mb-1 font-bold">Sucursal de Destino / Entrega</label>
                                            <select 
                                              value={selectedDestino}
                                              onChange={e => setSelectedDestino(e.target.value)}
-                                             className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg text-xs border border-zinc-800 w-full focus:border-blue-500 outline-none font-bold"
+                                             className="bg-[#FFFDFC] text-[#1F2928] px-3 py-2 rounded-lg text-xs border border-[#DED8CF] w-full focus:border-blue-500 outline-none font-bold"
                                            >
                                              {sucursalesDisponibles.map(suc => (
                                                <option key={suc} value={suc}>{suc}</option>
@@ -3818,7 +3818,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                                          {/* Selector de Producto de Inventario */}
                                          <div>
-                                           <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Producto en Catálogo</label>
+                                           <label className="block text-[10px] text-[#68706E] mb-1 font-bold">Producto en Catálogo</label>
                                            <select 
                                              value={selectedProductId}
                                              onChange={(e) => {
@@ -3829,7 +3829,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                setSelectedStockUnitId("manual");
                                                setNserie("");
                                              }}
-                                             className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg text-xs border border-zinc-800 w-full focus:border-blue-500 outline-none"
+                                             className="bg-[#FFFDFC] text-[#1F2928] px-3 py-2 rounded-lg text-xs border border-[#DED8CF] w-full focus:border-blue-500 outline-none"
                                            >
                                              <option value="">-- Seleccionar de catálogo --</option>
                                              {productos.map(p => (
@@ -3841,7 +3841,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                          {/* Selector de Unidad de Stock */}
                                          {selectedProductStock && (
                                            <div>
-                                             <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Unidad de Stock Disponible (Origen)</label>
+                                             <label className="block text-[10px] text-[#68706E] mb-1 font-bold">Unidad de Stock Disponible (Origen)</label>
                                              <select 
                                                value={selectedStockUnitId}
                                                onChange={(e) => {
@@ -3854,7 +3854,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                    setNserie(unit?.nserie || "");
                                                  }
                                                }}
-                                               className="bg-zinc-900 text-zinc-100 px-3 py-2 rounded-lg text-xs border border-zinc-800 w-full focus:border-blue-500 outline-none"
+                                               className="bg-[#FFFDFC] text-[#1F2928] px-3 py-2 rounded-lg text-xs border border-[#DED8CF] w-full focus:border-blue-500 outline-none"
                                              >
                                                <option value="manual">Cargar manualmente (Sin stock / Casa Central)</option>
                                                {(selectedProductStock.stock || []).filter((u: any) => u.estado === "Disponible").map((u: any) => (
@@ -3867,22 +3867,22 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                          )}
 
                                          {/* Informar asignación de venta */}
-                                         <div className="text-[9px] text-zinc-500 font-medium bg-zinc-900 p-2 rounded border border-zinc-850">
+                                         <div className="text-[9px] text-[#68706E] font-medium bg-[#FFFDFC] p-2 rounded border border-[#DED8CF]">
                                            {!sol.afiliadoEmail ? (
-                                             <span className="text-yellow-500">ℹ️ Venta libre: puedes asignar stock de Casa Central o cualquier sucursal.</span>
+                                             <span className="text-[#B44E2A]">ℹ️ Venta libre: puedes asignar stock de Casa Central o cualquier sucursal.</span>
                                            ) : (
-                                             <span>ℹ️ Venta del afiliado: <strong className="text-zinc-300">{sol.afiliadoEmail}</strong>. Se recomienda seleccionar stock local o rutarlo.</span>
+                                             <span>ℹ️ Venta del afiliado: <strong className="text-[#1F2928]">{sol.afiliadoEmail}</strong>. Se recomienda seleccionar stock local o rutarlo.</span>
                                            )}
                                          </div>
 
                                          <div>
-                                           <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Nº de Serie / IMEI a Asignar</label>
+                                           <label className="block text-[10px] text-[#68706E] mb-1 font-bold">Nº de Serie / IMEI a Asignar</label>
                                            <input 
                                              type="text" 
                                              value={nserie} 
                                              onChange={e=>setNserie(e.target.value)} 
                                              placeholder="Ej: SN-12345" 
-                                             className="bg-zinc-900 text-zinc-100 px-3 py-2 border border-zinc-800 rounded-lg text-xs w-full focus:border-blue-500 outline-none font-mono" 
+                                             className="bg-[#FFFDFC] text-[#1F2928] px-3 py-2 border border-[#DED8CF] rounded-lg text-xs w-full focus:border-blue-500 outline-none font-mono" 
                                            />
                                          </div>
 
@@ -3898,16 +3898,16 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                    </div>
 
                                    {/* SECCIÓN 2: SEGUIMIENTO DE PEDIDO AL PROVEEDOR (PRODUCTO SIN STOCK) */}
-                                   <div className="bg-zinc-950 p-4 border border-zinc-850 rounded-xl space-y-3 relative z-10">
-                                     <div className="flex justify-between items-center border-b border-zinc-900 pb-2">
-                                       <h4 className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                                   <div className="bg-[#FFFDFC] p-4 border border-[#DED8CF] rounded-xl space-y-3 relative z-10">
+                                     <div className="flex justify-between items-center border-b border-[#DED8CF] pb-2">
+                                       <h4 className="text-xs font-black text-[#B44E2A] uppercase tracking-wider flex items-center gap-1.5">
                                          🏭 Seguimiento de Pedido al Proveedor (Sin Stock Local)
                                        </h4>
                                        {sol.proveedorEstado && (
                                          <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase border ${
-                                           sol.proveedorEstado === "RECIBIDO" ? "bg-green-500/20 text-green-400 border-green-500/30" :
+                                           sol.proveedorEstado === "RECIBIDO" ? "bg-green-500/20 text-[#2F7D5C] border-green-500/30" :
                                            sol.proveedorEstado === "EN_TRANSITO" ? "bg-blue-500/20 text-blue-400 border-blue-500/30" :
-                                           "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                                           "bg-amber-500/20 text-[#B44E2A] border-amber-500/30"
                                          }`}>
                                            {sol.proveedorEstado === "RECIBIDO" ? "✅ Recibido" : sol.proveedorEstado === "EN_TRANSITO" ? "🚚 En Tránsito" : "🛒 Pedido Solicitado"}
                                          </span>
@@ -3918,15 +3918,15 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                      {(sol.proveedorNombre || sol.proveedorGuia || sol.proveedorCosto || sol.proveedorFechaPedido) ? (
                                        <div className="bg-amber-950/20 border border-amber-500/20 p-3.5 rounded-lg space-y-2 text-xs">
                                          <div className="space-y-1">
-                                           {(sol.proveedorFacturaTicket || sol.facturaProveedorOriginal) && <p><strong className="text-zinc-400">Nº Ticket / Factura Proveedor:</strong> <span className="text-amber-400 font-mono font-bold">{sol.proveedorFacturaTicket || sol.facturaProveedorOriginal}</span></p>}
-                                           {sol.proveedorNombre && <p><strong className="text-zinc-400">Proveedor / Mayorista:</strong> <span className="text-white font-bold">{sol.proveedorNombre}</span></p>}
-                                           {sol.proveedorCosto > 0 && <p><strong className="text-zinc-400">Costo de Compra:</strong> <span className="text-green-400 font-black">${sol.proveedorCosto.toLocaleString("es-AR")}</span></p>}
-                                           {sol.proveedorGuia && <p><strong className="text-zinc-400">Nº de Guía / Tracking:</strong> <span className="text-amber-300 font-mono font-bold">{sol.proveedorGuia}</span></p>}
-                                           {sol.proveedorFechaPedido && <p><strong className="text-zinc-400">Fecha del Pedido:</strong> {new Date(sol.proveedorFechaPedido).toLocaleDateString("es-AR")}</p>}
-                                           {sol.proveedorFechaEstimada && <p><strong className="text-zinc-400">Fecha Estimada Arribo (ETA):</strong> {new Date(sol.proveedorFechaEstimada).toLocaleDateString("es-AR")}</p>}
+                                           {(sol.proveedorFacturaTicket || sol.facturaProveedorOriginal) && <p><strong className="text-[#68706E]">Nº Ticket / Factura Proveedor:</strong> <span className="text-[#B44E2A] font-mono font-bold">{sol.proveedorFacturaTicket || sol.facturaProveedorOriginal}</span></p>}
+                                           {sol.proveedorNombre && <p><strong className="text-[#68706E]">Proveedor / Mayorista:</strong> <span className="text-white font-bold">{sol.proveedorNombre}</span></p>}
+                                           {sol.proveedorCosto > 0 && <p><strong className="text-[#68706E]">Costo de Compra:</strong> <span className="text-[#2F7D5C] font-black">${sol.proveedorCosto.toLocaleString("es-AR")}</span></p>}
+                                           {sol.proveedorGuia && <p><strong className="text-[#68706E]">Nº de Guía / Tracking:</strong> <span className="text-amber-300 font-mono font-bold">{sol.proveedorGuia}</span></p>}
+                                           {sol.proveedorFechaPedido && <p><strong className="text-[#68706E]">Fecha del Pedido:</strong> {new Date(sol.proveedorFechaPedido).toLocaleDateString("es-AR")}</p>}
+                                           {sol.proveedorFechaEstimada && <p><strong className="text-[#68706E]">Fecha Estimada Arribo (ETA):</strong> {new Date(sol.proveedorFechaEstimada).toLocaleDateString("es-AR")}</p>}
                                          </div>
 
-                                         <div className="flex gap-2 pt-2 border-t border-zinc-900 mt-2">
+                                         <div className="flex gap-2 pt-2 border-t border-[#DED8CF] mt-2">
                                            <button
                                              type="button"
                                              onClick={() => {
@@ -3938,7 +3938,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                setProveedorFechaEstimada(sol.proveedorFechaEstimada || "");
                                                setProveedorEstado(sol.proveedorEstado || "SOLICITADO");
                                              }}
-                                             className="text-[10px] text-amber-400 hover:text-amber-300 font-bold underline flex items-center gap-1"
+                                             className="text-[10px] text-[#B44E2A] hover:text-amber-300 font-bold underline flex items-center gap-1"
                                            >
                                              ✏️ Editar Pedido a Proveedor
                                            </button>
@@ -3948,82 +3948,82 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                                      {/* Formulario de Alta / Edición de Pedido a Proveedor */}
                                      {(proveedorEditId === sol.id || (!sol.proveedorNombre && !sol.proveedorGuia && !sol.proveedorCosto)) && (
-                                       <div className="bg-zinc-900 p-3 rounded-lg border border-zinc-800 space-y-2.5 text-xs">
-                                         <p className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">
+                                       <div className="bg-[#FFFDFC] p-3 rounded-lg border border-[#DED8CF] space-y-2.5 text-xs">
+                                         <p className="text-[10px] font-bold text-[#B44E2A] uppercase tracking-widest">
                                            📝 Registrar / Actualizar Pedido al Proveedor
                                          </p>
 
                                          <div>
-                                           <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Nº de Ticket / Factura de Compra del Proveedor</label>
+                                           <label className="block text-[9px] text-[#68706E] font-bold uppercase mb-0.5">Nº de Ticket / Factura de Compra del Proveedor</label>
                                            <input 
                                              type="text"
                                              value={proveedorEditId === sol.id ? proveedorFacturaTicket : (sol.proveedorFacturaTicket || sol.facturaProveedorOriginal || "")}
                                              onChange={e => { setProveedorEditId(sol.id); setProveedorFacturaTicket(e.target.value); }}
                                              placeholder="Ej: FAC-0001-94812 / Ticket #4812"
-                                             className="w-full bg-zinc-950 border border-zinc-850 p-2 rounded text-xs text-amber-300 font-mono font-bold outline-none focus:border-amber-500 mb-2"
+                                             className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-amber-300 font-mono font-bold outline-none focus:border-amber-500 mb-2"
                                            />
                                          </div>
                                          <div>
-                                           <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Nombre del Proveedor / Mayorista</label>
+                                           <label className="block text-[9px] text-[#68706E] font-bold uppercase mb-0.5">Nombre del Proveedor / Mayorista</label>
                                            <input 
                                              type="text"
                                              value={proveedorEditId === sol.id ? proveedorNombre : ""}
                                              onChange={e => { setProveedorEditId(sol.id); setProveedorNombre(e.target.value); }}
                                              placeholder="Ej: Samsung Arg, Frávega Mayorista, Newsan, etc."
-                                             className="w-full bg-zinc-950 border border-zinc-850 p-2 rounded text-xs text-white outline-none focus:border-amber-500 font-bold"
+                                             className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none focus:border-amber-500 font-bold"
                                            />
                                          </div>
 
                                          <div className="grid grid-cols-2 gap-2">
                                            <div>
-                                             <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Costo Compra ($)</label>
+                                             <label className="block text-[9px] text-[#68706E] font-bold uppercase mb-0.5">Costo Compra ($)</label>
                                              <input 
                                                type="number"
                                                value={proveedorEditId === sol.id ? proveedorCosto : ""}
                                                onChange={e => { setProveedorEditId(sol.id); setProveedorCosto(e.target.value); }}
                                                placeholder="Costo abonado"
-                                               className="w-full bg-zinc-950 border border-zinc-850 p-2 rounded text-xs text-white outline-none focus:border-amber-500 font-mono"
+                                               className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none focus:border-amber-500 font-mono"
                                              />
                                            </div>
                                            <div>
-                                             <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Nº de Guía / Tracking</label>
+                                             <label className="block text-[9px] text-[#68706E] font-bold uppercase mb-0.5">Nº de Guía / Tracking</label>
                                              <input 
                                                type="text"
                                                value={proveedorEditId === sol.id ? proveedorGuia : ""}
                                                onChange={e => { setProveedorEditId(sol.id); setProveedorGuia(e.target.value); }}
                                                placeholder="Ej: Andreani #829148"
-                                               className="w-full bg-zinc-950 border border-zinc-850 p-2 rounded text-xs text-white outline-none focus:border-amber-500 font-mono"
+                                               className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none focus:border-amber-500 font-mono"
                                              />
                                            </div>
                                          </div>
 
                                          <div className="grid grid-cols-2 gap-2">
                                            <div>
-                                             <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Fecha del Pedido</label>
+                                             <label className="block text-[9px] text-[#68706E] font-bold uppercase mb-0.5">Fecha del Pedido</label>
                                              <input 
                                                type="date"
                                                value={proveedorEditId === sol.id ? proveedorFechaPedido : ""}
                                                onChange={e => { setProveedorEditId(sol.id); setProveedorFechaPedido(e.target.value); }}
-                                               className="w-full bg-zinc-950 border border-zinc-850 p-2 rounded text-xs text-white outline-none focus:border-amber-500"
+                                               className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none focus:border-amber-500"
                                              />
                                            </div>
                                            <div>
-                                             <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Fecha Estimada Arribo (ETA)</label>
+                                             <label className="block text-[9px] text-[#68706E] font-bold uppercase mb-0.5">Fecha Estimada Arribo (ETA)</label>
                                              <input 
                                                type="date"
                                                value={proveedorEditId === sol.id ? proveedorFechaEstimada : ""}
                                                onChange={e => { setProveedorEditId(sol.id); setProveedorFechaEstimada(e.target.value); }}
-                                               className="w-full bg-zinc-950 border border-zinc-850 p-2 rounded text-xs text-white outline-none focus:border-amber-500"
+                                               className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none focus:border-amber-500"
                                              />
                                            </div>
                                          </div>
 
                                          <div>
-                                           <label className="block text-[9px] text-zinc-500 font-bold uppercase mb-0.5">Estado del Envío Proveedor</label>
+                                           <label className="block text-[9px] text-[#68706E] font-bold uppercase mb-0.5">Estado del Envío Proveedor</label>
                                            <select
                                              value={proveedorEditId === sol.id ? proveedorEstado : "SOLICITADO"}
                                              onChange={e => { setProveedorEditId(sol.id); setProveedorEstado(e.target.value); }}
-                                             className="w-full bg-zinc-950 border border-zinc-850 p-2 rounded text-xs text-amber-300 font-bold outline-none focus:border-amber-500"
+                                             className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-amber-300 font-bold outline-none focus:border-amber-500"
                                            >
                                              <option value="SOLICITADO">🛒 SOLICITADO AL PROVEEDOR</option>
                                              <option value="EN_TRANSITO">🚚 EN TRÁNSITO (EN CAMINO)</option>
@@ -4045,28 +4045,28 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                    <div className="pt-2 border-t border-blue-900/50">
                                       <label className="block text-xs font-bold text-blue-300/70 mb-2">Estado Final de Entrega al Cliente:</label>
                                       {entregaActiva === sol.id ? (
-                                        <div className="bg-zinc-900 border border-blue-500 p-4 rounded-xl flex flex-col gap-3 shadow-2xl">
+                                        <div className="bg-[#FFFDFC] border border-blue-500 p-4 rounded-xl flex flex-col gap-3 shadow-xs">
                                            <h4 className="text-blue-400 font-bold text-xs uppercase text-center border-b border-blue-900 pb-2 mb-1">Confirmar Cierre y Adelanto</h4>
                                            <div className="grid grid-cols-2 gap-3">
                                              <div>
-                                               <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Adelanto Abonado ($)</label>
-                                               <input type="number" value={montoAbonado} onChange={e=>setMontoAbonado(e.target.value)} className="bg-zinc-950 text-zinc-100 px-3 py-2.5 rounded-lg text-sm border border-zinc-800 w-full focus:border-yellow-500 outline-none font-black" />
+                                               <label className="block text-[10px] text-[#68706E] mb-1 font-bold">Adelanto Abonado ($)</label>
+                                               <input type="number" value={montoAbonado} onChange={e=>setMontoAbonado(e.target.value)} className="bg-[#F7F3EC] text-[#1F2928] px-3 py-2.5 rounded-lg text-sm border border-[#DED8CF] w-full focus:border-yellow-500 outline-none font-black" />
                                              </div>
                                              <div>
-                                               <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Método Pago</label>
-                                               <select value={metodoPago} onChange={e=>setMetodoPago(e.target.value)} className="bg-zinc-950 text-zinc-100 px-3 py-2.5 rounded-lg text-sm border border-zinc-800 w-full focus:border-blue-500 outline-none">
+                                               <label className="block text-[10px] text-[#68706E] mb-1 font-bold">Método Pago</label>
+                                               <select value={metodoPago} onChange={e=>setMetodoPago(e.target.value)} className="bg-[#F7F3EC] text-[#1F2928] px-3 py-2.5 rounded-lg text-sm border border-[#DED8CF] w-full focus:border-blue-500 outline-none">
                                                  <option value="Efectivo">💵 Efectivo</option>
                                                  <option value="Transferencia">📱 Transf.</option>
                                                </select>
                                              </div>
                                            </div>
                                            <div>
-                                             <label className="block text-[10px] text-zinc-500 mb-1 font-bold">Nota Logística (Opcional)</label>
-                                             <input type="text" value={comentarioEntrega} onChange={e=>setComentarioEntrega(e.target.value)} placeholder="..." className="bg-zinc-950 text-zinc-100 px-3 py-2.5 rounded-lg text-sm border border-zinc-800 w-full focus:border-blue-500 outline-none" />
+                                             <label className="block text-[10px] text-[#68706E] mb-1 font-bold">Nota Logística (Opcional)</label>
+                                             <input type="text" value={comentarioEntrega} onChange={e=>setComentarioEntrega(e.target.value)} placeholder="..." className="bg-[#F7F3EC] text-[#1F2928] px-3 py-2.5 rounded-lg text-sm border border-[#DED8CF] w-full focus:border-blue-500 outline-none" />
                                            </div>
                                            <div className="flex gap-2 mt-3">
-                                             <button onClick={() => setEntregaActiva(null)} className="flex-1 bg-zinc-800/80 text-zinc-400 py-2.5 rounded-lg text-xs font-bold hover:bg-gray-200 transition">Cancelar</button>
-                                             <button onClick={() => handleConfirmarEntregaAdmin(sol.id, "ENTREGADO", false, sol.vinculoProductoId || "", sol.vinculoUnidadId || "")} className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-xs font-black hover:bg-blue-500 transition shadow-2xl shadow-black/60">✓ GUARDAR CIERRE</button>
+                                             <button onClick={() => setEntregaActiva(null)} className="flex-1 bg-[#F7F3EC]/80 text-[#68706E] py-2.5 rounded-lg text-xs font-bold hover:bg-gray-200 transition">Cancelar</button>
+                                             <button onClick={() => handleConfirmarEntregaAdmin(sol.id, "ENTREGADO", false, sol.vinculoProductoId || "", sol.vinculoUnidadId || "")} className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-xs font-black hover:bg-blue-500 transition shadow-xs">✓ GUARDAR CIERRE</button>
                                            </div>
                                         </div>
                                       ) : (
@@ -4080,7 +4080,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                  handleConfirmarEntregaAdmin(sol.id, val, true);
                                               }
                                            }}
-                                           className={`w-full text-sm p-3 rounded-lg font-bold outline-none transition-colors border-2 ${sol.estadoEntrega === 'ENTREGADO' ? 'bg-green-900/30 border-green-500/50 text-green-400' : 'bg-zinc-900 border-blue-900 text-white focus:border-blue-500'}`}
+                                           className={`w-full text-sm p-3 rounded-lg font-bold outline-none transition-colors border-2 ${sol.estadoEntrega === 'ENTREGADO' ? 'bg-green-900/30 border-green-500/50 text-[#2F7D5C]' : 'bg-[#FFFDFC] border-blue-900 text-white focus:border-blue-500'}`}
                                         >
                                            <option value="PENDIENTE_ENTREGA">⏳ Pendiente de entrega</option>
                                            <option value="ENTREGADO">✅ ENTREGADO Y CERRADO</option>
@@ -4089,12 +4089,12 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                       )}
 
                                       {sol.estadoEntrega === "ENTREGADO" && !entregaActiva && (
-                                        <div className="bg-zinc-900/50 border border-green-500/10 p-3 rounded-lg mt-3">
+                                        <div className="bg-[#F7F3EC] border border-green-500/10 p-3 rounded-lg mt-3">
                                           <div className="grid grid-cols-2 gap-2 text-xs">
-                                            <p className="text-zinc-400"><span className="text-zinc-500 font-bold block text-[10px]">Nº SERIE:</span> {sol.numeroSerie || "N/A"}</p>
-                                            <p className="text-zinc-400"><span className="text-zinc-500 font-bold block text-[10px]">ANTICIPO ABONADO:</span> <span className="text-green-400 font-black">${sol.montoAbonado || 0}</span> ({sol.metodoPago || "N/A"})</p>
+                                            <p className="text-[#68706E]"><span className="text-[#68706E] font-bold block text-[10px]">Nº SERIE:</span> {sol.numeroSerie || "N/A"}</p>
+                                            <p className="text-[#68706E]"><span className="text-[#68706E] font-bold block text-[10px]">ANTICIPO ABONADO:</span> <span className="text-[#2F7D5C] font-black">${sol.montoAbonado || 0}</span> ({sol.metodoPago || "N/A"})</p>
                                           </div>
-                                          {sol.comentarioEntrega && <p className="text-[10px] text-zinc-500 italic mt-2 border-t border-zinc-850 pt-2">&quot;{sol.comentarioEntrega}&quot;</p>}
+                                          {sol.comentarioEntrega && <p className="text-[10px] text-[#68706E] italic mt-2 border-t border-[#DED8CF] pt-2">&quot;{sol.comentarioEntrega}&quot;</p>}
                                         </div>
                                       )}
                                    </div>
@@ -4104,11 +4104,11 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                              {/* DOCUMENTACIÓN LEGAL */}
                              {currentEstado === "APROBADO" && (
-                               <div className="bg-zinc-950 border border-zinc-850 p-4 rounded-xl">
-                                 <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest text-center mb-3">Generación Legal (PDF)</h3>
+                               <div className="bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-xl">
+                                 <h3 className="text-xs font-bold text-[#68706E] uppercase tracking-widest text-center mb-3">Generación Legal (PDF)</h3>
                                  <div className="grid grid-cols-2 gap-3">
-                                   <button onClick={() => handleOpenContratoEditor(sol)} className="bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-zinc-400 hover:text-yellow-400 py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">📄 Editar Contrato</button>
-                                   <button onClick={() => handleOpenContratoEditor(sol)} className="bg-zinc-950 border border-zinc-800 hover:border-yellow-500 text-zinc-400 hover:text-yellow-400 py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">📄 Editar Pagaré</button>
+                                   <button onClick={() => handleOpenContratoEditor(sol)} className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500 text-[#68706E] hover:text-[#B44E2A] py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">📄 Editar Contrato</button>
+                                   <button onClick={() => handleOpenContratoEditor(sol)} className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500 text-[#68706E] hover:text-[#B44E2A] py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">📄 Editar Pagaré</button>
                                  </div>
                                </div>
                              )}
@@ -4117,8 +4117,8 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                           {/* COLUMNA 3: COBRANZA Y CUOTAS (SOLO SI TIENE PLAN) */}
                           <div className="flex flex-col gap-6">
                             {sol.planPagos ? (
-                              <div className="bg-green-950/10 border-2 border-green-500/20 p-5 rounded-xl shadow-2xl shadow-black/60 h-full flex flex-col gap-4">
-                                <h3 className="text-sm font-black text-green-400 uppercase tracking-widest flex items-center gap-2 border-b border-green-950/50 pb-3"><DollarSign className="w-4 h-4"/> Auditoría de Cuotas</h3>
+                              <div className="bg-green-950/10 border-2 border-green-500/20 p-5 rounded-xl shadow-xs h-full flex flex-col gap-4">
+                                <h3 className="text-sm font-black text-[#2F7D5C] uppercase tracking-widest flex items-center gap-2 border-b border-green-950/50 pb-3"><DollarSign className="w-4 h-4"/> Auditoría de Cuotas</h3>
                                 
                                 {/* RESUMEN DE PAGO */}
                                 {(() => {
@@ -4133,35 +4133,35 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                    const pct = totalOriginal > 0 ? Math.round((totalAbonado / totalOriginal) * 100) : 0;
                                    
                                    return (
-                                      <div className="bg-zinc-950/70 border border-green-500/10 p-4 rounded-xl space-y-3">
-                                         <div className="flex justify-between items-center text-xs border-b border-zinc-900 pb-2">
-                                            <span className="text-zinc-500 font-bold uppercase tracking-wider">Resumen de Pagos</span>
-                                            <span className="text-green-400 font-mono font-black">{paidCuotas.length} / {plan.length} Cuotas</span>
+                                      <div className="bg-[#FFFDFC]/70 border border-green-500/10 p-4 rounded-xl space-y-3">
+                                         <div className="flex justify-between items-center text-xs border-b border-[#DED8CF] pb-2">
+                                            <span className="text-[#68706E] font-bold uppercase tracking-wider">Resumen de Pagos</span>
+                                            <span className="text-[#2F7D5C] font-mono font-black">{paidCuotas.length} / {plan.length} Cuotas</span>
                                          </div>
                                          <div className="grid grid-cols-3 gap-2 text-center">
-                                            <div className="bg-zinc-900/50 p-2 rounded border border-zinc-850">
-                                               <span className="block text-[8px] text-zinc-500 font-bold uppercase">Total Plan</span>
-                                               <span className="text-[11px] text-zinc-300 font-black">${totalOriginal}</span>
+                                            <div className="bg-[#F7F3EC] p-2 rounded border border-[#DED8CF]">
+                                               <span className="block text-[8px] text-[#68706E] font-bold uppercase">Total Plan</span>
+                                               <span className="text-[11px] text-[#1F2928] font-black">${totalOriginal}</span>
                                             </div>
                                             <div className="bg-green-950/20 p-2 rounded border border-green-500/10">
                                                <span className="block text-[8px] text-green-500/60 font-bold uppercase">Abonado</span>
-                                               <span className="text-[11px] text-green-400 font-black">${totalAbonado}</span>
+                                               <span className="text-[11px] text-[#2F7D5C] font-black">${totalAbonado}</span>
                                             </div>
-                                            <div className="bg-zinc-900/50 p-2 rounded border border-zinc-850">
-                                               <span className="block text-[8px] text-zinc-500 font-bold uppercase">Pendiente</span>
-                                               <span className="text-[11px] text-orange-400 font-black">${totalPendiente}</span>
+                                            <div className="bg-[#F7F3EC] p-2 rounded border border-[#DED8CF]">
+                                               <span className="block text-[8px] text-[#68706E] font-bold uppercase">Pendiente</span>
+                                               <span className="text-[11px] text-[#B44E2A] font-black">${totalPendiente}</span>
                                             </div>
                                          </div>
                                          <div className="space-y-1 pt-1">
-                                            <div className="flex justify-between text-[9px] font-bold text-zinc-500">
+                                            <div className="flex justify-between text-[9px] font-bold text-[#68706E]">
                                                <span>PROGRESO DE PAGO</span>
                                                <span>{pct}%</span>
                                             </div>
-                                            <div className="w-full bg-zinc-900 h-2 rounded-full overflow-hidden border border-zinc-850">
+                                            <div className="w-full bg-[#FFFDFC] h-2 rounded-full overflow-hidden border border-[#DED8CF]">
                                                <div className="bg-green-500 h-full transition-all duration-500" style={{ width: `${pct}%` }}></div>
                                             </div>
                                          </div>
-                                          <div className="pt-2 border-t border-zinc-900">
+                                          <div className="pt-2 border-t border-[#DED8CF]">
                                             <button
                                                onClick={() => {
                                                   generarEstadoCuenta({
@@ -4176,7 +4176,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                      planPagos: plan
                                                   });
                                                }}
-                                               className="w-full bg-green-950/20 hover:bg-green-600 border border-green-500/25 text-green-400 hover:text-white font-bold py-2 rounded-lg text-xs transition uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95"
+                                               className="w-full bg-green-950/20 hover:bg-green-600 border border-green-500/25 text-[#2F7D5C] hover:text-white font-bold py-2 rounded-lg text-xs transition uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95"
                                             >
                                                📥 Descargar Resumen de Cuenta (PDF)
                                             </button>
@@ -4187,44 +4187,44 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                 
                                 <div className="space-y-3 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar">
                                   {sol.planPagos.map((cuota: any, idx: number) => (
-                                    <div key={idx} className="bg-zinc-900 border border-green-900/50 p-4 rounded-lg flex flex-col gap-3">
+                                    <div key={idx} className="bg-[#FFFDFC] border border-green-900/50 p-4 rounded-lg flex flex-col gap-3">
                                       <div className="flex justify-between items-start border-b border-green-900/30 pb-2">
                                         <div>
-                                          <p className="text-white font-black text-sm">Cuota {cuota.numero} <span className="text-green-400">${cuota.montoOriginal}</span></p>
-                                          <p className="text-[10px] text-zinc-500 font-medium">Vence: {new Date(cuota.vencimiento).toLocaleDateString()}</p>
+                                          <p className="text-white font-black text-sm">Cuota {cuota.numero} <span className="text-[#2F7D5C]">${cuota.montoOriginal}</span></p>
+                                          <p className="text-[10px] text-[#68706E] font-medium">Vence: {new Date(cuota.vencimiento).toLocaleDateString()}</p>
                                         </div>
                                         <div className="text-right">
-                                          {cuota.estado === "PAGADO" && <span className="bg-green-500/20 text-green-400 px-2.5 py-1 rounded border border-green-500/10 text-[10px] font-black uppercase tracking-widest">Acreditado</span>}
+                                          {cuota.estado === "PAGADO" && <span className="bg-green-500/20 text-[#2F7D5C] px-2.5 py-1 rounded border border-green-500/10 text-[10px] font-black uppercase tracking-widest">Acreditado</span>}
                                           {cuota.estado === "PENDIENTE" && <span className="bg-orange-500/10 text-orange-500 px-2.5 py-1 rounded border border-orange-500/20 text-[10px] font-black uppercase tracking-widest">Pendiente</span>}
                                           {cuota.estado === "EN_REVISION" && <span className="bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded border border-blue-500/50 text-[10px] font-black uppercase tracking-widest animate-pulse">Revisar Pago</span>}
                                         </div>
                                       </div>
                                       
                                       {cuota.estado === "PAGADO" && (
-                                         <div className="flex flex-col gap-1.5 mt-1 bg-zinc-950 p-2.5 rounded border border-zinc-900">
+                                         <div className="flex flex-col gap-1.5 mt-1 bg-[#FFFDFC] p-2.5 rounded border border-[#DED8CF]">
                                             <div className="flex justify-between items-center text-[10px]">
-                                               <span className="text-zinc-500 font-bold uppercase">Abonado:</span>
-                                               <span className="text-green-400 font-black">${cuota.montoAbonado || cuota.montoOriginal}</span>
+                                               <span className="text-[#68706E] font-bold uppercase">Abonado:</span>
+                                               <span className="text-[#2F7D5C] font-black">${cuota.montoAbonado || cuota.montoOriginal}</span>
                                             </div>
                                             {cuota.fechaPago && (
                                                <div className="flex justify-between items-center text-[10px]">
-                                                  <span className="text-zinc-500">Fecha de Pago:</span>
-                                                  <span className="text-zinc-300">{new Date(cuota.fechaPago).toLocaleDateString("es-AR")}</span>
+                                                  <span className="text-[#68706E]">Fecha de Pago:</span>
+                                                  <span className="text-[#1F2928]">{new Date(cuota.fechaPago).toLocaleDateString("es-AR")}</span>
                                                </div>
                                             )}
                                             {(cuota.cuentaDestino || cuota.metodoPagoManual || cuota.metodoPago) && (
                                                <div className="flex justify-between items-center text-[10px]">
-                                                  <span className="text-zinc-500">Medio / Cuenta:</span>
-                                                  <span className="text-zinc-300">{cuota.cuentaDestino || cuota.metodoPagoManual || cuota.metodoPago}</span>
+                                                  <span className="text-[#68706E]">Medio / Cuenta:</span>
+                                                  <span className="text-[#1F2928]">{cuota.cuentaDestino || cuota.metodoPagoManual || cuota.metodoPago}</span>
                                                </div>
                                             )}
                                             {cuota.nroComprobante && (
                                                <div className="flex justify-between items-center text-[10px]">
-                                                  <span className="text-zinc-500">Transacción:</span>
-                                                  <span className="text-zinc-300 font-mono">{cuota.nroComprobante}</span>
+                                                  <span className="text-[#68706E]">Transacción:</span>
+                                                  <span className="text-[#1F2928] font-mono">{cuota.nroComprobante}</span>
                                                </div>
                                             )}
-                                            <div className="flex gap-2 mt-2 pt-2 border-t border-zinc-900">
+                                            <div className="flex gap-2 mt-2 pt-2 border-t border-[#DED8CF]">
                                                {cuota.comprobanteUrl && (
                                                   <a 
                                                     href={cuota.comprobanteUrl} 
@@ -4254,7 +4254,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                         esPagoParcial: isPartial
                                                      });
                                                   }}
-                                                  className="flex-1 bg-green-950/20 text-green-400 border border-green-500/20 py-1 rounded text-[9px] font-bold hover:bg-green-600 hover:text-white transition uppercase tracking-wider flex items-center justify-center gap-1"
+                                                  className="flex-1 bg-green-950/20 text-[#2F7D5C] border border-green-500/20 py-1 rounded text-[9px] font-bold hover:bg-green-600 hover:text-white transition uppercase tracking-wider flex items-center justify-center gap-1"
                                                >
                                                   📥 Descargar Recibo PDF
                                                </button>
@@ -4263,7 +4263,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                       )}
 
                                       {cuota.estado === "EN_REVISION" && (
-                                         <div className="bg-zinc-950 p-3 rounded-lg border border-zinc-800 flex flex-col gap-3">
+                                         <div className="bg-[#FFFDFC] p-3 rounded-lg border border-[#DED8CF] flex flex-col gap-3">
                                             <a href={cuota.comprobanteUrl} target="_blank" rel="noreferrer" className="bg-blue-600/20 text-blue-400 border border-blue-500/50 text-xs font-bold py-2 rounded text-center hover:bg-blue-600 hover:text-white transition-colors">📄 Abrir Comprobante Adjunto</a>
                                             <div className="flex gap-2">
                                               <button onClick={async () => {
@@ -4281,14 +4281,14 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                   setPagoMonto(String(cuota.montoOriginal));
                                                   setPagoComprobante(cuota.nroComprobante || "");
                                                   setPagoCuentaDestino(cuota.cuentaDestino || "Mercado Pago (Fintech)");
-                                              }} className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2 rounded text-xs font-black transition shadow-2xl shadow-black/60">✓ Aprobar</button>
+                                              }} className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2 rounded text-xs font-black transition shadow-xs">✓ Aprobar</button>
                                             </div>
                                          </div>
                                       )}
 
                                        {cuota.estado === "PENDIENTE" && (
-                                         <div className="bg-zinc-950/60 p-3 rounded-lg border border-zinc-900/60 flex flex-col gap-2 mt-1">
-                                           <p className="text-[10px] text-zinc-500 font-medium">Registrar cobro manual realizado en efectivo o transferencia:</p>
+                                         <div className="bg-[#FFFDFC]/60 p-3 rounded-lg border border-[#DED8CF]/60 flex flex-col gap-2 mt-1">
+                                           <p className="text-[10px] text-[#68706E] font-medium">Registrar cobro manual realizado en efectivo o transferencia:</p>
                                            <div className="flex gap-2">
                                              <button
                                                onClick={() => {
@@ -4297,7 +4297,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                  setPagoComprobante("");
                                                  setPagoCuentaDestino("Caja Efectivo");
                                                }}
-                                               className="flex-1 bg-green-950/30 hover:bg-green-600 border border-green-500/20 text-green-400 hover:text-white py-1.5 rounded text-[10px] font-black transition uppercase tracking-wider"
+                                               className="flex-1 bg-green-950/30 hover:bg-green-600 border border-green-500/20 text-[#2F7D5C] hover:text-white py-1.5 rounded text-[10px] font-black transition uppercase tracking-wider"
                                              >
                                                💵 Efectivo
                                              </button>
@@ -4320,8 +4320,8 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                 </div>
                               </div>
                             ) : (
-                              <div className="bg-zinc-950 border border-zinc-850 p-6 rounded-xl flex items-center justify-center text-center h-full">
-                                 <p className="text-zinc-500 text-sm">Aún no hay plan de cuotas o no se registró la entrega física.</p>
+                              <div className="bg-[#FFFDFC] border border-[#DED8CF] p-6 rounded-xl flex items-center justify-center text-center h-full">
+                                 <p className="text-[#68706E] text-sm">Aún no hay plan de cuotas o no se registró la entrega física.</p>
                               </div>
                             )}
                           </div>
@@ -4336,43 +4336,43 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
           </div>
              {/* MODAL DE CONFIRMACIÓN DE COBRO Y EMISIÓN DE COMPROBANTE */}
              {pagoAConfirmar && (
-               <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                 <div className="bg-zinc-900 border-2 border-green-500/20 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-5">
-                   <div className="border-b border-zinc-800 pb-3 flex justify-between items-center">
+               <div className="fixed inset-0 bg-[#FFFDFC]/85 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                 <div className="bg-[#FFFDFC] border-2 border-green-500/20 rounded-3xl w-full max-w-md p-6 shadow-xs space-y-5">
+                   <div className="border-b border-[#DED8CF] pb-3 flex justify-between items-center">
                      <div>
-                       <h3 className="text-sm font-black text-green-400 uppercase tracking-widest">💰 Acreditación de Pago</h3>
-                       <p className="text-[10px] text-zinc-500">Registre los datos de la transacción para emitir comprobante</p>
+                       <h3 className="text-sm font-black text-[#2F7D5C] uppercase tracking-widest">💰 Acreditación de Pago</h3>
+                       <p className="text-[10px] text-[#68706E]">Registre los datos de la transacción para emitir comprobante</p>
                      </div>
-                     <button onClick={() => setPagoAConfirmar(null)} className="text-zinc-500 hover:text-white text-xs font-bold">✕</button>
+                     <button onClick={() => setPagoAConfirmar(null)} className="text-[#68706E] hover:text-white text-xs font-bold">✕</button>
                    </div>
                    
                    <div className="space-y-4 text-xs">
                      <div>
-                       <label className="block text-[10px] text-zinc-400 font-bold uppercase mb-1">Monto Real Cobrado ($)</label>
+                       <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Monto Real Cobrado ($)</label>
                        <input 
                          type="number" 
                          value={pagoMonto} 
                          onChange={e => setPagoMonto(e.target.value)} 
-                         className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white font-black text-sm outline-none focus:border-green-500" 
+                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white font-black text-sm outline-none focus:border-green-500" 
                          placeholder="Monto"
                        />
                      </div>
                      <div>
-                       <label className="block text-[10px] text-zinc-400 font-bold uppercase mb-1">Nº Comprobante / Transacción (Opcional)</label>
+                       <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Nº Comprobante / Transacción (Opcional)</label>
                        <input 
                          type="text" 
                          value={pagoComprobante} 
                          onChange={e => setPagoComprobante(e.target.value)} 
-                         className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white font-mono outline-none focus:border-green-500" 
+                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white font-mono outline-none focus:border-green-500" 
                          placeholder="Ej: TXN-99887766"
                        />
                      </div>
                      <div>
-                       <label className="block text-[10px] text-zinc-400 font-bold uppercase mb-1">Cuenta de Destino / Depósito</label>
+                       <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Cuenta de Destino / Depósito</label>
                        <select 
                          value={pagoCuentaDestino} 
                          onChange={e => setPagoCuentaDestino(e.target.value)} 
-                         className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white outline-none focus:border-green-500 font-medium"
+                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white outline-none focus:border-green-500 font-medium"
                        >
                          <option value="Caja Efectivo">💵 Caja Efectivo</option>
                          <option value="Mercado Pago (Fintech)">📱 Mercado Pago (Fintech)</option>
@@ -4387,13 +4387,13 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                    <div className="flex gap-3 pt-2">
                      <button 
                        onClick={() => setPagoAConfirmar(null)} 
-                       className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold py-2 rounded-lg text-xs transition uppercase tracking-wider"
+                       className="flex-1 bg-[#F7F3EC] hover:bg-[#FFFDFC] text-[#1F2928] font-bold py-2 rounded-lg text-xs transition uppercase tracking-wider"
                      >
                        Cancelar
                      </button>
                      <button 
                        onClick={handleProcesarPagoFinal} 
-                       className="flex-1 bg-green-600 hover:bg-green-500 text-white font-black py-2 rounded-lg text-xs transition shadow-lg shadow-green-900/30 uppercase tracking-wider"
+                       className="flex-1 bg-green-600 hover:bg-green-500 text-white font-black py-2 rounded-lg text-xs transition shadow-xs shadow-green-900/30 uppercase tracking-wider"
                      >
                        💾 Confirmar y Generar PDF
                      </button>
@@ -4404,68 +4404,68 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
              {/* MODAL EDITOR DE CONTRATO */}
              {contratoAEditar && (
-               <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
-                 <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-4xl p-6 md:p-8 max-h-[90vh] overflow-y-auto space-y-6 custom-scrollbar shadow-2xl">
+               <div className="fixed inset-0 bg-[#1F2928]/60 backdrop-blur-sm backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
+                 <div className="bg-[#FFFDFC] border border-[#DED8CF] rounded-3xl w-full max-w-4xl p-6 md:p-8 max-h-[90vh] overflow-y-auto space-y-6 custom-scrollbar shadow-xs">
                    
-                   <div className="flex justify-between items-center border-b border-zinc-800 pb-4">
+                   <div className="flex justify-between items-center border-b border-[#DED8CF] pb-4">
                      <div>
-                       <h2 className="text-xl font-black text-yellow-400">Editor Legal de Contrato / Pagaré</h2>
-                       <p className="text-xs text-zinc-500">Revise y modifique los valores antes de exportar a PDF</p>
+                       <h2 className="text-xl font-black text-[#B44E2A]">Editor Legal de Contrato / Pagaré</h2>
+                       <p className="text-xs text-[#68706E]">Revise y modifique los valores antes de exportar a PDF</p>
                      </div>
-                     <button onClick={() => setContratoAEditar(null)} className="text-zinc-400 hover:text-white font-black text-sm">
+                     <button onClick={() => setContratoAEditar(null)} className="text-[#68706E] hover:text-white font-black text-sm">
                        ✕ Cerrar
                      </button>
                    </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                      {/* Campos personales */}
-                     <div className="md:col-span-3 border-b border-zinc-800/80 pb-2">
-                       <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Datos del Comprador</h3>
+                     <div className="md:col-span-3 border-b border-[#DED8CF] pb-2">
+                       <h3 className="text-xs font-bold text-[#68706E] uppercase tracking-widest">Datos del Comprador</h3>
                      </div>
                      <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">Nombre Completo</label>
-                       <input type="text" value={contratoAEditar.nombreComprador} onChange={e => setContratoAEditar({...contratoAEditar, nombreComprador: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <label className="block text-xs font-bold text-[#68706E] mb-1">Nombre Completo</label>
+                       <input type="text" value={contratoAEditar.nombreComprador} onChange={e => setContratoAEditar({...contratoAEditar, nombreComprador: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">DNI</label>
-                       <input type="text" value={contratoAEditar.dni} onChange={e => setContratoAEditar({...contratoAEditar, dni: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <label className="block text-xs font-bold text-[#68706E] mb-1">DNI</label>
+                       <input type="text" value={contratoAEditar.dni} onChange={e => setContratoAEditar({...contratoAEditar, dni: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">Domicilio (PBA)</label>
-                       <input type="text" value={contratoAEditar.domicilio} onChange={e => setContratoAEditar({...contratoAEditar, domicilio: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <label className="block text-xs font-bold text-[#68706E] mb-1">Domicilio (PBA)</label>
+                       <input type="text" value={contratoAEditar.domicilio} onChange={e => setContratoAEditar({...contratoAEditar, domicilio: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">Email</label>
-                       <input type="text" value={contratoAEditar.email} onChange={e => setContratoAEditar({...contratoAEditar, email: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <label className="block text-xs font-bold text-[#68706E] mb-1">Email</label>
+                       <input type="text" value={contratoAEditar.email} onChange={e => setContratoAEditar({...contratoAEditar, email: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">WhatsApp</label>
-                       <input type="text" value={contratoAEditar.whatsapp} onChange={e => setContratoAEditar({...contratoAEditar, whatsapp: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <label className="block text-xs font-bold text-[#68706E] mb-1">WhatsApp</label>
+                       <input type="text" value={contratoAEditar.whatsapp} onChange={e => setContratoAEditar({...contratoAEditar, whatsapp: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">N° de Legajo / Contrato</label>
-                       <input type="text" value={contratoAEditar.nroContrato} onChange={e => setContratoAEditar({...contratoAEditar, nroContrato: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <label className="block text-xs font-bold text-[#68706E] mb-1">N° de Legajo / Contrato</label>
+                       <input type="text" value={contratoAEditar.nroContrato} onChange={e => setContratoAEditar({...contratoAEditar, nroContrato: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
 
                      {/* Campos del bien */}
-                     <div className="md:col-span-3 border-b border-zinc-800/80 pb-2 pt-2">
-                       <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Detalles del Bien</h3>
+                     <div className="md:col-span-3 border-b border-[#DED8CF] pb-2 pt-2">
+                       <h3 className="text-xs font-bold text-[#68706E] uppercase tracking-widest">Detalles del Bien</h3>
                      </div>
                      <div className="md:col-span-2">
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">Producto / Modelo</label>
-                       <input type="text" value={contratoAEditar.producto} onChange={e => setContratoAEditar({...contratoAEditar, producto: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <label className="block text-xs font-bold text-[#68706E] mb-1">Producto / Modelo</label>
+                       <input type="text" value={contratoAEditar.producto} onChange={e => setContratoAEditar({...contratoAEditar, producto: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">IMEI / N° de Serie</label>
-                       <input type="text" value={contratoAEditar.nserie} onChange={e => setContratoAEditar({...contratoAEditar, nserie: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <label className="block text-xs font-bold text-[#68706E] mb-1">IMEI / N° de Serie</label>
+                       <input type="text" value={contratoAEditar.nserie} onChange={e => setContratoAEditar({...contratoAEditar, nserie: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
 
                      {/* Financiacion */}
-                     <div className="md:col-span-3 border-b border-zinc-800/80 pb-2 pt-2">
-                       <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Estructura Financiera</h3>
+                     <div className="md:col-span-3 border-b border-[#DED8CF] pb-2 pt-2">
+                       <h3 className="text-xs font-bold text-[#68706E] uppercase tracking-widest">Estructura Financiera</h3>
                      </div>
                      <div>
-                       <label className="block text-xs font-bold text-amber-400 mb-1">Precio Producto ($)</label>
+                       <label className="block text-xs font-bold text-[#B44E2A] mb-1">Precio Producto ($)</label>
                        <input type="text" value={contratoAEditar.precioContado} onChange={e => {
                           const newPC = e.target.value;
                           const numContado = parseFloat(newPC.replace(/[^0-9.-]/g, "")) || 0;
@@ -4489,10 +4489,10 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                           } else {
                             setContratoAEditar({ ...contratoAEditar, precioContado: newPC });
                           }
-                        }} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
+                        }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
                      </div>
                      <div>
-                       <label className="block text-xs font-bold text-amber-400 mb-1">Factor Financiado</label>
+                       <label className="block text-xs font-bold text-[#B44E2A] mb-1">Factor Financiado</label>
                        <input type="text" value={contratoAEditar.factorFinanciado} onChange={e => {
                           const newFactorStr = e.target.value;
                           const factor = parseFloat(newFactorStr.replace(/[^0-9.-]/g, "")) || 0;
@@ -4516,10 +4516,10 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                           } else {
                             setContratoAEditar({ ...contratoAEditar, factorFinanciado: newFactorStr });
                           }
-                        }} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-amber-400 text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
+                        }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#B44E2A] text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
                      </div>
                      <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">Total Financiado ($)</label>
+                       <label className="block text-xs font-bold text-[#68706E] mb-1">Total Financiado ($)</label>
                        <input type="text" value={contratoAEditar.totalFinanciado} onChange={e => {
                           const newTF = e.target.value;
                           const numTotal = parseFloat(newTF.replace(/[^0-9.-]/g, "")) || 0;
@@ -4543,10 +4543,10 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                           } else {
                             setContratoAEditar({ ...contratoAEditar, totalFinanciado: newTF });
                           }
-                        }} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
+                        }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
                      </div>
                       <div>
-                        <label className="block text-xs font-bold text-yellow-400 mb-1">Cantidad de Cuotas</label>
+                        <label className="block text-xs font-bold text-[#B44E2A] mb-1">Cantidad de Cuotas</label>
                         <select 
                           value={contratoAEditar.cuotas} 
                           onChange={e => {
@@ -4604,7 +4604,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                               });
                             }
                           }} 
-                          className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-yellow-400 text-xs font-bold focus:border-yellow-500 outline-none font-mono"
+                          className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#B44E2A] text-xs font-bold focus:border-yellow-500 outline-none font-mono"
                         >
                           {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
                             <option key={n} value={n}>
@@ -4642,23 +4642,23 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                           } else {
                             setContratoAEditar({ ...contratoAEditar, importeCuota: newImpStr });
                           }
-                        }} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
+                        }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
                      </div>
                      <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">TNA Compensatoria (%)</label>
-                       <input type="text" value={contratoAEditar.tnaComp} onChange={e => setContratoAEditar({...contratoAEditar, tnaComp: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <label className="block text-xs font-bold text-[#68706E] mb-1">TNA Compensatoria (%)</label>
+                       <input type="text" value={contratoAEditar.tnaComp} onChange={e => setContratoAEditar({...contratoAEditar, tnaComp: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">TNA Punitoria (Mora %)</label>
-                       <input type="text" value={contratoAEditar.tnaPun} onChange={e => setContratoAEditar({...contratoAEditar, tnaPun: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <label className="block text-xs font-bold text-[#68706E] mb-1">TNA Punitoria (Mora %)</label>
+                       <input type="text" value={contratoAEditar.tnaPun} onChange={e => setContratoAEditar({...contratoAEditar, tnaPun: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">CFT EA (%)</label>
-                       <input type="text" value={contratoAEditar.cftEa} onChange={e => setContratoAEditar({...contratoAEditar, cftEa: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <label className="block text-xs font-bold text-[#68706E] mb-1">CFT EA (%)</label>
+                       <input type="text" value={contratoAEditar.cftEa} onChange={e => setContratoAEditar({...contratoAEditar, cftEa: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
-                       <label className="block text-xs font-bold text-zinc-400 mb-1">Lugar y Fecha Firma</label>
-                       <input type="text" value={contratoAEditar.lugarFecha} onChange={e => setContratoAEditar({...contratoAEditar, lugarFecha: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <label className="block text-xs font-bold text-[#68706E] mb-1">Lugar y Fecha Firma</label>
+                       <input type="text" value={contratoAEditar.lugarFecha} onChange={e => setContratoAEditar({...contratoAEditar, lugarFecha: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                    </div>
 
@@ -4681,11 +4681,11 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                         return (
                           <div className="space-y-3">
                             <div className="bg-amber-950/20 border border-amber-500/40 p-3 rounded-xl space-y-1.5 text-xs text-amber-200">
-                              <p className="text-[10px] font-black uppercase text-amber-400 tracking-wider flex items-center justify-between border-b border-amber-500/30 pb-1">
+                              <p className="text-[10px] font-black uppercase text-[#B44E2A] tracking-wider flex items-center justify-between border-b border-amber-500/30 pb-1">
                                 <span>📜 Previsualización Cláusula Segunda (Contrato PDF)</span>
-                                <span className="text-[9px] font-mono text-zinc-400">Desglose Mandato Comercial</span>
+                                <span className="text-[9px] font-mono text-[#68706E]">Desglose Mandato Comercial</span>
                               </p>
-                              <p className="flex justify-between font-mono"><span>• Valor Neto del Bien (Costo Proveedor):</span> <strong className="text-emerald-400 font-bold">${cProd.toLocaleString("es-AR")}</strong></p>
+                              <p className="flex justify-between font-mono"><span>• Valor Neto del Bien (Costo Proveedor):</span> <strong className="text-[#2F7D5C] font-bold">${cProd.toLocaleString("es-AR")}</strong></p>
                               <p className="flex justify-between font-mono"><span>• Gastos de logística + Servicio de Soporte técnico (60%):</span> <strong className="text-white font-bold">${gastosSoporte.toLocaleString("es-AR")}</strong></p>
                               <p className="flex justify-between font-mono"><span>• Costo Financiero Total - CFT (40%):</span> <strong className="text-white font-bold">${costoFinanciero.toLocaleString("es-AR")}</strong></p>
                               <p className="flex justify-between font-sans text-amber-300 font-black pt-1.5 border-t border-amber-500/30 text-sm">
@@ -4695,25 +4695,25 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs pt-1">
-                              <div className="bg-[#181920] border border-emerald-500/30 p-3 rounded-xl space-y-1">
-                                <p className="text-[10px] text-emerald-400 font-bold uppercase">🟢 Monto Exento por Cuota (Devolución Capital)</p>
+                              <div className="bg-[#FFFDFC] border border-emerald-500/30 p-3 rounded-xl space-y-1">
+                                <p className="text-[10px] text-[#2F7D5C] font-bold uppercase">🟢 Monto Exento por Cuota (Devolución Capital)</p>
                                 <p className="text-base font-black text-white font-mono">
-                                  ${mExento.toLocaleString("es-AR")} <span className="text-[10px] text-zinc-400 font-normal">/ cuota</span>
+                                  ${mExento.toLocaleString("es-AR")} <span className="text-[10px] text-[#68706E] font-normal">/ cuota</span>
                                 </p>
                                 <p className="text-[10px] text-emerald-300 font-medium">
                                   ⚠️ Acción Alerta: Generar Recibo X (Devolución de Capital Exento por Mandato)
                                 </p>
                               </div>
 
-                              <div className="bg-[#181920] border border-blue-500/30 p-3 rounded-xl space-y-1.5">
+                              <div className="bg-[#FFFDFC] border border-blue-500/30 p-3 rounded-xl space-y-1.5">
                                 <div className="flex justify-between items-center">
                                   <p className="text-[10px] text-blue-400 font-bold uppercase">🔵 Factura B AFIP por Cuota (Servicios/CFT)</p>
                                   <span className="text-[9px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20 font-bold">IVA 21% Incorporado</span>
                                 </div>
                                 <p className="text-base font-black text-white font-mono">
-                                  ${mGravado.toLocaleString("es-AR")} <span className="text-[10px] text-zinc-400 font-normal">/ cuota</span>
+                                  ${mGravado.toLocaleString("es-AR")} <span className="text-[10px] text-[#68706E] font-normal">/ cuota</span>
                                 </p>
-                                <div className="text-[10px] text-blue-300 font-medium space-y-0.5 pt-1 border-t border-zinc-800/80 font-mono">
+                                <div className="text-[10px] text-blue-300 font-medium space-y-0.5 pt-1 border-t border-[#DED8CF] font-mono">
                                   <p className="flex justify-between"><span>📄 Base Neta (Honorarios):</span> <span className="font-bold text-white">${nGravado.toLocaleString("es-AR")}</span></p>
                                   <p className="flex justify-between"><span>🏛️ Débito Fiscal IVA 21%:</span> <span className="font-bold text-blue-200">${iva21.toLocaleString("es-AR")}</span></p>
                                 </div>
@@ -4726,36 +4726,36 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                    {/* Vencimiento de cuotas */}
                    <div className="space-y-3">
-                     <div className="border-b border-zinc-800/80 pb-2">
-                       <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Cronograma de Cuotas (Anexo I)</h3>
+                     <div className="border-b border-[#DED8CF] pb-2">
+                       <h3 className="text-xs font-bold text-[#68706E] uppercase tracking-widest">Cronograma de Cuotas (Anexo I)</h3>
                      </div>
                      <div className="max-h-[250px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                        {contratoAEditar.cuotasPlan.map((c: any, index: number) => (
-                         <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-zinc-950 p-3 rounded-lg border border-zinc-850 items-center">
-                           <span className="text-xs font-bold text-yellow-400">Cuota N° {c.numero}</span>
+                         <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-[#FFFDFC] p-3 rounded-lg border border-[#DED8CF] items-center">
+                           <span className="text-xs font-bold text-[#B44E2A]">Cuota N° {c.numero}</span>
                            <div>
-                             <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Vencimiento</label>
+                             <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Vencimiento</label>
                              <input type="date" value={c.vencimiento} onChange={e => {
                                const newPlan = [...contratoAEditar.cuotasPlan];
                                newPlan[index].vencimiento = e.target.value;
                                setContratoAEditar({...contratoAEditar, cuotasPlan: newPlan});
-                             }} className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white outline-none" />
+                             }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none" />
                            </div>
                            <div>
-                             <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Monto ($)</label>
+                             <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Monto ($)</label>
                              <input type="number" value={c.montoOriginal} onChange={e => {
                                const newPlan = [...contratoAEditar.cuotasPlan];
                                newPlan[index].montoOriginal = Number(e.target.value);
                                setContratoAEditar({...contratoAEditar, cuotasPlan: newPlan});
-                             }} className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white outline-none" />
+                             }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none" />
                            </div>
                            <div>
-                             <label className="block text-[10px] text-zinc-500 font-bold uppercase mb-1">Observación</label>
+                             <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Observación</label>
                              <input type="text" value={c.observacion} onChange={e => {
                                const newPlan = [...contratoAEditar.cuotasPlan];
                                newPlan[index].observacion = e.target.value;
                                setContratoAEditar({...contratoAEditar, cuotasPlan: newPlan});
-                             }} className="w-full bg-zinc-900 border border-zinc-800 p-2 rounded text-xs text-white outline-none" />
+                             }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none" />
                            </div>
                          </div>
                        ))}
@@ -4763,11 +4763,11 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                    </div>
 
                     {/* Botones de acción */}
-                    <div className="flex flex-col gap-4 pt-4 border-t border-zinc-800">
+                    <div className="flex flex-col gap-4 pt-4 border-t border-[#DED8CF]">
                       <button 
                         type="button"
                         onClick={handleGuardarEdicionContrato} 
-                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 rounded-xl font-black text-xs uppercase tracking-widest transition-colors shadow-xl flex items-center justify-center gap-2"
+                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 rounded-xl font-black text-xs uppercase tracking-widest transition-colors shadow-xs flex items-center justify-center gap-2"
                       >
                         💾 Guardar Modificaciones del Contrato y Pagaré en la Base de Datos
                       </button>
@@ -4777,13 +4777,13 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                        💬 Confirmar Legajo, Enviar WhatsApp y pasar a "Pendiente de firma"
                      </button>
                      <div className="flex flex-col md:flex-row gap-3">
-                       <button onClick={() => generarContratoModelo(contratoAEditar)} className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black py-3.5 rounded-xl font-black text-xs uppercase tracking-wider transition-colors shadow-lg">
+                       <button onClick={() => generarContratoModelo(contratoAEditar)} className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black py-3.5 rounded-xl font-black text-xs uppercase tracking-wider transition-colors shadow-xs">
                          📥 Generar Contrato (PDF)
                        </button>
-                       <button onClick={() => generarPagareModelo(contratoAEditar)} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3.5 rounded-xl font-black text-xs uppercase tracking-wider transition-colors shadow-lg">
+                       <button onClick={() => generarPagareModelo(contratoAEditar)} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3.5 rounded-xl font-black text-xs uppercase tracking-wider transition-colors shadow-xs">
                          📥 Generar Pagaré (PDF)
                        </button>
-                       <button onClick={() => setContratoAEditar(null)} className="bg-transparent border border-zinc-700 text-zinc-400 hover:text-white py-3.5 px-6 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors">
+                       <button onClick={() => setContratoAEditar(null)} className="bg-transparent border border-[#DED8CF] text-[#68706E] hover:text-white py-3.5 px-6 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors">
                          Cancelar
                        </button>
                      </div>
@@ -4844,8 +4844,8 @@ function BcraScoringPanel({ cuit }: BcraScoringPanelProps) {
   };
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl shadow-inner space-y-3">
-      <h4 className="text-xs font-black text-yellow-400 uppercase tracking-widest flex items-center gap-1.5 justify-between">
+    <div className="bg-[#FFFDFC] border border-[#DED8CF] p-5 rounded-xl shadow-inner space-y-3">
+      <h4 className="text-xs font-black text-[#B44E2A] uppercase tracking-widest flex items-center gap-1.5 justify-between">
         <span>📊 Scoring BCRA (En App)</span>
         {cleanCuit && cleanCuit.length === 11 && !data && !loading && (
           <button
@@ -4858,8 +4858,8 @@ function BcraScoringPanel({ cuit }: BcraScoringPanelProps) {
       </h4>
 
       {loading && (
-        <div className="flex items-center gap-2 text-xs text-zinc-400 font-mono py-1">
-          <span className="animate-spin text-yellow-500">⏳</span> Consultando base del BCRA...
+        <div className="flex items-center gap-2 text-xs text-[#68706E] font-mono py-1">
+          <span className="animate-spin text-[#B44E2A]">⏳</span> Consultando base del BCRA...
         </div>
       )}
 
@@ -4871,26 +4871,26 @@ function BcraScoringPanel({ cuit }: BcraScoringPanelProps) {
       )}
 
       {data && (
-        <div className="space-y-3 text-xs bg-zinc-950 p-3 rounded-lg border border-zinc-850">
+        <div className="space-y-3 text-xs bg-[#FFFDFC] p-3 rounded-lg border border-[#DED8CF]">
           <div>
-            <span className="text-[10px] text-zinc-500 font-black block uppercase">Denominación Oficial</span>
+            <span className="text-[10px] text-[#68706E] font-black block uppercase">Denominación Oficial</span>
             <span className="font-bold text-white uppercase">{data.denominacion || "Sin nombre registrado"}</span>
           </div>
 
           {data.periodos && data.periodos.length > 0 ? (
             <div className="space-y-2">
-              <span className="text-[10px] text-zinc-500 font-black block uppercase">Deudas Consolidadas (Período: {data.periodos[0].periodo})</span>
+              <span className="text-[10px] text-[#68706E] font-black block uppercase">Deudas Consolidadas (Período: {data.periodos[0].periodo})</span>
               <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
                 {data.periodos[0].entidades.map((ent: any, idx: number) => {
                   const sit = Number(ent.situacion);
-                  let badgeColor = "bg-green-500/20 text-green-400 border-green-500/30";
-                  if (sit === 2) badgeColor = "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+                  let badgeColor = "bg-green-500/20 text-[#2F7D5C] border-green-500/30";
+                  if (sit === 2) badgeColor = "bg-yellow-500/20 text-[#B44E2A] border-yellow-500/30";
                   if (sit >= 3) badgeColor = "bg-red-500/20 text-red-400 border-red-500/30";
                   return (
-                    <div key={idx} className="bg-zinc-900/60 p-2 rounded border border-zinc-850 flex justify-between items-center text-[10px] gap-2">
+                    <div key={idx} className="bg-[#F7F3EC] p-2 rounded border border-[#DED8CF] flex justify-between items-center text-[10px] gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-zinc-300 truncate" title={ent.entidad}>{ent.entidad}</p>
-                        <p className="text-zinc-500 text-[9px]">Monto: ${ent.monto ? ent.monto * 1000 : 0} ARS</p>
+                        <p className="font-bold text-[#1F2928] truncate" title={ent.entidad}>{ent.entidad}</p>
+                        <p className="text-[#68706E] text-[9px]">Monto: ${ent.monto ? ent.monto * 1000 : 0} ARS</p>
                       </div>
                       <span className={`px-2 py-0.5 rounded border text-[9px] font-black ${badgeColor}`}>
                         Sit. {sit}
@@ -4901,7 +4901,7 @@ function BcraScoringPanel({ cuit }: BcraScoringPanelProps) {
               </div>
             </div>
           ) : (
-            <p className="text-[10px] text-green-400 font-bold">✓ Sin deudas registradas en el sistema financiero.</p>
+            <p className="text-[10px] text-[#2F7D5C] font-bold">✓ Sin deudas registradas en el sistema financiero.</p>
           )}
         </div>
       )}

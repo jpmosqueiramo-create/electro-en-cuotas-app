@@ -85,56 +85,56 @@ export default function RendicionesPage() {
 
   return (
     <AdminProtectedRoute>
-      <div className="min-h-screen bg-[#181920] text-white p-8 relative">
+      <div className="min-h-screen bg-[#FFFDFC] text-white p-8 relative">
         <div className="max-w-7xl mx-auto">
-          <header className="flex justify-between items-center mb-8 border-b border-zinc-800 pb-4">
+          <header className="flex justify-between items-center mb-8 border-b border-[#DED8CF] pb-4">
             <div className="flex items-center gap-4">
               <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-12 w-auto object-contain" />
-              <h1 className="text-3xl font-black text-[#fe5000]">Rendiciones de Cobranzas</h1>
+              <h1 className="text-3xl font-black text-[#B44E2A]">Rendiciones de Cobranzas</h1>
             </div>
-            <Link href="/admin" className="text-zinc-400 border border-gray-700 px-4 py-2 rounded hover:text-white transition font-bold">← Volver al Panel de Monitoreo</Link>
+            <Link href="/admin" className="text-[#68706E] border border-[#DED8CF] px-4 py-2 rounded hover:text-white transition font-bold">← Volver al Panel de Monitoreo</Link>
           </header>
 
           {loading ? (
-            <p className="text-center text-zinc-400 font-bold mt-20">Analizando base de datos central...</p>
+            <p className="text-center text-[#68706E] font-bold mt-20">Analizando base de datos central...</p>
           ) : (
             <>
-              <h2 className="text-xl font-bold text-white mb-4 border-b border-zinc-800 pb-2">Atención Requerida (Pendientes)</h2>
+              <h2 className="text-xl font-bold text-white mb-4 border-b border-[#DED8CF] pb-2">Atención Requerida (Pendientes)</h2>
               {pendientes.length === 0 ? (
-                <div className="bg-[#181920] border border-zinc-800 p-8 rounded-xl text-center shadow-2xl shadow-black/60 max-w-xl mx-auto mb-12">
+                <div className="bg-[#FFFDFC] border border-[#DED8CF] p-8 rounded-xl text-center shadow-xs max-w-xl mx-auto mb-12">
                   <span className="text-4xl mb-4 block">✅</span>
                   <h2 className="text-xl font-bold text-white mb-2">Todo al Día</h2>
-                  <p className="text-zinc-400">No hay pagos pendientes de rendir por parte de los afiliados.</p>
+                  <p className="text-[#68706E]">No hay pagos pendientes de rendir por parte de los afiliados.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-12">
                   {pendientes.map(sol => (
-                    <div key={sol.id} className="bg-[#181920] border border-zinc-800 rounded-xl p-6 shadow-2xl shadow-black/80 relative overflow-hidden">
+                    <div key={sol.id} className="bg-[#FFFDFC] border border-[#DED8CF] rounded-xl p-6 shadow-xs relative overflow-hidden">
                       <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-black px-3 py-1 rounded-bl-xl shadow-md">FRENADO</div>
 
-                      <h3 className="text-lg font-black text-white mb-1 border-b border-zinc-800 pb-2">{sol.productoDeseado}</h3>
+                      <h3 className="text-lg font-black text-white mb-1 border-b border-[#DED8CF] pb-2">{sol.productoDeseado}</h3>
 
                       <div className="mt-4 space-y-2">
-                        <p className="text-xs font-semibold flex justify-between p-2 bg-[#181920] rounded">
-                          <span className="text-zinc-400">👤 Afiliado:</span>
+                        <p className="text-xs font-semibold flex justify-between p-2 bg-[#FFFDFC] rounded">
+                          <span className="text-[#68706E]">👤 Afiliado:</span>
                           <span className="text-white tracking-wide">{sol.afiliadoEmail}</span>
                         </p>
-                        <p className="text-xs font-semibold flex justify-between p-2 bg-[#181920] rounded border border-zinc-800">
-                          <span className="text-zinc-400">💵 Cobro Reportado:</span>
-                          <span className="text-[#fe5000] text-sm font-black">${sol.montoAbonado}</span>
+                        <p className="text-xs font-semibold flex justify-between p-2 bg-[#FFFDFC] rounded border border-[#DED8CF]">
+                          <span className="text-[#68706E]">💵 Cobro Reportado:</span>
+                          <span className="text-[#B44E2A] text-sm font-black">${sol.montoAbonado}</span>
                         </p>
-                        <p className="text-xs font-semibold flex justify-between p-2 bg-[#181920] rounded">
-                          <span className="text-zinc-400">💳 Modalidad:</span>
+                        <p className="text-xs font-semibold flex justify-between p-2 bg-[#FFFDFC] rounded">
+                          <span className="text-[#68706E]">💳 Modalidad:</span>
                           <span className="text-white uppercase">{sol.metodoPago}</span>
                         </p>
-                        <p className="text-xs font-semibold flex justify-between p-2 bg-[#181920] rounded">
-                          <span className="text-zinc-400">📦 SN Entregado:</span>
+                        <p className="text-xs font-semibold flex justify-between p-2 bg-[#FFFDFC] rounded">
+                          <span className="text-[#68706E]">📦 SN Entregado:</span>
                           <span className="text-blue-400">{sol.numeroSerie || "N/A"}</span>
                         </p>
                       </div>
 
                       {sol.comentarioEntrega && (
-                        <div className="bg-zinc-800 p-3 rounded mt-3 text-xs italic text-gray-300 border-l-2 border-[#fe5000]">
+                        <div className="bg-[#F7F3EC] p-3 rounded mt-3 text-xs italic text-[#1F2928] border-l-2 border-[#fe5000]">
                           &quot;{sol.comentarioEntrega}&quot;
                         </div>
                       )}
@@ -150,13 +150,13 @@ export default function RendicionesPage() {
                 </div>
               )}
 
-              <h2 className="text-xl font-bold text-white mb-4 mt-8 border-b border-zinc-800 pb-2">Historial de Rendiciones (Caja Confirmada)</h2>
+              <h2 className="text-xl font-bold text-white mb-4 mt-8 border-b border-[#DED8CF] pb-2">Historial de Rendiciones (Caja Confirmada)</h2>
               {historial.length === 0 ? (
-                <p className="text-zinc-500 text-sm">No existen rendiciones aprobadas aún en el historial.</p>
+                <p className="text-[#68706E] text-sm">No existen rendiciones aprobadas aún en el historial.</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left bg-[#181920] rounded-lg overflow-hidden border border-zinc-800 text-sm">
-                    <thead className="bg-[#181920]/50 text-zinc-400 border-b border-zinc-800">
+                  <table className="w-full text-left bg-[#FFFDFC] rounded-lg overflow-hidden border border-[#DED8CF] text-sm">
+                    <thead className="bg-[#FFFDFC]/50 text-[#68706E] border-b border-[#DED8CF]">
                       <tr>
                         <th className="p-4">Producto</th>
                         <th className="p-4">Cliente</th>
@@ -168,13 +168,13 @@ export default function RendicionesPage() {
                     </thead>
                     <tbody>
                       {historial.map(sol => (
-                        <tr key={sol.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/50 transition">
+                        <tr key={sol.id} className="border-b border-[#DED8CF] hover:bg-[#F7F3EC]/60 transition">
                           <td className="p-4 font-bold text-white max-w-[200px] truncate">{sol.productoDeseado}</td>
-                          <td className="p-4 text-gray-300">{sol.clienteEmail}</td>
-                          <td className="p-4 text-gray-300">{sol.afiliadoEmail}</td>
-                          <td className="p-4 font-black text-green-400">${sol.montoAbonado}</td>
-                          <td className="p-4"><span className="bg-zinc-800 border border-zinc-700 px-2 py-1 rounded text-xs text-white uppercase">{sol.metodoPago}</span></td>
-                          <td className="p-4 text-[10px] text-zinc-500 italic max-w-[250px]">{sol.historialRendicion || "Acuse confirmado exitosamente"}</td>
+                          <td className="p-4 text-[#1F2928]">{sol.clienteEmail}</td>
+                          <td className="p-4 text-[#1F2928]">{sol.afiliadoEmail}</td>
+                          <td className="p-4 font-black text-[#2F7D5C]">${sol.montoAbonado}</td>
+                          <td className="p-4"><span className="bg-[#F7F3EC] border border-[#DED8CF] px-2 py-1 rounded text-xs text-white uppercase">{sol.metodoPago}</span></td>
+                          <td className="p-4 text-[10px] text-[#68706E] italic max-w-[250px]">{sol.historialRendicion || "Acuse confirmado exitosamente"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -189,10 +189,10 @@ export default function RendicionesPage() {
 
       {/* Modal de Confirmación */}
       {modalOpen && solicitudSeleccionada && (
-        <div className="fixed inset-0 bg-[#181920]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#181920] border border-zinc-800 p-8 rounded-xl shadow-2xl max-w-md w-full relative animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-[#FFFDFC]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#FFFDFC] border border-[#DED8CF] p-8 rounded-xl shadow-xs max-w-md w-full relative animate-in fade-in zoom-in duration-200">
             <h2 className="text-2xl font-black text-white mb-2">Confirmar Recepción</h2>
-            <p className="text-zinc-400 text-sm mb-6">Verifica los datos del pago de <strong className="text-[#fe5000]">${solicitudSeleccionada.montoAbonado}</strong> reportado por <strong className="text-white">{solicitudSeleccionada.afiliadoEmail}</strong>.</p>
+            <p className="text-[#68706E] text-sm mb-6">Verifica los datos del pago de <strong className="text-[#B44E2A]">${solicitudSeleccionada.montoAbonado}</strong> reportado por <strong className="text-white">{solicitudSeleccionada.afiliadoEmail}</strong>.</p>
             
             {/* Alerta de División Fiscal AFIP por Cuota */}
             {(() => {
@@ -202,22 +202,22 @@ export default function RendicionesPage() {
               const calc = calcularOperacionFinanciera({ costoProducto: cProd, multiplicador: mult, cuotas: n });
 
               return (
-                <div className="mb-6 bg-[#121316] border border-zinc-800 p-4 rounded-xl space-y-2 text-xs">
-                  <p className="font-black text-amber-400 uppercase tracking-widest text-[10px] flex items-center gap-1">
+                <div className="mb-6 bg-[#121316] border border-[#DED8CF] p-4 rounded-xl space-y-2 text-xs">
+                  <p className="font-black text-[#B44E2A] uppercase tracking-widest text-[10px] flex items-center gap-1">
                     ⚖️ ALERTA DE DIVISIÓN FISCAL AFIP (MANDATO)
                   </p>
                   
-                  <div className="flex justify-between items-center bg-[#181920] p-2 rounded border border-emerald-500/30">
-                    <span className="text-emerald-400 font-bold text-[11px]">🟢 Recibo X (Capital Exento):</span>
+                  <div className="flex justify-between items-center bg-[#FFFDFC] p-2 rounded border border-emerald-500/30">
+                    <span className="text-[#2F7D5C] font-bold text-[11px]">🟢 Recibo X (Capital Exento):</span>
                     <span className="text-white font-black">${calc.montoExentoCuota.toLocaleString("es-AR")}</span>
                   </div>
 
-                  <div className="bg-[#181920] p-2.5 rounded border border-blue-500/30 space-y-1">
+                  <div className="bg-[#FFFDFC] p-2.5 rounded border border-blue-500/30 space-y-1">
                     <div className="flex justify-between items-center">
                       <span className="text-blue-400 font-bold text-[11px]">🔵 Factura B AFIP (Servicios/CFT):</span>
                       <span className="text-white font-black">${calc.montoGravadoCuota.toLocaleString("es-AR")}</span>
                     </div>
-                    <div className="text-[10px] text-zinc-400 border-t border-zinc-800/80 pt-1 space-y-0.5 font-mono">
+                    <div className="text-[10px] text-[#68706E] border-t border-[#DED8CF] pt-1 space-y-0.5 font-mono">
                       <div className="flex justify-between"><span>📄 Base Neta (Honorarios):</span> <span className="text-white font-bold">${calc.netoGravadoCuota.toLocaleString("es-AR")}</span></div>
                       <div className="flex justify-between"><span>🏛️ Débito Fiscal IVA 21%:</span> <span className="text-blue-300 font-bold">${calc.iva21Cuota.toLocaleString("es-AR")}</span></div>
                     </div>
@@ -227,12 +227,12 @@ export default function RendicionesPage() {
             })()}
 
             <div className="mb-6">
-              <label className="block text-xs font-bold text-zinc-400 uppercase mb-2">📝 Fecha Real de Cobro</label>
+              <label className="block text-xs font-bold text-[#68706E] uppercase mb-2">📝 Fecha Real de Cobro</label>
               <input 
                 type="date" 
                 value={fechaCobroReal}
                 onChange={(e) => setFechaCobroReal(e.target.value)}
-                className="w-full bg-[#181920] border border-zinc-700 text-white p-3 rounded-lg focus:border-[#fe5000] outline-none transition-colors"
+                className="w-full bg-[#FFFDFC] border border-[#DED8CF] text-white p-3 rounded-lg focus:border-[#fe5000] outline-none transition-colors"
               />
             </div>
             
@@ -240,7 +240,7 @@ export default function RendicionesPage() {
               <button 
                 onClick={cerrarModal}
                 disabled={procesando}
-                className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3 rounded-lg transition-colors border border-zinc-700"
+                className="flex-1 bg-[#F7F3EC] hover:bg-[#FFFDFC] text-white font-bold py-3 rounded-lg transition-colors border border-[#DED8CF]"
               >
                 Cancelar
               </button>
