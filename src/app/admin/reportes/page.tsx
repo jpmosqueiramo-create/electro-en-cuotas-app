@@ -277,7 +277,7 @@ export default function ReportesPage() {
           {/* HEADER */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#FFFDFC] border border-[#DED8CF] p-6 rounded-3xl shadow-xs">
             <div className="flex items-center gap-4">
-              <Link href="/admin" className="p-2.5 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#68706E] hover:text-white rounded-xl border border-[#DED8CF] transition">
+              <Link href="/admin" className="p-2.5 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#68706E] hover:text-[#173E3B] rounded-xl border border-[#DED8CF] transition">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
               <div>
@@ -327,7 +327,7 @@ export default function ReportesPage() {
                 <span className="text-[10px] font-bold text-[#B44E2A] bg-amber-500/10 px-2 py-0.5 rounded uppercase">Planilla 1</span>
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">Cobros de Cuotas</h3>
+                <h3 className="text-base font-heading font-bold text-[#173E3B]">Cobros de Cuotas</h3>
                 <p className="text-xs text-[#68706E] mt-0.5">Registro contable de cobranzas de clientes</p>
                 <p className="text-lg font-black text-[#B44E2A] font-mono mt-2">
                   ${totalCobrado.toLocaleString("es-AR")} <span className="text-xs font-normal text-[#68706E]">({cobrosFiltrados.length} reg.)</span>
@@ -351,7 +351,7 @@ export default function ReportesPage() {
                 <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded uppercase">Planilla 2</span>
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">Gastos de Fletes y Logística</h3>
+                <h3 className="text-base font-heading font-bold text-[#173E3B]">Gastos de Fletes y Logística</h3>
                 <p className="text-xs text-[#68706E] mt-0.5">Control de costos de viajes y despachos</p>
                 <p className="text-lg font-black text-blue-400 font-mono mt-2">
                   ${totalFletes.toLocaleString("es-AR")} <span className="text-xs font-normal text-[#68706E]">({fletesFiltrados.length} reg.)</span>
@@ -375,7 +375,7 @@ export default function ReportesPage() {
                 <span className="text-[10px] font-bold text-[#2F7D5C] bg-emerald-500/10 px-2 py-0.5 rounded uppercase">Planilla 3</span>
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">Pago de Comisiones</h3>
+                <h3 className="text-base font-heading font-bold text-[#173E3B]">Pago de Comisiones</h3>
                 <p className="text-xs text-[#68706E] mt-0.5">Liquidaciones a vendedores y afiliados</p>
                 <p className="text-lg font-black text-[#2F7D5C] font-mono mt-2">
                   ${totalComisiones.toLocaleString("es-AR")} <span className="text-xs font-normal text-[#68706E]">({comisionesFiltradas.length} reg.)</span>
@@ -394,7 +394,7 @@ export default function ReportesPage() {
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 placeholder="Buscar por Cliente, DNI, Recibo N°, Remito N°, Afiliado o Contrato..."
-                className="w-full bg-[#FFFDFC] border border-[#DED8CF] pl-10 pr-4 py-2.5 rounded-xl text-xs text-white placeholder-zinc-500 outline-none focus:border-[#fe5000] transition"
+                className="w-full bg-[#FFFDFC] border border-[#DED8CF] pl-10 pr-4 py-2.5 rounded-xl text-xs text-[#1F2928] placeholder-[#68706E] outline-none focus:border-[#fe5000] transition"
               />
             </div>
           </div>

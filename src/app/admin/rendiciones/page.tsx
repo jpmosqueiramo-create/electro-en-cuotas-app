@@ -7,6 +7,7 @@ import { db } from "@/lib/firebase";
 import { collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ArrowLeft, DollarSign, CheckCircle2, AlertCircle, FileText, Calendar } from "lucide-react";
 
 export default function RendicionesPage() {
   const { user } = useAuth();
@@ -36,7 +37,7 @@ export default function RendicionesPage() {
           itemsHistorial.push({ id: doc.id, ...data });
         }
       });
-      itemsHistorial.sort((a, b) => b.fechaCreacion?.toMillis() - a.fechaCreacion?.toMillis());
+      itemsHistorial.sort((a, b) => (b.fechaCreacion?.toMillis ? b.fechaCreacion.toMillis() : 0) - (a.fechaCreacion?.toMillis ? a.fechaCreacion.toMillis() : 0));
 
       setPendientes(itemsPendientes);
       setHistorial(itemsHistorial);
@@ -85,102 +86,147 @@ export default function RendicionesPage() {
 
   return (
     <AdminProtectedRoute>
-      <div className="min-h-screen bg-[#FFFDFC] text-white p-8 relative">
-        <div className="max-w-7xl mx-auto">
-          <header className="flex justify-between items-center mb-8 border-b border-[#DED8CF] pb-4">
+      <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] p-4 md:p-8 font-sans selection:bg-[#173E3B] selection:text-white">
+        <div className="max-w-7xl mx-auto space-y-6">
+
+          {/* HEADER PRINCIPAL */}
+          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#FFFDFC] border border-[#DED8CF] p-6 rounded-2xl shadow-xs">
             <div className="flex items-center gap-4">
-              <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-12 w-auto object-contain" />
-              <h1 className="text-3xl font-black text-[#B44E2A]">Rendiciones de Cobranzas</h1>
+              <Link href="/admin" className="p-2.5 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#173E3B] rounded-xl border border-[#DED8CF] transition shadow-xs">
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+              <div>
+                <div className="inline-flex items-center gap-1.5 text-[10px] font-heading font-bold uppercase tracking-widest text-[#B44E2A]">
+                  <DollarSign className="w-3.5 h-3.5 text-[#B44E2A]" /> Centro de Monitoreo Root
+                </div>
+                <h1 className="text-2xl md:text-3xl font-heading font-extrabold text-[#173E3B]">
+                  Rendiciones de Cobranza
+                </h1>
+                <p className="text-xs text-[#68706E] font-sans mt-0.5">
+                  Auditoría de entregas y confirmación física de dinero recibido por afiliados
+                </p>
+              </div>
             </div>
-            <Link href="/admin" className="text-[#68706E] border border-[#DED8CF] px-4 py-2 rounded hover:text-white transition font-bold">← Volver al Panel de Monitoreo</Link>
+
+            <div className="flex items-center gap-2 bg-[#F7F3EC] px-4 py-2.5 rounded-xl border border-[#DED8CF]">
+              <DollarSign className="w-4 h-4 text-[#2F7D5C]" />
+              <span className="text-xs font-heading font-bold text-[#68706E]">
+                Pendientes: <strong className="text-[#B44E2A] font-mono text-sm">{pendientes.length}</strong>
+              </span>
+            </div>
           </header>
 
           {loading ? (
-            <p className="text-center text-[#68706E] font-bold mt-20">Analizando base de datos central...</p>
+            <div className="bg-[#FFFDFC] border border-[#DED8CF] p-12 rounded-2xl text-center shadow-xs">
+              <p className="text-sm text-[#68706E] animate-pulse font-heading font-semibold">Analizando base de datos central...</p>
+            </div>
           ) : (
             <>
-              <h2 className="text-xl font-bold text-white mb-4 border-b border-[#DED8CF] pb-2">Atención Requerida (Pendientes)</h2>
-              {pendientes.length === 0 ? (
-                <div className="bg-[#FFFDFC] border border-[#DED8CF] p-8 rounded-xl text-center shadow-xs max-w-xl mx-auto mb-12">
-                  <span className="text-4xl mb-4 block">✅</span>
-                  <h2 className="text-xl font-bold text-white mb-2">Todo al Día</h2>
-                  <p className="text-[#68706E]">No hay pagos pendientes de rendir por parte de los afiliados.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-12">
-                  {pendientes.map(sol => (
-                    <div key={sol.id} className="bg-[#FFFDFC] border border-[#DED8CF] rounded-xl p-6 shadow-xs relative overflow-hidden">
-                      <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-black px-3 py-1 rounded-bl-xl shadow-md">FRENADO</div>
+              {/* SECCIÓN PENDIENTES */}
+              <div className="space-y-4">
+                <h2 className="text-xl font-heading font-bold text-[#173E3B] flex items-center gap-2 border-b border-[#DED8CF] pb-2">
+                  <AlertCircle className="w-5 h-5 text-[#B44E2A]" /> Atención Requerida (Pendientes)
+                </h2>
 
-                      <h3 className="text-lg font-black text-white mb-1 border-b border-[#DED8CF] pb-2">{sol.productoDeseado}</h3>
+                {pendientes.length === 0 ? (
+                  <div className="bg-[#FFFDFC] border border-[#DED8CF] p-8 rounded-2xl text-center shadow-xs max-w-xl mx-auto space-y-2">
+                    <CheckCircle2 className="w-10 h-10 text-[#2F7D5C] mx-auto" />
+                    <h3 className="text-base font-heading font-bold text-[#173E3B]">Todo al Día</h3>
+                    <p className="text-xs text-[#68706E] font-sans">No hay rendiciones pendientes de confirmación en este momento.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {pendientes.map(sol => (
+                      <div key={sol.id} className="bg-[#FFFDFC] border border-[#DED8CF] rounded-2xl p-6 shadow-xs relative overflow-hidden flex flex-col justify-between hover:border-[#173E3B]/60 transition-all">
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-start border-b border-[#DED8CF] pb-3">
+                            <h3 className="text-base font-heading font-bold text-[#173E3B] truncate max-w-[200px]">{sol.productoDeseado}</h3>
+                            <span className="bg-[#E7B86A]/20 text-[#8F6211] border border-[#E7B86A]/50 text-[10px] font-heading font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                              PENDIENTE ARCA
+                            </span>
+                          </div>
 
-                      <div className="mt-4 space-y-2">
-                        <p className="text-xs font-semibold flex justify-between p-2 bg-[#FFFDFC] rounded">
-                          <span className="text-[#68706E]">👤 Afiliado:</span>
-                          <span className="text-white tracking-wide">{sol.afiliadoEmail}</span>
-                        </p>
-                        <p className="text-xs font-semibold flex justify-between p-2 bg-[#FFFDFC] rounded border border-[#DED8CF]">
-                          <span className="text-[#68706E]">💵 Cobro Reportado:</span>
-                          <span className="text-[#B44E2A] text-sm font-black">${sol.montoAbonado}</span>
-                        </p>
-                        <p className="text-xs font-semibold flex justify-between p-2 bg-[#FFFDFC] rounded">
-                          <span className="text-[#68706E]">💳 Modalidad:</span>
-                          <span className="text-white uppercase">{sol.metodoPago}</span>
-                        </p>
-                        <p className="text-xs font-semibold flex justify-between p-2 bg-[#FFFDFC] rounded">
-                          <span className="text-[#68706E]">📦 SN Entregado:</span>
-                          <span className="text-blue-400">{sol.numeroSerie || "N/A"}</span>
-                        </p>
-                      </div>
+                          <div className="space-y-2 text-xs">
+                            <div className="flex justify-between p-2.5 bg-[#F7F3EC] rounded-xl border border-[#DED8CF]">
+                              <span className="text-[#68706E] font-sans">👤 Afiliado:</span>
+                              <span className="text-[#1F2928] font-heading font-bold truncate max-w-[180px]">{sol.afiliadoEmail}</span>
+                            </div>
+                            <div className="flex justify-between p-2.5 bg-[#F7F3EC] rounded-xl border border-[#DED8CF]">
+                              <span className="text-[#68706E] font-sans">💵 Cobro Reportado:</span>
+                              <span className="text-[#B44E2A] text-sm font-heading font-extrabold font-mono">${sol.montoAbonado}</span>
+                            </div>
+                            <div className="flex justify-between p-2.5 bg-[#F7F3EC] rounded-xl border border-[#DED8CF]">
+                              <span className="text-[#68706E] font-sans">💳 Modalidad:</span>
+                              <span className="text-[#173E3B] font-heading font-bold uppercase">{sol.metodoPago}</span>
+                            </div>
+                            <div className="flex justify-between p-2.5 bg-[#F7F3EC] rounded-xl border border-[#DED8CF]">
+                              <span className="text-[#68706E] font-sans">📦 SN Entregado:</span>
+                              <span className="text-[#1F2928] font-mono font-bold">{sol.numeroSerie || "N/A"}</span>
+                            </div>
+                          </div>
 
-                      {sol.comentarioEntrega && (
-                        <div className="bg-[#F7F3EC] p-3 rounded mt-3 text-xs italic text-[#1F2928] border-l-2 border-[#fe5000]">
-                          &quot;{sol.comentarioEntrega}&quot;
+                          {sol.comentarioEntrega && (
+                            <div className="bg-[#F7F3EC] p-3 rounded-xl text-xs italic text-[#1F2928] border-l-2 border-[#B44E2A]">
+                              &quot;{sol.comentarioEntrega}&quot;
+                            </div>
+                          )}
                         </div>
-                      )}
 
-                      <button
-                        onClick={() => abrirModal(sol)}
-                        className="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-lg transition-all shadow-[0_0_15px_rgba(37,99,235,0.4)] border border-blue-400"
-                      >
-                        ✓ CONFIRMAR INGRESO AL ARCA
-                      </button>
+                        <button
+                          onClick={() => abrirModal(sol)}
+                          className="w-full mt-6 bg-[#2F7D5C] hover:bg-[#256449] text-white font-heading font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition-all shadow-xs"
+                        >
+                          ✓ CONFIRMAR INGRESO AL ARCA
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* SECCIÓN HISTORIAL */}
+              <div className="space-y-4 pt-6">
+                <h2 className="text-xl font-heading font-bold text-[#173E3B] border-b border-[#DED8CF] pb-2">
+                  Historial de Rendiciones (Caja Confirmada)
+                </h2>
+
+                {historial.length === 0 ? (
+                  <p className="text-[#68706E] text-xs font-sans">No existen rendiciones aprobadas aún en el historial.</p>
+                ) : (
+                  <div className="bg-[#FFFDFC] rounded-2xl overflow-hidden border border-[#DED8CF] shadow-xs">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs font-sans">
+                        <thead className="bg-[#F7F3EC] text-[#173E3B] font-heading font-bold uppercase border-b border-[#DED8CF]">
+                          <tr>
+                            <th className="p-4">Producto</th>
+                            <th className="p-4">Cliente</th>
+                            <th className="p-4">Afiliado</th>
+                            <th className="p-4">Importe</th>
+                            <th className="p-4">Método</th>
+                            <th className="p-4">Auditoría Institucional</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#DED8CF]">
+                          {historial.map(sol => (
+                            <tr key={sol.id} className="hover:bg-[#F7F3EC]/50 transition text-[#1F2928]">
+                              <td className="p-4 font-heading font-bold text-[#173E3B] max-w-[200px] truncate">{sol.productoDeseado}</td>
+                              <td className="p-4 text-[#1F2928]">{sol.clienteEmail}</td>
+                              <td className="p-4 text-[#1F2928]">{sol.afiliadoEmail}</td>
+                              <td className="p-4 font-heading font-bold text-[#2F7D5C] font-mono text-sm">${sol.montoAbonado}</td>
+                              <td className="p-4">
+                                <span className="bg-[#F7F3EC] border border-[#DED8CF] px-2.5 py-1 rounded-md text-[10px] font-heading font-bold text-[#173E3B] uppercase">
+                                  {sol.metodoPago}
+                                </span>
+                              </td>
+                              <td className="p-4 text-[11px] text-[#68706E] italic max-w-[250px]">{sol.historialRendicion || "Acuse confirmado exitosamente"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  ))}
-                </div>
-              )}
-
-              <h2 className="text-xl font-bold text-white mb-4 mt-8 border-b border-[#DED8CF] pb-2">Historial de Rendiciones (Caja Confirmada)</h2>
-              {historial.length === 0 ? (
-                <p className="text-[#68706E] text-sm">No existen rendiciones aprobadas aún en el historial.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left bg-[#FFFDFC] rounded-lg overflow-hidden border border-[#DED8CF] text-sm">
-                    <thead className="bg-[#FFFDFC]/50 text-[#68706E] border-b border-[#DED8CF]">
-                      <tr>
-                        <th className="p-4">Producto</th>
-                        <th className="p-4">Cliente</th>
-                        <th className="p-4">Afiliado</th>
-                        <th className="p-4">Importe</th>
-                        <th className="p-4">Método</th>
-                        <th className="p-4">Auditoría Institucional</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {historial.map(sol => (
-                        <tr key={sol.id} className="border-b border-[#DED8CF] hover:bg-[#F7F3EC]/60 transition">
-                          <td className="p-4 font-bold text-white max-w-[200px] truncate">{sol.productoDeseado}</td>
-                          <td className="p-4 text-[#1F2928]">{sol.clienteEmail}</td>
-                          <td className="p-4 text-[#1F2928]">{sol.afiliadoEmail}</td>
-                          <td className="p-4 font-black text-[#2F7D5C]">${sol.montoAbonado}</td>
-                          <td className="p-4"><span className="bg-[#F7F3EC] border border-[#DED8CF] px-2 py-1 rounded text-xs text-white uppercase">{sol.metodoPago}</span></td>
-                          <td className="p-4 text-[10px] text-[#68706E] italic max-w-[250px]">{sol.historialRendicion || "Acuse confirmado exitosamente"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </>
           )}
 
@@ -189,10 +235,14 @@ export default function RendicionesPage() {
 
       {/* Modal de Confirmación */}
       {modalOpen && solicitudSeleccionada && (
-        <div className="fixed inset-0 bg-[#FFFDFC]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#FFFDFC] border border-[#DED8CF] p-8 rounded-xl shadow-xs max-w-md w-full relative animate-in fade-in zoom-in duration-200">
-            <h2 className="text-2xl font-black text-white mb-2">Confirmar Recepción</h2>
-            <p className="text-[#68706E] text-sm mb-6">Verifica los datos del pago de <strong className="text-[#B44E2A]">${solicitudSeleccionada.montoAbonado}</strong> reportado por <strong className="text-white">{solicitudSeleccionada.afiliadoEmail}</strong>.</p>
+        <div className="fixed inset-0 bg-[#1F2928]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#FFFDFC] border border-[#DED8CF] p-6 sm:p-8 rounded-2xl shadow-xl max-w-md w-full relative animate-in fade-in zoom-in duration-200 space-y-5">
+            <div>
+              <h2 className="text-xl font-heading font-extrabold text-[#173E3B]">Confirmar Recepción de Fondos</h2>
+              <p className="text-[#68706E] text-xs font-sans mt-1">
+                Verificá el pago de <strong className="text-[#B44E2A] font-mono text-sm">${solicitudSeleccionada.montoAbonado}</strong> reportado por <strong className="text-[#173E3B]">{solicitudSeleccionada.afiliadoEmail}</strong>.
+              </p>
+            </div>
             
             {/* Alerta de División Fiscal AFIP por Cuota */}
             {(() => {
@@ -202,52 +252,52 @@ export default function RendicionesPage() {
               const calc = calcularOperacionFinanciera({ costoProducto: cProd, multiplicador: mult, cuotas: n });
 
               return (
-                <div className="mb-6 bg-[#121316] border border-[#DED8CF] p-4 rounded-xl space-y-2 text-xs">
-                  <p className="font-black text-[#B44E2A] uppercase tracking-widest text-[10px] flex items-center gap-1">
+                <div className="bg-[#F7F3EC] border border-[#DED8CF] p-4 rounded-xl space-y-2 text-xs">
+                  <p className="font-heading font-bold text-[#B44E2A] uppercase tracking-wider text-[10px] flex items-center gap-1">
                     ⚖️ ALERTA DE DIVISIÓN FISCAL AFIP (MANDATO)
                   </p>
                   
-                  <div className="flex justify-between items-center bg-[#FFFDFC] p-2 rounded border border-emerald-500/30">
-                    <span className="text-[#2F7D5C] font-bold text-[11px]">🟢 Recibo X (Capital Exento):</span>
-                    <span className="text-white font-black">${calc.montoExentoCuota.toLocaleString("es-AR")}</span>
+                  <div className="flex justify-between items-center bg-[#FFFDFC] p-2.5 rounded-xl border border-[#DED8CF]">
+                    <span className="text-[#2F7D5C] font-heading font-bold text-[11px]">🟢 Recibo X (Capital Exento):</span>
+                    <span className="text-[#1F2928] font-mono font-bold">${calc.montoExentoCuota.toLocaleString("es-AR")}</span>
                   </div>
 
-                  <div className="bg-[#FFFDFC] p-2.5 rounded border border-blue-500/30 space-y-1">
+                  <div className="bg-[#FFFDFC] p-2.5 rounded-xl border border-[#DED8CF] space-y-1">
                     <div className="flex justify-between items-center">
-                      <span className="text-blue-400 font-bold text-[11px]">🔵 Factura B AFIP (Servicios/CFT):</span>
-                      <span className="text-white font-black">${calc.montoGravadoCuota.toLocaleString("es-AR")}</span>
+                      <span className="text-[#173E3B] font-heading font-bold text-[11px]">🔵 Factura B AFIP (Servicios/CFT):</span>
+                      <span className="text-[#1F2928] font-mono font-bold">${calc.montoGravadoCuota.toLocaleString("es-AR")}</span>
                     </div>
                     <div className="text-[10px] text-[#68706E] border-t border-[#DED8CF] pt-1 space-y-0.5 font-mono">
-                      <div className="flex justify-between"><span>📄 Base Neta (Honorarios):</span> <span className="text-white font-bold">${calc.netoGravadoCuota.toLocaleString("es-AR")}</span></div>
-                      <div className="flex justify-between"><span>🏛️ Débito Fiscal IVA 21%:</span> <span className="text-blue-300 font-bold">${calc.iva21Cuota.toLocaleString("es-AR")}</span></div>
+                      <div className="flex justify-between"><span>📄 Base Neta (Honorarios):</span> <span className="text-[#1F2928] font-bold">${calc.netoGravadoCuota.toLocaleString("es-AR")}</span></div>
+                      <div className="flex justify-between"><span>🏛️ Débito Fiscal IVA 21%:</span> <span className="text-[#173E3B] font-bold">${calc.iva21Cuota.toLocaleString("es-AR")}</span></div>
                     </div>
                   </div>
                 </div>
               );
             })()}
 
-            <div className="mb-6">
-              <label className="block text-xs font-bold text-[#68706E] uppercase mb-2">📝 Fecha Real de Cobro</label>
+            <div>
+              <label className="block text-xs font-heading font-bold text-[#173E3B] uppercase mb-1.5">📝 Fecha Real de Cobro</label>
               <input 
                 type="date" 
                 value={fechaCobroReal}
                 onChange={(e) => setFechaCobroReal(e.target.value)}
-                className="w-full bg-[#FFFDFC] border border-[#DED8CF] text-white p-3 rounded-lg focus:border-[#fe5000] outline-none transition-colors"
+                className="w-full bg-[#FFFDFC] border border-[#DED8CF] text-[#1F2928] p-3 rounded-xl focus:border-[#173E3B] outline-none font-sans text-xs"
               />
             </div>
             
-            <div className="flex gap-4">
+            <div className="flex gap-3 pt-2">
               <button 
                 onClick={cerrarModal}
                 disabled={procesando}
-                className="flex-1 bg-[#F7F3EC] hover:bg-[#FFFDFC] text-white font-bold py-3 rounded-lg transition-colors border border-[#DED8CF]"
+                className="flex-1 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#68706E] font-heading font-bold py-3 rounded-xl transition-all border border-[#DED8CF] text-xs"
               >
                 Cancelar
               </button>
               <button 
                 onClick={confirmarRendicion}
                 disabled={procesando}
-                className="flex-1 bg-green-600 hover:bg-green-500 text-white font-black py-3 rounded-lg transition-all shadow-[0_0_15px_rgba(22,163,74,0.4)] disabled:opacity-50"
+                className="flex-1 bg-[#2F7D5C] hover:bg-[#256449] text-white font-heading font-bold py-3 rounded-xl transition-all shadow-xs text-xs disabled:opacity-50"
               >
                 {procesando ? "Guardando..." : "✓ Guardar en Arca"}
               </button>

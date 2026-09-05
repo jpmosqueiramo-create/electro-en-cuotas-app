@@ -2169,7 +2169,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                   <div className="space-y-3 bg-[#FFFDFC] p-4 rounded-xl border border-[#DED8CF]">
                                     <h4 className="text-sm font-black text-[#B44E2A] uppercase tracking-wider border-b border-[#DED8CF] pb-2 mb-2">Producto Solicitado (Especial)</h4>
-                                    <p className="text-sm text-[#1F2928] font-bold bg-[#FFFDFC] p-3 rounded-lg border border-[#DED8CF]"><strong className="text-[#68706E] block text-xs uppercase mb-1 font-black">Necesidad del cliente:</strong> {req.necesidad}</p>
+                                    <p className="text-sm text-[#1F2928] font-bold bg-[#F7F3EC] p-3 rounded-xl border border-[#DED8CF]-lg border border-[#DED8CF]"><strong className="text-[#68706E] block text-xs uppercase mb-1 font-black">Necesidad del cliente:</strong> {req.necesidad}</p>
                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Localidad:</strong> {req.localidad}</p>
                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Referido por:</strong> {req.referente || "Ninguno"}</p>
                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">WhatsApp:</strong> {req.whatsapp}</p>
@@ -2285,7 +2285,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                           </div>
                                           <div className="flex justify-between text-[#68706E]">
                                             <span>⚖️ Honorarios e Intereses (Gravado):</span>
-                                            <strong className="text-white">${Math.max(0, (Number(budgetCuotaValor) * Number(budgetCuotas)) - Number(budgetCostoProveedor)).toLocaleString("es-AR")}</strong>
+                                            <strong className="text-[#173E3B]">${Math.max(0, (Number(budgetCuotaValor) * Number(budgetCuotas)) - Number(budgetCostoProveedor)).toLocaleString("es-AR")}</strong>
                                           </div>
                                           <div className="flex justify-between text-[#68706E] text-[11px]">
                                             <span>🧾 Débito Fiscal IVA 21% Incluido:</span>
@@ -2368,7 +2368,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                           {draftItems.map((item) => (
                                             <div key={item.id} className="flex justify-between items-center bg-[#F7F3EC] p-2.5 rounded-lg border border-[#DED8CF]">
                                               <div className="flex-1">
-                                                <p className="text-xs text-white font-bold">{item.producto}</p>
+                                                <p className="text-xs text-[#173E3B] font-bold">{item.producto}</p>
                                                 <p className="text-[10px] text-[#68706E]">{item.cuotas} cuotas de ${item.valorCuota}</p>
                                                 {(item.proveedor || item.costoProveedor) && (
                                                   <p className="text-[9px] text-amber-500 italic mt-0.5">🔒 Prov: {item.proveedor || "S/D"} (Costo: ${item.costoProveedor || 0})</p>
@@ -2533,7 +2533,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                               <>
                                                 <button 
                                                   onClick={() => handleAceptarPresupuesto(req, p.id)} 
-                                                  className="bg-green-600 hover:bg-green-500 text-white font-bold px-3 py-1.5 rounded text-xs transition-colors"
+                                                  className="bg-green-600 hover:bg-green-500 text-[#173E3B] font-bold px-3 py-1.5 rounded text-xs transition-colors"
                                                 >
                                                   ✓ Aceptar
                                                 </button>
@@ -2545,7 +2545,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                 </button>
                                                 <button 
                                                   onClick={() => handleCargarPresupuestoParaEditar(req, p)} 
-                                                  className="bg-blue-650 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded text-xs transition-colors"
+                                                  className="bg-blue-650 hover:bg-blue-500 text-[#173E3B] font-bold px-3 py-1.5 rounded text-xs transition-colors"
                                                 >
                                                   ✏️ Editar
                                                 </button>
@@ -2561,7 +2561,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                 {/* Acciones de cierre del asesoramiento */}
                                 <div className="border-t border-[#DED8CF] pt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                   <div>
-                                    <a href={`https://wa.me/${req.whatsapp.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2.5 rounded-lg text-xs transition-colors inline-flex items-center gap-2">
+                                    <a href={`https://wa.me/${req.whatsapp.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" className="bg-green-600 hover:bg-green-500 text-[#173E3B] font-bold px-4 py-2.5 rounded-lg text-xs transition-colors inline-flex items-center gap-2">
                                       💬 Continuar Asesoramiento WhatsApp
                                     </a>
                                   </div>
@@ -2606,33 +2606,33 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                        <div className="space-y-3 text-xs text-[#1F2928]">
                                          <div>
                                            <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Nombre Completo</label>
-                                           <input type="text" value={editFields.nombreCompleto} onChange={e => setEditFields({...editFields, nombreCompleto: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                           <input type="text" value={editFields.nombreCompleto} onChange={e => setEditFields({...editFields, nombreCompleto: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
                                          </div>
                                          <div className="grid grid-cols-2 gap-2">
                                            <div>
                                              <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">DNI</label>
-                                             <input type="text" value={editFields.numeroDni} onChange={e => setEditFields({...editFields, numeroDni: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                             <input type="text" value={editFields.numeroDni} onChange={e => setEditFields({...editFields, numeroDni: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
                                            </div>
                                            <div>
                                              <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">CUIL</label>
-                                             <input type="text" value={editFields.cuil} onChange={e => handleEditCuilChange(e.target.value)} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500 font-mono" />
+                                             <input type="text" value={editFields.cuil} onChange={e => handleEditCuilChange(e.target.value)} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-mono" />
                                            </div>
                                          </div>
                                          <div>
                                            <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Email</label>
-                                           <input type="email" value={editFields.email} onChange={e => setEditFields({...editFields, email: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                           <input type="email" value={editFields.email} onChange={e => setEditFields({...editFields, email: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
                                          </div>
                                          <div>
                                            <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Teléfono (WhatsApp)</label>
-                                           <input type="text" value={editFields.telefono} onChange={e => setEditFields({...editFields, telefono: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                           <input type="text" value={editFields.telefono} onChange={e => setEditFields({...editFields, telefono: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
                                          </div>
                                          <div>
                                            <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Dirección y Localidad</label>
-                                           <input type="text" value={editFields.direccion} onChange={e => setEditFields({...editFields, direccion: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                           <input type="text" value={editFields.direccion} onChange={e => setEditFields({...editFields, direccion: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
                                          </div>
                                          <div className="flex gap-2 pt-2">
-                                           <button onClick={() => handleGuardarDatosEditados(req)} className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded text-xs transition-all uppercase tracking-wider">💾 Guardar</button>
-                                           <button onClick={() => setEditingId(null)} className="bg-transparent border border-[#DED8CF] hover:text-white text-[#68706E] font-bold py-2 px-4 rounded text-xs transition-all">✕ Cancelar</button>
+                                           <button onClick={() => handleGuardarDatosEditados(req)} className="flex-1 bg-green-600 hover:bg-green-500 text-[#173E3B] font-bold py-2 rounded text-xs transition-all uppercase tracking-wider">💾 Guardar</button>
+                                           <button onClick={() => setEditingId(null)} className="bg-transparent border border-[#DED8CF] hover:text-[#173E3B] text-[#68706E] font-bold py-2 px-4 rounded text-xs transition-all">✕ Cancelar</button>
                                          </div>
                                        </div>
                                      ) : (
@@ -2787,7 +2787,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                     </div>
                                   </div>
                                   <div className="flex flex-wrap items-center gap-3">
-                                    <a href={`https://wa.me/${(req.whatsapp || "").replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition-colors">
+                                    <a href={`https://wa.me/${(req.whatsapp || "").replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" className="bg-green-600 hover:bg-green-500 text-[#173E3B] font-bold px-4 py-2 rounded-lg text-xs transition-colors">
                                       💬 Hablar por WhatsApp
                                     </a>
                                     <select 
@@ -2869,7 +2869,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                  </span>
                               )}
                             </div>
-                            <div className="text-[#68706E] bg-[#FFFDFC] p-2 rounded-full">
+                            <div className="text-[#68706E] bg-[#F7F3EC] p-2 rounded-xl border border-[#DED8CF]-full">
                               {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                             </div>
                           </div>
@@ -2891,7 +2891,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                          e.stopPropagation();
                                          setActiveProductSolId(prev => ({ ...prev, [group.key]: item.id }));
                                        }}
-                                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${isActive ? 'bg-yellow-500 text-black shadow-xs shadow-yellow-500/20' : 'bg-[#FFFDFC] text-[#68706E] border border-[#DED8CF] hover:bg-[#FFFDFC]'}`}
+                                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${isActive ? 'bg-[#173E3B] text-white font-heading font-bold shadow-xs shadow-yellow-500/20' : 'bg-[#FFFDFC] text-[#68706E] border border-[#DED8CF] hover:bg-[#FFFDFC]'}`}
                                      >
                                        🛍️ {item.productoDeseado || item.producto || "Solicitud"} ({item.estado})
                                      </button>
@@ -2926,50 +2926,50 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                      <div className="space-y-3 text-xs text-[#1F2928]">
                                        <div>
                                          <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Nombre Completo</label>
-                                         <input type="text" value={editFields.nombreCompleto} onChange={e => setEditFields({...editFields, nombreCompleto: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                         <input type="text" value={editFields.nombreCompleto} onChange={e => setEditFields({...editFields, nombreCompleto: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
                                        </div>
                                        <div className="grid grid-cols-2 gap-2">
                                          <div>
                                            <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">DNI</label>
-                                           <input type="text" value={editFields.numeroDni} onChange={e => setEditFields({...editFields, numeroDni: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                           <input type="text" value={editFields.numeroDni} onChange={e => setEditFields({...editFields, numeroDni: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
                                          </div>
                                          <div>
                                            <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">CUIL</label>
-                                           <input type="text" value={editFields.cuil} onChange={e => handleEditCuilChange(e.target.value)} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500 font-mono" />
+                                           <input type="text" value={editFields.cuil} onChange={e => handleEditCuilChange(e.target.value)} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-mono" />
                                          </div>
                                        </div>
                                        <div>
                                          <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Email</label>
-                                         <input type="email" value={editFields.email} onChange={e => setEditFields({...editFields, email: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                         <input type="email" value={editFields.email} onChange={e => setEditFields({...editFields, email: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
                                        </div>
                                        <div>
                                          <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Teléfono</label>
-                                         <input type="text" value={editFields.telefono} onChange={e => setEditFields({...editFields, telefono: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                         <input type="text" value={editFields.telefono} onChange={e => setEditFields({...editFields, telefono: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
                                        </div>
                                        <div className="grid grid-cols-2 gap-2">
                                          <div>
                                            <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Dirección</label>
-                                           <input type="text" value={editFields.direccion} onChange={e => setEditFields({...editFields, direccion: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                           <input type="text" value={editFields.direccion} onChange={e => setEditFields({...editFields, direccion: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
                                          </div>
                                          <div>
                                            <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Localidad</label>
-                                           <input type="text" value={editFields.localidad} onChange={e => setEditFields({...editFields, localidad: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-white outline-none focus:border-yellow-500" />
+                                           <input type="text" value={editFields.localidad} onChange={e => setEditFields({...editFields, localidad: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
                                          </div>
                                        </div>
                                        <div className="flex gap-2 pt-2">
-                                         <button onClick={() => handleGuardarDatosEditados(req)} className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded text-xs transition-all uppercase tracking-wider">💾 Guardar</button>
-                                         <button onClick={() => setEditingId(null)} className="bg-transparent border border-[#DED8CF] hover:text-white text-[#68706E] font-bold py-2 px-4 rounded text-xs transition-all">✕ Cancelar</button>
+                                         <button onClick={() => handleGuardarDatosEditados(req)} className="flex-1 bg-green-600 hover:bg-green-500 text-[#173E3B] font-bold py-2 rounded text-xs transition-all uppercase tracking-wider">💾 Guardar</button>
+                                         <button onClick={() => setEditingId(null)} className="bg-transparent border border-[#DED8CF] hover:text-[#173E3B] text-[#68706E] font-bold py-2 px-4 rounded text-xs transition-all">✕ Cancelar</button>
                                        </div>
                                      </div>
                                    ) : (
                                      <div className="space-y-2 text-sm text-[#68706E]">
-                                       <p><strong className="text-white">DNI:</strong> {req.datosPersonales?.numeroDni || "S/D"}</p>
-                                       {req.datosPersonales?.cuil && <p><strong className="text-white">CUIL:</strong> {req.datosPersonales.cuil}</p>}
-                                       <p><strong className="text-white">Email:</strong> {req.clienteEmail}</p>
-                                       <p><strong className="text-white">Teléfono:</strong> {req.datosPersonales?.telefono}</p>
-                                       <p><strong className="text-white">Domicilio:</strong> {req.datosPersonales?.direccion}, {req.datosPersonales?.localidad}</p>
-                                       <p><strong className="text-white">TNA Pactada:</strong> {req.tasaInteresTna ? `${req.tasaInteresTna}%` : "No especificada"}</p>
-                                       <p><strong className="text-white">Mora Pactada:</strong> {req.tasaMora ? `${req.tasaMora}% diaria` : "No especificada"}</p>
+                                       <p><strong className="text-[#173E3B]">DNI:</strong> {req.datosPersonales?.numeroDni || "S/D"}</p>
+                                       {req.datosPersonales?.cuil && <p><strong className="text-[#173E3B]">CUIL:</strong> {req.datosPersonales.cuil}</p>}
+                                       <p><strong className="text-[#173E3B]">Email:</strong> {req.clienteEmail}</p>
+                                       <p><strong className="text-[#173E3B]">Teléfono:</strong> {req.datosPersonales?.telefono}</p>
+                                       <p><strong className="text-[#173E3B]">Domicilio:</strong> {req.datosPersonales?.direccion}, {req.datosPersonales?.localidad}</p>
+                                       <p><strong className="text-[#173E3B]">TNA Pactada:</strong> {req.tasaInteresTna ? `${req.tasaInteresTna}%` : "No especificada"}</p>
+                                       <p><strong className="text-[#173E3B]">Mora Pactada:</strong> {req.tasaMora ? `${req.tasaMora}% diaria` : "No especificada"}</p>
                                      </div>
                                    )}
                                  </div>
@@ -3096,13 +3096,13 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                     <h3 className="text-sm font-black text-[#B44E2A] mb-3 uppercase tracking-widest border-b border-[#DED8CF] pb-2">Asignación de Afiliado</h3>
                                     {req.afiliadoEmail ? (
                                       <div className="flex flex-col gap-2">
-                                        <p className="text-sm text-white font-bold bg-[#FFFDFC] p-2 rounded border border-[#DED8CF]">👤 {req.afiliadoEmail}</p>
+                                        <p className="text-sm text-[#173E3B] font-bold bg-[#F7F3EC] p-2 rounded-xl border border-[#DED8CF] border border-[#DED8CF]">👤 {req.afiliadoEmail}</p>
                                         <button onClick={() => handleAsignarAfiliado(req.id, "")} className="text-xs text-red-500 hover:text-red-400 font-bold self-start mt-1">✕ Remover Asignación</button>
                                       </div>
                                     ) : (
                                       <div className="flex flex-col gap-2">
                                         <p className="text-xs text-[#68706E] mb-2">Ningún afiliado está a cargo del seguimiento de este cliente.</p>
-                                        <select id={`seller_${req.id}`} className="bg-[#FFFDFC] border border-[#DED8CF] text-xs p-2.5 rounded text-white focus:border-yellow-500 w-full outline-none">
+                                        <select id={`seller_${req.id}`} className="bg-[#FFFDFC] border border-[#DED8CF] text-xs p-2.5 rounded text-[#1F2928] focus:border-yellow-500 w-full outline-none">
                                           <option value="">-- Asignar Afiliado --</option>
                                           {afiliadoesActivos.map(v => <option key={v} value={v}>{v}</option>)}
                                           <option value="NUEVO" className="font-bold text-[#B44E2A]">+ Escribir correo manualmente...</option>
@@ -3153,7 +3153,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                      <button 
                                       onClick={() => guardarCambios(req)}
                                       disabled={guardandoId === req.id || (currentEstado === req.estado && currentMensaje === (req.mensajeAdmin||""))}
-                                      className="w-full bg-yellow-500 text-black py-3 rounded-lg font-black uppercase tracking-widest text-xs hover:bg-yellow-400 transition-colors shadow-xs disabled:opacity-50 disabled:shadow-none"
+                                      className="w-full bg-[#173E3B] text-white font-heading font-bold py-3 rounded-lg font-black uppercase tracking-widest text-xs hover:bg-yellow-400 transition-colors shadow-xs disabled:opacity-50 disabled:shadow-none"
                                      >
                                       {guardandoId === req.id ? "Guardando..." : "Registrar Dictamen"}
                                      </button>
@@ -3198,7 +3198,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                       alert("Error al confirmar firma.");
                                     }
                                   }}
-                                  className="relative z-10 bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xs uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all shadow-xs hover:-translate-y-0.5 active:scale-95"
+                                  className="relative z-10 bg-cyan-600 hover:bg-cyan-500 text-[#173E3B] font-bold text-xs uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all shadow-xs hover:-translate-y-0.5 active:scale-95"
                                 >
                                   ✓ Confirmar Firma y Enviar a Logística
                                 </button>
@@ -3286,7 +3286,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                        <div className="text-[#68706E] bg-[#FFFDFC] p-2 rounded-full">
+                        <div className="text-[#68706E] bg-[#F7F3EC] p-2 rounded-xl border border-[#DED8CF]-full">
                           {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                         </div>
                       </div>
@@ -3308,7 +3308,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                      e.stopPropagation();
                                      setActiveProductSolId(prev => ({ ...prev, [group.key]: item.id }));
                                    }}
-                                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${isActive ? 'bg-yellow-500 text-black shadow-xs shadow-yellow-500/20' : 'bg-[#FFFDFC] text-[#68706E] border border-[#DED8CF] hover:bg-[#FFFDFC]'}`}
+                                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${isActive ? 'bg-[#173E3B] text-white font-heading font-bold shadow-xs shadow-yellow-500/20' : 'bg-[#FFFDFC] text-[#68706E] border border-[#DED8CF] hover:bg-[#FFFDFC]'}`}
                                  >
                                    🛍️ {item.productoDeseado || item.producto || "Solicitud"} ({item.estado})
                                  </button>
@@ -3324,14 +3324,14 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                              <div className="bg-[#FFFDFC] border border-[#DED8CF] p-5 rounded-xl shadow-inner">
                                <h3 className="text-sm font-black text-[#B44E2A] mb-3 uppercase tracking-widest border-b border-[#DED8CF] pb-2">Perfil Crediticio</h3>
                                <div className="space-y-2 text-sm text-[#68706E]">
-                                 <p><strong className="text-white">Email:</strong> {sol.clienteEmail}</p>
-                                 <p><strong className="text-white">Teléfono:</strong> {sol.datosPersonales?.telefono}</p>
-                                 <p><strong className="text-white">Domicilio:</strong> {sol.datosPersonales?.direccion}, {sol.datosPersonales?.localidad}</p>
-                                 <p><strong className="text-white">TNA Pactada:</strong> {(sol as any).tasaInteresTna ? `${(sol as any).tasaInteresTna}%` : "No especificada"}</p>
-                                 <p><strong className="text-white">Mora Pactada:</strong> {(sol as any).tasaMora ? `${(sol as any).tasaMora}% diaria` : "No especificada"}</p>
-                                 {sol.datosPersonales?.email && <p><strong className="text-white">Email Formulario:</strong> {sol.datosPersonales.email}</p>}
+                                 <p><strong className="text-[#173E3B]">Email:</strong> {sol.clienteEmail}</p>
+                                 <p><strong className="text-[#173E3B]">Teléfono:</strong> {sol.datosPersonales?.telefono}</p>
+                                 <p><strong className="text-[#173E3B]">Domicilio:</strong> {sol.datosPersonales?.direccion}, {sol.datosPersonales?.localidad}</p>
+                                 <p><strong className="text-[#173E3B]">TNA Pactada:</strong> {(sol as any).tasaInteresTna ? `${(sol as any).tasaInteresTna}%` : "No especificada"}</p>
+                                 <p><strong className="text-[#173E3B]">Mora Pactada:</strong> {(sol as any).tasaMora ? `${(sol as any).tasaMora}% diaria` : "No especificada"}</p>
+                                 {sol.datosPersonales?.email && <p><strong className="text-[#173E3B]">Email Formulario:</strong> {sol.datosPersonales.email}</p>}
                                  {sol.datosPersonales?.antiguedadLaboral && (
-                                   <p><strong className="text-white">Antigüedad Laboral:</strong> {new Date(sol.datosPersonales.antiguedadLaboral).toLocaleDateString("es-AR")}</p>
+                                   <p><strong className="text-[#173E3B]">Antigüedad Laboral:</strong> {new Date(sol.datosPersonales.antiguedadLaboral).toLocaleDateString("es-AR")}</p>
                                  )}
                                </div>
                              </div>
@@ -3350,13 +3350,13 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                 <h3 className="text-sm font-black text-[#B44E2A] mb-3 uppercase tracking-widest border-b border-[#DED8CF] pb-2">Asignación de Afiliado</h3>
                                 {sol.afiliadoEmail ? (
                                   <div className="flex flex-col gap-2">
-                                    <p className="text-sm text-white font-bold bg-[#FFFDFC] p-2 rounded border border-[#DED8CF]">👤 {sol.afiliadoEmail}</p>
+                                    <p className="text-sm text-[#173E3B] font-bold bg-[#F7F3EC] p-2 rounded-xl border border-[#DED8CF] border border-[#DED8CF]">👤 {sol.afiliadoEmail}</p>
                                     <button onClick={() => handleAsignarAfiliado(sol.id, "")} className="text-xs text-red-500 hover:text-red-400 font-bold self-start mt-1">✕ Remover Asignación</button>
                                   </div>
                                 ) : (
                                   <div className="flex flex-col gap-2">
                                     <p className="text-xs text-[#68706E] mb-2">Ningún afiliado está a cargo del seguimiento de este cliente.</p>
-                                    <select id={`seller_${sol.id}`} className="bg-[#FFFDFC] border border-[#DED8CF] text-xs p-2.5 rounded text-white focus:border-yellow-500 w-full outline-none">
+                                    <select id={`seller_${sol.id}`} className="bg-[#FFFDFC] border border-[#DED8CF] text-xs p-2.5 rounded text-[#1F2928] focus:border-yellow-500 w-full outline-none">
                                       <option value="">-- Asignar Afiliado --</option>
                                       {afiliadoesActivos.map(v => <option key={v as string} value={v as string}>{v as string}</option>)}
                                       <option value="NUEVO" className="font-bold text-[#B44E2A]">+ Escribir correo manualmente...</option>
@@ -3409,7 +3409,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                  <button 
                                   onClick={() => guardarCambios(sol)}
                                   disabled={guardandoId === sol.id || (currentEstado === sol.estado && currentMensaje === (sol.mensajeAdmin||""))}
-                                  className="w-full bg-yellow-500 text-black py-3 rounded-lg font-black uppercase tracking-widest text-xs hover:bg-yellow-400 transition-colors shadow-xs disabled:opacity-50 disabled:shadow-none"
+                                  className="w-full bg-[#173E3B] text-white font-heading font-bold py-3 rounded-lg font-black uppercase tracking-widest text-xs hover:bg-yellow-400 transition-colors shadow-xs disabled:opacity-50 disabled:shadow-none"
                                  >
                                   {guardandoId === sol.id ? "Guardando..." : "Registrar Dictamen"}
                                  </button>
@@ -3492,11 +3492,11 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                                                  {/* Si ya hay un seguimiento de despacho local emitido */}
                                                  {(sol.remitoDespachoNro || sol.remitoDespachoTransporte || sol.remitoDespachoGuia) && (
-                                                   <div className="bg-[#FFFDFC] p-3 rounded-lg border border-[#DED8CF] space-y-1.5 text-xs">
+                                                   <div className="bg-[#F7F3EC] p-3 rounded-xl border border-[#DED8CF]-lg border border-[#DED8CF] space-y-1.5 text-xs">
                                                      <p className="text-[#B44E2A] font-bold text-[10px] uppercase tracking-wider">
                                                        📌 Ficha de Seguimiento del Despacho Local
                                                      </p>
-                                                     {sol.remitoDespachoNro && <p><strong className="text-[#68706E]">Nº Remito:</strong> <span className="text-white font-mono font-bold">{sol.remitoDespachoNro}</span></p>}
+                                                     {sol.remitoDespachoNro && <p><strong className="text-[#68706E]">Nº Remito:</strong> <span className="text-[#1F2928] font-mono font-bold">{sol.remitoDespachoNro}</span></p>}
                                                      {sol.remitoDespachoDestinatario && <p><strong className="text-[#68706E]">Destinatario:</strong> <span className="text-[#1F2928]">{sol.remitoDespachoDestinatario} (DNI: {sol.remitoDespachoDoc})</span></p>}
                                                      {sol.remitoDespachoDireccion && <p><strong className="text-[#68706E]">Dirección de Entrega:</strong> <span className="text-[#1F2928]">{sol.remitoDespachoDireccion}</span></p>}
                                                      {sol.remitoDespachoTransporte && <p><strong className="text-[#68706E]">Flete / Transporte Local:</strong> <span className="text-blue-300 font-bold">{sol.remitoDespachoTransporte}</span></p>}
@@ -3625,7 +3625,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                          const st = remitoEditId === sol.id ? remitoEstadoEnvio : (sol.remitoDespachoEstado || "REMITO_EMITIDO");
                                                          handleActualizarEstadoDespachoRemito(sol, st);
                                                        }}
-                                                       className="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5 uppercase tracking-wider"
+                                                       className="flex-1 bg-amber-600 hover:bg-amber-500 text-[#173E3B] font-bold py-2.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5 uppercase tracking-wider"
                                                      >
                                                        💾 Guardar Estado y Datos de Despacho
                                                      </button>
@@ -3653,7 +3653,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                          });
                                                          handleGuardarDespachoRemito(sol);
                                                        }}
-                                                       className="flex-1 bg-[#fe5000] hover:bg-[#fe5000]/90 text-white font-black py-2.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5 shadow-md uppercase tracking-wider"
+                                                       className="flex-1 bg-[#fe5000] hover:bg-[#fe5000]/90 text-[#173E3B] font-bold py-2.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5 shadow-md uppercase tracking-wider"
                                                      >
                                                        📄 Generar Remito PDF
                                                      </button>
@@ -3692,7 +3692,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                          
                                                          <button 
                                                            onClick={() => handleConfirmarArriboSucursal(sol.id, sol.vinculoProductoId || selectedProductId, sol.vinculoUnidadId || "", destino)}
-                                                           className="ml-auto bg-blue-600 hover:bg-blue-500 text-white font-black text-[9px] uppercase tracking-widest px-2.5 py-1 rounded transition-colors"
+                                                           className="ml-auto bg-blue-600 hover:bg-blue-500 text-[#173E3B] font-bold text-[9px] uppercase tracking-widest px-2.5 py-1 rounded transition-colors"
                                                          >
                                                            📥 Confirmar Arribo a Sucursal
                                                          </button>
@@ -3709,7 +3709,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                            value={comisionistaEditId === sol.id ? comisionistaNombre : ""} 
                                                            onChange={e => { setComisionistaEditId(sol.id); setComisionistaNombre(e.target.value); }} 
                                                            placeholder="Ej: Comisionista Junín" 
-                                                           className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-blue-500" 
+                                                           className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" 
                                                          />
                                                        </div>
                                                        <div className="grid grid-cols-2 gap-2">
@@ -3720,7 +3720,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                              value={comisionistaEditId === sol.id ? comisionistaCosto : ""} 
                                                              onChange={e => { setComisionistaEditId(sol.id); setComisionistaCosto(e.target.value); }} 
                                                              placeholder="ARS" 
-                                                             className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-blue-500" 
+                                                             className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" 
                                                            />
                                                          </div>
                                                          <div>
@@ -3729,13 +3729,13 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                              type="date" 
                                                              value={comisionistaEditId === sol.id ? comisionistaFechaEnvio : ""} 
                                                              onChange={e => { setComisionistaEditId(sol.id); setComisionistaFechaEnvio(e.target.value); }} 
-                                                             className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-blue-500" 
+                                                             className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" 
                                                            />
                                                          </div>
                                                        </div>
                                                        <button 
                                                          onClick={() => handleGuardarComisionista(sol.id)} 
-                                                         className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 rounded text-[9px] transition-all uppercase tracking-wider"
+                                                         className="w-full bg-blue-600 hover:bg-blue-500 text-[#173E3B] font-bold py-1 rounded text-[9px] transition-all uppercase tracking-wider"
                                                        >
                                                          💾 Registrar Salida Comisionista
                                                        </button>
@@ -3867,7 +3867,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                          )}
 
                                          {/* Informar asignación de venta */}
-                                         <div className="text-[9px] text-[#68706E] font-medium bg-[#FFFDFC] p-2 rounded border border-[#DED8CF]">
+                                         <div className="text-[9px] text-[#68706E] font-medium bg-[#F7F3EC] p-2 rounded-xl border border-[#DED8CF] border border-[#DED8CF]">
                                            {!sol.afiliadoEmail ? (
                                              <span className="text-[#B44E2A]">ℹ️ Venta libre: puedes asignar stock de Casa Central o cualquier sucursal.</span>
                                            ) : (
@@ -3889,7 +3889,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                          <button
                                            type="button"
                                            onClick={() => handleReservarStock(sol.id, selectedProductId, selectedStockUnitId, nserie, selectedDestino)}
-                                           className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg text-xs transition-colors uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95"
+                                           className="w-full bg-blue-600 hover:bg-blue-500 text-[#173E3B] font-bold py-2.5 rounded-lg text-xs transition-colors uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95"
                                          >
                                            📌 Confirmar Reserva y Ruteo de Stock
                                          </button>
@@ -3919,7 +3919,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                        <div className="bg-amber-950/20 border border-amber-500/20 p-3.5 rounded-lg space-y-2 text-xs">
                                          <div className="space-y-1">
                                            {(sol.proveedorFacturaTicket || sol.facturaProveedorOriginal) && <p><strong className="text-[#68706E]">Nº Ticket / Factura Proveedor:</strong> <span className="text-[#B44E2A] font-mono font-bold">{sol.proveedorFacturaTicket || sol.facturaProveedorOriginal}</span></p>}
-                                           {sol.proveedorNombre && <p><strong className="text-[#68706E]">Proveedor / Mayorista:</strong> <span className="text-white font-bold">{sol.proveedorNombre}</span></p>}
+                                           {sol.proveedorNombre && <p><strong className="text-[#68706E]">Proveedor / Mayorista:</strong> <span className="text-[#173E3B] font-bold">{sol.proveedorNombre}</span></p>}
                                            {sol.proveedorCosto > 0 && <p><strong className="text-[#68706E]">Costo de Compra:</strong> <span className="text-[#2F7D5C] font-black">${sol.proveedorCosto.toLocaleString("es-AR")}</span></p>}
                                            {sol.proveedorGuia && <p><strong className="text-[#68706E]">Nº de Guía / Tracking:</strong> <span className="text-amber-300 font-mono font-bold">{sol.proveedorGuia}</span></p>}
                                            {sol.proveedorFechaPedido && <p><strong className="text-[#68706E]">Fecha del Pedido:</strong> {new Date(sol.proveedorFechaPedido).toLocaleDateString("es-AR")}</p>}
@@ -3948,7 +3948,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                                      {/* Formulario de Alta / Edición de Pedido a Proveedor */}
                                      {(proveedorEditId === sol.id || (!sol.proveedorNombre && !sol.proveedorGuia && !sol.proveedorCosto)) && (
-                                       <div className="bg-[#FFFDFC] p-3 rounded-lg border border-[#DED8CF] space-y-2.5 text-xs">
+                                       <div className="bg-[#F7F3EC] p-3 rounded-xl border border-[#DED8CF]-lg border border-[#DED8CF] space-y-2.5 text-xs">
                                          <p className="text-[10px] font-bold text-[#B44E2A] uppercase tracking-widest">
                                            📝 Registrar / Actualizar Pedido al Proveedor
                                          </p>
@@ -4034,7 +4034,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                          <button
                                            type="button"
                                            onClick={() => handleGuardarPedidoProveedor(sol.id)}
-                                           className="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-2 rounded text-xs transition-colors uppercase tracking-wider shadow-md"
+                                           className="w-full bg-amber-600 hover:bg-amber-500 text-[#173E3B] font-bold py-2 rounded text-xs transition-colors uppercase tracking-wider shadow-md"
                                          >
                                            💾 Guardar Estado del Pedido al Proveedor
                                          </button>
@@ -4176,7 +4176,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                      planPagos: plan
                                                   });
                                                }}
-                                               className="w-full bg-green-950/20 hover:bg-green-600 border border-green-500/25 text-[#2F7D5C] hover:text-white font-bold py-2 rounded-lg text-xs transition uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95"
+                                               className="w-full bg-green-950/20 hover:bg-green-600 border border-green-500/25 text-[#2F7D5C] hover:text-[#173E3B] font-bold py-2 rounded-lg text-xs transition uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95"
                                             >
                                                📥 Descargar Resumen de Cuenta (PDF)
                                             </button>
@@ -4190,7 +4190,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                     <div key={idx} className="bg-[#FFFDFC] border border-green-900/50 p-4 rounded-lg flex flex-col gap-3">
                                       <div className="flex justify-between items-start border-b border-green-900/30 pb-2">
                                         <div>
-                                          <p className="text-white font-black text-sm">Cuota {cuota.numero} <span className="text-[#2F7D5C]">${cuota.montoOriginal}</span></p>
+                                          <p className="text-[#173E3B] font-bold text-sm">Cuota {cuota.numero} <span className="text-[#2F7D5C]">${cuota.montoOriginal}</span></p>
                                           <p className="text-[10px] text-[#68706E] font-medium">Vence: {new Date(cuota.vencimiento).toLocaleDateString()}</p>
                                         </div>
                                         <div className="text-right">
@@ -4230,7 +4230,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                     href={cuota.comprobanteUrl} 
                                                     target="_blank" 
                                                     rel="noreferrer" 
-                                                    className="flex-1 bg-blue-950/20 text-blue-400 border border-blue-500/20 text-center py-1 rounded text-[9px] font-bold hover:bg-blue-600 hover:text-white transition"
+                                                    className="flex-1 bg-blue-950/20 text-blue-400 border border-blue-500/20 text-center py-1 rounded text-[9px] font-bold hover:bg-blue-600 hover:text-[#173E3B] transition"
                                                   >
                                                     📄 Ver Adjunto
                                                   </a>
@@ -4254,7 +4254,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                         esPagoParcial: isPartial
                                                      });
                                                   }}
-                                                  className="flex-1 bg-green-950/20 text-[#2F7D5C] border border-green-500/20 py-1 rounded text-[9px] font-bold hover:bg-green-600 hover:text-white transition uppercase tracking-wider flex items-center justify-center gap-1"
+                                                  className="flex-1 bg-green-950/20 text-[#2F7D5C] border border-green-500/20 py-1 rounded text-[9px] font-bold hover:bg-green-600 hover:text-[#173E3B] transition uppercase tracking-wider flex items-center justify-center gap-1"
                                                >
                                                   📥 Descargar Recibo PDF
                                                </button>
@@ -4263,8 +4263,8 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                       )}
 
                                       {cuota.estado === "EN_REVISION" && (
-                                         <div className="bg-[#FFFDFC] p-3 rounded-lg border border-[#DED8CF] flex flex-col gap-3">
-                                            <a href={cuota.comprobanteUrl} target="_blank" rel="noreferrer" className="bg-blue-600/20 text-blue-400 border border-blue-500/50 text-xs font-bold py-2 rounded text-center hover:bg-blue-600 hover:text-white transition-colors">📄 Abrir Comprobante Adjunto</a>
+                                         <div className="bg-[#F7F3EC] p-3 rounded-xl border border-[#DED8CF]-lg border border-[#DED8CF] flex flex-col gap-3">
+                                            <a href={cuota.comprobanteUrl} target="_blank" rel="noreferrer" className="bg-blue-600/20 text-blue-400 border border-blue-500/50 text-xs font-bold py-2 rounded text-center hover:bg-blue-600 hover:text-[#173E3B] transition-colors">📄 Abrir Comprobante Adjunto</a>
                                             <div className="flex gap-2">
                                               <button onClick={async () => {
                                                   const m = prompt("Motivo de rechazo (Ej: borroso, falso):");
@@ -4275,7 +4275,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                   await updateDoc(doc(db, "solicitudes", sol.id), { planPagos: newPlan });
                                                   await fetchSolicitudes();
                                                   alert("Pago Rechazado.");
-                                              }} className="flex-1 bg-red-900/40 text-red-400 border border-red-500/10 hover:bg-red-600 hover:text-white py-2 rounded text-xs font-bold transition">Rechazar</button>
+                                              }} className="flex-1 bg-red-900/40 text-red-400 border border-red-500/10 hover:bg-red-600 hover:text-[#173E3B] py-2 rounded text-xs font-bold transition">Rechazar</button>
                                               <button onClick={() => {
                                                   setPagoAConfirmar({ solId: sol.id, idx, metodo: 'Transferencia', originalAmount: cuota.montoOriginal, isClientApprove: true });
                                                   setPagoMonto(String(cuota.montoOriginal));
@@ -4297,7 +4297,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                  setPagoComprobante("");
                                                  setPagoCuentaDestino("Caja Efectivo");
                                                }}
-                                               className="flex-1 bg-green-950/30 hover:bg-green-600 border border-green-500/20 text-[#2F7D5C] hover:text-white py-1.5 rounded text-[10px] font-black transition uppercase tracking-wider"
+                                               className="flex-1 bg-green-950/30 hover:bg-green-600 border border-green-500/20 text-[#2F7D5C] hover:text-[#173E3B] py-1.5 rounded text-[10px] font-black transition uppercase tracking-wider"
                                              >
                                                💵 Efectivo
                                              </button>
@@ -4308,7 +4308,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                                  setPagoComprobante("");
                                                  setPagoCuentaDestino("Mercado Pago (Fintech)");
                                                }}
-                                               className="flex-1 bg-blue-950/30 hover:bg-blue-650 border border-blue-500/20 text-blue-400 hover:text-white py-1.5 rounded text-[10px] font-black transition uppercase tracking-wider"
+                                               className="flex-1 bg-blue-950/30 hover:bg-blue-650 border border-blue-500/20 text-blue-400 hover:text-[#173E3B] py-1.5 rounded text-[10px] font-black transition uppercase tracking-wider"
                                              >
                                                📱 Transf.
                                              </button>
@@ -4343,7 +4343,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                        <h3 className="text-sm font-black text-[#2F7D5C] uppercase tracking-widest">💰 Acreditación de Pago</h3>
                        <p className="text-[10px] text-[#68706E]">Registre los datos de la transacción para emitir comprobante</p>
                      </div>
-                     <button onClick={() => setPagoAConfirmar(null)} className="text-[#68706E] hover:text-white text-xs font-bold">✕</button>
+                     <button onClick={() => setPagoAConfirmar(null)} className="text-[#68706E] hover:text-[#173E3B] text-xs font-bold">✕</button>
                    </div>
                    
                    <div className="space-y-4 text-xs">
@@ -4353,7 +4353,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                          type="number" 
                          value={pagoMonto} 
                          onChange={e => setPagoMonto(e.target.value)} 
-                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white font-black text-sm outline-none focus:border-green-500" 
+                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#173E3B] font-bold text-sm outline-none focus:border-green-500" 
                          placeholder="Monto"
                        />
                      </div>
@@ -4363,7 +4363,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                          type="text" 
                          value={pagoComprobante} 
                          onChange={e => setPagoComprobante(e.target.value)} 
-                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white font-mono outline-none focus:border-green-500" 
+                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] font-mono outline-none focus:border-green-500" 
                          placeholder="Ej: TXN-99887766"
                        />
                      </div>
@@ -4393,7 +4393,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                      </button>
                      <button 
                        onClick={handleProcesarPagoFinal} 
-                       className="flex-1 bg-green-600 hover:bg-green-500 text-white font-black py-2 rounded-lg text-xs transition shadow-xs shadow-green-900/30 uppercase tracking-wider"
+                       className="flex-1 bg-green-600 hover:bg-green-500 text-[#173E3B] font-bold py-2 rounded-lg text-xs transition shadow-xs shadow-green-900/30 uppercase tracking-wider"
                      >
                        💾 Confirmar y Generar PDF
                      </button>
@@ -4412,7 +4412,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                        <h2 className="text-xl font-black text-[#B44E2A]">Editor Legal de Contrato / Pagaré</h2>
                        <p className="text-xs text-[#68706E]">Revise y modifique los valores antes de exportar a PDF</p>
                      </div>
-                     <button onClick={() => setContratoAEditar(null)} className="text-[#68706E] hover:text-white font-black text-sm">
+                     <button onClick={() => setContratoAEditar(null)} className="text-[#68706E] hover:text-[#173E3B] font-bold text-sm">
                        ✕ Cerrar
                      </button>
                    </div>
@@ -4663,7 +4663,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                    </div>
 
                     {/* CARD DE CLAUSULA SEGUNDA Y DIVISIÓN FISCAL AFIP (SINCRONIZADA) */}
-                    <div className="md:col-span-3 bg-[#121316] border border-amber-500/30 p-4 rounded-2xl space-y-3 mt-2 shadow-inner">
+                    <div className="md:col-span-3 bg-[#F7F3EC] border border-amber-500/30 p-4 rounded-2xl space-y-3 mt-2 shadow-inner">
                       {(() => {
                         const cProd = Math.round(parseFloat(contratoAEditar.precioContado?.toString().replace(/[^0-9.-]/g, "") || "0") || 0);
                         const totalFin = Math.round(parseFloat(contratoAEditar.totalFinanciado?.toString().replace(/[^0-9.-]/g, "") || "0") || 0);
@@ -4686,8 +4686,8 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                 <span className="text-[9px] font-mono text-[#68706E]">Desglose Mandato Comercial</span>
                               </p>
                               <p className="flex justify-between font-mono"><span>• Valor Neto del Bien (Costo Proveedor):</span> <strong className="text-[#2F7D5C] font-bold">${cProd.toLocaleString("es-AR")}</strong></p>
-                              <p className="flex justify-between font-mono"><span>• Gastos de logística + Servicio de Soporte técnico (60%):</span> <strong className="text-white font-bold">${gastosSoporte.toLocaleString("es-AR")}</strong></p>
-                              <p className="flex justify-between font-mono"><span>• Costo Financiero Total - CFT (40%):</span> <strong className="text-white font-bold">${costoFinanciero.toLocaleString("es-AR")}</strong></p>
+                              <p className="flex justify-between font-mono"><span>• Gastos de logística + Servicio de Soporte técnico (60%):</span> <strong className="text-[#173E3B] font-bold">${gastosSoporte.toLocaleString("es-AR")}</strong></p>
+                              <p className="flex justify-between font-mono"><span>• Costo Financiero Total - CFT (40%):</span> <strong className="text-[#173E3B] font-bold">${costoFinanciero.toLocaleString("es-AR")}</strong></p>
                               <p className="flex justify-between font-sans text-amber-300 font-black pt-1.5 border-t border-amber-500/30 text-sm">
                                 <span>• VALOR TOTAL A FINANCIAR:</span>
                                 <span className="font-mono text-amber-300">${totalFin.toLocaleString("es-AR")}</span>
@@ -4697,7 +4697,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs pt-1">
                               <div className="bg-[#FFFDFC] border border-emerald-500/30 p-3 rounded-xl space-y-1">
                                 <p className="text-[10px] text-[#2F7D5C] font-bold uppercase">🟢 Monto Exento por Cuota (Devolución Capital)</p>
-                                <p className="text-base font-black text-white font-mono">
+                                <p className="text-base font-black text-[#1F2928] font-mono">
                                   ${mExento.toLocaleString("es-AR")} <span className="text-[10px] text-[#68706E] font-normal">/ cuota</span>
                                 </p>
                                 <p className="text-[10px] text-emerald-300 font-medium">
@@ -4710,7 +4710,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                   <p className="text-[10px] text-blue-400 font-bold uppercase">🔵 Factura B AFIP por Cuota (Servicios/CFT)</p>
                                   <span className="text-[9px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20 font-bold">IVA 21% Incorporado</span>
                                 </div>
-                                <p className="text-base font-black text-white font-mono">
+                                <p className="text-base font-black text-[#1F2928] font-mono">
                                   ${mGravado.toLocaleString("es-AR")} <span className="text-[10px] text-[#68706E] font-normal">/ cuota</span>
                                 </p>
                                 <div className="text-[10px] text-blue-300 font-medium space-y-0.5 pt-1 border-t border-[#DED8CF] font-mono">
@@ -4731,7 +4731,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                      </div>
                      <div className="max-h-[250px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                        {contratoAEditar.cuotasPlan.map((c: any, index: number) => (
-                         <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-[#FFFDFC] p-3 rounded-lg border border-[#DED8CF] items-center">
+                         <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-[#F7F3EC] p-3 rounded-xl border border-[#DED8CF]-lg border border-[#DED8CF] items-center">
                            <span className="text-xs font-bold text-[#B44E2A]">Cuota N° {c.numero}</span>
                            <div>
                              <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Vencimiento</label>
@@ -4783,7 +4783,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                        <button onClick={() => generarPagareModelo(contratoAEditar)} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3.5 rounded-xl font-black text-xs uppercase tracking-wider transition-colors shadow-xs">
                          📥 Generar Pagaré (PDF)
                        </button>
-                       <button onClick={() => setContratoAEditar(null)} className="bg-transparent border border-[#DED8CF] text-[#68706E] hover:text-white py-3.5 px-6 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors">
+                       <button onClick={() => setContratoAEditar(null)} className="bg-transparent border border-[#DED8CF] text-[#68706E] hover:text-[#173E3B] py-3.5 px-6 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors">
                          Cancelar
                        </button>
                      </div>
@@ -4871,10 +4871,10 @@ function BcraScoringPanel({ cuit }: BcraScoringPanelProps) {
       )}
 
       {data && (
-        <div className="space-y-3 text-xs bg-[#FFFDFC] p-3 rounded-lg border border-[#DED8CF]">
+        <div className="space-y-3 text-xs bg-[#F7F3EC] p-3 rounded-xl border border-[#DED8CF]-lg border border-[#DED8CF]">
           <div>
             <span className="text-[10px] text-[#68706E] font-black block uppercase">Denominación Oficial</span>
-            <span className="font-bold text-white uppercase">{data.denominacion || "Sin nombre registrado"}</span>
+            <span className="font-bold text-[#173E3B] font-bold uppercase">{data.denominacion || "Sin nombre registrado"}</span>
           </div>
 
           {data.periodos && data.periodos.length > 0 ? (

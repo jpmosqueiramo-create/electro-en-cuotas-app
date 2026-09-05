@@ -190,7 +190,7 @@ export default function RemitosAdminPage() {
                 📜
               </div>
               <div>
-                <h1 className="text-2xl font-black text-white flex items-center gap-2">
+                <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-[#173E3B] flex items-center gap-2">
                   Gestión de Remitos Emitidos
                 </h1>
                 <p className="text-xs text-[#68706E]">
@@ -200,27 +200,27 @@ export default function RemitosAdminPage() {
             </div>
 
             <div className="flex flex-wrap gap-2 text-xs font-bold">
-              <Link href="/admin" className="bg-[#121316] hover:bg-[#F7F3EC] text-[#1F2928] px-3 py-2 rounded-xl border border-[#DED8CF] transition">
+              <Link href="/admin" className="bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#173E3B] font-heading font-bold shadow-xs px-3 py-2 rounded-xl border border-[#DED8CF] transition">
                 🏠 Menú Admin
               </Link>
-              <Link href="/admin/validaciones" className="bg-[#121316] hover:bg-[#F7F3EC] text-blue-400 px-3 py-2 rounded-xl border border-[#DED8CF] transition">
+              <Link href="/admin/validaciones" className="bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#173E3B] font-heading font-bold shadow-xs px-3 py-2 rounded-xl border border-[#DED8CF] transition">
                 📥 Validaciones
               </Link>
-              <Link href="/admin/cartera" className="bg-[#121316] hover:bg-[#F7F3EC] text-purple-400 px-3 py-2 rounded-xl border border-[#DED8CF] transition">
+              <Link href="/admin/cartera" className="bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#B44E2A] font-heading font-bold shadow-xs px-3 py-2 rounded-xl border border-[#DED8CF] transition">
                 📈 Cartera
               </Link>
-              <Link href="/admin/comisiones" className="bg-[#121316] hover:bg-[#F7F3EC] text-[#B44E2A] px-3 py-2 rounded-xl border border-[#DED8CF] transition">
+              <Link href="/admin/comisiones" className="bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#B44E2A] font-heading font-bold shadow-xs px-3 py-2 rounded-xl border border-[#DED8CF] transition">
                 💰 Comisiones
               </Link>
-              <Link href="/admin/productos" className="bg-[#121316] hover:bg-[#F7F3EC] text-[#B44E2A] px-3 py-2 rounded-xl border border-[#DED8CF] transition">
+              <Link href="/admin/productos" className="bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#B44E2A] font-heading font-bold shadow-xs px-3 py-2 rounded-xl border border-[#DED8CF] transition">
                 ⚡ Productos
               </Link>
-              <Link href="/admin/rendiciones" className="bg-[#121316] hover:bg-[#F7F3EC] text-[#2F7D5C] px-3 py-2 rounded-xl border border-[#DED8CF] transition">
+              <Link href="/admin/rendiciones" className="bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#2F7D5C] font-heading font-bold shadow-xs px-3 py-2 rounded-xl border border-[#DED8CF] transition">
                 💸 Rendiciones
               </Link>
               <button
                 onClick={() => setShowConfigModal(true)}
-                className="bg-[#fe5000] hover:bg-[#fe5000]/90 text-white px-3.5 py-2 rounded-xl border border-[#fe5000]/40 font-black flex items-center gap-1.5 transition shadow-xs shadow-[#fe5000]/20 active:scale-95"
+                className="bg-[#173E3B] hover:bg-[#123230] text-white font-heading font-bold shadow-xs px-3.5 py-2 rounded-xl border border-[#fe5000]/40 font-black flex items-center gap-1.5 transition shadow-xs shadow-[#fe5000]/20 active:scale-95"
               >
                 ⚙️ Configuración
               </button>
@@ -234,7 +234,7 @@ export default function RemitosAdminPage() {
               </div>
               <div>
                 <p className="text-[10px] text-[#68706E] font-bold uppercase">Total de Remitos Emitidos</p>
-                <p className="text-2xl font-black text-white mt-0.5">{totalRemitos}</p>
+                <p className="text-2xl font-heading font-extrabold text-[#173E3B] mt-0.5">{totalRemitos}</p>
               </div>
             </div>
 
@@ -267,7 +267,7 @@ export default function RemitosAdminPage() {
                 placeholder="Buscar por N° Remito, Cliente, DNI, Producto, Contrato..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full bg-[#121316] border border-[#DED8CF] pl-10 pr-4 py-2.5 rounded-xl text-xs text-white placeholder-zinc-500 outline-none focus:border-amber-500 font-bold transition-all"
+                className="w-full bg-[#F7F3EC] border border-[#DED8CF] pl-10 pr-4 py-2.5 rounded-xl text-xs text-[#1F2928] placeholder-[#68706E] outline-none focus:border-amber-500 font-bold transition-all"
               />
             </div>
 
@@ -278,7 +278,7 @@ export default function RemitosAdminPage() {
               <select
                 value={filtroTipo}
                 onChange={(e: any) => setFiltroTipo(e.target.value)}
-                className="bg-[#121316] border border-[#DED8CF] text-white font-bold text-xs p-2.5 rounded-xl outline-none focus:border-amber-500 transition-all cursor-pointer"
+                className="bg-[#F7F3EC] border border-[#DED8CF] text-[#173E3B] font-bold text-xs p-2.5 rounded-xl outline-none focus:border-amber-500 transition-all cursor-pointer"
               >
                 <option value="TODOS">Todos los Remitos ({totalRemitos})</option>
                 <option value="REMITO_TIPO_R">📜 Remito Tipo R (Mandato Comercial)</option>
@@ -295,7 +295,7 @@ export default function RemitosAdminPage() {
           ) : remitosFiltrados.length === 0 ? (
             <div className="bg-[#FFFDFC] border border-[#DED8CF] rounded-3xl p-12 text-center space-y-3">
               <div className="text-4xl">📜</div>
-              <h3 className="text-lg font-black text-white">No se encontraron remitos registrados</h3>
+              <h3 className="text-lg font-heading font-bold text-[#173E3B]">No se encontraron remitos registrados</h3>
               <p className="text-xs text-[#68706E]">
                 {busqueda ? "Intenta ajustar la búsqueda o limpiar los filtros." : "Los remitos generados en las solicitudes aparecerán automáticamente aquí."}
               </p>
@@ -310,7 +310,7 @@ export default function RemitosAdminPage() {
                     
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-[#DED8CF] pb-3">
                       <div className="flex items-center gap-3">
-                        <span className="bg-[#121316] border border-amber-500/40 text-amber-300 font-mono font-black text-sm px-3 py-1.5 rounded-xl shadow-inner">
+                        <span className="bg-[#F7F3EC] border border-amber-500/40 text-amber-300 font-mono font-black text-sm px-3 py-1.5 rounded-xl shadow-inner">
                           📜 {item.nroRemito || "0001-00000000"}
                         </span>
 
@@ -321,7 +321,7 @@ export default function RemitosAdminPage() {
 
                       <div className="text-xs text-[#68706E] flex items-center gap-2">
                         <Calendar className="w-3.5 h-3.5 text-[#68706E]" />
-                        <span>Fecha: <strong className="text-white">{item.fechaEmision || "Reciente"}</strong></span>
+                        <span>Fecha: <strong className="text-[#173E3B]">{item.fechaEmision || "Reciente"}</strong></span>
                       </div>
                     </div>
 
@@ -329,7 +329,7 @@ export default function RemitosAdminPage() {
                       
                       <div className="bg-[#121316] p-3 rounded-xl border border-[#DED8CF] space-y-1">
                         <p className="text-[10px] text-[#68706E] font-bold uppercase">👤 Cliente Titular</p>
-                        <p className="text-white font-bold truncate">{item.clienteNombre || "Sin Nombre"}</p>
+                        <p className="text-[#173E3B] font-bold truncate">{item.clienteNombre || "Sin Nombre"}</p>
                         <p className="text-[#68706E] font-mono text-[10px]">DNI: {item.clienteDni || "N/A"}</p>
                         <p className="text-[#68706E] text-[10px] truncate" title={item.clienteDomicilio}>{item.clienteDomicilio || "Sin domicilio"}</p>
                       </div>
@@ -369,7 +369,7 @@ export default function RemitosAdminPage() {
 
                       <button
                         onClick={() => handleRedescargarPDF(item)}
-                        className="bg-[#fe5000] hover:bg-[#fe5000]/90 text-white font-black text-xs px-4 py-2 rounded-xl shadow-md uppercase tracking-wider flex items-center gap-2 transition"
+                        className="bg-[#fe5000] hover:bg-[#fe5000]/90 text-[#173E3B] font-bold text-xs px-4 py-2 rounded-xl shadow-md uppercase tracking-wider flex items-center gap-2 transition"
                       >
                         <Download className="w-3.5 h-3.5" /> Re-Descargar Remito PDF
                       </button>
@@ -391,11 +391,11 @@ export default function RemitosAdminPage() {
                 <div className="flex items-center gap-2">
                   <div className="bg-[#fe5000]/10 p-2 rounded-xl text-[#B44E2A] text-xl font-bold">⚙️</div>
                   <div>
-                    <h3 className="text-lg font-black text-white">Configuración del Encabezado de Remitos</h3>
+                    <h3 className="text-lg font-heading font-bold text-[#173E3B]">Configuración del Encabezado de Remitos</h3>
                     <p className="text-xs text-[#68706E]">Personalizá los datos institucionales y fiscales impresos en los Remitos (Tipo R COD. 91).</p>
                   </div>
                 </div>
-                <button onClick={() => setShowConfigModal(false)} className="text-[#68706E] hover:text-white font-bold text-lg">✕</button>
+                <button onClick={() => setShowConfigModal(false)} className="text-[#68706E] hover:text-[#173E3B] font-bold text-lg">✕</button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
@@ -405,7 +405,7 @@ export default function RemitosAdminPage() {
                     type="text"
                     value={empresaConfig.razonSocial || ""}
                     onChange={e => setEmpresaConfig({ ...empresaConfig, razonSocial: e.target.value })}
-                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-white outline-none focus:border-[#fe5000] font-bold"
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-bold"
                   />
                 </div>
 
@@ -415,7 +415,7 @@ export default function RemitosAdminPage() {
                     type="text"
                     value={empresaConfig.nombreFantasia || ""}
                     onChange={e => setEmpresaConfig({ ...empresaConfig, nombreFantasia: e.target.value })}
-                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-white outline-none focus:border-[#fe5000] font-bold"
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-bold"
                   />
                 </div>
 
@@ -425,7 +425,7 @@ export default function RemitosAdminPage() {
                     type="text"
                     value={empresaConfig.domicilioFiscal || ""}
                     onChange={e => setEmpresaConfig({ ...empresaConfig, domicilioFiscal: e.target.value })}
-                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-white outline-none focus:border-[#fe5000]"
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]"
                   />
                 </div>
 
@@ -435,7 +435,7 @@ export default function RemitosAdminPage() {
                     type="text"
                     value={empresaConfig.cuit || ""}
                     onChange={e => setEmpresaConfig({ ...empresaConfig, cuit: e.target.value })}
-                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-white outline-none focus:border-[#fe5000] font-mono"
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-mono"
                   />
                 </div>
 
@@ -445,7 +445,7 @@ export default function RemitosAdminPage() {
                     type="text"
                     value={empresaConfig.condicionIva || ""}
                     onChange={e => setEmpresaConfig({ ...empresaConfig, condicionIva: e.target.value })}
-                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-white outline-none focus:border-[#fe5000] font-bold"
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-bold"
                   />
                 </div>
 
@@ -455,7 +455,7 @@ export default function RemitosAdminPage() {
                     type="text"
                     value={empresaConfig.iibb || ""}
                     onChange={e => setEmpresaConfig({ ...empresaConfig, iibb: e.target.value })}
-                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-white outline-none focus:border-[#fe5000] font-mono"
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-mono"
                   />
                 </div>
 
@@ -466,7 +466,7 @@ export default function RemitosAdminPage() {
                     value={empresaConfig.fechaInicioActividades || ""}
                     onChange={e => setEmpresaConfig({ ...empresaConfig, fechaInicioActividades: e.target.value })}
                     placeholder="DD/MM/YYYY"
-                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-white outline-none focus:border-[#fe5000]"
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]"
                   />
                 </div>
 
@@ -476,7 +476,7 @@ export default function RemitosAdminPage() {
                     type="email"
                     value={empresaConfig.emailContacto || ""}
                     onChange={e => setEmpresaConfig({ ...empresaConfig, emailContacto: e.target.value })}
-                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-white outline-none focus:border-[#fe5000]"
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]"
                   />
                 </div>
 
@@ -486,7 +486,7 @@ export default function RemitosAdminPage() {
                     type="text"
                     value={empresaConfig.telefonoContacto || ""}
                     onChange={e => setEmpresaConfig({ ...empresaConfig, telefonoContacto: e.target.value })}
-                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-white outline-none focus:border-[#fe5000]"
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]"
                   />
                 </div>
               </div>
@@ -501,7 +501,7 @@ export default function RemitosAdminPage() {
                 <button
                   onClick={handleGuardarConfigEmpresa}
                   disabled={guardandoConfig}
-                  className="flex-1 bg-[#fe5000] hover:bg-[#fe5000]/90 text-white py-3 rounded-xl font-black transition text-xs shadow-xs uppercase tracking-wider disabled:opacity-50"
+                  className="flex-1 bg-[#173E3B] hover:bg-[#123230] text-white font-heading font-bold shadow-xs py-3 rounded-xl font-black transition text-xs shadow-xs uppercase tracking-wider disabled:opacity-50"
                 >
                   {guardandoConfig ? "Guardando..." : "💾 Guardar Configuración"}
                 </button>

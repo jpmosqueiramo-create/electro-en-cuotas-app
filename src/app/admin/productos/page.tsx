@@ -456,20 +456,20 @@ export default function AdminProductosPage() {
 
   return (
     <AdminProtectedRoute>
-      <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] p-8">
+      <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] p-4 sm:p-8 font-sans selection:bg-[#173E3B] selection:text-white">
         <div className="max-w-7xl mx-auto">
           <header className="flex justify-between items-center mb-8 border-b border-[#DED8CF] pb-4">
             <div className="flex items-center gap-4">
               <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-12 w-auto object-contain bg-[#173E3B] p-1.5 rounded-xl shadow-xs" />
-              <h1 className="text-2xl font-bold text-[#B44E2A]">Gestión de Productos e Inventario</h1>
+              <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-[#173E3B]">Catálogo de Productos e Inventario</h1>
             </div>
-            <a href="/admin" className="text-sm border border-[#fe5000]/50 hover:bg-yellow-500 hover:text-black px-4 py-2 rounded transition-colors">
+            <a href="/admin" className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-[#173E3B] text-[#173E3B] font-heading font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-xs">
               Volver al Panel Admin
             </a>
           </header>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-4 bg-[#121316] border border-[#DED8CF] rounded-lg p-6 h-fit transition-all duration-300" style={editandoId ? {boxShadow: "0 0 30px rgba(234,179,8,0.15)", borderColor: "#eab308"} : {}}>
+            <div className="lg:col-span-4 bg-[#FFFDFC] border border-[#DED8CF] rounded-2xl p-6 h-fit shadow-xs transition-all duration-300" style={editandoId ? {boxShadow: "0 0 30px rgba(234,179,8,0.15)", borderColor: "#eab308"} : {}}>
               <h2 className="text-xl mb-6 font-semibold border-b border-[#DED8CF] pb-2 flex items-center gap-2">
                 {editandoId ? "✏️ Modificando Producto" : "Añadir Nuevo Producto"}
               </h2>
@@ -477,30 +477,30 @@ export default function AdminProductosPage() {
               <form onSubmit={handleSubirProducto} className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-[#B44E2A] mb-1">Código de Producto (EAN / SKU)</label>
+                    <label className="block text-xs font-bold text-[#173E3B] mb-1">Código de Producto (EAN / SKU)</label>
                     <input 
                       value={codigoProducto} 
                       onChange={e=>setCodigoProducto(e.target.value)} 
                       type="text" 
                       placeholder="Ej: 7796885403083" 
-                      className="w-full bg-[#F7F3EC]/80 border border-amber-500/40 rounded p-2 text-white font-mono text-xs font-bold focus:border-[#fe5000] focus:outline-none" 
+                      className="w-full bg-[#F7F3EC]/80 border border-amber-500/40 rounded p-2 text-[#1F2928] font-mono text-xs font-bold focus:border-[#173E3B] focus:outline-none" 
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-yellow-200 mb-1">Nombre del equipo</label>
+                    <label className="block text-xs font-bold text-[#173E3B] mb-1">Nombre del equipo</label>
                     <input 
                       required 
                       value={nombre} 
                       onChange={e=>setNombre(e.target.value)} 
                       type="text" 
                       placeholder="Ej: Samsung Galaxy A55 5G"
-                      className="w-full bg-[#F7F3EC]/80 border border-[#DED8CF] rounded p-2 text-white text-xs font-bold focus:border-[#fe5000] focus:outline-none" 
+                      className="w-full bg-[#F7F3EC]/80 border border-[#DED8CF] rounded p-2 text-[#1F2928] text-xs font-bold focus:border-[#173E3B] focus:outline-none" 
                     />
                   </div>
                 </div>
                 
                 {/* MOTOR FINANCIERO CON SELECTOR Y FACTORES MODIFICABLES DE 1 A 12 CUOTAS */}
-                <div className="p-5 bg-[#121316] border border-amber-500/30 rounded-2xl space-y-4 shadow-xs">
+                <div className="p-5 bg-[#F7F3EC] border border-[#DED8CF] rounded-2xl space-y-4 shadow-xs">
                    <div className="flex justify-between items-center border-b border-[#DED8CF] pb-3">
                      <div>
                        <h3 className="text-xs font-black text-[#B44E2A] uppercase tracking-widest flex items-center gap-1.5">
@@ -531,20 +531,20 @@ export default function AdminProductosPage() {
                          }} 
                          type="number" 
                          placeholder="Ej: 400000" 
-                         className="w-full bg-[#FFFDFC] border border-emerald-500/50 rounded-xl p-3 text-white text-sm font-black focus:border-emerald-400 focus:outline-none shadow-inner" 
+                         className="w-full bg-[#FFFDFC] border border-emerald-500/50 rounded-xl p-3 text-[#1F2928] text-sm font-black focus:border-[#173E3B] focus:outline-none shadow-inner" 
                          required
                        />
                      </div>
 
                      <div>
                        <label className="block text-xs font-bold text-[#68706E] mb-1">Nombre del Proveedor (Opcional)</label>
-                       <input value={proveedor} onChange={e=>setProveedor(e.target.value)} type="text" placeholder="Ej: Distribuidora Oficial" className="w-full bg-[#FFFDFC] border border-[#DED8CF] rounded-xl p-3 text-white text-xs font-bold focus:border-[#fe5000] focus:outline-none" />
+                       <input value={proveedor} onChange={e=>setProveedor(e.target.value)} type="text" placeholder="Ej: Distribuidora Oficial" className="w-full bg-[#FFFDFC] border border-[#DED8CF] rounded-xl p-3 text-[#1F2928] text-xs font-bold focus:border-[#173E3B] focus:outline-none" />
                      </div>
                    </div>
                 </div>
 
                 {/* TABLA INTERACTIVA DE PLANES DE 1 A 12 CUOTAS CON TILDE Y FACTORES MODIFICABLES */}
-                <div className="p-5 bg-[#121316] border border-[#DED8CF] rounded-2xl space-y-4">
+                <div className="p-5 bg-[#F7F3EC] border border-[#DED8CF] rounded-2xl space-y-4">
                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#DED8CF] pb-3 gap-2">
                      <div>
                        <h3 className="text-xs font-black text-[#B44E2A] uppercase tracking-wider flex items-center gap-1.5">
@@ -607,7 +607,7 @@ export default function AdminProductosPage() {
                            className={`p-3 rounded-xl border transition-all ${
                              isActivo 
                                ? "bg-[#FFFDFC] border-[#DED8CF] hover:border-amber-500/50 shadow-md" 
-                               : "bg-[#14151a] border-[#DED8CF]/60 opacity-50"
+                               : "bg-[#F7F3EC] border-[#DED8CF] opacity-60"
                            }`}
                          >
                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -620,7 +620,7 @@ export default function AdminProductosPage() {
                                  }}
                                  className="w-4 h-4 accent-[#fe5000] rounded cursor-pointer"
                                />
-                               <span className="text-xs font-black text-white w-20">
+                               <span className="text-xs font-heading font-bold text-[#173E3B] w-20">
                                  {n} {n === 1 ? "Cuota" : "Cuotas"}
                                </span>
                              </div>
@@ -645,7 +645,7 @@ export default function AdminProductosPage() {
                                      setCuota8(Math.round((cProd * val) / 8).toString());
                                    }
                                  }}
-                                 className="w-20 bg-[#121316] border border-amber-500/40 rounded-lg p-1.5 text-center text-amber-300 font-mono text-xs font-black outline-none focus:border-amber-400"
+                                 className="w-20 bg-[#FFFDFC] border border-[#DED8CF] rounded-lg p-1.5 text-center text-[#1F2928] font-mono text-xs font-bold outline-none focus:border-amber-400"
                                />
                              </div>
 
@@ -665,9 +665,9 @@ export default function AdminProductosPage() {
                      })}
                    </div>
                 </div>
-                <div className="p-4 bg-[#121316] border border-[#DED8CF] rounded-2xl space-y-3 shadow-xs">
+                <div className="p-4 bg-[#F7F3EC] border border-[#DED8CF] rounded-2xl space-y-3 shadow-xs">
                    <div className="flex justify-between items-center border-b border-[#DED8CF] pb-2">
-                     <label className="block text-xs font-black text-yellow-200 uppercase tracking-wider flex items-center gap-1.5">
+                     <label className="block text-xs font-black text-[#173E3B] uppercase tracking-wider flex items-center gap-1.5">
                        📝 Descripción corta y Ficha Técnica
                      </label>
                    </div>
@@ -676,12 +676,12 @@ export default function AdminProductosPage() {
                      value={descripcion} 
                      onChange={e=>setDescripcion(e.target.value)} 
                      placeholder="Ej: Ficha técnica detallada del equipo, pantalla, almacenamiento, procesador y garantía..." 
-                     className="w-full bg-[#FFFDFC] border border-[#DED8CF] rounded-xl p-3 text-white text-xs font-mono focus:border-[#fe5000] focus:outline-none leading-relaxed shadow-inner" 
+                     className="w-full bg-[#FFFDFC] border border-[#DED8CF] rounded-xl p-3 text-[#1F2928] text-xs font-mono focus:border-[#173E3B] focus:outline-none leading-relaxed shadow-inner" 
                      rows={6} 
                    />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2 text-yellow-200">
+                  <label className="block text-sm mb-2 text-[#173E3B]">
                     Imágenes del Producto (Máximo 4)
                   </label>
                   
@@ -732,13 +732,13 @@ export default function AdminProductosPage() {
                       multiple
                       accept="image/*"
                       onChange={handleFileChange}
-                      className="w-full bg-[#F7F3EC]/80 border border-[#DED8CF] rounded p-2 text-white file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:bg-yellow-500 file:text-black hover:file:bg-yellow-400 transition-colors cursor-pointer text-xs"
+                      className="w-full bg-[#F7F3EC]/80 border border-[#DED8CF] rounded p-2 text-[#1F2928] file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:bg-yellow-500 file:text-black hover:file:bg-yellow-400 transition-colors cursor-pointer text-xs"
                     />
                   )}
                 </div>
                 
                 <div className="pt-4 flex flex-col gap-3">
-                  <button disabled={loading} type="submit" className={`w-full text-black py-4 rounded font-bold transition-colors shadow-xs ${editandoId ? 'bg-blue-500 hover:bg-blue-400' : 'bg-yellow-500 hover:bg-yellow-400'} disabled:opacity-50`}>
+                  <button disabled={loading} type="submit" className={`w-full text-white py-3.5 rounded-xl font-heading font-bold uppercase tracking-wider transition-all shadow-xs ${editandoId ? 'bg-blue-600 hover:bg-blue-500' : 'bg-[#173E3B] hover:bg-[#123230]'} disabled:opacity-50`}>
                     {loading ? "Guardando..." : (editandoId ? "💾 Guardar Cambios" : "Crear Producto")}
                   </button>
                   
@@ -751,18 +751,18 @@ export default function AdminProductosPage() {
               </form>
             </div>
 
-            <div className="lg:col-span-8 bg-[#121316] border border-[#DED8CF] rounded-lg p-6">
+            <div className="lg:col-span-8 bg-[#FFFDFC] border border-[#DED8CF] rounded-2xl p-6 shadow-xs">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-[#DED8CF] pb-3 mb-6 gap-3">
                 <h2 className="text-xl font-semibold">Inventario General ({productos.length})</h2>
                 <button
                   onClick={() => setMostrarTrasladoModal(true)}
-                  className="bg-yellow-500 hover:bg-yellow-400 text-black px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2"
+                  className="bg-[#173E3B] hover:bg-[#123230] text-white px-4 py-2.5 rounded-xl font-heading font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-xs"
                 >
                   🚚 Nuevo Remito de Traslado
                 </button>
               </div>
               {productos.length === 0 ? (
-                <p className="text-yellow-200/50 italic">No hay productos en tu base de datos todavía.</p>
+                <p className="text-[#173E3B]/50 italic">No hay productos en tu base de datos todavía.</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   {productos.map(p => (
@@ -807,7 +807,7 @@ export default function AdminProductosPage() {
                   <select 
                     value={nuevaUnidadLocalidad} 
                     onChange={e => setNuevaUnidadLocalidad(e.target.value)} 
-                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-[#fe5000] outline-none"
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-[#173E3B] outline-none"
                   >
                     {LOCALIDADES_STOCK.map(loc => (
                       <option key={loc} value={loc}>{loc}</option>
@@ -821,13 +821,13 @@ export default function AdminProductosPage() {
                     value={nuevaUnidadNserie} 
                     onChange={e => setNuevaUnidadNserie(e.target.value)} 
                     placeholder="Ej: SN-492849204" 
-                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-[#fe5000] outline-none font-mono" 
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-[#173E3B] outline-none font-mono" 
                   />
                 </div>
               </div>
               <button 
                 type="submit" 
-                className="w-full bg-yellow-500 hover:bg-yellow-400 text-black py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors shadow-xs"
+                className="w-full bg-[#173E3B] hover:bg-[#123230] text-white py-3 rounded-xl font-heading font-bold text-xs uppercase tracking-wider transition-all shadow-xs"
               >
                 + Agregar Unidad a Stock
               </button>
@@ -841,7 +841,7 @@ export default function AdminProductosPage() {
                   <p className="text-xs text-[#68706E] italic text-center py-6">No hay unidades cargadas en stock para este producto.</p>
                 ) : (
                   (stockProducto.stock || []).map((u: UnidadStock) => (
-                    <div key={u.id} className="flex justify-between items-center bg-[#121316] p-3 rounded-lg border border-[#DED8CF]">
+                    <div key={u.id} className="flex justify-between items-center bg-[#F7F3EC] p-3 rounded-xl border border-[#DED8CF]">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] bg-[#FFFDFC] text-[#B44E2A] px-2 py-0.5 rounded font-black border border-[#DED8CF]">
@@ -900,7 +900,7 @@ export default function AdminProductosPage() {
             <form onSubmit={handleGenerarTrasladoYActualizarDb} className="space-y-6">
               
               {/* Origen y Destino */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#121316] p-4 rounded-xl border border-[#DED8CF]">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#F7F3EC] p-4 rounded-xl border border-[#DED8CF]">
                 <div>
                   <label className="block text-xs font-bold text-[#68706E] mb-1">Localidad de Origen (Despacho)</label>
                   <select 
@@ -910,7 +910,7 @@ export default function AdminProductosPage() {
                       // Clear line selections since origin changed
                       setTrasladoLineas(prev => prev.map(l => ({ ...l, selectedUnitIds: [], nseries: [], cantidad: 1 })));
                     }}
-                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-[#fe5000] outline-none"
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-[#173E3B] outline-none"
                   >
                     {LOCALIDADES_STOCK.map(loc => (
                       <option key={loc} value={loc}>{loc}</option>
@@ -922,7 +922,7 @@ export default function AdminProductosPage() {
                   <select 
                     value={trasladoDestino} 
                     onChange={e => setTrasladoDestino(e.target.value)} 
-                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-[#fe5000] outline-none"
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-[#173E3B] outline-none"
                   >
                     {LOCALIDADES_STOCK.map(loc => (
                       <option key={loc} value={loc}>{loc}</option>
@@ -960,7 +960,7 @@ export default function AdminProductosPage() {
                     const availableUnits = matchedProd ? (matchedProd.stock || []).filter((u: any) => u.localidad === trasladoOrigen && u.estado === "Disponible") : [];
 
                     return (
-                      <div key={line.id} className="bg-[#121316] p-4 rounded-xl border border-[#DED8CF] space-y-3 relative">
+                      <div key={line.id} className="bg-[#F7F3EC] p-4 rounded-xl border border-[#DED8CF] space-y-3 relative">
                         <button
                           type="button"
                           onClick={() => handleQuitarLineaTraslado(line.id)}
@@ -1110,7 +1110,7 @@ export default function AdminProductosPage() {
                 </button>
                 <button 
                   type="submit" 
-                  className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black py-3 rounded-lg font-black text-xs uppercase tracking-wider transition-colors shadow-xs"
+                  className="flex-1 bg-[#173E3B] hover:bg-[#123230] text-white py-3 rounded-xl font-heading font-bold text-xs uppercase tracking-wider transition-all shadow-xs"
                 >
                   🚚 Generar Remito y Procesar Traslado
                 </button>
@@ -1220,7 +1220,7 @@ function AdminProductCard({
         <h3 className="font-bold text-md mb-4 line-clamp-2 leading-tight">{p.nombre}</h3>
         
         {/* Datos Internos Admin */}
-        <div className="bg-[#121316] border border-[#DED8CF] p-3 rounded-lg mb-3 text-xs flex flex-col gap-1">
+        <div className="bg-[#F7F3EC] border border-[#DED8CF] p-3 rounded-xl mb-3 text-xs flex flex-col gap-1">
           <p className="text-[#68706E] font-bold uppercase mb-1 border-b border-[#DED8CF] pb-1">Administrativo</p>
           <p className="text-[#68706E]">Costo: <span className="font-mono">${p.costoProducto || 0}</span></p>
           <p className="text-[#68706E]">Contado: <span className="text-[#2F7D5C] font-mono font-bold">${p.precioContado || 0}</span></p>
@@ -1230,7 +1230,7 @@ function AdminProductCard({
         </div>
 
         {/* Resumen de Stock por Localidad */}
-        <div className="bg-[#121316] border border-[#DED8CF] p-3 rounded-lg mb-3 text-xs flex flex-col gap-1">
+        <div className="bg-[#F7F3EC] border border-[#DED8CF] p-3 rounded-xl mb-3 text-xs flex flex-col gap-1">
           <p className="text-[#68706E] font-bold uppercase mb-1 border-b border-[#DED8CF] pb-1">Stock Disponible</p>
           {LOCALIDADES_STOCK.map(loc => {
             const count = (p.stock || []).filter(u => u.localidad === loc && u.estado === "Disponible").length;

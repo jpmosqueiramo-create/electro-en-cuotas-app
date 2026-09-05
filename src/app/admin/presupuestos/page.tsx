@@ -89,9 +89,7 @@ export default function PresupuestosPage() {
         });
       });
 
-      // Sort chronologically (newest first)
       allPresupuestos.sort((a, b) => b.fechaObjeto.getTime() - a.fechaObjeto.getTime());
-
       setPresupuestos(allPresupuestos);
     } catch (e) {
       console.error("Error al cargar presupuestos:", e);
@@ -104,7 +102,6 @@ export default function PresupuestosPage() {
     fetchPresupuestos();
   }, []);
 
-  // Filtering logic
   const presupuestosFiltrados = presupuestos.filter((p) => {
     const estadoMatch =
       filtroEstado === "TODOS" ? true :
@@ -157,14 +154,17 @@ export default function PresupuestosPage() {
       <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] p-4 md:p-8 font-sans selection:bg-[#173E3B] selection:text-white">
         <div className="max-w-7xl mx-auto space-y-6">
           
-          {/* HEADER CON BOTONES DE NAVEGACIÓN RÁPIDA */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#FFFDFC] border border-[#DED8CF] p-6 rounded-2xl shadow-xs">
+          {/* HEADER PRINCIPAL */}
+          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#FFFDFC] border border-[#DED8CF] p-6 rounded-2xl shadow-xs">
             <div className="flex items-center gap-4">
               <Link href="/admin" className="p-2.5 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#173E3B] rounded-xl border border-[#DED8CF] transition shadow-xs">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
               <div>
-                <h1 className="text-2xl md:text-3xl font-black text-[#173E3B] font-heading font-extrabold">
+                <div className="inline-flex items-center gap-1.5 text-[10px] font-heading font-bold uppercase tracking-widest text-[#B44E2A]">
+                  <FileText className="w-3.5 h-3.5 text-[#B44E2A]" /> Centro de Monitoreo Root
+                </div>
+                <h1 className="text-2xl md:text-3xl font-heading font-extrabold text-[#173E3B]">
                   Historial Maestro de Presupuestos
                 </h1>
                 <p className="text-xs text-[#68706E] font-sans mt-0.5">
@@ -174,17 +174,17 @@ export default function PresupuestosPage() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <Link href="/admin/clientes" className="bg-[#FFFDFC] hover:bg-[#F7F3EC] text-cyan-400 border border-cyan-500/30 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+              <Link href="/admin/clientes" className="bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#173E3B] border border-[#DED8CF] hover:border-[#173E3B] px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition flex items-center gap-1.5 shadow-xs">
                 <Users className="w-3.5 h-3.5" /> Ver Clientes
               </Link>
-              <Link href="/admin/validaciones" className="bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#B44E2A] border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+              <Link href="/admin/validaciones" className="bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#B44E2A] border border-[#DED8CF] hover:border-[#B44E2A] px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition flex items-center gap-1.5 shadow-xs">
                 <ShieldCheck className="w-3.5 h-3.5" /> Validaciones
               </Link>
-              <div className="bg-[#FFFDFC] px-3 py-2 rounded-xl border border-[#DED8CF] text-xs font-mono font-bold text-[#1F2928]">
-                Total: <strong className="text-[#B44E2A]">{presupuestos.length}</strong>
+              <div className="bg-[#F7F3EC] px-3.5 py-2 rounded-xl border border-[#DED8CF] text-xs font-heading font-bold text-[#68706E]">
+                Total: <strong className="text-[#173E3B] font-mono text-sm">{presupuestos.length}</strong>
               </div>
             </div>
-          </div>
+          </header>
 
           {/* BARRA DE CONTROLES: FILTROS Y BUSCADOR */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-[#FFFDFC] border border-[#DED8CF] p-5 rounded-2xl shadow-xs">
@@ -197,29 +197,29 @@ export default function PresupuestosPage() {
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 placeholder="Buscar por Nombre, DNI, N° de Presupuesto o Producto..."
-                className="w-full bg-[#FFFDFC] border border-[#DED8CF] pl-10 pr-4 py-2.5 rounded-xl text-xs text-[#1F2928] placeholder-[#68706E] outline-none focus:border-[#173E3B] transition font-sans"
+                className="w-full bg-[#FFFDFC] border border-[#DED8CF] pl-10 pr-4 py-2.5 rounded-xl text-xs text-[#1F2928] placeholder-[#68706E] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans transition"
               />
             </div>
 
             {/* Filtros por Estado */}
             <div className="md:col-span-6 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-[#68706E] mr-1 flex items-center gap-1">
+              <span className="text-xs font-heading font-bold text-[#68706E] mr-1 flex items-center gap-1">
                 <Filter className="w-3.5 h-3.5" /> Estado:
               </span>
               {[
-                { key: "TODOS", label: "Todos", color: "bg-[#F7F3EC] text-white" },
-                { key: "ACEPTADO", label: "🟢 Aceptados", color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" },
-                { key: "PENDIENTE", label: "🟡 Pendientes", color: "bg-amber-500/20 text-amber-300 border-amber-500/30" },
-                { key: "RECHAZADO", label: "🔴 Rechazados", color: "bg-rose-500/20 text-rose-300 border-rose-500/30" },
-                { key: "ELIMINADO", label: "🗑️ Cancelados", color: "bg-[#F7F3EC] text-[#68706E] border-[#DED8CF]" }
+                { key: "TODOS", label: "Todos" },
+                { key: "ACEPTADO", label: "🟢 Aceptados" },
+                { key: "PENDIENTE", label: "🟡 Pendientes" },
+                { key: "RECHAZADO", label: "🔴 Rechazados" },
+                { key: "ELIMINADO", label: "🗑️ Cancelados" }
               ].map((f) => (
                 <button
                   key={f.key}
                   onClick={() => setFiltroEstado(f.key)}
-                  className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all ${
+                  className={`text-xs font-heading font-bold px-3 py-1.5 rounded-xl border transition-all ${
                     filtroEstado === f.key
-                      ? "bg-[#fe5000] text-white border-[#fe5000] shadow-md shadow-orange-500/20"
-                      : "bg-[#FFFDFC] text-[#68706E] border-[#DED8CF] hover:border-[#DED8CF]"
+                      ? "bg-[#173E3B] text-white border-[#173E3B] shadow-xs"
+                      : "bg-[#FFFDFC] text-[#68706E] border-[#DED8CF] hover:border-[#173E3B]"
                   }`}
                 >
                   {f.label}
@@ -231,19 +231,19 @@ export default function PresupuestosPage() {
 
           {/* LISTADO DE PRESUPUESTOS */}
           {loading ? (
-            <div className="bg-[#FFFDFC] border border-[#DED8CF] p-12 rounded-3xl text-center">
-              <p className="text-sm text-[#68706E] animate-pulse font-medium">Cargando historial maestro de presupuestos...</p>
+            <div className="bg-[#FFFDFC] border border-[#DED8CF] p-12 rounded-2xl text-center shadow-xs">
+              <p className="text-sm text-[#68706E] animate-pulse font-heading font-semibold">Cargando historial maestro de presupuestos...</p>
             </div>
           ) : presupuestosFiltrados.length === 0 ? (
-            <div className="bg-[#FFFDFC] border border-[#DED8CF] p-12 rounded-3xl text-center space-y-3">
-              <FileText className="w-12 h-12 text-zinc-600 mx-auto" />
-              <p className="text-base text-[#1F2928] font-bold">No se encontraron presupuestos</p>
-              <p className="text-xs text-[#68706E] max-w-md mx-auto">
+            <div className="bg-[#FFFDFC] border border-[#DED8CF] p-12 rounded-2xl text-center space-y-3 shadow-xs">
+              <FileText className="w-12 h-12 text-[#68706E]/60 mx-auto" />
+              <p className="text-base text-[#173E3B] font-heading font-bold">No se encontraron presupuestos</p>
+              <p className="text-xs text-[#68706E] font-sans max-w-md mx-auto">
                 No hay presupuestos registrados que coincidan con la búsqueda o el filtro seleccionado.
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {presupuestosFiltrados.map((p, idx) => {
                 const isAceptado = p.estado === "Aceptado" || p.estado === "Aprobado";
                 const isRechazado = p.estado === "Rechazado";
@@ -255,51 +255,51 @@ export default function PresupuestosPage() {
                 return (
                   <div
                     key={p.id + "_" + idx}
-                    className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-zinc-750 p-5 rounded-2xl transition-all shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+                    className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-[#173E3B]/60 p-5 rounded-2xl transition-all shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
                   >
                     {/* Info Cliente y Fecha */}
-                    <div className="space-y-1.5 flex-1">
+                    <div className="space-y-2 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[11px] font-black text-[#B44E2A] font-mono bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                        <span className="text-[11px] font-heading font-bold text-[#B44E2A] font-mono bg-[#B44E2A]/10 px-2.5 py-0.5 rounded-md border border-[#B44E2A]/20">
                           N° {p.id ? p.id.replace("pres_", "").substring(0, 8).toUpperCase() : "S/D"}
                         </span>
                         
-                        <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider border ${
-                          isAceptado ? "bg-emerald-500/10 text-[#2F7D5C] border-emerald-500/30" :
-                          isRechazado ? "bg-rose-500/10 text-rose-400 border-rose-500/30" :
-                          isCancelado ? "bg-[#F7F3EC] text-[#68706E] border-[#DED8CF]" :
-                          "bg-amber-500/10 text-[#B44E2A] border-amber-500/30"
+                        <span className={`text-[10px] font-heading font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider border ${
+                          isAceptado ? "bg-[#2F7D5C]/15 text-[#2F7D5C] border-[#2F7D5C]/30" :
+                          isRechazado ? "bg-rose-100 text-rose-700 border-rose-200" :
+                          isCancelado ? "bg-gray-100 text-[#68706E] border-gray-200" :
+                          "bg-[#E7B86A]/20 text-[#8F6211] border-[#E7B86A]/50"
                         }`}>
                           {isAceptado ? "🟢 Aceptado" : isRechazado ? "🔴 Rechazado" : isCancelado ? "🗑️ Cancelado" : "🟡 Pendiente"}
                         </span>
 
-                        <span className="text-[11px] text-[#68706E] font-medium">
-                          {p.fechaObjeto ? p.fechaObjeto.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "Fecha no disp."}
+                        <span className="text-xs text-[#68706E] font-sans">
+                          {p.fechaObjeto ? p.fechaObjeto.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "Fecha no disponible"}
                         </span>
                       </div>
 
                       <div>
-                        <h3 className="text-base font-bold text-white">{p.clienteNombre}</h3>
-                        <p className="text-xs text-[#68706E]">
-                          DNI: <span className="font-mono font-bold text-[#1F2928]">{p.clienteDni}</span> | WhatsApp: <span className="font-mono text-[#1F2928]">{p.clienteWhatsapp}</span>
+                        <h3 className="text-base font-heading font-bold text-[#173E3B]">{p.clienteNombre}</h3>
+                        <p className="text-xs text-[#68706E] font-sans mt-0.5">
+                          DNI: <span className="font-mono font-bold text-[#1F2928]">{p.clienteDni}</span> | WhatsApp: <span className="font-mono text-[#1F2928]">{p.clienteWhatsapp}</span> | Localidad: <span className="text-[#1F2928]">{p.clienteLocalidad}</span>
                         </p>
                       </div>
 
                       {/* Listado de Productos / Opciones */}
-                      <div className="pt-2 space-y-1">
+                      <div className="pt-2 space-y-1.5">
                         {itemsList.map((it: any, itemIdx: number) => (
-                          <div key={itemIdx} className="text-xs bg-[#FFFDFC]/80 p-2 rounded-lg border border-[#DED8CF] flex items-center justify-between">
+                          <div key={itemIdx} className="text-xs bg-[#F7F3EC] p-2.5 rounded-xl border border-[#DED8CF] flex items-center justify-between">
                             <div>
                               {itemsList.length > 1 && (
-                                <span className="text-[9px] font-black uppercase text-[#B44E2A] bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 mr-1.5">
+                                <span className="text-[9px] font-heading font-bold uppercase text-[#B44E2A] bg-[#B44E2A]/10 px-1.5 py-0.5 rounded border border-[#B44E2A]/20 mr-1.5">
                                   Opción {itemIdx + 1}
                                 </span>
                               )}
-                              <span className="font-bold text-[#1F2928]">{it.producto}</span>
-                              <span className="text-[#68706E] ml-2">({it.cuotas} cuotas de <strong className="text-[#B44E2A] font-mono">${(it.valorCuota || 0).toLocaleString("es-AR")}</strong>)</span>
+                              <span className="font-heading font-bold text-[#173E3B]">{it.producto}</span>
+                              <span className="text-[#68706E] ml-2 font-sans">({it.cuotas} cuotas de <strong className="text-[#2F7D5C] font-mono">${(it.valorCuota || 0).toLocaleString("es-AR")}</strong>)</span>
                             </div>
                             {it.costoProveedor > 0 && (
-                              <span className="text-[10px] text-[#B44E2A]/80 font-mono">
+                              <span className="text-[10px] text-[#68706E] font-mono">
                                 Prov: ${it.costoProveedor}
                               </span>
                             )}
@@ -308,7 +308,7 @@ export default function PresupuestosPage() {
                       </div>
 
                       {p.notas && (
-                        <p className="text-[11px] text-[#68706E] italic pt-1">
+                        <p className="text-xs text-[#68706E] font-sans italic pt-1">
                           Notas: {p.notas}
                         </p>
                       )}
@@ -317,23 +317,23 @@ export default function PresupuestosPage() {
                     {/* Resumen Financiero y Acciones */}
                     <div className="flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end gap-3 flex-shrink-0 w-full md:w-auto border-t md:border-t-0 border-[#DED8CF] pt-3 md:pt-0">
                       <div className="text-left md:text-right">
-                        <span className="text-[10px] text-[#68706E] uppercase tracking-wider font-bold block">Cuota Mensual Total</span>
-                        <span className="text-xl font-black text-[#B44E2A] font-mono">
-                          ${totalCuota.toLocaleString("es-AR")} <span className="text-xs font-normal text-[#68706E]">/ mes</span>
+                        <span className="text-[10px] text-[#68706E] font-heading uppercase tracking-wider font-bold block">Cuota Mensual Total</span>
+                        <span className="text-xl font-heading font-extrabold text-[#173E3B] font-mono">
+                          ${totalCuota.toLocaleString("es-AR")} <span className="text-xs font-normal text-[#68706E] font-sans">/ mes</span>
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2 w-full sm:w-auto">
                         <button
                           onClick={() => handleDescargarPdf(p)}
-                          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#B44E2A] border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm"
+                          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#B44E2A] border border-[#DED8CF] hover:border-[#B44E2A] px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all shadow-xs"
                         >
                           <Download className="w-3.5 h-3.5" /> PDF
                         </button>
 
                         <Link
                           href={`/admin/validaciones`}
-                          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#fe5000] hover:bg-[#e04600] text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-orange-500/20"
+                          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#173E3B] hover:bg-[#123230] text-white px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all shadow-xs"
                         >
                           <ExternalLink className="w-3.5 h-3.5" /> Legajo
                         </Link>

@@ -150,14 +150,14 @@ export default function CarteraPage() {
 
   return (
     <AdminProtectedRoute>
-      <div className="min-h-screen bg-[#FFFDFC] text-white p-8">
+      <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] p-8">
       <div className="max-w-7xl mx-auto">
         <header className="flex justify-between items-center mb-8 border-b border-[#DED8CF] pb-4">
           <div>
-             <h1 className="text-3xl font-black text-[#B44E2A]">Gestión de Cartera Activa</h1>
+             <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-[#173E3B]">Gestión de Cartera Activa</h1>
              <p className="text-[#68706E] text-sm mt-1">Seguimiento de cuotas, cobranzas y promesas de pago.</p>
           </div>
-          <Link href="/admin" className="text-[#68706E] border border-[#DED8CF] px-4 py-2 rounded hover:text-white transition font-bold">← Volver al Panel</Link>
+          <Link href="/admin" className="text-[#68706E] border border-[#DED8CF] px-4 py-2 rounded hover:text-[#173E3B] transition font-bold">← Volver al Panel</Link>
         </header>
 
         {promesasExigibles.length > 0 && !loading && (
@@ -183,7 +183,7 @@ export default function CarteraPage() {
           <p className="text-center text-[#68706E] font-bold mt-20">Cargando base de cartera...</p>
         ) : solicitudes.length === 0 ? (
           <div className="bg-[#FFFDFC] border border-[#DED8CF] p-8 rounded-xl text-center shadow-xs max-w-xl mx-auto mt-12">
-            <h2 className="text-xl font-bold text-white mb-2">Cartera Vacía</h2>
+            <h2 className="text-xl font-bold text-[#173E3B] font-heading font-bold mb-2">Cartera Vacía</h2>
             <p className="text-[#68706E]">No hay ventas entregadas actualmente activas en seguimiento.</p>
           </div>
         ) : (
@@ -197,11 +197,11 @@ export default function CarteraPage() {
                   
                   <div className="mb-4 border-b border-[#DED8CF] pb-4 mt-6">
                      {/* BOTON DE BORRAR */}
-                     <button onClick={() => setModalBorrar(sol.id)} className="absolute top-2 left-2 z-10 text-red-500 hover:text-white bg-red-500/5 hover:bg-red-600 rounded p-1.5 transition-colors border border-red-500/10" title="Eliminar Cliente de la Base de Datos">
+                     <button onClick={() => setModalBorrar(sol.id)} className="absolute top-2 left-2 z-10 text-red-500 hover:text-[#173E3B] bg-red-500/5 hover:bg-red-600 rounded p-1.5 transition-colors border border-red-500/10" title="Eliminar Cliente de la Base de Datos">
                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                      </button>
                      
-                     <h3 className="text-xl font-black text-white mb-1">{sol.datosPersonales?.nombreCompleto || "Desconocido"}</h3>
+                     <h3 className="text-xl font-black text-[#173E3B] font-heading font-bold mb-1">{sol.datosPersonales?.nombreCompleto || "Desconocido"}</h3>
                      <p className="text-[#68706E] text-sm flex gap-2"><span className="text-[#B44E2A] font-bold">📲 {sol.datosPersonales?.telefono}</span> <span className="text-[#68706E]">|</span> <span className="text-[#68706E]">{sol.datosPersonales?.numeroDni}</span></p>
                      <p className="text-[#68706E] text-xs mt-1">Afiliado asignado: {sol.afiliadoEmail}</p>
                      <p className="text-blue-400 font-bold text-sm mt-3">Equipo: {sol.productoDeseado}</p>
@@ -228,7 +228,7 @@ export default function CarteraPage() {
                      </div>
                   )}
 
-                  <button onClick={() => setExpandedId(expandedId === sol.id ? null : sol.id)} className="mt-auto w-full bg-[#F7F3EC] hover:bg-[#FFFDFC] text-white font-bold py-3 rounded text-sm transition border border-[#DED8CF] shadow-md">
+                  <button onClick={() => setExpandedId(expandedId === sol.id ? null : sol.id)} className="mt-auto w-full bg-[#F7F3EC] hover:bg-[#FFFDFC] text-[#173E3B] font-bold py-3 rounded text-sm transition border border-[#DED8CF] shadow-md">
                     {expandedId === sol.id ? "Cerrar Panel de Venta" : "Ver Plan de Cuotas y Bitácora 💳"}
                   </button>
 
@@ -252,7 +252,7 @@ export default function CarteraPage() {
                                       return (
                                         <div key={idx} className={`p-3 rounded border flex flex-col md:flex-row md:items-center justify-between gap-3 text-sm ${cuota.estado === 'PAGADO' ? 'bg-green-900/10 border-green-500/10' : cuota.estado === 'EN_REVISION' ? 'bg-blue-900/20 border-blue-500/50' : isAtrasada ? 'bg-red-900/20 border-red-500/10' : 'bg-[#FFFDFC] border-[#DED8CF]'}`}>
                                             <div>
-                                               <p className="font-bold text-white">Cuota {cuota.numero} <span className="text-[#B44E2A] ml-2">${cuota.montoOriginal}</span></p>
+                                               <p className="font-bold text-[#1F2928]">Cuota {cuota.numero} <span className="text-[#B44E2A] ml-2">${cuota.montoOriginal}</span></p>
                                                <p className="text-xs text-[#68706E]">Vence: {new Date(cuota.vencimiento).toLocaleDateString()}</p>
                                             </div>
                                             <div className="flex flex-col md:items-end gap-1">
@@ -281,7 +281,7 @@ export default function CarteraPage() {
 
                         {/* SECCION: BITACORA */}
                         <div>
-                            <h4 className="text-white font-bold text-sm mb-3 border-b border-[#DED8CF] pb-1 flex justify-between">Historial de Contactos <span className="text-[10px] text-[#68706E] font-normal mt-1">(Bitácora)</span></h4>
+                            <h4 className="text-[#173E3B] font-bold text-sm mb-3 border-b border-[#DED8CF] pb-1 flex justify-between">Historial de Contactos <span className="text-[10px] text-[#68706E] font-normal mt-1">(Bitácora)</span></h4>
                             {(!sol.historialContactos || sol.historialContactos.length === 0) ? (
                                <p className="text-xs text-[#68706E] italic text-center py-4">No hay contactos registrados aún.</p>
                             ) : (
@@ -335,7 +335,7 @@ export default function CarteraPage() {
                <div className="bg-green-500/5 w-20 h-20 rounded-full flex items-center justify-center mb-6 border border-green-500/10">
                   <span className="text-[#2F7D5C] text-4xl font-black">✓</span>
                </div>
-               <h3 className="text-2xl font-black text-white mb-3">Liquidar Cuota</h3>
+               <h3 className="text-2xl font-heading font-extrabold text-[#173E3B] mb-3">Liquidar Cuota</h3>
                <p className="text-[#68706E] text-sm mb-4 leading-relaxed">¿Estás completamente seguro de que el importe de esta cuota impactó en tu cuenta bancaria y deseas marcarla como cerrada permanentemente?</p>
                
                <div className="w-full text-left mb-6 bg-[#FFFDFC] p-4 rounded-lg border border-[#DED8CF]">
@@ -435,7 +435,7 @@ export default function CarteraPage() {
                <div className="bg-red-500/5 w-20 h-20 rounded-full flex items-center justify-center mb-6 border border-red-500/10">
                   <span className="text-red-500 text-4xl font-black">!</span>
                </div>
-               <h3 className="text-2xl font-black text-white mb-3">Eliminar Cartera</h3>
+               <h3 className="text-2xl font-heading font-extrabold text-[#173E3B] mb-3">Eliminar Cartera</h3>
                <p className="text-[#68706E] text-sm mb-6 leading-relaxed">Estás a punto de <strong className="text-red-400">borrar a este cliente y toda su historia de la faz de la tierra</strong>. Esto es I-R-R-E-V-E-R-S-I-B-L-E. ¿Estás absolutamente seguro?</p>
                <div className="w-full flex gap-3">
                   <button onClick={() => setModalBorrar(null)} className="flex-1 bg-[#F7F3EC] text-[#1F2928] py-3.5 rounded-xl font-bold hover:bg-[#FFFDFC] transition">Cancelar</button>

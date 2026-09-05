@@ -270,7 +270,7 @@ export default function AdminComisionesPage() {
                  <DollarSign className="w-8 h-8 text-[#B44E2A]" />
               </div>
               <div>
-                <h1 className="text-2xl font-black text-white flex items-center gap-2">
+                <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-[#173E3B] flex items-center gap-2">
                   Gestión y Liquidación de Comisiones
                 </h1>
                 <p className="text-[#68706E] text-xs mt-0.5">
@@ -314,7 +314,7 @@ export default function AdminComisionesPage() {
                       <div key={email} className="bg-[#FFFDFC] border border-[#DED8CF] rounded-2xl shadow-xs overflow-hidden transition-all">
                          <div onClick={() => setExpandedEmail(isExpanded ? null : email)} className="cursor-pointer p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:bg-[#F7F3EC]/40 transition-colors">
                             <div className="flex items-center gap-3.5">
-                               <div className="bg-[#121316] border border-[#DED8CF] p-3 rounded-2xl text-2xl shadow-inner">👤</div>
+                               <div className="bg-[#F7F3EC] border border-[#DED8CF] p-3 rounded-2xl text-2xl shadow-inner">👤</div>
                                <div>
                                   <h3 className="font-bold text-white text-lg flex items-center gap-2">{email}</h3>
                                   <p className="text-xs text-[#68706E] mt-0.5">{items.length} comisiones registradas</p>
@@ -342,7 +342,7 @@ export default function AdminComisionesPage() {
                             <div className="p-5 border-t border-[#DED8CF] bg-[#121316]/60 space-y-6">
                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-[#FFFDFC] p-4 rounded-xl border border-[#DED8CF]">
                                   <div>
-                                    <h4 className="font-black text-sm text-white uppercase tracking-wider flex items-center gap-2">
+                                    <h4 className="font-black text-sm text-[#173E3B] font-bold uppercase tracking-wider flex items-center gap-2">
                                       💳 Registrar Pago a Vendedor
                                     </h4>
                                     <p className="text-xs text-[#68706E]">Elegí cancelar la totalidad o realizar entregas a cuenta</p>
@@ -385,7 +385,7 @@ export default function AdminComisionesPage() {
                                            return (
                                               <div key={p.id} className="bg-[#FFFDFC] border border-[#DED8CF] p-3.5 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs shadow-sm">
                                                  <div className="space-y-0.5">
-                                                    <p className="font-bold text-white text-sm">
+                                                    <p className="font-bold text-[#1F2928] text-sm">
                                                        {p.clienteNombre ? "Cliente: " + p.clienteNombre : "Venta General"} 
                                                        <span className="text-[#68706E] font-normal text-xs ml-2">({new Date(p.fecha).toLocaleDateString("es-AR")})</span>
                                                     </p>
@@ -436,7 +436,7 @@ export default function AdminComisionesPage() {
                                                        {new Date(pago.fechaPago).toLocaleString("es-AR")}
                                                     </span>
                                                  </div>
-                                                 <p className="text-white font-bold">
+                                                 <p className="text-[#173E3B] font-bold">
                                                     Método: <span className="text-[#1F2928] font-normal">{pago.metodoPago} ({pago.cuentaOrigen || "Caja General"})</span>
                                                  </p>
                                                  {pago.numeroComprobante && (
@@ -462,7 +462,7 @@ export default function AdminComisionesPage() {
                                                  <button 
                                                    type="button"
                                                    onClick={() => generarComprobantePDF(email, pago, [])}
-                                                   className="bg-[#F7F3EC] hover:bg-[#FFFDFC] text-[#1F2928] hover:text-white font-bold p-2 rounded-lg text-[10px] border border-[#DED8CF] transition-colors flex items-center gap-1"
+                                                   className="bg-[#F7F3EC] hover:bg-[#FFFDFC] text-[#1F2928] hover:text-[#173E3B] font-bold p-2 rounded-lg text-[10px] border border-[#DED8CF] transition-colors flex items-center gap-1"
                                                    title="Descargar Comprobante PDF"
                                                  >
                                                    📄 Recibo
@@ -522,14 +522,14 @@ export default function AdminComisionesPage() {
                     <span className="text-[9px] bg-[#fe5000]/20 text-[#B44E2A] font-black uppercase px-2.5 py-1 rounded border border-[#fe5000]/30 inline-block mb-1">
                       REGISTRO DE LIQUIDACIÓN
                     </span>
-                    <h3 className="text-lg font-black text-white">
+                    <h3 className="text-lg font-heading font-bold text-[#173E3B]">
                       {pagoTipo === "TOTAL" ? "Liquidación Total de Comisiones" : "Pago Parcial a Cuenta"}
                     </h3>
                     <p className="text-xs text-[#68706E] font-bold mt-0.5">Vendedor: {pagoAfiliadoEmail}</p>
                   </div>
                   <button 
                     onClick={() => setModalPagoOpen(false)} 
-                    className="text-[#68706E] hover:text-white font-black text-sm bg-[#F7F3EC] p-2 rounded-xl"
+                    className="text-[#68706E] hover:text-[#173E3B] font-bold text-sm bg-[#F7F3EC] p-2 rounded-xl"
                   >
                     ✕
                   </button>
@@ -546,7 +546,7 @@ export default function AdminComisionesPage() {
                         const tot = itemsAf.reduce((acc, curr) => acc + ((curr.comisionAsociada || 0) - (curr.montoPagadoAcumulado || 0)), 0);
                         setPagoMontoInput(String(tot));
                       }}
-                      className={`py-2 rounded-lg font-bold text-xs transition-all ${pagoTipo === "TOTAL" ? "bg-green-600 text-white shadow-md font-black" : "text-[#68706E] hover:text-white"}`}
+                      className={`py-2 rounded-lg font-bold text-xs transition-all ${pagoTipo === "TOTAL" ? "bg-green-600 text-white shadow-md font-black" : "text-[#68706E] hover:text-[#173E3B]"}`}
                     >
                       💚 Liquidación Total
                     </button>
@@ -557,7 +557,7 @@ export default function AdminComisionesPage() {
                         setPagoTipo("PARCIAL");
                         setPagoMontoInput("");
                       }}
-                      className={`py-2 rounded-lg font-bold text-xs transition-all ${pagoTipo === "PARCIAL" ? "bg-yellow-500 text-black shadow-md font-black" : "text-[#68706E] hover:text-white"}`}
+                      className={`py-2 rounded-lg font-bold text-xs transition-all ${pagoTipo === "PARCIAL" ? "bg-[#173E3B] text-white font-heading font-bold shadow-md font-black" : "text-[#68706E] hover:text-[#173E3B]"}`}
                     >
                       ✏️ Pago Parcial
                     </button>
@@ -573,7 +573,7 @@ export default function AdminComisionesPage() {
                       value={pagoMontoInput} 
                       onChange={e => setPagoMontoInput(e.target.value)} 
                       placeholder="Ej: 45000" 
-                      className="w-full bg-[#121316] border border-[#DED8CF] p-3 rounded-xl text-white font-mono font-black text-base outline-none focus:border-yellow-500 shadow-inner"
+                      className="w-full bg-[#F7F3EC] border border-[#DED8CF] p-3 rounded-xl text-[#1F2928] font-mono font-black text-base outline-none focus:border-yellow-500 shadow-inner"
                     />
                   </div>
 
@@ -585,7 +585,7 @@ export default function AdminComisionesPage() {
                       <select 
                         value={pagoMetodo} 
                         onChange={e => setPagoMetodo(e.target.value)}
-                        className="w-full bg-[#121316] border border-[#DED8CF] p-2.5 rounded-xl text-white font-bold outline-none focus:border-yellow-500"
+                        className="w-full bg-[#F7F3EC] border border-[#DED8CF] p-2.5 rounded-xl text-[#173E3B] font-bold outline-none focus:border-yellow-500"
                       >
                         <option value="Transferencia Bancaria">Transferencia Bancaria</option>
                         <option value="Efectivo en Mano">Efectivo en Mano</option>
@@ -604,7 +604,7 @@ export default function AdminComisionesPage() {
                         value={pagoCuentaOrigen} 
                         onChange={e => setPagoCuentaOrigen(e.target.value)} 
                         placeholder="Ej: Banco Galicia / Caja Central" 
-                        className="w-full bg-[#121316] border border-[#DED8CF] p-2.5 rounded-xl text-white outline-none focus:border-yellow-500 font-bold"
+                        className="w-full bg-[#F7F3EC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-bold"
                       />
                     </div>
                   </div>
@@ -618,7 +618,7 @@ export default function AdminComisionesPage() {
                       value={pagoComprobanteNum} 
                       onChange={e => setPagoComprobanteNum(e.target.value)} 
                       placeholder="Ej: Transferencia N° 9812401294" 
-                      className="w-full bg-[#121316] border border-[#DED8CF] p-2.5 rounded-xl text-white font-mono outline-none focus:border-yellow-500"
+                      className="w-full bg-[#F7F3EC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] font-mono outline-none focus:border-yellow-500"
                     />
                   </div>
 
@@ -630,7 +630,7 @@ export default function AdminComisionesPage() {
                       value={pagoObservaciones} 
                       onChange={e => setPagoObservaciones(e.target.value)} 
                       placeholder="Ej: Pago a cuenta correspondiente al mes de Agosto..." 
-                      className="w-full bg-[#121316] border border-[#DED8CF] p-2.5 rounded-xl text-white outline-none focus:border-yellow-500 resize-none h-16"
+                      className="w-full bg-[#F7F3EC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] resize-none h-16"
                     />
                   </div>
 
