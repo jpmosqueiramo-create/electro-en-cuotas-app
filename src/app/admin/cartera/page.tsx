@@ -205,6 +205,59 @@ export default function CarteraPage() {
                      <p className="text-[#68706E] text-sm flex gap-2"><span className="text-[#B44E2A] font-bold">📲 {sol.datosPersonales?.telefono}</span> <span className="text-[#68706E]">|</span> <span className="text-[#68706E]">{sol.datosPersonales?.numeroDni}</span></p>
                      <p className="text-[#68706E] text-xs mt-1">Afiliado asignado: {sol.afiliadoEmail}</p>
                      <p className="text-blue-400 font-bold text-sm mt-3">Equipo: {sol.productoDeseado}</p>
+
+                     {/* ESTADO CONTRATO FIRMADO DIGITALMENTE O WHATSAPP LINK */}
+                     <div className="mt-4">
+                       {sol.contratoFirmado ? (
+                         <div className="bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                           <div>
+                             <span className="text-emerald-400 text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
+                               🟢 Contrato Firmado Digitalmente
+                             </span>
+                             <p className="text-[11px] text-[#68706E] mt-0.5">
+                               Fecha: {sol.fechaFirmaDigital ? new Date(sol.fechaFirmaDigital).toLocaleString('es-AR') : 'Autorizado'} | IP: {sol.ipFirmaDigital || 'Web'}
+                             </p>
+                           </div>
+                           <Link
+                             href={`/firmar-contrato/${sol.id}`}
+                             target="_blank"
+                             className="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-md transition shadow-xs whitespace-nowrap"
+                           >
+                             📄 Ver Contrato
+                           </Link>
+                         </div>
+                       ) : (
+                         <div className="bg-cyan-500/10 border border-cyan-500/20 p-3 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                           <div>
+                             <span className="text-cyan-400 text-xs font-bold uppercase tracking-wider">
+                               ✍️ Autorización de Contrato
+                             </span>
+                             <p className="text-[11px] text-[#68706E] mt-0.5">
+                               Podés enviar el link directo de firma por WhatsApp al cliente.
+                             </p>
+                           </div>
+                           <div className="flex gap-2">
+                             <a
+                               href={`https://wa.me/${(sol.datosPersonales?.telefono || sol.whatsapp || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${sol.datosPersonales?.nombreCompleto || 'Cliente'}, podés revisar y autorizar digitalmente tu Contrato de Mandato Comercial desde el siguiente enlace seguro:
+
+https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/${sol.id}`)}`}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-md transition shadow-xs whitespace-nowrap flex items-center gap-1"
+                             >
+                               💬 WhatsApp Link
+                             </a>
+                             <Link
+                               href={`/firmar-contrato/${sol.id}`}
+                               target="_blank"
+                               className="bg-[#FFFDFC] border border-[#DED8CF] hover:bg-[#F7F3EC] text-[#173E3B] text-[11px] font-bold px-3 py-1.5 rounded-md transition shadow-xs whitespace-nowrap"
+                             >
+                               👀 Ver Firma
+                             </Link>
+                           </div>
+                         </div>
+                       )}
+                     </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 text-center mb-6">

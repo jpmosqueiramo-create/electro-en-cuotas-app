@@ -1271,9 +1271,11 @@ export default function AdminValidacionesPage() {
         comprobanteUrl: null
       }));
 
+      let targetId = c.solId;
+
       if (c.isApertura) {
         // 1. Create request in solicitudes collection
-        await addDoc(collection(db, "solicitudes"), {
+        const docRef = await addDoc(collection(db, "solicitudes"), {
           clienteId: "aperturado_" + c.solId,
           clienteEmail: c.email || "no-email@cuenta-hogar.com",
           datosPersonales: {
@@ -1304,6 +1306,7 @@ export default function AdminValidacionesPage() {
           afiliadoEmail: c.originalSolicitud.referente || null,
           planPagos: planPagosMapped
         });
+        targetId = docRef.id;
 
         // 2. Mark account request as approved
         await updateDoc(doc(db, "solicitudes_cuenta", c.solId), { estado: "Aprobado" });
@@ -1329,12 +1332,17 @@ export default function AdminValidacionesPage() {
         });
       }
 
-      // 3. Send WhatsApp
+      // 3. Send WhatsApp with Direct Digital Signature Link
       const tel = c.whatsapp.replace(/[^0-9]/g, "");
-      const mensaje = `${c.nombreComprador}, ya aprobamos tu solicitud de gestión de compra por ${c.producto}, pronto nos pondremos en contacto para coordinar entrega. Si tienes alguna consulta escribinos, e intentaremos responderte lo antes posible`;
+      const firmaUrl = `https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/${targetId}`;
+      const mensaje = `Hola ${c.nombreComprador}, ¡tu solicitud para ${c.producto} fue aprobada! 📋✍️ Podés revisar y autorizar digitalmente tu Contrato de Mandato Comercial ingresando al siguiente enlace seguro:
+
+${firmaUrl}
+
+Quedamos a tu disposición para coordinar la entrega.`;
       const wame = `https://wa.me/${tel}?text=${encodeURIComponent(mensaje)}`;
       
-      alert("¡Formularios guardados exitosamente! Redirigiendo a WhatsApp...");
+      alert("¡Formularios guardados exitosamente! Redirigiendo a WhatsApp con el enlace de firma digital...");
       window.open(wame, "_blank");
       
       // Close editor and reload data
@@ -1388,7 +1396,7 @@ export default function AdminValidacionesPage() {
               });
             }
 
-            await addDoc(collection(db, "solicitudes"), {
+            const docRef = await addDoc(collection(db, "solicitudes"), {
               clienteId: "aperturado_" + req.id,
               clienteEmail: req.email || "no-email@cuenta-hogar.com",
               datosPersonales: {
@@ -1490,7 +1498,7 @@ export default function AdminValidacionesPage() {
               });
             }
 
-            await addDoc(collection(db, "solicitudes"), {
+            const docRef = await addDoc(collection(db, "solicitudes"), {
               clienteId: "aperturado_" + id,
               clienteEmail: reqObj.email || "no-email@cuenta-hogar.com",
               datosPersonales: {
@@ -3179,31 +3187,68 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                               
                             </div>
 
-                            {/* PENDIENTE DE FIRMA ACTION CARD */}
-                            {req.estado === "PENDIENTE_FIRMA" && (
+                            {/* PENDIENTE DE FIRMA / FIRMADO ACTION CARD */}
+                            {req.contratoFirmado ? (
+                              <div className="mt-6 p-5 bg-emerald-950/20 border-2 border-emerald-500/30 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 relative overflow-hidden">
+                                <div className="relative z-10">
+                                  <h4 className="font-black text-emerald-400 text-base uppercase tracking-wider flex items-center gap-2">🟢 Contrato Autorizado y Firmado Digitalmente</h4>
+                                  <p className="text-xs text-[#68706E] mt-1">
+                                    <strong>Fecha Firma:</strong> {req.fechaFirmaDigital ? new Date(req.fechaFirmaDigital).toLocaleString('es-AR') : "Registrada"} | <strong>IP Audit:</strong> {req.ipFirmaDigital || "Digital Web"} | <strong>Método:</strong> {req.metodoFirma || "LINK_DIRECTO_WHATSAPP_EMAIL"}
+                                  </p>
+                                </div>
+                                <Link 
+                                  href={`/firmar-contrato/${req.id}`} 
+                                  target="_blank" 
+                                  className="relative z-10 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-xl transition-all shadow-xs inline-flex items-center gap-2"
+                                >
+                                  📄 Ver Contrato Firmado
+                                </Link>
+                              </div>
+                            ) : req.estado === "PENDIENTE_FIRMA" ? (
                               <div className="mt-6 p-5 bg-cyan-950/20 border-2 border-cyan-500/30 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl -mr-10 -mt-10" />
                                 <div className="relative z-10">
                                   <h4 className="font-black text-cyan-400 text-base uppercase tracking-wider flex items-center gap-2">✍️ Pendiente de firma del contrato</h4>
-                                  <p className="text-xs text-[#68706E] mt-1 max-w-xl">El Contrato y Pagaré fueron generados y la notificación enviada al cliente. Una vez firmados, confirmá la recepción para derivar automáticamente a Logística y despacho del producto.</p>
+                                  <p className="text-xs text-[#68706E] mt-1 max-w-xl">El Contrato y Pagaré están listos. Podés enviar el link directo de firma por WhatsApp o copiarlo para que el cliente lo autorice online sin registrarse.</p>
                                 </div>
-                                <button 
-                                  onClick={async () => {
-                                    if (!window.confirm(`¿Confirmas que el cliente ${req.datosPersonales?.nombreCompleto || ''} ya firmó el Contrato y Pagaré?`)) return;
-                                    try {
-                                      await updateDoc(doc(db, "solicitudes", req.id), { estado: "APROBADO" });
-                                      alert("¡Excelente! Contrato firmado. La solicitud ha sido enviada a Logística y Entregas.");
-                                      await fetchSolicitudes();
-                                    } catch(e) {
-                                      alert("Error al confirmar firma.");
-                                    }
-                                  }}
-                                  className="relative z-10 bg-cyan-600 hover:bg-cyan-500 text-[#173E3B] font-bold text-xs uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all shadow-xs hover:-translate-y-0.5 active:scale-95"
-                                >
-                                  ✓ Confirmar Firma y Enviar a Logística
-                                </button>
+                                <div className="relative z-10 flex flex-wrap gap-2">
+                                  <a
+                                    href={`https://wa.me/${(req.whatsapp || req.datosPersonales?.telefono || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${req.datosPersonales?.nombreCompleto || 'Cliente'}, podés revisar y autorizar digitalmente tu Contrato de Mandato Comercial en el siguiente enlace seguro:
+
+https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/${req.id}`)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider px-4 py-3 rounded-xl transition-all shadow-xs inline-flex items-center gap-2"
+                                  >
+                                    💬 WhatsApp Firma
+                                  </a>
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(`https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/${req.id}`);
+                                      alert("¡Enlace de firma copiado al portapapeles!");
+                                    }}
+                                    className="bg-[#FFFDFC] border border-[#DED8CF] hover:bg-[#F7F3EC] text-[#173E3B] font-bold text-xs uppercase tracking-wider px-4 py-3 rounded-xl transition-all shadow-xs"
+                                  >
+                                    📋 Copiar Link
+                                  </button>
+                                  <button 
+                                    onClick={async () => {
+                                      if (!window.confirm(`¿Confirmas que el cliente ${req.datosPersonales?.nombreCompleto || ''} ya firmó el Contrato y Pagaré?`)) return;
+                                      try {
+                                        await updateDoc(doc(db, "solicitudes", req.id), { estado: "APROBADO" });
+                                        alert("¡Excelente! Contrato firmado. La solicitud ha sido enviada a Logística y Entregas.");
+                                        await fetchSolicitudes();
+                                      } catch(e) {
+                                        alert("Error al confirmar firma.");
+                                      }
+                                    }}
+                                    className="bg-cyan-600 hover:bg-cyan-500 text-[#173E3B] font-bold text-xs uppercase tracking-widest px-4 py-3 rounded-xl transition-all shadow-xs"
+                                  >
+                                    ✓ Confirmar y Pasar a Logística
+                                  </button>
+                                </div>
                               </div>
-                            )}
+                            ) : null}
 
                           </div>
                         )}
