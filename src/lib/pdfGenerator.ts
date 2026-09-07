@@ -1507,9 +1507,23 @@ export const generarComprobantePago = (datos: DatosComprobantePago) => {
 
   y += 7;
 
-  // Fila 1: Recupero de Capital (Exento)
-  const mExento = datos.montoExento !== undefined ? datos.montoExento : Math.round(datos.montoAbonado * 0.70);
-  const mGravado = datos.montoGravado !== undefined ? datos.montoGravado : Math.max(0, datos.montoAbonado - mExento);
+  // Proportional breakdown calculation for Partial & Full Payments
+  const rawExento = datos.montoExento !== undefined ? datos.montoExento : Math.round(datos.montoAbonado * 0.70);
+  const rawGravado = datos.montoGravado !== undefined ? datos.montoGravado : Math.max(0, datos.montoAbonado - rawExento);
+  const fullCuotaTotal = rawExento + rawGravado;
+
+  let mExento = 0;
+  let mGravado = 0;
+
+  if (fullCuotaTotal > 0 && (datos.esPagoParcial || Math.abs(fullCuotaTotal - datos.montoAbonado) > 1)) {
+    // Proportional Recalculation for Partial Payments
+    const ratio = datos.montoAbonado / fullCuotaTotal;
+    mExento = Math.round(rawExento * ratio);
+    mGravado = Math.max(0, datos.montoAbonado - mExento); // Guarantees mExento + mGravado === datos.montoAbonado EXACTLY
+  } else {
+    mExento = rawExento;
+    mGravado = rawGravado;
+  }
 
   const nroContratoStr = datos.nroContrato || `CH-${cleanReciboNum}`;
   const totalCuotasStr = datos.cuotasTotal || 12;
@@ -1630,7 +1644,7 @@ export const generarComprobantePago = (datos: DatosComprobantePago) => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(146, 64, 14);
-    doc.text(`ℹ️ AJUSTE FINANCIERO APLICADO: La diferencia de pago fue trasladada a la Cuota N° ${datos.proximaCuotaNumero}.`, 13, y + 4.5);
+    doc.text(`[!] AJUSTE FINANCIERO APLICADO: La diferencia de pago fue trasladada a la Cuota N° ${datos.proximaCuotaNumero}.`, 13, y + 4.5);
     doc.text(`Nuevo valor reajustado para la Cuota N° ${datos.proximaCuotaNumero}: ${formatARS(datos.proximaCuotaValor)}`, 13, y + 9);
     y += 16;
   }
