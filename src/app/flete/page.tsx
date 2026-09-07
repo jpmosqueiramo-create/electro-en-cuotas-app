@@ -513,16 +513,16 @@ Si podés, adjuntá una foto o link del producto.`;
       <section className="py-20 lg:py-28 bg-[#173E3B] text-[#FFFDFC]">
         <div className="max-w-4xl mx-auto px-6 text-center space-y-8">
           
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 bg-[#FFFDFC]/10 border border-[#FFFDFC]/20 text-[#E7B86A] px-4 py-1.5 rounded-full text-xs font-heading font-bold uppercase tracking-widest">
-              <Truck className="w-4 h-4" /> Presupuesto por WhatsApp
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 bg-[#E7B86A]/20 border border-[#E7B86A]/40 text-[#E7B86A] px-4 py-2 rounded-full text-xs font-heading font-extrabold uppercase tracking-widest shadow-xs">
+              <Truck className="w-4 h-4 text-[#E7B86A]" /> Presupuesto por WhatsApp
             </div>
             
-            <h2 className="text-3xl sm:text-4xl lg:text-[44px] font-heading font-extrabold tracking-tight leading-tight text-[#FFFDFC]">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-extrabold tracking-tight leading-tight !text-white drop-shadow-sm">
               ¿Querés saber cuánto cuesta traer tu compra?
             </h2>
             
-            <p className="text-base sm:text-lg text-[#F7F3EC]/90 font-sans max-w-xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg text-[#FFFDFC] font-sans font-medium max-w-xl mx-auto leading-relaxed">
               Contanos qué compraste y a qué localidad tenemos que llevarlo. Te cotizamos el envío por WhatsApp.
             </p>
           </div>
