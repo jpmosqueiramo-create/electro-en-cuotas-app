@@ -359,10 +359,10 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
 
                             <div className="bg-[#FFFDFC] p-4 rounded-lg border border-[#DED8CF]">
                                <h5 className="text-[10px] text-[#B44E2A] font-bold uppercase tracking-widest mb-2">Registrar una nueva gestión telefónica/whatsapp</h5>
-                               <textarea value={nuevaNota} onChange={e=>setNuevaNota(e.target.value)} placeholder="Ej: Llamé y dijo que cancela en RapiPago mañana a las 18hs..." className="w-full bg-[#FFFDFC] text-white p-3 rounded border border-[#DED8CF] text-xs outline-none focus:border-yellow-500 h-20 min-h-[4rem] mb-3 transition-colors" />
+                               <textarea value={nuevaNota} onChange={e=>setNuevaNota(e.target.value)} placeholder="Ej: Llamé y dijo que cancela en RapiPago mañana a las 18hs..." className="w-full bg-[#FFFDFC] text-[#1F2928] p-3 rounded border border-[#DED8CF] text-xs outline-none focus:border-yellow-500 h-20 min-h-[4rem] mb-3 transition-colors" />
                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
                                   <label className="text-[11px] font-bold text-[#68706E] whitespace-nowrap">Agendar Promesa P.:</label>
-                                  <input type="date" value={fechaPromesa} onChange={e=>setFechaPromesa(e.target.value)} className="w-full sm:w-auto bg-[#FFFDFC] text-white p-2 rounded border border-[#DED8CF] text-xs outline-none focus:border-yellow-500" />
+                                  <input type="date" value={fechaPromesa} onChange={e=>setFechaPromesa(e.target.value)} className="w-full sm:w-auto bg-[#FFFDFC] text-[#1F2928] p-2 rounded border border-[#DED8CF] text-xs outline-none focus:border-yellow-500" />
                                </div>
                                <button onClick={() => handleAgregarNota(sol)} className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs py-3 rounded uppercase tracking-wider transition-colors shadow-md">
                                   + Guardar Nota a la Bitácora
@@ -397,14 +397,14 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                      type="number" 
                      value={montoIngresado} 
                      onChange={(e) => setMontoIngresado(e.target.value)}
-                     className="w-full bg-[#FFFDFC] border border-[#DED8CF] text-white p-3 rounded-lg focus:border-yellow-500 outline-none transition-colors font-bold text-lg"
+                     className="w-full bg-[#FFFDFC] border border-[#DED8CF] text-[#1F2928] p-3 rounded-lg focus:border-yellow-500 outline-none transition-colors font-bold text-lg"
                      min="0"
                   />
                   <p className="text-[10px] text-[#68706E] mt-2">Si el pago es parcial, el saldo restante se sumará automáticamente a la próxima cuota o creará una nueva.</p>
                </div>
                <div className="w-full text-left mb-6 bg-[#FFFDFC] p-4 rounded-lg border border-[#DED8CF]">
                   <label className="text-xs text-[#B44E2A] font-bold uppercase mb-2 block">Método de Pago</label>
-                  <select value={metodoPagoCuota} onChange={e=>setMetodoPagoCuota(e.target.value)} className="w-full bg-[#FFFDFC] border border-[#DED8CF] text-white p-3 rounded-lg focus:border-yellow-500 outline-none font-bold">
+                  <select value={metodoPagoCuota} onChange={e=>setMetodoPagoCuota(e.target.value)} className="w-full bg-[#FFFDFC] border border-[#DED8CF] text-[#1F2928] p-3 rounded-lg focus:border-yellow-500 outline-none font-bold">
                      <option value="Efectivo">Efectivo 💵</option>
                      <option value="Transferencia">Transferencia Bancaria 🏦</option>
                   </select>

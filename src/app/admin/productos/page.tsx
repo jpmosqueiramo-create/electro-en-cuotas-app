@@ -988,7 +988,7 @@ export default function AdminProductosPage() {
                                 value={line.manualNombre}
                                 onChange={e => handleUpdateLineaTraslado(line.id, { manualNombre: e.target.value })}
                                 placeholder="Ej: Fundas protectoras, cables, etc."
-                                className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none focus:border-blue-500 font-bold"
+                                className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] outline-none focus:border-blue-500 font-bold"
                               />
                             </div>
                             <div>
@@ -999,7 +999,7 @@ export default function AdminProductosPage() {
                                 required
                                 value={line.cantidad}
                                 onChange={e => handleUpdateLineaTraslado(line.id, { cantidad: Math.max(1, Number(e.target.value)) })}
-                                className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none focus:border-blue-500 font-bold font-mono"
+                                className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] outline-none focus:border-blue-500 font-bold font-mono"
                               />
                             </div>
                             <div className="md:col-span-3">
@@ -1028,7 +1028,7 @@ export default function AdminProductosPage() {
                                       cantidad: 1
                                     });
                                   }}
-                                  className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none focus:border-[#fe5000] font-bold"
+                                  className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] outline-none focus:border-[#fe5000] font-bold"
                                 >
                                   <option value="">-- Seleccionar --</option>
                                   {productos.map(p => (
@@ -1095,7 +1095,7 @@ export default function AdminProductosPage() {
                   value={trasladoComentario} 
                   onChange={e => setTrasladoComentario(e.target.value)} 
                   placeholder="Ej: Traslado interno para reabastecer stock de sucursal por alta demanda." 
-                  className="w-full bg-[#121316] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs focus:border-[#fe5000] outline-none" 
+                  className="w-full bg-[#121316] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs focus:border-[#fe5000] outline-none" 
                   rows={2}
                 />
               </div>

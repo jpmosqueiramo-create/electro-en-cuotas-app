@@ -120,3 +120,19 @@ h1, h2, h3, h4, h5, h6 {
 .btn-secondary:hover {
   background-color: rgba(23, 62, 59, 0.05);
 }
+
+
+/* Global Form Input & Textarea High-Contrast Text Rules */
+input, select, textarea {
+  color: #1F2928;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #68706E;
+  opacity: 0.85;
+}
+
+select option {
+  background-color: #FFFDFC;
+  color: #1F2928;
+}

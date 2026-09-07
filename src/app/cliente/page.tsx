@@ -880,13 +880,13 @@ export default function ClientePage() {
                                           id={`monto_${sol.id}_${idx}`} 
                                           defaultValue={cuota.montoOriginal} 
                                           min="1" 
-                                          className="w-24 bg-[#181920] border border-zinc-700 text-white p-1.5 rounded-lg text-xs font-mono font-bold outline-none focus:border-amber-500" 
+                                          className="w-24 bg-[#181920] border border-zinc-700 text-[#1F2928] p-1.5 rounded-lg text-xs font-mono font-bold outline-none focus:border-amber-500" 
                                         />
                                         <input 
                                           type="file" 
                                           id={`comprobante_${sol.id}_${idx}`} 
                                           accept="image/*,application/pdf" 
-                                          className="text-[9px] text-zinc-400 file:bg-amber-500 file:text-black file:border-0 file:rounded file:px-2 file:py-1 file:font-bold hover:file:bg-amber-400" 
+                                          className="text-[9px] text-[#1F2928] file:bg-amber-500 file:text-black file:border-0 file:rounded file:px-2 file:py-1 file:font-bold hover:file:bg-amber-400" 
                                         />
                                         <button 
                                           id={`btn_${sol.id}_${idx}`}

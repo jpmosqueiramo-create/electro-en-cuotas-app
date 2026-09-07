@@ -2094,7 +2094,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                placeholder="Buscar por DNI, Nombre o Email del cliente..." 
                value={searchTerm}
                onChange={(e) => setSearchTerm(e.target.value)}
-               className="w-full bg-[#FFFDFC] border border-[#DED8CF] text-white pl-12 pr-4 py-4 rounded-xl focus:outline-none focus:border-yellow-500 transition-colors font-medium shadow-inner"
+               className="w-full bg-[#FFFDFC] border border-[#DED8CF] text-[#1F2928] pl-12 pr-4 py-4 rounded-xl focus:outline-none focus:border-yellow-500 transition-colors font-medium shadow-inner"
              />
           </div>
 
@@ -2202,7 +2202,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                           value={budgetProd} 
                                           onChange={e=>setBudgetProd(e.target.value)} 
                                           placeholder="Ej: HELADERA GAFA 280 L" 
-                                          className="bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-bold" 
+                                          className="bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] w-full outline-none focus:border-yellow-500 font-bold" 
                                         />
                                       </div>
                                       
@@ -2214,7 +2214,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                           value={budgetCostoProveedor} 
                                           onChange={e=>handleCambiarCostoProveedor(e.target.value)} 
                                           placeholder="Ej: 400000" 
-                                          className="bg-[#FFFDFC] border border-emerald-500/40 p-2 rounded text-xs text-white w-full outline-none focus:border-emerald-400 font-mono font-black" 
+                                          className="bg-[#FFFDFC] border border-emerald-500/40 p-2 rounded text-xs text-[#1F2928] w-full outline-none focus:border-emerald-400 font-mono font-black" 
                                         />
                                       </div>
 
@@ -2224,7 +2224,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                         <select 
                                           value={budgetCuotas} 
                                           onChange={e=>handleCambiarCuotas(e.target.value)} 
-                                          className="bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500 font-bold"
+                                          className="bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] w-full outline-none focus:border-yellow-500 font-bold"
                                         >
                                           {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
                                             <option key={n} value={n}>
@@ -2243,7 +2243,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                           step="0.01" 
                                           value={budgetFactor} 
                                           onChange={e=>handleCambiarFactor(e.target.value)} 
-                                          className="bg-[#FFFDFC] border border-amber-500/40 p-2 rounded text-xs text-white w-full outline-none focus:border-amber-400 font-mono font-bold" 
+                                          className="bg-[#FFFDFC] border border-amber-500/40 p-2 rounded text-xs text-[#1F2928] w-full outline-none focus:border-amber-400 font-mono font-bold" 
                                         />
                                       </div>
 
@@ -2305,11 +2305,11 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                       {/* DATOS PROVEEDOR USO INTERNO */}
                                       <div>
                                         <label className="block text-[10px] text-[#68706E] font-bold mb-1">🔒 Proveedor (Uso Interno)</label>
-                                        <input type="text" value={budgetProveedor} onChange={e=>setBudgetProveedor(e.target.value)} placeholder="Ej: Distribuidora BA" className="bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500" />
+                                        <input type="text" value={budgetProveedor} onChange={e=>setBudgetProveedor(e.target.value)} placeholder="Ej: Distribuidora BA" className="bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] w-full outline-none focus:border-yellow-500" />
                                       </div>
                                       <div>
                                         <label className="block text-[10px] text-[#68706E] font-bold mb-1">🔒 Link Proveedor (Uso Interno)</label>
-                                        <input type="text" value={budgetLinkProveedor} onChange={e=>setBudgetLinkProveedor(e.target.value)} placeholder="Ej: mercadolibre.com.ar/..." className="bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500" />
+                                        <input type="text" value={budgetLinkProveedor} onChange={e=>setBudgetLinkProveedor(e.target.value)} placeholder="Ej: mercadolibre.com.ar/..." className="bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] w-full outline-none focus:border-yellow-500" />
                                       </div>
                                     </div>
 
@@ -2390,7 +2390,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                                           <div className="pt-2">
                                             <label className="block text-[10px] text-[#68706E] font-bold mb-1">Notas / Detalles Adicionales</label>
-                                            <input type="text" value={budgetNotas} onChange={e=>setBudgetNotas(e.target.value)} placeholder="Ej: Vidrio templado y funda de regalo." className="bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white w-full outline-none focus:border-yellow-500" />
+                                            <input type="text" value={budgetNotas} onChange={e=>setBudgetNotas(e.target.value)} placeholder="Ej: Vidrio templado y funda de regalo." className="bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] w-full outline-none focus:border-yellow-500" />
                                           </div>
 
                                           <div className="grid grid-cols-2 gap-2 pt-2">
@@ -2801,7 +2801,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                     <select 
                                       value={req.estado || "Pendiente"} 
                                       onChange={(e) => handleActualizarEstadoApertura(req.id, e.target.value)}
-                                      className="bg-[#F7F3EC] text-white border border-[#DED8CF] px-3 py-1.5 rounded-lg text-xs font-bold outline-none focus:border-yellow-500"
+                                      className="bg-[#F7F3EC] text-[#1F2928] border border-[#DED8CF] px-3 py-1.5 rounded-lg text-xs font-bold outline-none focus:border-yellow-500"
                                     >
                                       <option value="Pendiente">Pendiente</option>
                                       <option value="Aprobado">Aprobado</option>
@@ -3154,7 +3154,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                        <textarea 
                                         value={currentMensaje}
                                         onChange={(e) => handleMensajeChange(req.id, e.target.value)}
-                                        className="w-full bg-[#FFFDFC] border border-[#DED8CF] rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none text-sm resize-none min-h-[80px]"
+                                        className="w-full bg-[#FFFDFC] border border-[#DED8CF] rounded-lg p-3 text-[#1F2928] focus:border-yellow-500 focus:outline-none text-sm resize-none min-h-[80px]"
                                         placeholder="Escribe un comentario..."
                                        />
                                      </div>
@@ -3447,7 +3447,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                    <textarea 
                                     value={currentMensaje}
                                     onChange={(e) => handleMensajeChange(sol.id, e.target.value)}
-                                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none text-sm resize-none min-h-[80px]"
+                                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] rounded-lg p-3 text-[#1F2928] focus:border-yellow-500 focus:outline-none text-sm resize-none min-h-[80px]"
                                     placeholder="Escribe un comentario si rechazás o pedís más info..."
                                    />
                                  </div>
@@ -3576,7 +3576,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                                        value={getDestinatarioNombre(sol)}
                                                        onChange={e => setRemitoNombreMap(prev => ({ ...prev, [sol.id]: e.target.value }))}
                                                        placeholder="Nombre del Destinatario"
-                                                       className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-bold"
+                                                       className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-[#1F2928] outline-none focus:border-amber-500 font-bold"
                                                      />
                                                    </div>
                                                    <div className="grid grid-cols-2 gap-2">
@@ -3587,7 +3587,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                                          value={getDestinatarioDoc(sol)}
                                                          onChange={e => setRemitoDocMap(prev => ({ ...prev, [sol.id]: e.target.value }))}
                                                          placeholder="Documento / CUIT"
-                                                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-mono"
+                                                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-[#1F2928] outline-none focus:border-amber-500 font-mono"
                                                        />
                                                      </div>
                                                      <div>
@@ -3597,7 +3597,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                                          value={getDestinatarioTel(sol)}
                                                          onChange={e => setRemitoTelMap(prev => ({ ...prev, [sol.id]: e.target.value }))}
                                                          placeholder="Teléfono"
-                                                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500"
+                                                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-[#1F2928] outline-none focus:border-amber-500"
                                                        />
                                                      </div>
                                                    </div>
@@ -3608,7 +3608,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                                        value={getDestinatarioDireccion(sol)}
                                                        onChange={e => setRemitoDireccionMap(prev => ({ ...prev, [sol.id]: e.target.value }))}
                                                        placeholder="Sucursal o domicilio del cliente/afiliado"
-                                                       className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500"
+                                                       className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-[#1F2928] outline-none focus:border-amber-500"
                                                      />
                                                    </div>
 
@@ -3620,7 +3620,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                                        value={remitoEditId === sol.id ? remitoTransporte : ""}
                                                        onChange={e => { setRemitoEditId(sol.id); setRemitoTransporte(e.target.value); }}
                                                        placeholder="Ej: Flete Expreso Junín, Moto Mensajería, etc."
-                                                       className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500"
+                                                       className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-[#1F2928] outline-none focus:border-amber-500"
                                                      />
                                                    </div>
                                                    <div className="grid grid-cols-2 gap-2">
@@ -3631,7 +3631,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                                          value={remitoEditId === sol.id ? remitoCostoLocal : ""}
                                                          onChange={e => { setRemitoEditId(sol.id); setRemitoCostoLocal(e.target.value); }}
                                                          placeholder="ARS"
-                                                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-mono"
+                                                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-[#1F2928] outline-none focus:border-amber-500 font-mono"
                                                        />
                                                      </div>
                                                      <div>
@@ -3641,7 +3641,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                                          value={remitoEditId === sol.id ? remitoGuiaLocal : ""}
                                                          onChange={e => { setRemitoEditId(sol.id); setRemitoGuiaLocal(e.target.value); }}
                                                          placeholder="Ej: GUIA-94812"
-                                                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-white outline-none focus:border-amber-500 font-mono"
+                                                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-1.5 rounded text-[11px] text-[#1F2928] outline-none focus:border-amber-500 font-mono"
                                                        />
                                                      </div>
                                                    </div>
@@ -4015,7 +4015,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                              value={proveedorEditId === sol.id ? proveedorNombre : ""}
                                              onChange={e => { setProveedorEditId(sol.id); setProveedorNombre(e.target.value); }}
                                              placeholder="Ej: Samsung Arg, Frávega Mayorista, Newsan, etc."
-                                             className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none focus:border-amber-500 font-bold"
+                                             className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] outline-none focus:border-amber-500 font-bold"
                                            />
                                          </div>
 
@@ -4027,7 +4027,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                                value={proveedorEditId === sol.id ? proveedorCosto : ""}
                                                onChange={e => { setProveedorEditId(sol.id); setProveedorCosto(e.target.value); }}
                                                placeholder="Costo abonado"
-                                               className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none focus:border-amber-500 font-mono"
+                                               className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] outline-none focus:border-amber-500 font-mono"
                                              />
                                            </div>
                                            <div>
@@ -4037,7 +4037,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                                value={proveedorEditId === sol.id ? proveedorGuia : ""}
                                                onChange={e => { setProveedorEditId(sol.id); setProveedorGuia(e.target.value); }}
                                                placeholder="Ej: Andreani #829148"
-                                               className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none focus:border-amber-500 font-mono"
+                                               className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] outline-none focus:border-amber-500 font-mono"
                                              />
                                            </div>
                                          </div>
@@ -4049,7 +4049,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                                type="date"
                                                value={proveedorEditId === sol.id ? proveedorFechaPedido : ""}
                                                onChange={e => { setProveedorEditId(sol.id); setProveedorFechaPedido(e.target.value); }}
-                                               className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none focus:border-amber-500"
+                                               className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] outline-none focus:border-amber-500"
                                              />
                                            </div>
                                            <div>
@@ -4058,7 +4058,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                                type="date"
                                                value={proveedorEditId === sol.id ? proveedorFechaEstimada : ""}
                                                onChange={e => { setProveedorEditId(sol.id); setProveedorFechaEstimada(e.target.value); }}
-                                               className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none focus:border-amber-500"
+                                               className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] outline-none focus:border-amber-500"
                                              />
                                            </div>
                                          </div>
@@ -4125,7 +4125,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                                  handleConfirmarEntregaAdmin(sol.id, val, true);
                                               }
                                            }}
-                                           className={`w-full text-sm p-3 rounded-lg font-bold outline-none transition-colors border-2 ${sol.estadoEntrega === 'ENTREGADO' ? 'bg-green-900/30 border-green-500/50 text-[#2F7D5C]' : 'bg-[#FFFDFC] border-blue-900 text-white focus:border-blue-500'}`}
+                                           className={`w-full text-sm p-3 rounded-lg font-bold outline-none transition-colors border-2 ${sol.estadoEntrega === 'ENTREGADO' ? 'bg-green-900/30 border-green-500/50 text-[#2F7D5C]' : 'bg-[#FFFDFC] border-blue-900 text-[#1F2928] focus:border-blue-500'}`}
                                         >
                                            <option value="PENDIENTE_ENTREGA">⏳ Pendiente de entrega</option>
                                            <option value="ENTREGADO">✅ ENTREGADO Y CERRADO</option>
@@ -4417,7 +4417,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                        <select 
                          value={pagoCuentaDestino} 
                          onChange={e => setPagoCuentaDestino(e.target.value)} 
-                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white outline-none focus:border-green-500 font-medium"
+                         className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] outline-none focus:border-green-500 font-medium"
                        >
                          <option value="Caja Efectivo">💵 Caja Efectivo</option>
                          <option value="Mercado Pago (Fintech)">📱 Mercado Pago (Fintech)</option>
@@ -4469,27 +4469,27 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                      </div>
                      <div>
                        <label className="block text-xs font-bold text-[#68706E] mb-1">Nombre Completo</label>
-                       <input type="text" value={contratoAEditar.nombreComprador} onChange={e => setContratoAEditar({...contratoAEditar, nombreComprador: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <input type="text" value={contratoAEditar.nombreComprador} onChange={e => setContratoAEditar({...contratoAEditar, nombreComprador: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
                        <label className="block text-xs font-bold text-[#68706E] mb-1">DNI</label>
-                       <input type="text" value={contratoAEditar.dni} onChange={e => setContratoAEditar({...contratoAEditar, dni: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <input type="text" value={contratoAEditar.dni} onChange={e => setContratoAEditar({...contratoAEditar, dni: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
                        <label className="block text-xs font-bold text-[#68706E] mb-1">Domicilio (PBA)</label>
-                       <input type="text" value={contratoAEditar.domicilio} onChange={e => setContratoAEditar({...contratoAEditar, domicilio: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <input type="text" value={contratoAEditar.domicilio} onChange={e => setContratoAEditar({...contratoAEditar, domicilio: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
                        <label className="block text-xs font-bold text-[#68706E] mb-1">Email</label>
-                       <input type="text" value={contratoAEditar.email} onChange={e => setContratoAEditar({...contratoAEditar, email: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <input type="text" value={contratoAEditar.email} onChange={e => setContratoAEditar({...contratoAEditar, email: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
                        <label className="block text-xs font-bold text-[#68706E] mb-1">WhatsApp</label>
-                       <input type="text" value={contratoAEditar.whatsapp} onChange={e => setContratoAEditar({...contratoAEditar, whatsapp: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <input type="text" value={contratoAEditar.whatsapp} onChange={e => setContratoAEditar({...contratoAEditar, whatsapp: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
                        <label className="block text-xs font-bold text-[#68706E] mb-1">N° de Legajo / Contrato</label>
-                       <input type="text" value={contratoAEditar.nroContrato} onChange={e => setContratoAEditar({...contratoAEditar, nroContrato: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <input type="text" value={contratoAEditar.nroContrato} onChange={e => setContratoAEditar({...contratoAEditar, nroContrato: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
 
                      {/* Campos del bien */}
@@ -4498,11 +4498,11 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                      </div>
                      <div className="md:col-span-2">
                        <label className="block text-xs font-bold text-[#68706E] mb-1">Producto / Modelo</label>
-                       <input type="text" value={contratoAEditar.producto} onChange={e => setContratoAEditar({...contratoAEditar, producto: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <input type="text" value={contratoAEditar.producto} onChange={e => setContratoAEditar({...contratoAEditar, producto: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
                        <label className="block text-xs font-bold text-[#68706E] mb-1">IMEI / N° de Serie</label>
-                       <input type="text" value={contratoAEditar.nserie} onChange={e => setContratoAEditar({...contratoAEditar, nserie: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <input type="text" value={contratoAEditar.nserie} onChange={e => setContratoAEditar({...contratoAEditar, nserie: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
 
                      {/* Financiacion */}
@@ -4534,7 +4534,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                           } else {
                             setContratoAEditar({ ...contratoAEditar, precioContado: newPC });
                           }
-                        }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
+                        }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
                      </div>
                      <div>
                        <label className="block text-xs font-bold text-[#B44E2A] mb-1">Factor Financiado</label>
@@ -4588,7 +4588,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                           } else {
                             setContratoAEditar({ ...contratoAEditar, totalFinanciado: newTF });
                           }
-                        }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
+                        }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
                      </div>
                       <div>
                         <label className="block text-xs font-bold text-[#B44E2A] mb-1">Cantidad de Cuotas</label>
@@ -4687,23 +4687,23 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                           } else {
                             setContratoAEditar({ ...contratoAEditar, importeCuota: newImpStr });
                           }
-                        }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
+                        }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-yellow-500 outline-none font-mono" />
                      </div>
                      <div>
                        <label className="block text-xs font-bold text-[#68706E] mb-1">TNA Compensatoria (%)</label>
-                       <input type="text" value={contratoAEditar.tnaComp} onChange={e => setContratoAEditar({...contratoAEditar, tnaComp: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <input type="text" value={contratoAEditar.tnaComp} onChange={e => setContratoAEditar({...contratoAEditar, tnaComp: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
                        <label className="block text-xs font-bold text-[#68706E] mb-1">TNA Punitoria (Mora %)</label>
-                       <input type="text" value={contratoAEditar.tnaPun} onChange={e => setContratoAEditar({...contratoAEditar, tnaPun: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <input type="text" value={contratoAEditar.tnaPun} onChange={e => setContratoAEditar({...contratoAEditar, tnaPun: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
                        <label className="block text-xs font-bold text-[#68706E] mb-1">CFT EA (%)</label>
-                       <input type="text" value={contratoAEditar.cftEa} onChange={e => setContratoAEditar({...contratoAEditar, cftEa: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <input type="text" value={contratoAEditar.cftEa} onChange={e => setContratoAEditar({...contratoAEditar, cftEa: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                      <div>
                        <label className="block text-xs font-bold text-[#68706E] mb-1">Lugar y Fecha Firma</label>
-                       <input type="text" value={contratoAEditar.lugarFecha} onChange={e => setContratoAEditar({...contratoAEditar, lugarFecha: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-white text-xs font-bold focus:border-yellow-500 outline-none" />
+                       <input type="text" value={contratoAEditar.lugarFecha} onChange={e => setContratoAEditar({...contratoAEditar, lugarFecha: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] text-xs font-bold focus:border-yellow-500 outline-none" />
                      </div>
                    </div>
 
@@ -4784,7 +4784,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                const newPlan = [...contratoAEditar.cuotasPlan];
                                newPlan[index].vencimiento = e.target.value;
                                setContratoAEditar({...contratoAEditar, cuotasPlan: newPlan});
-                             }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none" />
+                             }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] outline-none" />
                            </div>
                            <div>
                              <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Monto ($)</label>
@@ -4792,7 +4792,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                const newPlan = [...contratoAEditar.cuotasPlan];
                                newPlan[index].montoOriginal = Number(e.target.value);
                                setContratoAEditar({...contratoAEditar, cuotasPlan: newPlan});
-                             }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none" />
+                             }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] outline-none" />
                            </div>
                            <div>
                              <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Observación</label>
@@ -4800,7 +4800,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                const newPlan = [...contratoAEditar.cuotasPlan];
                                newPlan[index].observacion = e.target.value;
                                setContratoAEditar({...contratoAEditar, cuotasPlan: newPlan});
-                             }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-white outline-none" />
+                             }} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-xs text-[#1F2928] outline-none" />
                            </div>
                          </div>
                        ))}
