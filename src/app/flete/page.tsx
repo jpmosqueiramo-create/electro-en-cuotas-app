@@ -54,47 +54,49 @@ Si podés, adjuntá una foto o link del producto.`;
             <div className="lg:col-span-7 space-y-6 text-left">
               
               {/* TAG LOGÍSTICO */}
-              <div className="inline-flex items-center gap-3 bg-[#FFFDFC]/10 border border-[#FFFDFC]/20 text-[#E7B86A] px-4 py-1.5 rounded-full text-xs font-heading font-bold uppercase tracking-widest">
-                <span className="w-2 h-2 rounded-full bg-[#E7B86A]"></span>
-                ENVÍOS LOW COST · CABA <span className="text-[#FFFDFC]">●────────→ ●</span> INTERIOR
+              <div className="inline-flex items-center gap-3 bg-[#F4C46E]/20 border border-[#F4C46E]/40 text-[#F4C46E] px-4 py-2 rounded-full text-xs font-heading font-extrabold uppercase tracking-widest shadow-xs">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#F4C46E] animate-pulse"></span>
+                ENVÍOS LOW COST · CABA <span className="text-[#FFFDFC] font-mono">●────────→ ●</span> INTERIOR
               </div>
 
               {/* H1 PROTAGONISTA */}
-              <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-heading font-extrabold tracking-tight leading-[1.08] text-[#FFFDFC]">
-                Comprar en Capital es fácil.<br />
-                <span className="text-[#E7B86A]">Traerlo al interior es otra historia.</span>
+              <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-heading font-extrabold tracking-tight leading-[1.1] !text-white drop-shadow-md">
+                Comprar en Capital es fácil.
+                <span className="block mt-2 text-[#F4C46E] font-heading font-extrabold drop-shadow-sm">
+                  Traerlo al interior es otra historia.
+                </span>
               </h1>
 
               {/* BAJADA */}
-              <p className="text-base sm:text-lg text-[#F7F3EC]/90 font-sans font-normal leading-relaxed max-w-2xl">
+              <p className="text-base sm:text-xl text-[#FAF8F5] font-sans font-medium leading-relaxed max-w-2xl drop-shadow-xs">
                 Recibimos tu compra en nuestro centro logístico de CABA y la llevamos hasta tu domicilio aprovechando nuestros recorridos programados.
               </p>
 
               {/* CTA CONTRASTADO */}
-              <div className="pt-3 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+              <div className="pt-4 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
                 <a
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 bg-[#B44E2A] hover:bg-[#984021] text-white font-heading font-bold px-8 py-4 rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-black/20"
+                  className="inline-flex items-center justify-center gap-2.5 bg-[#B44E2A] hover:bg-[#984021] text-white font-heading font-extrabold px-9 py-4.5 rounded-2xl text-xs uppercase tracking-wider transition-all shadow-xl shadow-black/30 hover:scale-[1.02] active:scale-95 border border-amber-400/20"
                 >
-                  <WhatsAppIcon className="w-4 h-4" />
-                  Cotizar mi envío
+                  <WhatsAppIcon className="w-4.5 h-4.5" />
+                  Cotizar mi envío por WhatsApp
                 </a>
               </div>
 
-              {/* REFUERZO SOBRIO (SIN TARJETAS) */}
-              <div className="pt-6 border-t border-[#FFFDFC]/15 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-heading font-medium text-[#F7F3EC]/80">
+              {/* REFUERZO SOBRIO */}
+              <div className="pt-6 border-t border-[#FFFDFC]/20 flex flex-wrap items-center gap-x-8 gap-y-3 text-xs sm:text-sm font-heading font-bold text-[#FAF8F5]">
                 <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#E7B86A]"></span>
+                  <span className="w-2 h-2 rounded-full bg-[#F4C46E]"></span>
                   <span>Recepción en CABA</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#E7B86A]"></span>
+                  <span className="w-2 h-2 rounded-full bg-[#F4C46E]"></span>
                   <span>Transporte propio</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#E7B86A]"></span>
+                  <span className="w-2 h-2 rounded-full bg-[#F4C46E]"></span>
                   <span>Entrega a domicilio</span>
                 </div>
               </div>
