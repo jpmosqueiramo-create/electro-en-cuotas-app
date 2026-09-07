@@ -1162,18 +1162,22 @@ export default function AdminValidacionesPage() {
       : (sol.direccion || "");
     const tel = sol.datosPersonales?.telefono || sol.whatsapp || "";
 
-    // Default "Precio Producto" to supplier product cost (Costo del Producto en Proveedor)
+    // Priority: Supplier Product Cost (Costo de Proveedor / Costo del Bien)
     const numCuotasNum = parseInt(planElegido) || 12;
     const totalFinanciadoVal = numCuotasNum * vc;
+    const officialFactor = FACTORES_PREDETERMINADOS[numCuotasNum] || (numCuotasNum > 12 ? 3.25 : 2.5);
 
     let calculatedContado = 0;
-    if (sol.costoProducto && Number(sol.costoProducto) > 0) {
-      calculatedContado = Number(sol.costoProducto);
-    } else if (sol.costoProveedor && Number(sol.costoProveedor) > 0) {
+    
+    // 1. Check if request has explicit supplier cost
+    if (sol.costoProveedor && Number(sol.costoProveedor) > 0 && Number(sol.costoProveedor) < totalFinanciadoVal) {
       calculatedContado = Number(sol.costoProveedor);
-    } else if (sol.precioContado && Number(sol.precioContado) > 0 && Number(sol.precioContado) < totalFinanciadoVal) {
-      calculatedContado = Number(sol.precioContado);
+    } else if (sol.costoProducto && Number(sol.costoProducto) > 0 && Number(sol.costoProducto) < totalFinanciadoVal) {
+      calculatedContado = Number(sol.costoProducto);
+    } else if (sol.costoBien && Number(sol.costoBien) > 0 && Number(sol.costoBien) < totalFinanciadoVal) {
+      calculatedContado = Number(sol.costoBien);
     } else {
+      // 2. Search catalog product supplier cost
       const solProdName = (sol.productoDeseado || sol.productoNombre || "").toLowerCase().trim();
       const prodMatch = (productos || []).find((p: any) => {
         if (!p.nombre) return false;
@@ -1184,21 +1188,31 @@ export default function AdminValidacionesPage() {
       if (prodMatch) {
         if (prodMatch.costoProducto && Number(prodMatch.costoProducto) > 0) {
           calculatedContado = Number(prodMatch.costoProducto);
+        } else if (prodMatch.costoProveedor && Number(prodMatch.costoProveedor) > 0) {
+          calculatedContado = Number(prodMatch.costoProveedor);
         } else if (prodMatch.precioContado && Number(prodMatch.precioContado) > 0 && Number(prodMatch.precioContado) < totalFinanciadoVal) {
           calculatedContado = Number(prodMatch.precioContado);
         }
       }
     }
 
-    const officialFactor = FACTORES_PREDETERMINADOS[numCuotasNum] || (numCuotasNum > 12 ? 3.25 : 2.5);
+    // 3. Check sol.precioContado if it is valid supplier cost
+    if (calculatedContado <= 0 && sol.precioContado && Number(sol.precioContado) > 0 && Number(sol.precioContado) < (totalFinanciadoVal / 1.1)) {
+      calculatedContado = Number(sol.precioContado);
+    }
 
-    if (calculatedContado <= 0 || calculatedContado >= totalFinanciadoVal) {
+    // 4. Fallback if supplier cost is missing or invalid: divide totalFinanciado by officialFactor (2.5)
+    if (calculatedContado <= 0 || calculatedContado >= (totalFinanciadoVal / 1.1)) {
       calculatedContado = Math.round(totalFinanciadoVal / officialFactor);
     }
 
-    const factorVal = calculatedContado > 0 
-      ? (totalFinanciadoVal / calculatedContado).toFixed(4) 
-      : officialFactor.toFixed(4);
+    let rawFactor = calculatedContado > 0 ? (totalFinanciadoVal / calculatedContado) : officialFactor;
+    if (rawFactor < 1.1 || rawFactor > 10) {
+      rawFactor = officialFactor;
+      calculatedContado = Math.round(totalFinanciadoVal / officialFactor);
+    }
+
+    const factorVal = String(Number(rawFactor.toFixed(2)));
 
     const itemsFinalList = itemsContratoList.map((it: any) => {
       const c = Number(it.cuotas) || Number(planElegido) || 12;
@@ -4581,7 +4595,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                             setContratoAEditar({
                               ...contratoAEditar,
                               totalFinanciado: newTF,
-                              factorFinanciado: factor.toFixed(4),
+                              factorFinanciado: String(Number(factor.toFixed(2))),
                               importeCuota: String(newImp),
                               cuotasPlan: newPlan
                             });
@@ -4638,14 +4652,14 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                 cuotas: newCuotasStr,
                                 totalFinanciado: String(newTotal),
                                 importeCuota: String(newImp),
-                                factorFinanciado: factor.toFixed(4),
+                                factorFinanciado: String(Number(factor.toFixed(2))),
                                 cuotasPlan: newPlan
                               });
                             } else {
                               setContratoAEditar({
                                 ...contratoAEditar,
                                 cuotas: newCuotasStr,
-                                factorFinanciado: factor.toFixed(4)
+                                factorFinanciado: String(Number(factor.toFixed(2)))
                               });
                             }
                           }} 
@@ -4681,7 +4695,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                               ...contratoAEditar,
                               importeCuota: newImpStr,
                               totalFinanciado: String(newTotal),
-                              factorFinanciado: factor.toFixed(4),
+                              factorFinanciado: String(Number(factor.toFixed(2))),
                               cuotasPlan: newPlan
                             });
                           } else {
