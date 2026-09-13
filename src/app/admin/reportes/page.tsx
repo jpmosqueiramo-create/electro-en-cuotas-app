@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminNav } from "@/components/AdminNav";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";

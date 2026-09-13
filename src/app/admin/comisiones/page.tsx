@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminNav } from "@/components/AdminNav";
 import { LOGO_BASE64 } from "@/lib/logoBase64";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { db } from "@/lib/firebase";
@@ -264,24 +265,7 @@ export default function AdminComisionesPage() {
     <AdminProtectedRoute>
       <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
-          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-[#DED8CF] pb-6">
-            <div className="flex items-center gap-4">
-              <div className="bg-[#fe5000]/10 p-3.5 rounded-2xl border border-[#fe5000]/30 shadow-xs">
-                 <DollarSign className="w-8 h-8 text-[#B44E2A]" />
-              </div>
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-[#173E3B] flex items-center gap-2">
-                  Gestión y Liquidación de Comisiones
-                </h1>
-                <p className="text-[#68706E] text-xs mt-0.5">
-                  Administra pagos totales o parciales a tu fuerza de venta con auditoría y comprobantes PDF
-                </p>
-              </div>
-            </div>
-            <Link href="/admin" className="text-xs bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500 text-[#B44E2A] hover:text-yellow-300 px-4 py-2.5 rounded-xl transition-all font-bold shadow-md">
-              ← Volver al Panel Admin
-            </Link>
-          </header>
+          <AdminNav title="Comisiones Afiliados" subtitle="Resumen de comisiones ganadas por fuerza de ventas y liquidación de comprobantes" />
 
           {cargando ? (
              <div className="text-center py-20 text-[#68706E] font-bold animate-pulse">

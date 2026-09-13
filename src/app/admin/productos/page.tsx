@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminNav } from "@/components/AdminNav";
 import { calcularOperacionFinanciera, FACTORES_PREDETERMINADOS, calcularTablaTodosLosPlanes } from "@/lib/financialEngine";
 import { useState, useEffect } from "react";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
@@ -458,15 +459,7 @@ export default function AdminProductosPage() {
     <AdminProtectedRoute>
       <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] p-4 sm:p-8 font-sans selection:bg-[#173E3B] selection:text-white">
         <div className="max-w-7xl mx-auto">
-          <header className="flex justify-between items-center mb-8 border-b border-[#DED8CF] pb-4">
-            <div className="flex items-center gap-4">
-              <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-12 w-auto object-contain bg-[#173E3B] p-1.5 rounded-xl shadow-xs" />
-              <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-[#173E3B]">Catálogo de Productos e Inventario</h1>
-            </div>
-            <a href="/admin" className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-[#173E3B] text-[#173E3B] font-heading font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-xs">
-              Volver al Panel Admin
-            </a>
-          </header>
+          <AdminNav title="Catálogo de Productos" subtitle="Administración de catálogo, listas de precios, multiplicador de financiamiento e inventario" />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-4 bg-[#FFFDFC] border border-[#DED8CF] rounded-2xl p-6 h-fit shadow-xs transition-all duration-300" style={editandoId ? {boxShadow: "0 0 30px rgba(234,179,8,0.15)", borderColor: "#eab308"} : {}}>

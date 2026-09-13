@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminNav } from "@/components/AdminNav";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { useAuth } from "@/components/AuthProvider";
 import { db } from "@/lib/firebase";

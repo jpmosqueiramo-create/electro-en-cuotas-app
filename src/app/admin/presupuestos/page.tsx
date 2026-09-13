@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminNav } from "@/components/AdminNav";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
@@ -155,36 +156,7 @@ export default function PresupuestosPage() {
         <div className="max-w-7xl mx-auto space-y-6">
           
           {/* HEADER PRINCIPAL */}
-          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#FFFDFC] border border-[#DED8CF] p-6 rounded-2xl shadow-xs">
-            <div className="flex items-center gap-4">
-              <Link href="/admin" className="p-2.5 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#173E3B] rounded-xl border border-[#DED8CF] transition shadow-xs">
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
-              <div>
-                <div className="inline-flex items-center gap-1.5 text-[10px] font-heading font-bold uppercase tracking-widest text-[#B44E2A]">
-                  <FileText className="w-3.5 h-3.5 text-[#B44E2A]" /> Centro de Monitoreo Root
-                </div>
-                <h1 className="text-2xl md:text-3xl font-heading font-extrabold text-[#173E3B]">
-                  Historial Maestro de Presupuestos
-                </h1>
-                <p className="text-xs text-[#68706E] font-sans mt-0.5">
-                  Registro cronológico de todas las cotizaciones emitidas (Aprobadas, Rechazadas, Pendientes y Canceladas)
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap">
-              <Link href="/admin/clientes" className="bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#173E3B] border border-[#DED8CF] hover:border-[#173E3B] px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition flex items-center gap-1.5 shadow-xs">
-                <Users className="w-3.5 h-3.5" /> Ver Clientes
-              </Link>
-              <Link href="/admin/validaciones" className="bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#B44E2A] border border-[#DED8CF] hover:border-[#B44E2A] px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition flex items-center gap-1.5 shadow-xs">
-                <ShieldCheck className="w-3.5 h-3.5" /> Validaciones
-              </Link>
-              <div className="bg-[#F7F3EC] px-3.5 py-2 rounded-xl border border-[#DED8CF] text-xs font-heading font-bold text-[#68706E]">
-                Total: <strong className="text-[#173E3B] font-mono text-sm">{presupuestos.length}</strong>
-              </div>
-            </div>
-          </header>
+          <AdminNav title="Historial de Presupuestos" subtitle="Registro histórico de cotizaciones realizadas por la red de ventas afiliados" />
 
           {/* BARRA DE CONTROLES: FILTROS Y BUSCADOR */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-[#FFFDFC] border border-[#DED8CF] p-5 rounded-2xl shadow-xs">

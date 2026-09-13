@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminNav } from "@/components/AdminNav";
 import { useAuth } from "@/components/AuthProvider";
 import { db } from "@/lib/firebase";
 import { collection, doc, getDocs, query, updateDoc, deleteDoc, where, addDoc } from "firebase/firestore";
@@ -152,13 +153,7 @@ export default function CarteraPage() {
     <AdminProtectedRoute>
       <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] p-8">
       <div className="max-w-7xl mx-auto">
-        <header className="flex justify-between items-center mb-8 border-b border-[#DED8CF] pb-4">
-          <div>
-             <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-[#173E3B]">Gestión de Cartera Activa</h1>
-             <p className="text-[#68706E] text-sm mt-1">Seguimiento de cuotas, cobranzas y promesas de pago.</p>
-          </div>
-          <Link href="/admin" className="text-[#68706E] border border-[#DED8CF] px-4 py-2 rounded hover:text-[#173E3B] transition font-bold">← Volver al Panel</Link>
-        </header>
+        <AdminNav title="Cartera Activa y Cobranzas" subtitle="Seguimiento maestro de créditos en calle, cobranzas, emisión de recibos PDF y gestión de morosidad" />
 
         {promesasExigibles.length > 0 && !loading && (
            <div className="bg-red-900/30 border border-red-500/80 p-5 rounded-xl mb-8 flex flex-col gap-2 shadow-[0_0_30px_rgba(239,68,68,0.15)]">

@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminNav } from "@/components/AdminNav";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { FACTORES_PREDETERMINADOS, calcularOperacionFinanciera, calcularTablaTodosLosPlanes } from "@/lib/financialEngine";
 import { db, storage } from "@/lib/firebase";
@@ -2060,29 +2061,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
       <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           
-          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-[#DED8CF] pb-6">
-            <div className="flex items-center gap-4">
-              <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-14 w-auto object-contain rounded-xl border border-[#DED8CF] shadow-md bg-[#173E3B] p-1.5 rounded-xl shadow-xs p-1" />
-              <div>
-                <h1 className="text-2xl font-black text-[#B44E2A]">Panel de Control General</h1>
-                <p className="text-[#68706E] text-sm">Gestión de créditos, entregas y cobranzas</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Link href="/admin/presupuestos" className="text-xs bg-amber-500/10 hover:bg-amber-500/20 text-[#B44E2A] border border-amber-500/30 px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
-                📄 Historial Presupuestos
-              </Link>
-              <Link href="/admin/clientes" className="text-xs bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
-                👥 Base Clientes
-              </Link>
-              <Link href="/admin/reportes" className="text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-[#2F7D5C] border border-emerald-500/30 px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
-                📊 Reportes Excel
-              </Link>
-              <Link href="/admin" className="text-xs border border-[#DED8CF] hover:bg-[#F7F3EC] text-[#1F2928] px-3 py-2 rounded-xl transition font-bold whitespace-nowrap">
-                ← Panel Root
-              </Link>
-            </div>
-          </header>
+          <AdminNav title="Gestor de Validaciones" subtitle="Bandeja de solicitudes de crédito, análisis scoring DNI y firma digital de contratos" />
 
           {/* TABS NAVIGATION */}
           <div className="flex flex-wrap gap-2 mb-6 bg-[#F7F3EC] p-2 rounded-xl border border-[#DED8CF]">
