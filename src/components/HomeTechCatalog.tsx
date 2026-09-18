@@ -266,12 +266,13 @@ export default function HomeTechCatalog() {
     <div className="min-h-screen bg-[#111318] text-white font-sans selection:bg-[#FFD21A] selection:text-black">
       
       {/* 0. HEADER / NAVBAR PROFESIONAL CON ALTO IMPACTO */}
+            {/* 0. HEADER / NAVBAR OPTIMIZADO */}
       <header className="sticky top-0 z-50 bg-[#111318]/95 backdrop-blur-md border-b border-[#222530]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 sm:h-20 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-4">
           
-          {/* BRANDING LOGO COMPACTO Y NÍTIDO */}
+          {/* BRANDING LOGO ELEGANTE Y LEGIBLE */}
           <Link href="/" className="flex items-center gap-3 shrink-0">
-            <div className="p-1.5 bg-[#090A0D] border border-[#FFD21A]/30 rounded-xl shadow-md">
+            <div className="p-1.5 bg-[#090A0D] border border-[#FFD21A]/40 rounded-xl shadow-md">
               <img 
                 src="/logo-cuenta-hogar-oficial.png" 
                 alt="Cuenta Hogar" 
@@ -280,7 +281,7 @@ export default function HomeTechCatalog() {
             </div>
             <div className="hidden sm:block text-left">
               <span className="block text-[10px] font-mono font-bold tracking-widest text-[#FFD21A] uppercase">
-                LOGÍSTICA & CRÉDITO
+                GESTIÓN DE COMPRAS · LOGÍSTICA
               </span>
               <span className="block text-xs font-bold text-white tracking-tight">
                 CUENTA HOGAR
@@ -309,7 +310,7 @@ export default function HomeTechCatalog() {
 
             <a 
               href="#contacto" 
-              className="inline-flex items-center gap-1.5 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs font-extrabold uppercase tracking-wider px-4 sm:px-5 py-2.5 rounded-xl transition-all shadow-md shadow-[#FFD21A]/20 transform active:scale-95"
+              className="inline-flex items-center gap-1.5 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs font-extrabold uppercase tracking-wider px-3.5 sm:px-5 py-2.5 rounded-xl transition-all shadow-md shadow-[#FFD21A]/20 transform active:scale-95"
             >
               <span>Solicitar Compra</span>
               <ArrowRight className="w-4 h-4" />
@@ -319,27 +320,27 @@ export default function HomeTechCatalog() {
         </div>
       </header>
 
-      {/* 1. NUEVO HERO PUBLICITARIO DE ALTO IMPACTO (DIRECCIÓN DE ARTE PROFESIONAL) */}
-      <section className="relative overflow-hidden pt-8 sm:pt-14 pb-12 sm:pb-20 lg:pt-16 lg:pb-24 border-b border-[#222530] bg-[#111318]">
+      {/* 1. HERO PUBLICITARIO OPTIMIZADO (MOBILE-FIRST CON PRIORIDAD DE CONVERSIÓN) */}
+      <section className="relative overflow-hidden pt-6 sm:pt-12 pb-10 sm:pb-20 lg:pt-16 lg:pb-24 border-b border-[#222530] bg-[#111318]">
         
-        {/* LÍNEAS GRÁFICAS Y RESPLANDOR SUTIL DE FONDO (SIN EXCESOS NI PARTICULAS) */}
+        {/* LÍNEAS GRÁFICAS Y RESPLANDOR SUTIL DE FONDO */}
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-[#FFD21A]/5 via-transparent to-transparent pointer-events-none" />
         <div className="absolute -top-24 left-1/3 w-96 h-96 bg-[#FFD21A]/5 blur-[120px] pointer-events-none rounded-full" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
           
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-center">
             
-            {/* COLUMNA IZQUIERDA: COPY PUBLICITARIO & ACCIONES COMERCIALES */}
-            <div className="lg:col-span-6 space-y-5 sm:space-y-6 text-left">
+            {/* COLUMNA IZQUIERDA: ORDEN MOBILE STRICT: 1.TÍTULO -> 2.SUBTÍTULO -> 3.CTAs -> 4.FOTO TRANSIT (Mobile) -> 5.DIFERENCIALES */}
+            <div className="lg:col-span-6 space-y-4 sm:space-y-6 text-left">
               
-              {/* TAGLINE DE MARCA SUTIL Y ELEGANTE */}
-              <div className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-mono font-bold uppercase tracking-widest text-[#FFD21A] bg-[#FFD21A]/10 border border-[#FFD21A]/25 px-3 py-1 rounded-full">
+              {/* TAGLINE DE MARCA */}
+              <div className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-[#FFD21A] bg-[#FFD21A]/10 border border-[#FFD21A]/25 px-3 py-1 rounded-full">
                 <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
                 CUENTA HOGAR · CABA → INTERIOR
               </div>
 
-              {/* TITULAR PRINCIPAL IMPACTANTE */}
+              {/* 1. TÍTULO PRINCIPAL (BLANCO + AMARILLO ELÉCTRICO) */}
               <h1 className="text-3xl sm:text-5xl lg:text-[54px] font-extrabold tracking-tight text-white leading-[1.08]">
                 Capital tiene lo que buscás.<br />
                 <span className="text-[#FFD21A] block mt-1">
@@ -347,31 +348,16 @@ export default function HomeTechCatalog() {
                 </span>
               </h1>
 
-              {/* FOTOGRAFÍA DE LA TRANSIT (APARECE EN MOBILE ENTRE TÍTULO Y SUBTÍTULO PARA VISIBILIDAD INMEDIATA) */}
-              <div className="lg:hidden relative my-4 rounded-2xl overflow-hidden border border-[#2D323E] shadow-xl bg-[#090A0D]">
-                <img 
-                  src="/flota-cuenta-hogar.jpg" 
-                  alt="Ford Transit oficial Cuenta Hogar realizando logística CABA - Interior" 
-                  className="w-full h-[210px] sm:h-[280px] object-cover object-center"
-                />
-                <div className="absolute bottom-3 left-3 right-3 bg-[#111318]/90 backdrop-blur-md border border-[#2D323E] p-2.5 rounded-xl flex items-center gap-2.5">
-                  <Truck className="w-4 h-4 text-[#FFD21A] shrink-0" />
-                  <span className="text-[11px] font-bold text-white tracking-wide">
-                    Logística propia semanal CABA → Tu domicilio
-                  </span>
-                </div>
-              </div>
-
-              {/* SUBTÍTULO COMPACTO Y CLARO */}
+              {/* 2. SUBTÍTULO CORTO Y DIRECTO */}
               <p className="text-sm sm:text-base text-[#D1D5DB] font-normal leading-relaxed max-w-xl">
-                ¿Todavía no compraste? Gestionamos la compra por mandato. ¿Ya compraste? Recibimos tu pedido en CABA y lo llevamos a tu domicilio.
+                Gestionamos tu compra por mandato o trasladamos lo que ya compraste hasta tu domicilio.
               </p>
 
-              {/* CTAS COMERCIALES PRINCIPALES (AMBOS VISIBLES EN EL PRIMER PANTALLAZO MOBILE) */}
-              <div className="pt-2 flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center">
+              {/* 3. DOS CTAs COMERCIALES (ALTURA ~50px, VISIBLES DE INMEDIATO EN EL PRIMER FOLD MOBILE) */}
+              <div className="pt-1 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                 <a 
                   href="#contacto" 
-                  className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs sm:text-sm font-extrabold uppercase tracking-wider px-7 py-3.5 sm:py-4 rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95"
+                  className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs sm:text-sm font-extrabold uppercase tracking-wider px-7 h-[50px] rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95 shrink-0"
                 >
                   <span>Solicitar una compra</span>
                   <ArrowRight className="w-4.5 h-4.5" />
@@ -379,15 +365,29 @@ export default function HomeTechCatalog() {
 
                 <a 
                   href="#envios-low-cost" 
-                  className="inline-flex items-center justify-center gap-2 bg-[#1A1D26] hover:bg-[#252A37] text-white hover:text-[#FFD21A] border border-[#2D323E] hover:border-[#FFD21A]/50 text-xs sm:text-sm font-bold uppercase tracking-wider px-7 py-3.5 sm:py-4 rounded-xl transition-all"
+                  className="inline-flex items-center justify-center gap-2 bg-[#1A1D26] hover:bg-[#252A37] text-white hover:text-[#FFD21A] border border-[#2D323E] hover:border-[#FFD21A]/50 text-xs sm:text-sm font-bold uppercase tracking-wider px-7 h-[50px] rounded-xl transition-all shrink-0"
                 >
                   <span>Ya compré · Cotizar envío</span>
                   <ArrowRight className="w-4.5 h-4.5" />
                 </a>
               </div>
 
-              {/* REFUERZO DE OPERACIÓN REAL */}
-              <div className="pt-4 border-t border-[#222530] flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-bold text-[#9CA3AF]">
+              {/* 4. FOTOGRAFÍA DE LA TRANSIT EN MOBILE (APARECE DESPUÉS DE LOS CTAs) */}
+              <div className="lg:hidden relative pt-2">
+                <div className="relative rounded-2xl overflow-hidden border border-[#2D323E] bg-[#090A0D] shadow-lg">
+                  <img 
+                    src="/flota-cuenta-hogar.jpg" 
+                    alt="Ford Transit oficial Cuenta Hogar realizando logística CABA - Interior" 
+                    className="w-full h-[190px] sm:h-[240px] object-cover object-center"
+                  />
+                </div>
+                <p className="text-[11px] font-mono text-[#9CA3AF] text-center mt-2">
+                  Flota oficial Cuenta Hogar · Recorridos semanales CABA → Tu domicilio
+                </p>
+              </div>
+
+              {/* 5. DIFERENCIALES BREVES */}
+              <div className="pt-3 border-t border-[#222530] flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold text-[#9CA3AF]">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
                   <span>Centro logístico en CABA</span>
@@ -404,36 +404,21 @@ export default function HomeTechCatalog() {
 
             </div>
 
-            {/* COLUMNA DERECHA (DESKTOP): FOTOGRAFÍA PROTAGONISTA DE LA FORD TRANSIT INTEGRADA AL FONDO */}
+            {/* COLUMNA DERECHA (DESKTOP): FOTOGRAFÍA PROTAGONISTA DE LA FORD TRANSIT SIN RECUADROS SUPERPUESTOS */}
             <div className="hidden lg:block lg:col-span-6 relative">
               <div className="relative rounded-3xl overflow-hidden border border-[#2D323E] bg-[#090A0D] shadow-2xl group">
-                
                 <img 
                   src="/flota-cuenta-hogar.jpg" 
                   alt="Ford Transit oficial Cuenta Hogar realizando logística real" 
-                  className="w-full h-[460px] object-cover object-center group-hover:scale-103 transition-transform duration-700" 
+                  className="w-full h-[440px] object-cover object-center group-hover:scale-103 transition-transform duration-700" 
                 />
                 
                 {/* DEGRADADO SUTIL INFERIOR QUE INTEGRA LA FOTO CON EL FONDO */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-transparent to-transparent opacity-80" />
-
-                <div className="absolute bottom-5 left-5 right-5 bg-[#111318]/90 backdrop-blur-md border border-[#2D323E] p-4 rounded-2xl flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#FFD21A] rounded-xl flex items-center justify-center text-[#111318] font-extrabold shrink-0 shadow-md">
-                      <Truck className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-mono font-bold uppercase text-[#FFD21A] tracking-wider">
-                        Flota Oficial Cuenta Hogar
-                      </p>
-                      <p className="text-xs text-[#D1D5DB] mt-0.5">
-                        Ford Transit equipada para traslados seguros CABA → Interior
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
+                <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-transparent to-transparent opacity-70 pointer-events-none" />
               </div>
+              <p className="text-xs font-mono text-[#9CA3AF] text-right mt-2.5">
+                Flota oficial Ford Transit · Recorridos programados CABA → Interior
+              </p>
             </div>
 
           </div>
