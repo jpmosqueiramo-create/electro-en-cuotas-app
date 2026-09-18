@@ -593,10 +593,10 @@ export default function HomeTechCatalog() {
                 CATÁLOGO DESTACADO
               </span>
               <h2 className="text-3xl font-extrabold text-[#111318]">
-                Productos Populares Financiados
+                Explorá productos que podemos gestionar para vos
               </h2>
               <p className="text-sm text-[#4B5563]">
-                Cotizaciones estimadas en cuotas para compras por mandato.
+                Conocé ejemplos de productos y consultá una estimación del plan de pagos para gestionar tu compra.
               </p>
             </div>
 
@@ -669,7 +669,7 @@ export default function HomeTechCatalog() {
                         {/* PLAN DE CUOTAS */}
                         <div className="bg-white border border-[#E5E7EB] p-4 rounded-xl space-y-2">
                           <span className="text-[10px] font-mono font-bold text-[#6B7280] uppercase block">
-                            ESTIMACIÓN FINANCIACIÓN CUENTA HOGAR
+                            PLAN DE PAGOS ESTIMADO
                           </span>
                           {plan12 ? (
                             <div className="flex items-baseline justify-between">
@@ -690,13 +690,13 @@ export default function HomeTechCatalog() {
                     {/* BOTÓN DE COTIZACIÓN */}
                     <div className="p-6 pt-0">
                       <a 
-                        href={`https://wa.me/5491125659686?text=${encodeURIComponent(`Hola, quiero consultar por el producto: ${prod.nombre}`)}`}
+                        href={`https://wa.me/5491125659686?text=${encodeURIComponent(`Hola, quiero solicitar cotización para gestionar la compra del producto: ${prod.nombre}`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-full inline-flex items-center justify-center gap-2 bg-[#111318] hover:bg-[#1F232D] text-white hover:text-[#FFD21A] font-extrabold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-md"
                       >
                         <WhatsAppIcon className="w-4 h-4 text-[#25D366]" />
-                        <span>Consultar este producto</span>
+                        <span>Solicitar cotización</span>
                       </a>
                     </div>
 
@@ -705,6 +705,10 @@ export default function HomeTechCatalog() {
               })}
             </div>
           )}
+
+          <p className="text-xs text-center text-[#6B7280] max-w-3xl mx-auto pt-6 leading-relaxed">
+            * Los importes son orientativos y están sujetos a cotización y condiciones contractuales. El plan contempla el reintegro del capital utilizado para la compra y los servicios asociados que correspondan.
+          </p>
 
         </div>
       </section>
@@ -722,10 +726,10 @@ export default function HomeTechCatalog() {
                 SOLICITUD RÁPIDA DE OPCIONES
               </span>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
-                ¿Qué producto querés comprar o trasladar?
+                Contanos qué necesitás y te ayudamos a conseguirlo
               </h2>
               <p className="text-sm text-[#9CA3AF] max-w-xl mx-auto">
-                Ingresá tus datos y el artículo que necesitas. Te respondemos al instante por WhatsApp con opciones y costos.
+                Contanos qué producto buscás y te enviaremos por WhatsApp una propuesta para gestionar tu compra, con las condiciones del plan de pagos.
               </p>
             </div>
 
