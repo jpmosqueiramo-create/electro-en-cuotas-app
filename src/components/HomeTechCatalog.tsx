@@ -26,9 +26,6 @@ import {
   UserCheck,
   Layers,
   ArrowUpRight,
-  PhoneCall,
-  MessageSquare,
-  HelpCircle,
   Package
 } from "lucide-react";
 
@@ -70,7 +67,6 @@ export default function HomeTechCatalog() {
 
   // Modal Solicitud de Nueva Localidad
   const [modalLocalidadOpen, setModalLocalidadOpen] = useState(false);
-  const [h1Variant, setH1Variant] = useState<"A" | "B">("A");
   const [locNombre, setLocNombre] = useState("");
   const [locCiudad, setLocCiudad] = useState("");
   const [locTel, setLocTel] = useState("");
@@ -267,23 +263,23 @@ export default function HomeTechCatalog() {
   };
 
   return (
-    <div className="min-h-screen bg-[#090A0C] text-white font-sans selection:bg-[#FFE600] selection:text-black">
+    <div className="min-h-screen bg-[#111318] text-white font-sans selection:bg-[#FFD21A] selection:text-black">
       
-      {/* 0. HEADER / NAVBAR TECH EXPERIMENTAL DE LA HOME */}
-      <header className="sticky top-0 z-50 bg-[#0B0C10]/95 backdrop-blur-md border-b border-[#1E2028]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
+      {/* 0. HEADER / NAVBAR PROFESIONAL CON ALTO IMPACTO */}
+      <header className="sticky top-0 z-50 bg-[#111318]/95 backdrop-blur-md border-b border-[#222530]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 sm:h-20 flex items-center justify-between gap-4">
           
-          {/* BRANDING LOGO CON ESTÉTICA TECH Y DETALLE AMARILLO ELÉCTRICO */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative p-1.5 bg-[#000000] border border-[#FFE600]/40 rounded-xl group-hover:border-[#FFE600] transition-colors shadow-lg shadow-[#FFE600]/10">
+          {/* BRANDING LOGO COMPACTO Y NÍTIDO */}
+          <Link href="/" className="flex items-center gap-3 shrink-0">
+            <div className="p-1.5 bg-[#090A0D] border border-[#FFD21A]/30 rounded-xl shadow-md">
               <img 
                 src="/logo-cuenta-hogar-oficial.png" 
                 alt="Cuenta Hogar" 
-                className="h-9 sm:h-10 w-auto object-contain" 
+                className="h-8 sm:h-10 w-auto object-contain" 
               />
             </div>
             <div className="hidden sm:block text-left">
-              <span className="block text-[10px] font-mono font-bold tracking-widest text-[#FFE600] uppercase">
+              <span className="block text-[10px] font-mono font-bold tracking-widest text-[#FFD21A] uppercase">
                 LOGÍSTICA & CRÉDITO
               </span>
               <span className="block text-xs font-bold text-white tracking-tight">
@@ -292,28 +288,28 @@ export default function HomeTechCatalog() {
             </div>
           </Link>
 
-          {/* MENÚ DE NAVEGACIÓN PRINCIPAL */}
+          {/* MENÚ DE NAVEGACIÓN DESKTOP */}
           <nav className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-[#9CA3AF]">
-            <a href="#modelo" className="hover:text-[#FFE600] transition-colors">Cómo Funciona</a>
-            <a href="#catalogo" className="hover:text-[#FFE600] transition-colors">Productos</a>
-            <a href="#envios-low-cost" className="hover:text-[#FFE600] transition-colors">Envíos CABA</a>
+            <a href="#modelo" className="hover:text-[#FFD21A] transition-colors">Cómo Funciona</a>
+            <a href="#catalogo" className="hover:text-[#FFD21A] transition-colors">Productos</a>
+            <a href="#envios-low-cost" className="hover:text-[#FFD21A] transition-colors">Envíos CABA</a>
             <Link href="/nosotros" className="hover:text-white transition-colors">Nosotros</Link>
             <Link href="/flete" className="hover:text-white transition-colors">Low Cost</Link>
           </nav>
 
           {/* ACCIONES DEL HEADER */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <Link 
               href="/login-afiliado" 
-              className="hidden lg:inline-flex items-center gap-1.5 text-xs font-bold text-[#E5E7EB] hover:text-[#FFE600] border border-[#2A2D3A] hover:border-[#FFE600]/50 px-3.5 py-2 rounded-xl transition-all"
+              className="hidden lg:inline-flex items-center gap-1.5 text-xs font-bold text-[#E5E7EB] hover:text-[#FFD21A] border border-[#2D323E] hover:border-[#FFD21A]/50 px-3.5 py-2 rounded-xl transition-all"
             >
-              <UserCheck className="w-4 h-4 text-[#FFE600]" />
+              <UserCheck className="w-4 h-4 text-[#FFD21A]" />
               <span>Afiliados</span>
             </Link>
 
             <a 
               href="#contacto" 
-              className="inline-flex items-center gap-2 bg-[#FFE600] hover:bg-[#FFF000] text-black text-xs font-extrabold uppercase tracking-wider px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl transition-all transform active:scale-95 shadow-md shadow-[#FFE600]/20"
+              className="inline-flex items-center gap-1.5 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs font-extrabold uppercase tracking-wider px-4 sm:px-5 py-2.5 rounded-xl transition-all shadow-md shadow-[#FFD21A]/20 transform active:scale-95"
             >
               <span>Solicitar Compra</span>
               <ArrowRight className="w-4 h-4" />
@@ -323,123 +319,125 @@ export default function HomeTechCatalog() {
         </div>
       </header>
 
-      {/* 1. HERO PRINCIPAL TECNOLÓGICO Y DE MÁXIMO IMPACTO */}
-      <section className="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28 border-b border-[#1E2028] bg-gradient-to-b from-[#090A0C] via-[#0D0F14] to-[#090A0C]">
+      {/* 1. NUEVO HERO PUBLICITARIO DE ALTO IMPACTO (DIRECCIÓN DE ARTE PROFESIONAL) */}
+      <section className="relative overflow-hidden pt-8 sm:pt-14 pb-12 sm:pb-20 lg:pt-16 lg:pb-24 border-b border-[#222530] bg-[#111318]">
         
-        {/* RESPLANDOR AMBIENTAL AMARILLO ELÉCTRICO DE FONDO */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-[#FFE600]/10 blur-[140px] pointer-events-none rounded-full" />
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-            
-            {/* COLUMNA IZQUIERDA: H1 E IMPACTO VISUAL */}
-            <div className="lg:col-span-7 space-y-6 text-left">
-              
-              {/* TAG CON ESTILO AMARILLO ELÉCTRICO NEÓN */}
-              <div className="flex items-center justify-between gap-4">
-                <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-widest bg-[#FFE600]/10 border border-[#FFE600]/30 text-[#FFE600] px-3.5 py-1.5 rounded-full">
-                  <span className="w-2 h-2 rounded-full bg-[#FFE600] animate-pulse"></span>
-                  CUENTA HOGAR · CAPITAL → INTERIOR
-                </div>
+        {/* LÍNEAS GRÁFICAS Y RESPLANDOR SUTIL DE FONDO (SIN EXCESOS NI PARTICULAS) */}
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-[#FFD21A]/5 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute -top-24 left-1/3 w-96 h-96 bg-[#FFD21A]/5 blur-[120px] pointer-events-none rounded-full" />
 
-                {/* BOTÓN VARIACIÓN A/B DISCRETO */}
-                <button 
-                  onClick={() => setH1Variant(h1Variant === "A" ? "B" : "A")}
-                  className="text-[10px] font-mono text-[#9CA3AF] bg-[#14161F] border border-[#262A36] px-2.5 py-1 rounded-md hover:border-[#FFE600] transition-colors"
-                >
-                  Variante {h1Variant} <span className="opacity-60">(Probar A/B)</span>
-                </button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+          
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            
+            {/* COLUMNA IZQUIERDA: COPY PUBLICITARIO & ACCIONES COMERCIALES */}
+            <div className="lg:col-span-6 space-y-5 sm:space-y-6 text-left">
+              
+              {/* TAGLINE DE MARCA SUTIL Y ELEGANTE */}
+              <div className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-mono font-bold uppercase tracking-widest text-[#FFD21A] bg-[#FFD21A]/10 border border-[#FFD21A]/25 px-3 py-1 rounded-full">
+                <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
+                CUENTA HOGAR · CABA → INTERIOR
               </div>
 
-              {/* H1 CON PROTAGONISMO NEGRO TECH & AMARILLO ELÉCTRICO */}
-              <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold tracking-tight text-white leading-[1.08]">
-                Comprá en Capital.<br />
-                <span className="text-[#FFE600] drop-shadow-[0_0_25px_rgba(255,230,0,0.25)]">
-                  {h1Variant === "A" 
-                    ? "Sin viajar. Sin perseguir comisionistas." 
-                    : "Nosotros resolvemos lo que viene después."}
+              {/* TITULAR PRINCIPAL IMPACTANTE */}
+              <h1 className="text-3xl sm:text-5xl lg:text-[54px] font-extrabold tracking-tight text-white leading-[1.08]">
+                Capital tiene lo que buscás.<br />
+                <span className="text-[#FFD21A] block mt-1">
+                  Nosotros hacemos que llegue.
                 </span>
               </h1>
 
-              {/* BAJADA OPERATIVA */}
-              <p className="text-base sm:text-lg text-[#D1D5DB] font-normal leading-relaxed max-w-2xl">
-                Si todavía no compraste, gestionamos la compra por mandato. Si ya compraste, recibimos tu mercadería en nuestro local de CABA y organizamos el traslado directo hasta tu domicilio en el interior.
-              </p>
-
-              {/* TARJETA DESTACADA CON BORDE AMARILLO ELÉCTRICO */}
-              <div className="bg-[#12141C] border-l-4 border-l-[#FFE600] border border-[#222533] p-4.5 rounded-xl shadow-lg">
-                <p className="text-sm sm:text-base font-semibold text-white leading-relaxed">
-                  Sin coordinar quién retira, qué día pasa, a qué hora llega o cuándo te lo entregan.
-                </p>
+              {/* FOTOGRAFÍA DE LA TRANSIT (APARECE EN MOBILE ENTRE TÍTULO Y SUBTÍTULO PARA VISIBILIDAD INMEDIATA) */}
+              <div className="lg:hidden relative my-4 rounded-2xl overflow-hidden border border-[#2D323E] shadow-xl bg-[#090A0D]">
+                <img 
+                  src="/flota-cuenta-hogar.jpg" 
+                  alt="Ford Transit oficial Cuenta Hogar realizando logística CABA - Interior" 
+                  className="w-full h-[210px] sm:h-[280px] object-cover object-center"
+                />
+                <div className="absolute bottom-3 left-3 right-3 bg-[#111318]/90 backdrop-blur-md border border-[#2D323E] p-2.5 rounded-xl flex items-center gap-2.5">
+                  <Truck className="w-4 h-4 text-[#FFD21A] shrink-0" />
+                  <span className="text-[11px] font-bold text-white tracking-wide">
+                    Logística propia semanal CABA → Tu domicilio
+                  </span>
+                </div>
               </div>
 
-              {/* BOTONES DE ACCIÓN PRINCIPALES */}
-              <div className="pt-2 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+              {/* SUBTÍTULO COMPACTO Y CLARO */}
+              <p className="text-sm sm:text-base text-[#D1D5DB] font-normal leading-relaxed max-w-xl">
+                ¿Todavía no compraste? Gestionamos la compra por mandato. ¿Ya compraste? Recibimos tu pedido en CABA y lo llevamos a tu domicilio.
+              </p>
+
+              {/* CTAS COMERCIALES PRINCIPALES (AMBOS VISIBLES EN EL PRIMER PANTALLAZO MOBILE) */}
+              <div className="pt-2 flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center">
                 <a 
                   href="#contacto" 
-                  className="inline-flex items-center justify-center gap-2 bg-[#FFE600] hover:bg-[#FFF000] text-black text-xs font-extrabold uppercase tracking-wider px-8 py-4 rounded-xl transition-all shadow-lg shadow-[#FFE600]/25 transform active:scale-95"
+                  className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs sm:text-sm font-extrabold uppercase tracking-wider px-7 py-3.5 sm:py-4 rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95"
                 >
-                  <span>Quiero solicitar una compra</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>Solicitar una compra</span>
+                  <ArrowRight className="w-4.5 h-4.5" />
                 </a>
 
                 <a 
                   href="#envios-low-cost" 
-                  className="inline-flex items-center justify-center gap-2 bg-[#12141C] hover:bg-[#1A1D29] text-white hover:text-[#FFE600] border border-[#2E3245] hover:border-[#FFE600]/50 text-xs font-extrabold uppercase tracking-wider px-8 py-4 rounded-xl transition-all"
+                  className="inline-flex items-center justify-center gap-2 bg-[#1A1D26] hover:bg-[#252A37] text-white hover:text-[#FFD21A] border border-[#2D323E] hover:border-[#FFD21A]/50 text-xs sm:text-sm font-bold uppercase tracking-wider px-7 py-3.5 sm:py-4 rounded-xl transition-all"
                 >
                   <span>Ya compré · Cotizar envío</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4.5 h-4.5" />
                 </a>
               </div>
 
-              {/* REFUERZO DE CONFIANZA TECH */}
-              <div className="pt-6 border-t border-[#1E2028] flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-bold text-[#9CA3AF]">
+              {/* REFUERZO DE OPERACIÓN REAL */}
+              <div className="pt-4 border-t border-[#222530] flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-bold text-[#9CA3AF]">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#FFE600]"></span>
+                  <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
                   <span>Centro logístico en CABA</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#FFE600]"></span>
+                  <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
                   <span>Transporte propio</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#FFE600]"></span>
-                  <span>Entrega a domicilio</span>
+                  <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
+                  <span>Entrega en domicilio</span>
                 </div>
               </div>
 
             </div>
 
-            {/* COLUMNA DERECHA: IMAGEN DE FLOTA CON MARCO TECH */}
-            <div className="lg:col-span-5 relative">
-              <div className="relative rounded-2xl overflow-hidden border border-[#2A2E3D] bg-[#12141C] shadow-2xl group">
+            {/* COLUMNA DERECHA (DESKTOP): FOTOGRAFÍA PROTAGONISTA DE LA FORD TRANSIT INTEGRADA AL FONDO */}
+            <div className="hidden lg:block lg:col-span-6 relative">
+              <div className="relative rounded-3xl overflow-hidden border border-[#2D323E] bg-[#090A0D] shadow-2xl group">
+                
                 <img 
                   src="/flota-cuenta-hogar.jpg" 
-                  alt="Logística real y transporte propio de Cuenta Hogar" 
-                  className="w-full h-[360px] sm:h-[440px] lg:h-[480px] object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100" 
+                  alt="Ford Transit oficial Cuenta Hogar realizando logística real" 
+                  className="w-full h-[460px] object-cover object-center group-hover:scale-103 transition-transform duration-700" 
                 />
                 
-                <div className="absolute inset-0 bg-gradient-to-t from-[#090A0C] via-[#090A0C]/40 to-transparent flex items-end p-6">
-                  <div className="bg-[#12141C]/95 backdrop-blur-md border border-[#2E3245] text-white p-4 rounded-xl w-full shadow-lg">
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 bg-[#FFE600] rounded-xl flex items-center justify-center text-black font-extrabold shrink-0 shadow-md">
-                        <Truck className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-mono font-bold uppercase text-[#FFE600] tracking-wider">
-                          Operación Logística Real
-                        </p>
-                        <p className="text-xs text-[#9CA3AF] mt-0.5">
-                          Centro CABA → Recorridos programados directo a tu casa
-                        </p>
-                      </div>
+                {/* DEGRADADO SUTIL INFERIOR QUE INTEGRA LA FOTO CON EL FONDO */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-transparent to-transparent opacity-80" />
+
+                <div className="absolute bottom-5 left-5 right-5 bg-[#111318]/90 backdrop-blur-md border border-[#2D323E] p-4 rounded-2xl flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-[#FFD21A] rounded-xl flex items-center justify-center text-[#111318] font-extrabold shrink-0 shadow-md">
+                      <Truck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-mono font-bold uppercase text-[#FFD21A] tracking-wider">
+                        Flota Oficial Cuenta Hogar
+                      </p>
+                      <p className="text-xs text-[#D1D5DB] mt-0.5">
+                        Ford Transit equipada para traslados seguros CABA → Interior
+                      </p>
                     </div>
                   </div>
                 </div>
+
               </div>
             </div>
 
           </div>
+
         </div>
       </section>
 
@@ -448,10 +446,10 @@ export default function HomeTechCatalog() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-16">
           
           <div className="text-center max-w-3xl mx-auto space-y-3">
-            <span className="inline-block bg-[#090A0C] text-[#FFE600] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full border border-[#090A0C]">
+            <span className="inline-block bg-[#111318] text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full border border-[#111318]">
               MODELO OPERATIVO CUENTA HOGAR
             </span>
-            <h2 className="text-3xl lg:text-4xl font-extrabold text-[#090A0C]">
+            <h2 className="text-3xl lg:text-4xl font-extrabold text-[#111318]">
               Dos formas simples de resolver tu compra desde el interior
             </h2>
             <p className="text-base text-[#4B5563]">
@@ -462,12 +460,12 @@ export default function HomeTechCatalog() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             
             {/* OPCIÓN 1: COMPRA POR MANDATO */}
-            <div className="bg-[#F9FAFB] border border-[#E5E7EB] hover:border-[#090A0C] rounded-2xl p-8 shadow-sm transition-all flex flex-col justify-between space-y-6">
+            <div className="bg-[#F9FAFB] border border-[#E5E7EB] hover:border-[#111318] rounded-2xl p-8 shadow-sm transition-all flex flex-col justify-between space-y-6">
               <div className="space-y-4">
-                <div className="w-12 h-12 bg-[#090A0C] text-[#FFE600] rounded-xl flex items-center justify-center font-bold text-xl">
+                <div className="w-12 h-12 bg-[#111318] text-[#FFD21A] rounded-xl flex items-center justify-center font-bold text-xl">
                   1
                 </div>
-                <h3 className="text-2xl font-bold text-[#090A0C]">
+                <h3 className="text-2xl font-bold text-[#111318]">
                   Si todavía no compraste
                 </h3>
                 <p className="text-sm text-[#4B5563] leading-relaxed">
@@ -475,20 +473,20 @@ export default function HomeTechCatalog() {
                 </p>
                 <ul className="space-y-2 text-xs font-semibold text-[#1F2937] pt-2">
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#090A0C]" /> Asesoramiento en elección de modelos
+                    <CheckCircle2 className="w-4 h-4 text-[#111318]" /> Asesoramiento en elección de modelos
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#090A0C]" /> Verificación física del producto en comercio
+                    <CheckCircle2 className="w-4 h-4 text-[#111318]" /> Verificación física del producto en comercio
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#090A0C]" /> Emisión de presupuesto transparente en cuotas
+                    <CheckCircle2 className="w-4 h-4 text-[#111318]" /> Emisión de presupuesto transparente en cuotas
                   </li>
                 </ul>
               </div>
 
               <a 
                 href="#contacto" 
-                className="inline-flex items-center justify-center gap-2 bg-[#090A0C] hover:bg-[#1A1D26] text-white hover:text-[#FFE600] text-xs font-extrabold uppercase tracking-wider py-3.5 px-6 rounded-xl transition-all"
+                className="inline-flex items-center justify-center gap-2 bg-[#111318] hover:bg-[#1F232D] text-white hover:text-[#FFD21A] text-xs font-extrabold uppercase tracking-wider py-3.5 px-6 rounded-xl transition-all"
               >
                 <span>Solicitar Compra por Mandato</span>
                 <ArrowRight className="w-4 h-4" />
@@ -496,10 +494,10 @@ export default function HomeTechCatalog() {
             </div>
 
             {/* OPCIÓN 2: YA COMPRASTE · ENVÍO LOW COST */}
-            <div className="bg-[#090A0C] border border-[#1E2028] text-white rounded-2xl p-8 shadow-xl flex flex-col justify-between space-y-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFE600]/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="bg-[#111318] border border-[#222530] text-white rounded-2xl p-8 shadow-xl flex flex-col justify-between space-y-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFD21A]/10 rounded-full blur-2xl pointer-events-none" />
               <div className="space-y-4 relative z-10">
-                <div className="w-12 h-12 bg-[#FFE600] text-black rounded-xl flex items-center justify-center font-extrabold text-xl">
+                <div className="w-12 h-12 bg-[#FFD21A] text-[#111318] rounded-xl flex items-center justify-center font-extrabold text-xl">
                   2
                 </div>
                 <h3 className="text-2xl font-bold text-white">
@@ -510,20 +508,20 @@ export default function HomeTechCatalog() {
                 </p>
                 <ul className="space-y-2 text-xs font-semibold text-[#E5E7EB] pt-2">
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#FFE600]" /> Recepción y guardado seguro en CABA
+                    <CheckCircle2 className="w-4 h-4 text-[#FFD21A]" /> Recepción y guardado seguro en CABA
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#FFE600]" /> Emisión de Remito Oficial Tipo R
+                    <CheckCircle2 className="w-4 h-4 text-[#FFD21A]" /> Emisión de Remito Oficial Tipo R
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#FFE600]" /> Entrega directa a puerta de tu hogar
+                    <CheckCircle2 className="w-4 h-4 text-[#FFD21A]" /> Entrega directa a puerta de tu hogar
                   </li>
                 </ul>
               </div>
 
               <Link 
                 href="/flete" 
-                className="inline-flex items-center justify-center gap-2 bg-[#FFE600] hover:bg-[#FFF000] text-black text-xs font-extrabold uppercase tracking-wider py-3.5 px-6 rounded-xl transition-all shadow-md shadow-[#FFE600]/20 relative z-10"
+                className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs font-extrabold uppercase tracking-wider py-3.5 px-6 rounded-xl transition-all shadow-md shadow-[#FFD21A]/20 relative z-10"
               >
                 <span>Cotizar Servicio de Envío Low Cost</span>
                 <ArrowRight className="w-4 h-4" />
@@ -536,13 +534,13 @@ export default function HomeTechCatalog() {
       </section>
 
       {/* 3. SECCIÓN DE ENVÍOS LOW COST DESDE CABA AL INTERIOR */}
-      <section id="envios-low-cost" className="py-20 lg:py-24 bg-[#0D0F14] border-b border-[#1E2028]">
+      <section id="envios-low-cost" className="py-20 lg:py-24 bg-[#0E1015] border-b border-[#222530]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-16">
           
-          <div className="bg-[#12141C] border border-[#222533] rounded-2xl p-8 lg:p-12 shadow-2xl space-y-12">
+          <div className="bg-[#161922] border border-[#2A2E3D] rounded-2xl p-8 lg:p-12 shadow-2xl space-y-12">
             
             <div className="text-center max-w-2xl mx-auto space-y-3">
-              <div className="inline-flex items-center gap-2 bg-[#FFE600]/10 border border-[#FFE600]/30 text-[#FFE600] px-4 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider">
+              <div className="inline-flex items-center gap-2 bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] px-4 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider">
                 <Truck className="w-3.5 h-3.5" /> Envíos Low Cost CABA → Interior
               </div>
               <h2 className="text-3xl lg:text-4xl font-extrabold text-white">
@@ -554,8 +552,8 @@ export default function HomeTechCatalog() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-[#090A0C] border border-[#1E2028] p-6 rounded-xl space-y-3">
-                <div className="w-10 h-10 bg-[#1F2330] text-[#FFE600] rounded-lg flex items-center justify-center font-bold">
+              <div className="bg-[#111318] border border-[#222530] p-6 rounded-xl space-y-3">
+                <div className="w-10 h-10 bg-[#1F2330] text-[#FFD21A] rounded-lg flex items-center justify-center font-bold">
                   <MapPin className="w-5 h-5" />
                 </div>
                 <h3 className="text-lg font-bold text-white">Recepción en CABA</h3>
@@ -564,8 +562,8 @@ export default function HomeTechCatalog() {
                 </p>
               </div>
 
-              <div className="bg-[#090A0C] border border-[#1E2028] p-6 rounded-xl space-y-3">
-                <div className="w-10 h-10 bg-[#1F2330] text-[#FFE600] rounded-lg flex items-center justify-center font-bold">
+              <div className="bg-[#111318] border border-[#222530] p-6 rounded-xl space-y-3">
+                <div className="w-10 h-10 bg-[#1F2330] text-[#FFD21A] rounded-lg flex items-center justify-center font-bold">
                   <Truck className="w-5 h-5" />
                 </div>
                 <h3 className="text-lg font-bold text-white">Flota Propia</h3>
@@ -574,8 +572,8 @@ export default function HomeTechCatalog() {
                 </p>
               </div>
 
-              <div className="bg-[#090A0C] border border-[#1E2028] p-6 rounded-xl space-y-3">
-                <div className="w-10 h-10 bg-[#1F2330] text-[#FFE600] rounded-lg flex items-center justify-center font-bold">
+              <div className="bg-[#111318] border border-[#222530] p-6 rounded-xl space-y-3">
+                <div className="w-10 h-10 bg-[#1F2330] text-[#FFD21A] rounded-lg flex items-center justify-center font-bold">
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <h3 className="text-lg font-bold text-white">Remito Oficial</h3>
@@ -588,7 +586,7 @@ export default function HomeTechCatalog() {
             <div className="text-center pt-4">
               <Link 
                 href="/flete" 
-                className="inline-flex items-center gap-2 bg-[#FFE600] hover:bg-[#FFF000] text-black font-extrabold text-xs uppercase tracking-wider px-8 py-4 rounded-xl transition-all shadow-lg shadow-[#FFE600]/20"
+                className="inline-flex items-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold text-xs uppercase tracking-wider px-8 py-4 rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20"
               >
                 <span>Ver Tarifas y Ciudades del Recorrido</span>
                 <ArrowRight className="w-4 h-4" />
@@ -606,10 +604,10 @@ export default function HomeTechCatalog() {
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-[#E5E7EB] pb-6">
             <div className="space-y-2">
-              <span className="text-xs font-mono font-bold text-[#090A0C] uppercase tracking-widest bg-[#FFE600] px-3 py-1 rounded-md">
+              <span className="text-xs font-mono font-bold text-[#111318] uppercase tracking-widest bg-[#FFD21A] px-3 py-1 rounded-md">
                 CATÁLOGO DESTACADO
               </span>
-              <h2 className="text-3xl font-extrabold text-[#090A0C]">
+              <h2 className="text-3xl font-extrabold text-[#111318]">
                 Productos Populares Financiados
               </h2>
               <p className="text-sm text-[#4B5563]">
@@ -619,7 +617,7 @@ export default function HomeTechCatalog() {
 
             <a 
               href="#contacto" 
-              className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#090A0C] hover:text-[#FFE600] transition-colors"
+              className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#111318] hover:text-[#FFD21A] transition-colors"
             >
               <span>¿Buscás otro modelo? Consultanos</span>
               <ArrowRight className="w-4 h-4" />
@@ -639,11 +637,11 @@ export default function HomeTechCatalog() {
           ) : productos.length === 0 ? (
             <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-2xl p-12 text-center space-y-4">
               <Package className="w-12 h-12 text-[#9CA3AF] mx-auto" />
-              <h3 className="text-xl font-bold text-[#090A0C]">Catálogo en actualización</h3>
+              <h3 className="text-xl font-bold text-[#111318]">Catálogo en actualización</h3>
               <p className="text-sm text-[#4B5563] max-w-md mx-auto">
                 Podés pedir la cotización de cualquier electrodoméstico o artículo que necesites directamente a través de nuestro formulario.
               </p>
-              <a href="#contacto" className="inline-block bg-[#090A0C] text-[#FFE600] font-bold text-xs uppercase px-6 py-3 rounded-xl">
+              <a href="#contacto" className="inline-block bg-[#111318] text-[#FFD21A] font-bold text-xs uppercase px-6 py-3 rounded-xl">
                 Solicitar Cotización Directa
               </a>
             </div>
@@ -656,7 +654,7 @@ export default function HomeTechCatalog() {
                 return (
                   <div 
                     key={prod.id} 
-                    className="group bg-[#F9FAFB] border border-[#E5E7EB] hover:border-[#090A0C] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                    className="group bg-[#F9FAFB] border border-[#E5E7EB] hover:border-[#111318] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
                   >
                     <div>
                       {/* IMAGEN DEL PRODUCTO */}
@@ -666,14 +664,14 @@ export default function HomeTechCatalog() {
                           alt={prod.nombre} 
                           className="max-h-48 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
                         />
-                        <div className="absolute top-3 right-3 bg-[#090A0C] text-[#FFE600] text-[10px] font-mono font-bold px-2.5 py-1 rounded-md">
+                        <div className="absolute top-3 right-3 bg-[#111318] text-[#FFD21A] text-[10px] font-mono font-bold px-2.5 py-1 rounded-md">
                           ENTREGA CABA & INTERIOR
                         </div>
                       </div>
 
                       {/* DETALLES DEL PRODUCTO */}
                       <div className="p-6 space-y-4">
-                        <h3 className="text-lg font-bold text-[#090A0C] line-clamp-2 leading-snug">
+                        <h3 className="text-lg font-bold text-[#111318] line-clamp-2 leading-snug">
                           {prod.nombre}
                         </h3>
                         
@@ -691,12 +689,12 @@ export default function HomeTechCatalog() {
                           {plan12 ? (
                             <div className="flex items-baseline justify-between">
                               <span className="text-xs font-bold text-[#374151]">12 cuotas fijas de</span>
-                              <span className="text-lg font-extrabold text-[#090A0C]">
+                              <span className="text-lg font-extrabold text-[#111318]">
                                 {formatPrice(plan12.cuotaMensual)}
                               </span>
                             </div>
                           ) : (
-                            <div className="text-sm font-bold text-[#090A0C]">
+                            <div className="text-sm font-bold text-[#111318]">
                               Consultar planes de financiamiento
                             </div>
                           )}
@@ -710,7 +708,7 @@ export default function HomeTechCatalog() {
                         href={`https://wa.me/5491125659686?text=${encodeURIComponent(`Hola, quiero consultar por el producto: ${prod.nombre}`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full inline-flex items-center justify-center gap-2 bg-[#090A0C] hover:bg-[#1A1D26] text-white hover:text-[#FFE600] font-extrabold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-md"
+                        className="w-full inline-flex items-center justify-center gap-2 bg-[#111318] hover:bg-[#1F232D] text-white hover:text-[#FFD21A] font-extrabold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-md"
                       >
                         <WhatsAppIcon className="w-4 h-4 text-[#25D366]" />
                         <span>Consultar este producto</span>
@@ -727,15 +725,15 @@ export default function HomeTechCatalog() {
       </section>
 
       {/* 5. FORMULARIO RÁPIDO DE CONTACTO Y SOLICITUD (#CONTACTO) */}
-      <section id="contacto" className="py-20 lg:py-24 bg-[#090A0C] border-b border-[#1E2028]">
+      <section id="contacto" className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           
-          <div className="bg-[#12141C] border border-[#222533] rounded-2xl p-8 sm:p-12 shadow-2xl space-y-8 relative overflow-hidden">
+          <div className="bg-[#161922] border border-[#2A2E3D] rounded-2xl p-8 sm:p-12 shadow-2xl space-y-8 relative overflow-hidden">
             
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFE600]/5 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD21A]/5 rounded-full blur-3xl pointer-events-none" />
 
             <div className="text-center space-y-3 relative z-10">
-              <span className="inline-block bg-[#FFE600]/10 border border-[#FFE600]/30 text-[#FFE600] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full">
+              <span className="inline-block bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full">
                 SOLICITUD RÁPIDA DE OPCIONES
               </span>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
@@ -759,7 +757,7 @@ export default function HomeTechCatalog() {
                     value={qfNombre} 
                     onChange={e => setQfNombre(e.target.value)} 
                     placeholder="Ej. Juan Pérez" 
-                    className="w-full bg-[#090A0C] border border-[#2B2F3E] focus:border-[#FFE600] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
+                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
                   />
                 </div>
 
@@ -773,7 +771,7 @@ export default function HomeTechCatalog() {
                     value={qfDni} 
                     onChange={e => setQfDni(e.target.value)} 
                     placeholder="Ej. 30123456" 
-                    className="w-full bg-[#090A0C] border border-[#2B2F3E] focus:border-[#FFE600] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
+                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
                   />
                 </div>
 
@@ -787,7 +785,7 @@ export default function HomeTechCatalog() {
                     value={qfWhatsapp} 
                     onChange={e => setQfWhatsapp(e.target.value)} 
                     placeholder="Ej. 11 2345 6789" 
-                    className="w-full bg-[#090A0C] border border-[#2B2F3E] focus:border-[#FFE600] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
+                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
                   />
                 </div>
 
@@ -801,7 +799,7 @@ export default function HomeTechCatalog() {
                     value={qfLocalidad} 
                     onChange={e => setQfLocalidad(e.target.value)} 
                     placeholder="Ej. Lincoln, Chivilcoy, Los Toldos..." 
-                    className="w-full bg-[#090A0C] border border-[#2B2F3E] focus:border-[#FFE600] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
+                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
                   />
                 </div>
 
@@ -817,7 +815,7 @@ export default function HomeTechCatalog() {
                   value={qfNecesidad} 
                   onChange={e => setQfNecesidad(e.target.value)} 
                   placeholder="Ej. Heladera Gafa 380L, Smart TV 50 pulgadas, lavarropas automático..." 
-                  className="w-full bg-[#090A0C] border border-[#2B2F3E] focus:border-[#FFE600] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all resize-none"
+                  className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all resize-none"
                 />
               </div>
 
@@ -830,21 +828,21 @@ export default function HomeTechCatalog() {
                   value={qfReferente} 
                   onChange={e => setQfReferente(e.target.value)} 
                   placeholder="Ej. María Gómez (Vendedora afiliada)" 
-                  className="w-full bg-[#090A0C] border border-[#2B2F3E] focus:border-[#FFE600] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
+                  className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
                 />
               </div>
 
               <button 
                 type="submit" 
                 disabled={qfSubmitting}
-                className="w-full bg-[#FFE600] hover:bg-[#FFF000] text-black font-extrabold text-sm uppercase tracking-wider py-4 rounded-xl transition-all shadow-xl shadow-[#FFE600]/20 flex items-center justify-center gap-2 transform active:scale-98 disabled:opacity-50"
+                className="w-full bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold text-sm uppercase tracking-wider py-4 rounded-xl transition-all shadow-xl shadow-[#FFD21A]/20 flex items-center justify-center gap-2 transform active:scale-98 disabled:opacity-50"
               >
                 {qfSubmitting ? (
                   <span>Procesando solicitud...</span>
                 ) : (
                   <>
                     <span>Enviar Solicitud y Cotizar por WhatsApp</span>
-                    <WhatsAppIcon className="w-5 h-5 text-black" />
+                    <WhatsAppIcon className="w-5 h-5 text-[#111318]" />
                   </>
                 )}
               </button>
@@ -864,10 +862,10 @@ export default function HomeTechCatalog() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
           
           <div className="text-center max-w-2xl mx-auto space-y-3">
-            <span className="inline-block bg-[#090A0C] text-[#FFE600] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full">
+            <span className="inline-block bg-[#111318] text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full">
               ENTREGAS REALES Y TESTIMONIOS
             </span>
-            <h2 className="text-3xl font-extrabold text-[#090A0C]">
+            <h2 className="text-3xl font-extrabold text-[#111318]">
               Recorridos programados y entregas en puerta
             </h2>
             <p className="text-sm text-[#4B5563]">
@@ -878,7 +876,7 @@ export default function HomeTechCatalog() {
           <div className="relative max-w-4xl mx-auto bg-[#F9FAFB] border border-[#E5E7EB] rounded-2xl overflow-hidden shadow-lg">
             <div className="grid grid-cols-1 md:grid-cols-2 items-center">
               
-              <div className="h-72 md:h-96 relative bg-[#090A0C]">
+              <div className="h-72 md:h-96 relative bg-[#111318]">
                 <img 
                   src={entregas[activeEntregaIdx].src} 
                   alt={entregas[activeEntregaIdx].alt} 
@@ -887,10 +885,10 @@ export default function HomeTechCatalog() {
               </div>
 
               <div className="p-8 space-y-4 text-left">
-                <span className="text-xs font-mono font-bold text-[#090A0C] uppercase tracking-wider bg-[#FFE600] px-2.5 py-1 rounded">
+                <span className="text-xs font-mono font-bold text-[#111318] uppercase tracking-wider bg-[#FFD21A] px-2.5 py-1 rounded">
                   CASO REAL DE ENTREGA
                 </span>
-                <h3 className="text-2xl font-bold text-[#090A0C]">
+                <h3 className="text-2xl font-bold text-[#111318]">
                   {entregas[activeEntregaIdx].titulo}
                 </h3>
                 <p className="text-sm text-[#4B5563] leading-relaxed">
@@ -900,13 +898,13 @@ export default function HomeTechCatalog() {
                 <div className="flex items-center gap-3 pt-4 border-t border-[#E5E7EB]">
                   <button 
                     onClick={handlePrevEntrega}
-                    className="p-2.5 bg-white border border-[#E5E7EB] hover:bg-[#090A0C] hover:text-white rounded-xl transition-all"
+                    className="p-2.5 bg-white border border-[#E5E7EB] hover:bg-[#111318] hover:text-white rounded-xl transition-all"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                   <button 
                     onClick={handleNextEntrega}
-                    className="p-2.5 bg-white border border-[#E5E7EB] hover:bg-[#090A0C] hover:text-white rounded-xl transition-all"
+                    className="p-2.5 bg-white border border-[#E5E7EB] hover:bg-[#111318] hover:text-white rounded-xl transition-all"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </button>
@@ -923,9 +921,9 @@ export default function HomeTechCatalog() {
           <div className="text-center pt-4">
             <button 
               onClick={() => setModalLocalidadOpen(true)}
-              className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#090A0C] bg-[#F3F4F6] border border-[#E5E7EB] hover:bg-[#090A0C] hover:text-[#FFE600] px-5 py-3 rounded-xl transition-all"
+              className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#111318] bg-[#F3F4F6] border border-[#E5E7EB] hover:bg-[#111318] hover:text-[#FFD21A] px-5 py-3 rounded-xl transition-all"
             >
-              <MapPin className="w-4 h-4 text-[#FFE600]" />
+              <MapPin className="w-4 h-4 text-[#FFD21A]" />
               <span>¿No ves tu ciudad? Solicitar nueva localidad en las rutas</span>
             </button>
           </div>
@@ -936,7 +934,7 @@ export default function HomeTechCatalog() {
       {/* MODAL SOLICITUD NUEVA LOCALIDAD */}
       {modalLocalidadOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#12141C] border border-[#222533] text-white rounded-2xl p-6 sm:p-8 max-w-lg w-full space-y-6 relative">
+          <div className="bg-[#161922] border border-[#2A2E3D] text-white rounded-2xl p-6 sm:p-8 max-w-lg w-full space-y-6 relative">
             
             <button 
               onClick={() => setModalLocalidadOpen(false)}
@@ -946,7 +944,7 @@ export default function HomeTechCatalog() {
             </button>
 
             <div className="space-y-2">
-              <span className="text-xs font-mono font-bold text-[#FFE600] uppercase tracking-wider">
+              <span className="text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider">
                 EXPANSIÓN DE RUTAS LOGÍSTICAS
               </span>
               <h3 className="text-2xl font-bold text-white">
@@ -963,7 +961,7 @@ export default function HomeTechCatalog() {
                 <input 
                   type="text" required value={locNombre} onChange={e => setLocNombre(e.target.value)}
                   placeholder="Tu Nombre"
-                  className="w-full bg-[#090A0C] border border-[#2A2E3D] focus:border-[#FFE600] text-white text-sm p-3 rounded-xl outline-none"
+                  className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white text-sm p-3 rounded-xl outline-none"
                 />
               </div>
 
@@ -972,7 +970,7 @@ export default function HomeTechCatalog() {
                 <input 
                   type="text" required value={locCiudad} onChange={e => setLocCiudad(e.target.value)}
                   placeholder="Ej. Pehuajó, Junín, Carlos Casares..."
-                  className="w-full bg-[#090A0C] border border-[#2A2E3D] focus:border-[#FFE600] text-white text-sm p-3 rounded-xl outline-none"
+                  className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white text-sm p-3 rounded-xl outline-none"
                 />
               </div>
 
@@ -981,7 +979,7 @@ export default function HomeTechCatalog() {
                 <input 
                   type="tel" required value={locTel} onChange={e => setLocTel(e.target.value)}
                   placeholder="Ej. 11 2345 6789"
-                  className="w-full bg-[#090A0C] border border-[#2A2E3D] focus:border-[#FFE600] text-white text-sm p-3 rounded-xl outline-none"
+                  className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white text-sm p-3 rounded-xl outline-none"
                 />
               </div>
 
@@ -989,7 +987,7 @@ export default function HomeTechCatalog() {
                 <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1">Tu Interés *</label>
                 <select 
                   value={locInteres} onChange={e => setLocInteres(e.target.value)}
-                  className="w-full bg-[#090A0C] border border-[#2A2E3D] focus:border-[#FFE600] text-white text-sm p-3 rounded-xl outline-none"
+                  className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white text-sm p-3 rounded-xl outline-none"
                 >
                   <option value="Ambos (Financiación y Envíos)">Ambos (Financiación y Envíos)</option>
                   <option value="Solo Financiación en Cuotas">Solo Financiación en Cuotas</option>
@@ -1000,7 +998,7 @@ export default function HomeTechCatalog() {
               <button 
                 type="submit" 
                 disabled={locSubmitting}
-                className="w-full bg-[#FFE600] hover:bg-[#FFF000] text-black font-extrabold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-md"
+                className="w-full bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-md"
               >
                 {locSubmitting ? "Enviando..." : "Enviar Solicitud de Localidad"}
               </button>
@@ -1011,14 +1009,14 @@ export default function HomeTechCatalog() {
       )}
 
       {/* 7. FOOTER TECH EXCLUSIVO DE LA HOME EXPERIMENTAL */}
-      <footer className="bg-[#060709] border-t border-[#1C1E26] text-white py-12 lg:py-16">
+      <footer className="bg-[#090A0D] border-t border-[#1C1E26] text-white py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
           
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             
             <div className="space-y-4 md:col-span-2">
               <div className="flex items-center gap-3">
-                <div className="p-1 bg-black border border-[#FFE600]/40 rounded-lg">
+                <div className="p-1 bg-[#111318] border border-[#FFD21A]/40 rounded-lg">
                   <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-8 w-auto" />
                 </div>
                 <span className="font-bold text-white text-base">CUENTA HOGAR</span>
@@ -1026,14 +1024,14 @@ export default function HomeTechCatalog() {
               <p className="text-xs text-[#9CA3AF] max-w-md leading-relaxed">
                 Operatoria de mandato comercial, traslado y logística desde Buenos Aires hasta domicilios en el interior.
               </p>
-              <div className="flex items-center gap-2 text-xs font-mono text-[#FFE600]">
-                <MapPin className="w-4 h-4 text-[#FFE600]" />
+              <div className="flex items-center gap-2 text-xs font-mono text-[#FFD21A]">
+                <MapPin className="w-4 h-4 text-[#FFD21A]" />
                 <span>Centro de Logística & Atención: CABA, Argentina</span>
               </div>
             </div>
 
             <div className="space-y-3">
-              <h4 className="text-xs font-mono font-bold text-[#FFE600] uppercase tracking-wider">
+              <h4 className="text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider">
                 Navegación
               </h4>
               <ul className="space-y-2 text-xs text-[#9CA3AF]">
@@ -1046,7 +1044,7 @@ export default function HomeTechCatalog() {
             </div>
 
             <div className="space-y-3">
-              <h4 className="text-xs font-mono font-bold text-[#FFE600] uppercase tracking-wider">
+              <h4 className="text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider">
                 Legal & Accesos
               </h4>
               <ul className="space-y-2 text-xs text-[#9CA3AF]">
@@ -1062,7 +1060,7 @@ export default function HomeTechCatalog() {
 
           <div className="pt-8 border-t border-[#1C1E26] flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-[#6B7280]">
             <p>© {new Date().getFullYear()} Cuenta Hogar. Todos los derechos reservados.</p>
-            <p className="text-[11px] font-mono">Diseño Experimental Home — Negro & Amarillo Eléctrico</p>
+            <p className="text-[11px] font-mono">Dirección de Arte — Negro & Amarillo (#FFD21A)</p>
           </div>
 
         </div>
