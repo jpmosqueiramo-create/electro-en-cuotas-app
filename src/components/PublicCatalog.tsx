@@ -352,7 +352,7 @@ export default function PublicCatalog() {
 
             </div>
 
-            {/* COLUMNA DERECHA: FOTOGRAFÍA REAL DE LA OPERACIÓN (FORD TRANSIT / LOGÍSTICA) */}
+            {/* COLUMNA DERECHA: FOTOGRAFÍA REAL DE LA OPERACIÓN (RENAULT MASTER / LOGÍSTICA) */}
             <div className="lg:col-span-5 relative">
               <div className="relative rounded-2xl overflow-hidden border border-[#DED8CF] bg-[#FFFDFC] shadow-lg group">
                 <img 

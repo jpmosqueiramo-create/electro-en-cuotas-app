@@ -462,7 +462,7 @@ Si podés, adjuntá una foto o link del producto.`;
               <div className="relative rounded-3xl overflow-hidden border border-[#DED8CF] shadow-xl group">
                 <img 
                   src="/flota-cuenta-hogar.jpg" 
-                  alt="Transporte propio Ford Transit Cuenta Hogar" 
+                  alt="Transporte propio Renault Master Cuenta Hogar" 
                   className="w-full h-[400px] sm:h-[480px] object-cover group-hover:scale-102 transition-transform duration-700" 
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B]/80 via-transparent to-transparent flex items-end p-6">

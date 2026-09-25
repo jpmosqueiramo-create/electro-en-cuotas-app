@@ -377,7 +377,7 @@ export default function HomeTechCatalog() {
                 <div className="relative rounded-2xl overflow-hidden border border-[#2D323E] bg-[#090A0D] shadow-lg">
                   <img 
                     src="/flota-cuenta-hogar.jpg" 
-                    alt="Ford Transit oficial Cuenta Hogar realizando logística CABA - Interior" 
+                    alt="Renault Master oficial Cuenta Hogar realizando logística CABA - Interior" 
                     className="w-full h-[190px] sm:h-[240px] object-cover object-center"
                   />
                 </div>
@@ -404,12 +404,12 @@ export default function HomeTechCatalog() {
 
             </div>
 
-            {/* COLUMNA DERECHA (DESKTOP): FOTOGRAFÍA PROTAGONISTA DE LA FORD TRANSIT SIN RECUADROS SUPERPUESTOS */}
+            {/* COLUMNA DERECHA (DESKTOP): FOTOGRAFÍA PROTAGONISTA DE LA RENAULT MASTER SIN RECUADROS SUPERPUESTOS */}
             <div className="hidden lg:block lg:col-span-6 relative">
               <div className="relative rounded-3xl overflow-hidden border border-[#2D323E] bg-[#090A0D] shadow-2xl group">
                 <img 
                   src="/flota-cuenta-hogar.jpg" 
-                  alt="Ford Transit oficial Cuenta Hogar realizando logística real" 
+                  alt="Renault Master oficial Cuenta Hogar realizando logística real" 
                   className="w-full h-[440px] object-cover object-center group-hover:scale-103 transition-transform duration-700" 
                 />
                 
@@ -417,7 +417,7 @@ export default function HomeTechCatalog() {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-transparent to-transparent opacity-70 pointer-events-none" />
               </div>
               <p className="text-xs font-mono text-[#9CA3AF] text-right mt-2.5">
-                Flota oficial Ford Transit · Recorridos programados CABA → Interior
+                Flota oficial Renault Master · Recorridos programados CABA → Interior
               </p>
             </div>
 
