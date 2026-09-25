@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { LogIn, Menu, X, Truck, Tag, Users } from "lucide-react";
+import { Menu, X, ArrowRight, UserCheck } from "lucide-react";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -12,95 +12,112 @@ export default function Header() {
   const getLinkStyle = (targetPath: string) => {
     const isActive = pathname === targetPath || (targetPath === "/" && pathname === "/");
     if (isActive) {
-      return "text-xs font-heading font-bold text-[#173E3B] bg-[#F7F3EC] border border-[#DED8CF] rounded-lg px-3.5 py-2 flex items-center gap-1.5 transition-all duration-180";
+      return "text-xs font-bold text-[#FFD21A] bg-[#1A1D26] border border-[#FFD21A]/30 rounded-xl px-3.5 py-2 flex items-center gap-1.5 transition-all";
     }
-    return "text-xs font-heading font-semibold text-[#173E3B] hover:text-[#112F2D] hover:bg-[#F7F3EC]/80 transition-colors duration-180 px-3 py-2 flex items-center gap-1.5 rounded-lg";
+    return "text-xs font-bold text-[#9CA3AF] hover:text-[#FFD21A] hover:bg-[#1A1D26]/60 transition-all px-3 py-2 flex items-center gap-1.5 rounded-xl";
   };
 
   const getMobileLinkStyle = (targetPath: string) => {
-    const isActive = pathname === targetPath || (targetPath === "/" && pathname === "/");
+    const isActive = pathname === targetPath;
     if (isActive) {
-      return "text-base font-heading font-bold text-[#173E3B] bg-[#F7F3EC] px-4 py-3 rounded-xl border border-[#DED8CF] flex items-center gap-2";
+      return "text-sm font-bold text-[#FFD21A] bg-[#1A1D26] px-4 py-3 rounded-xl border border-[#FFD21A]/30 flex items-center gap-2";
     }
-    return "text-base font-heading font-semibold text-[#173E3B] hover:text-[#112F2D] transition-colors flex items-center gap-2 px-3 py-2";
+    return "text-sm font-bold text-[#D1D5DB] hover:text-[#FFD21A] transition-colors flex items-center gap-2 px-3 py-2";
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-[#FFFDFC]/95 border-b border-[#DED8CF] backdrop-blur-md text-[#173E3B] transition-all shadow-xs">
-      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-[#111318]/95 backdrop-blur-md border-b border-[#222530] text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-4">
         
-        {/* LOGO OFICIAL */}
+        {/* BRANDING LOGO */}
         <Link href="/" className="flex items-center gap-3 shrink-0">
-          <img 
-            src="/logo-cuenta-hogar-oficial.png" 
-            alt="Cuenta Hogar Logo" 
-            className="h-12 md:h-14 w-auto object-contain bg-[#173E3B] p-1.5 rounded-xl shadow-xs" 
-          />
+          <div className="p-1.5 bg-[#090A0D] border border-[#FFD21A]/40 rounded-xl shadow-md">
+            <img 
+              src="/logo-cuenta-hogar-oficial.png" 
+              alt="Cuenta Hogar" 
+              className="h-8 sm:h-10 w-auto object-contain" 
+            />
+          </div>
+          <div className="hidden sm:block text-left">
+            <span className="block text-[10px] font-mono font-bold tracking-widest text-[#FFD21A] uppercase">
+              GESTIÓN DE COMPRAS · LOGÍSTICA
+            </span>
+            <span className="block text-xs font-bold text-white tracking-tight">
+              CUENTA HOGAR
+            </span>
+          </div>
         </Link>
 
-        {/* DESKTOP MENU CON PALETA INSTITUCIONAL */}
-        <div className="hidden lg:flex items-center gap-2">
-          <Link href="/#catalogo" className={getLinkStyle("/")}>
-            <Tag className="w-3.5 h-3.5 text-[#B44E2A]" />
-            <span>Planes para vos</span>
+        {/* MENÚ DE NAVEGACIÓN DESKTOP */}
+        <nav className="hidden lg:flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+          <Link href="/#modelo" className={getLinkStyle("/#modelo")}>Cómo Funciona</Link>
+          <Link href="/productos" className={getLinkStyle("/productos")}>Productos</Link>
+          <Link href="/flete" className={getLinkStyle("/flete")}>Envíos Low Cost</Link>
+          <Link href="/nosotros" className={getLinkStyle("/nosotros")}>Nosotros</Link>
+          <Link href="/red-afiliados" className={getLinkStyle("/red-afiliados")}>Red de Afiliados</Link>
+        </nav>
+
+        {/* ACCIONES DEL HEADER */}
+        <div className="flex items-center gap-2.5">
+          <Link 
+            href="/login-afiliado" 
+            className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-[#E5E7EB] hover:text-[#FFD21A] border border-[#2D323E] hover:border-[#FFD21A]/50 px-3.5 py-2 rounded-xl transition-all"
+          >
+            <UserCheck className="w-4 h-4 text-[#FFD21A]" />
+            <span>Afiliados</span>
           </Link>
 
-          <Link href="/nosotros" className={getLinkStyle("/nosotros")}>
-            <span>Nosotros</span>
+          <Link 
+            href="/#contacto" 
+            className="inline-flex items-center gap-1.5 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs font-extrabold uppercase tracking-wider px-3.5 sm:px-5 py-2.5 rounded-xl transition-all shadow-md shadow-[#FFD21A]/20 transform active:scale-95"
+          >
+            <span>Solicitar Compra</span>
+            <ArrowRight className="w-4 h-4" />
           </Link>
 
-          <Link href="/flete" className={getLinkStyle("/flete")}>
-            <Truck className="w-3.5 h-3.5 text-[#B44E2A]" />
-            <span>Envíos Low Cost</span>
-          </Link>
-
-
-
-          <div className="pl-3 ml-2 border-l border-[#DED8CF]">
-            <Link 
-              href="/login" 
-              className="flex items-center gap-2 text-xs font-heading font-semibold bg-[#173E3B] hover:bg-[#112F2D] text-white px-4 py-2.5 rounded-xl shadow-xs transition-all duration-180"
-            >
-              <LogIn className="w-3.5 h-3.5 text-[#E7B86A]" />
-              <span>Portal de Clientes</span>
-            </Link>
-          </div>
+          {/* MOBILE HAMBURGER BUTTON */}
+          <button 
+            className="lg:hidden text-[#9CA3AF] hover:text-white p-2 hover:bg-[#1A1D26] rounded-xl transition-colors" 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Abrir menú"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
 
-        {/* MOBILE HAMBURGER BUTTON */}
-        <button 
-          className="lg:hidden text-[#173E3B] hover:text-[#112F2D] p-2 hover:bg-[#F7F3EC] rounded-xl transition-colors" 
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Abrir menú"
-        >
-          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
       </div>
 
       {/* MOBILE MENU DROPDOWN */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#FFFDFC] border-b border-[#DED8CF] p-6 flex flex-col gap-3 shadow-xl text-[#173E3B]">
-          <Link href="/#catalogo" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/")}>
-            <Tag className="w-4 h-4 text-[#B44E2A]" /> Planes para vos
+        <div className="lg:hidden bg-[#161922] border-b border-[#222530] p-6 flex flex-col gap-3 shadow-2xl text-white">
+          <Link href="/#modelo" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/#modelo")}>
+            Cómo Funciona
+          </Link>
+          <Link href="/productos" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/productos")}>
+            Productos
+          </Link>
+          <Link href="/flete" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/flete")}>
+            Envíos Low Cost CABA
           </Link>
           <Link href="/nosotros" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/nosotros")}>
             Nosotros
           </Link>
-          <Link href="/flete" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/flete")}>
-            <Truck className="w-4 h-4 text-[#B44E2A]" /> Envíos Low Cost
+          <Link href="/red-afiliados" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/red-afiliados")}>
+            Red de Afiliados
           </Link>
 
-          <div className="pt-3 border-t border-[#DED8CF]">
+          <div className="pt-3 border-t border-[#222530] flex flex-col gap-2.5">
             <Link 
-              href="/login" 
+              href="/login-afiliado" 
               onClick={() => setMobileMenuOpen(false)} 
-              className="flex items-center justify-center gap-2 text-sm font-heading font-semibold bg-[#173E3B] text-white px-5 py-3 rounded-xl shadow-xs"
+              className="flex items-center justify-center gap-2 text-xs font-bold text-[#E5E7EB] border border-[#2D323E] px-4 py-3 rounded-xl"
             >
-              <LogIn className="w-4 h-4 text-[#E7B86A]" /> Portal de Clientes
+              <UserCheck className="w-4 h-4 text-[#FFD21A]" />
+              <span>Acceso Red de Afiliados</span>
             </Link>
           </div>
         </div>
       )}
-    </nav>
+    </header>
   );
 }

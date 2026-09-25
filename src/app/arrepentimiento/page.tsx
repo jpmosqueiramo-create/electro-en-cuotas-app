@@ -51,44 +51,44 @@ export default function ArrepentimientoPage() {
 
   if (ticketId) {
     return (
-      <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] flex items-center justify-center p-6 font-sans">
-        <div className="max-w-md w-full bg-[#FFFDFC] border border-[#DED8CF] p-8 rounded-3xl text-center space-y-6 shadow-xl">
+      <div className="min-h-screen bg-[#111318] text-white flex items-center justify-center p-6 font-sans">
+        <div className="max-w-md w-full bg-[#161922] border border-[#222530] p-8 rounded-3xl text-center space-y-6 shadow-xl">
           <div className="text-6xl">📥</div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-[#173E3B] uppercase tracking-wide font-heading">
+            <h2 className="text-2xl font-bold text-[#FFD21A] uppercase tracking-wide font-heading">
               Solicitud Recibida
             </h2>
-            <p className="text-[#68706E] text-xs leading-relaxed">
+            <p className="text-[#9CA3AF] text-xs leading-relaxed">
               De conformidad con el Art. 34 de la Ley N° 24.240 de Defensa del Consumidor, se ha registrado formalmente tu revocación de aceptación.
             </p>
           </div>
 
-          <div className="bg-[#F7F3EC] p-4 rounded-xl border border-[#DED8CF] font-mono text-xs text-left space-y-2.5">
+          <div className="bg-[#111318] p-4 rounded-xl border border-[#222530] font-mono text-xs text-left space-y-2.5">
             <div className="flex justify-between border-b border-zinc-900 pb-2">
-              <span className="text-[#68706E]">Nro. de Gestión:</span>
-              <span className="text-[#173E3B] font-bold">{ticketId}</span>
+              <span className="text-[#9CA3AF]">Nro. de Gestión:</span>
+              <span className="text-[#FFD21A] font-bold">{ticketId}</span>
             </div>
             <div className="flex justify-between border-b border-zinc-900 pb-2">
-              <span className="text-[#68706E]">Cliente:</span>
-              <span className="text-[#1F2928] font-bold">{nombreCompleto}</span>
+              <span className="text-[#9CA3AF]">Cliente:</span>
+              <span className="text-white font-bold">{nombreCompleto}</span>
             </div>
             <div className="flex justify-between border-b border-zinc-900 pb-2">
-              <span className="text-[#68706E]">DNI:</span>
-              <span className="text-[#1F2928] font-bold">{dni}</span>
+              <span className="text-[#9CA3AF]">DNI:</span>
+              <span className="text-white font-bold">{dni}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#68706E]">Producto:</span>
+              <span className="text-[#9CA3AF]">Producto:</span>
               <span className="text-white font-bold truncate max-w-[180px]">{producto}</span>
             </div>
           </div>
 
-          <div className="text-xs text-[#68706E] italic bg-[#173E3B]/10 p-3.5 rounded-lg border border-[#173E3B]/20 text-left">
+          <div className="text-xs text-[#9CA3AF] italic bg-[#111318]/10 p-3.5 rounded-lg border border-[#173E3B]/20 text-left">
             🚩 <strong>Información importante:</strong> Nos contactaremos con vos dentro de las próximas 24 a 48 horas hábiles para coordinar la rescisión del plan y la entrega/devolución del equipo sin cargo.
           </div>
 
           <button
             onClick={() => router.push("/")}
-            className="w-full bg-[#173E3B] hover:bg-[#123230] text-white py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-md"
+            className="w-full bg-[#111318] hover:bg-[#123230] text-white py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-md"
           >
             Volver al inicio
           </button>

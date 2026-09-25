@@ -6,14 +6,14 @@ import Footer from "@/components/Footer";
 import { 
   Building2, 
   Truck, 
-  CreditCard, 
   MapPin, 
   UserCheck, 
   Sparkles, 
   HelpCircle, 
   ChevronDown, 
   ChevronUp, 
-  CheckCircle2
+  CheckCircle2,
+  ArrowRight
 } from "lucide-react";
 import { useState } from "react";
 
@@ -24,93 +24,89 @@ export default function NosotrosPage() {
     setOpenFaq(openFaq === idx ? null : idx);
   };
 
-  const localidades = [
-    "Lincoln",
-    "Zavalía",
-    "Los Toldos",
-    "Chivilcoy",
-    "O'Brien"
-  ];
-
   const faqs = [
     {
       q: "¿Cuenta Hogar es una financiera o una tienda online?",
-      a: "Cuenta Hogar no es únicamente una tienda ni una financiera tradicional. Somos un puente directo entre Capital Federal y el interior que combina centro logístico propio en CABA, transporte propio, financiación propia y atención cercana a través de vendedores afiliados de cada localidad."
+      a: "Cuenta Hogar no es una tienda ni una financiera tradicional. Somos una empresa que presta servicios de gestión de compras por mandato y logística asociada desde CABA hacia el interior, integrando centro de recepción propio en CABA, transporte propio y atención cercana a través de vendedores afiliados."
     },
     {
       q: "¿En qué consiste el servicio de Envíos Low Cost?",
-      a: "Si ya realizaste tus compras de mercadería o equipos en Capital Federal por tu cuenta, podés enviarlas a nuestro centro logístico en CABA (Caracas 1101). Las recibimos, organizamos y trasladamos en nuestros recorridos programados directo a tu domicilio o negocio en el interior."
+      a: "Si ya realizaste tus compras de mercadería o equipos en Capital Federal por tu cuenta, podés coordinar el envío a nuestro centro logístico en CABA (Caracas 1101). Las recibimos, organizamos y trasladamos en nuestros recorridos programados directo a tu domicilio o negocio en el interior."
     },
     {
-      q: "¿Cómo funciona la compra y financiación con mandato de compra?",
-      a: "Nos contás qué producto necesitás. Buscamos las mejores alternativas en CABA, te enviamos la propuesta por WhatsApp y, una vez aceptada a sola firma, gestionamos la compra, la trasladamos con nuestro transporte propio y la pagás en cuotas."
+      q: "¿Cómo funciona la gestión de compra por mandato?",
+      a: "Nos contás qué producto necesitás. Buscamos las mejores alternativas en CABA, te enviamos la propuesta por WhatsApp con las condiciones del plan de pagos estimado y, una vez aceptada, actuamos como tu mandatario para realizar la compra, la trasladamos con nuestro transporte propio y abonás el plan acordado."
     },
     {
       q: "¿Cómo se comunican con los clientes en cada localidad?",
-      a: "Trabajamos junto a vendedores afiliados de cada localidad, construyendo relaciones cercanas y basadas en la confianza y la recomendación directa."
+      a: "Trabajamos junto a vendedores afiliados de cada localidad, construyendo relaciones cercanas basadas en la confianza y la recomendación directa."
     },
     {
       q: "¿Qué sucede si el producto necesita servicio técnico?",
-      a: "Ofrecemos acompañamiento logístico para ayudar a gestionar el traslado del equipo hacia el service oficial en Capital Federal. El acompañamiento técnico consiste en ayudar a gestionar el traslado al service oficial y no reemplaza la garantía correspondiente del producto."
+      a: "Ofrecemos acompañamiento logístico para ayudar a gestionar el traslado del equipo hacia el service oficial en Capital Federal. El acompañamiento técnico consiste en ayudar a gestionar el traslado y no reemplaza la garantía original del fabricante."
     }
   ];
 
   return (
-    <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] font-sans selection:bg-[#173E3B] selection:text-white">
+    <div className="min-h-screen bg-[#111318] text-white font-sans selection:bg-[#FFD21A] selection:text-black">
       
       <Header />
 
       {/* HERO INSTITUCIONAL */}
-      <section className="relative overflow-hidden pt-16 pb-24 border-b border-[#DED8CF]">
-        <div className="max-w-7xl mx-auto px-6">
+      <section className="relative overflow-hidden pt-12 pb-20 border-b border-[#222530] bg-[#111318]">
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-[#FFD21A]/5 via-transparent to-transparent pointer-events-none" />
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
             {/* COPY PRINCIPAL */}
             <div className="lg:col-span-7 space-y-6 text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFFDFC] border border-[#DED8CF] text-[#173E3B] text-xs font-heading font-medium tracking-wide shadow-xs">
-                <Sparkles className="w-3.5 h-3.5 text-[#B44E2A]" /> Sobre Cuenta Hogar
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] text-xs font-mono font-bold tracking-wide">
+                <Sparkles className="w-3.5 h-3.5" /> SOBRE CUENTA HOGAR
               </div>
               
-              <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-heading font-bold tracking-tight leading-[1.12] text-[#173E3B]">
+              <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold tracking-tight leading-[1.08] text-white">
                 Acercamos Capital Federal<br />
-                <span className="text-[#B44E2A]">
+                <span className="text-[#FFD21A] block mt-1">
                   al interior.
                 </span>
               </h1>
               
-              <p className="text-lg lg:text-xl text-[#68706E] font-sans font-normal leading-[1.6]">
-                Cuenta Hogar nació para hacer más simple comprar, financiar y recibir productos desde Capital Federal viviendo en el interior.
+              <p className="text-base sm:text-lg text-[#D1D5DB] font-normal leading-relaxed">
+                Cuenta Hogar nació para simplificar la gestión de compras por mandato, el traslado y la recepción de productos desde CABA hasta tu domicilio en el interior.
               </p>
 
-              <div className="bg-[#FFFDFC] border border-[#DED8CF] p-6 lg:p-8 rounded-xl space-y-4 shadow-xs text-[#1F2928] text-sm lg:text-[15px] font-sans leading-[1.6]">
+              <div className="bg-[#161922] border border-[#2A2E3D] p-6 lg:p-8 rounded-2xl space-y-4 shadow-xl text-sm leading-relaxed text-[#9CA3AF]">
                 <p>
-                  Contamos con <strong className="text-[#173E3B] font-semibold">centro logístico propio en CABA</strong>, <strong className="text-[#173E3B] font-semibold">transporte propio</strong> y <strong className="text-[#173E3B] font-semibold">financiación propia</strong>. Esto nos permite acompañar todo el proceso: desde entender qué necesita cada cliente y gestionar la compra, hasta recibir el producto, organizar el traslado y realizar la entrega en su domicilio.
+                  Contamos con <strong className="text-white">centro de recepción y logística en CABA (Caracas 1101)</strong>, <strong className="text-white">depósito propio</strong> y <strong className="text-white">transporte propio</strong>. Esto nos permite acompañar todo el proceso: desde entender qué necesitás y realizar la gestión de compra, hasta recibir el producto, organizar el traslado y realizar la entrega en puerta.
                 </p>
                 <p>
-                  Trabajamos junto a <strong className="text-[#173E3B] font-semibold">vendedores afiliados</strong> de nuestras localidades, construyendo relaciones basadas en la confianza, el conocimiento del cliente y la atención cercana.
+                  Trabajamos de la mano con <strong className="text-[#FFD21A]">vendedores afiliados</strong> en cada localidad de cobertura, asegurando un trato transparente, cercano y personalizado.
                 </p>
                 <p>
-                  Además, a través de <strong className="text-[#B44E2A] font-semibold">Envíos Low Cost</strong>, recibimos compras realizadas en Capital Federal y las trasladamos al interior aprovechando nuestros recorridos programados, tanto para particulares como para emprendedores y comerciantes.
+                  Además, a través de <strong className="text-[#FFD21A]">Envíos Low Cost</strong>, recibimos compras que realizaste por tu cuenta en Capital Federal y las trasladamos al interior en nuestros recorridos programados.
                 </p>
               </div>
             </div>
 
-            {/* TARJETA FOTOGRÁFICA */}
+            {/* FOTOGRAFÍA INSTITUCIONAL DE LA OPERACIÓN REAL */}
             <div className="lg:col-span-5 relative group">
-              <div className="relative rounded-xl overflow-hidden border border-[#DED8CF] bg-[#F7F3EC]">
+              <div className="relative rounded-2xl overflow-hidden border border-[#2D323E] bg-[#090A0D] shadow-2xl">
                 <img 
-                  src="/nosotros-filosofia-hero.jpg" 
-                  alt="Cuenta Hogar: Acercamos Capital Federal al interior" 
-                  className="w-full h-[400px] object-cover" 
+                  src="/flota-cuenta-hogar.jpg" 
+                  alt="Unidad de transporte propio Renault Master Cuenta Hogar" 
+                  className="w-full h-[380px] sm:h-[440px] object-cover" 
                 />
                 
-                <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B]/90 via-[#173E3B]/20 to-transparent flex items-end p-5">
-                  <div className="bg-[#FFFDFC] border border-[#DED8CF] text-[#1F2928] p-4 rounded-lg w-full flex items-center justify-between shadow-xs">
+                <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-transparent to-transparent flex items-end p-5">
+                  <div className="bg-[#161922]/95 border border-[#2A2E3D] text-white p-4 rounded-xl w-full backdrop-blur-md">
                     <div className="flex items-center gap-3">
-                      <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-8 w-auto object-contain bg-[#173E3B] p-1 rounded-md" />
+                      <div className="p-1 bg-[#111318] border border-[#FFD21A]/40 rounded-lg shrink-0">
+                        <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar" className="h-7 w-auto object-contain" />
+                      </div>
                       <div>
-                        <p className="text-xs font-heading font-bold uppercase text-[#173E3B] tracking-wider">Infraestructura Propia</p>
-                        <p className="text-[12px] text-[#68706E] font-sans">Logística, Transporte y Financiación Directa</p>
+                        <p className="text-xs font-mono font-bold uppercase text-[#FFD21A]">Infraestructura Propia</p>
+                        <p className="text-[11px] text-[#9CA3AF]">Centro en CABA · Transporte Propio · Entrega en Domicilio</p>
                       </div>
                     </div>
                   </div>
@@ -122,206 +118,108 @@ export default function NosotrosPage() {
         </div>
       </section>
 
-      {/* BLOQUE VISUAL CON LOS TRES DIFERENCIALES CLAVE */}
-      <section className="py-24 lg:py-28 bg-[#F7F3EC] border-b border-[#DED8CF]">
-        <div className="max-w-7xl mx-auto px-6 space-y-12">
+      {/* TRES PILARES DE INFRAESTRUCTURA */}
+      <section className="py-20 lg:py-24 bg-[#0E1015] border-b border-[#222530]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
           
           <div className="text-center max-w-2xl mx-auto space-y-3">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FFFDFC] border border-[#DED8CF] text-[#173E3B] text-xs font-heading font-semibold uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5 text-[#173E3B]" /> Capacidades Propias
+            <span className="inline-block bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full">
+              CAPACIDADES OPERATIVAS REALES
             </span>
-            <h2 className="text-3xl lg:text-[40px] font-heading font-bold text-[#173E3B] leading-tight">
-              Tres pilares de infraestructura propia
+            <h2 className="text-3xl lg:text-4xl font-extrabold text-white">
+              Infraestructura propia para brindarte previsibilidad
             </h2>
-            <p className="text-[#68706E] text-base lg:text-[17px] font-sans leading-[1.6]">
-              Estructura real para garantizar un servicio previsible, cercano y seguro.
+            <p className="text-sm text-[#9CA3AF]">
+              Operaciones concretas y equipamiento dedicado para resolver tu necesidad de punta a punta.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            <div className="bg-[#FFFDFC] border border-[#DED8CF] p-8 rounded-xl flex flex-col justify-between space-y-4 shadow-xs">
-              <div className="space-y-3">
-                <div className="w-12 h-12 bg-[#F7F3EC] rounded-lg flex items-center justify-center text-[#173E3B] border border-[#DED8CF]">
-                  <Building2 className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-heading font-bold text-[#173E3B]">Centro logístico propio en CABA</h3>
-                <p className="text-[#68706E] text-xs font-sans leading-relaxed">
-                  Recibimos, organizamos y almacenamos temporalmente las compras antes de cada recorrido.
-                </p>
+            <div className="bg-[#161922] border border-[#2A2E3D] p-8 rounded-2xl space-y-4 shadow-xl">
+              <div className="w-12 h-12 bg-[#111318] text-[#FFD21A] rounded-xl flex items-center justify-center font-bold border border-[#FFD21A]/30">
+                <Building2 className="w-6 h-6" />
               </div>
-              <div className="pt-4 border-t border-[#DED8CF] text-xs font-heading font-semibold text-[#173E3B]">
-                📍 Caracas 1101, CABA
-              </div>
+              <h3 className="text-xl font-bold text-white">Centro de Recepción en CABA</h3>
+              <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                Ubicado estratégicamente en Caracas 1101. Recibimos, controlamos y custodiamos la mercadería previa a su salida hacia el interior.
+              </p>
             </div>
 
-            <div className="bg-[#FFFDFC] border border-[#DED8CF] p-8 rounded-xl flex flex-col justify-between space-y-4 shadow-xs">
-              <div className="space-y-3">
-                <div className="w-12 h-12 bg-[#F7F3EC] rounded-lg flex items-center justify-center text-[#B44E2A] border border-[#DED8CF]">
-                  <Truck className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-heading font-bold text-[#173E3B]">Transporte propio</h3>
-                <p className="text-[#68706E] text-xs font-sans leading-relaxed">
-                  Controlamos directamente la carga, los tiempos y las entregas para depender menos de terceros.
-                </p>
+            <div className="bg-[#161922] border border-[#2A2E3D] p-8 rounded-2xl space-y-4 shadow-xl">
+              <div className="w-12 h-12 bg-[#111318] text-[#FFD21A] rounded-xl flex items-center justify-center font-bold border border-[#FFD21A]/30">
+                <Truck className="w-6 h-6" />
               </div>
-              <div className="pt-4 border-t border-[#DED8CF] text-xs font-heading font-semibold text-[#B44E2A]">
-                🚚 Recorridos programados
-              </div>
+              <h3 className="text-xl font-bold text-white">Transporte Propio</h3>
+              <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                Sin intermediarios ni desvíos. Unidades equipadas para traslados seguros en nuestros recorridos semanales programados.
+              </p>
             </div>
 
-            <div className="bg-[#FFFDFC] border border-[#DED8CF] p-8 rounded-xl flex flex-col justify-between space-y-4 shadow-xs">
-              <div className="space-y-3">
-                <div className="w-12 h-12 bg-[#F7F3EC] rounded-lg flex items-center justify-center text-[#173E3B] border border-[#DED8CF]">
-                  <CreditCard className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-heading font-bold text-[#173E3B]">Financiación propia</h3>
-                <p className="text-[#68706E] text-xs font-sans leading-relaxed">
-                  Evaluamos cada operación de manera cercana y ofrecemos alternativas simples para nuestros clientes.
-                </p>
+            <div className="bg-[#161922] border border-[#2A2E3D] p-8 rounded-2xl space-y-4 shadow-xl">
+              <div className="w-12 h-12 bg-[#111318] text-[#FFD21A] rounded-xl flex items-center justify-center font-bold border border-[#FFD21A]/30">
+                <UserCheck className="w-6 h-6" />
               </div>
-              <div className="pt-4 border-t border-[#DED8CF] text-xs font-heading font-semibold text-[#173E3B]">
-                💳 A sola firma sin bancos
-              </div>
+              <h3 className="text-xl font-bold text-white">Red de Vendedores Afiliados</h3>
+              <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                Atención directa en cada localidad por parte de vendedores afiliados que conocen a los vecinos y sus necesidades.
+              </p>
             </div>
 
           </div>
+
         </div>
       </section>
 
-      {/* BLOQUE SOBRE LA RED LOCAL */}
-      <section className="py-24 lg:py-28 bg-[#F7F3EC] border-b border-[#DED8CF]">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="bg-[#FFFDFC] border border-[#DED8CF] p-8 lg:p-10 rounded-xl space-y-5 text-left shadow-xs">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#F7F3EC] border border-[#DED8CF] text-[#173E3B] text-xs font-heading font-semibold uppercase tracking-wider">
-              <UserCheck className="w-3.5 h-3.5 text-[#173E3B]" /> Red de Afiliados
-            </div>
-            
-            <h2 className="text-3xl lg:text-[36px] font-heading font-bold text-[#173E3B] leading-tight">
-              Cerca de nuestros clientes
-            </h2>
-
-            <p className="text-[#68706E] text-base font-sans leading-[1.6]">
-              Cuenta Hogar trabaja con <strong className="text-[#1F2928] font-semibold">vendedores afiliados</strong> que conocen sus localidades y acompañan la relación con cada cliente. La incorporación de nuevos vendedores afiliados se realiza de manera selectiva, priorizando la confianza y las referencias.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 text-xs text-[#1F2928] font-sans border-t border-[#DED8CF]">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#2F7D5C] shrink-0" />
-                <span>Trato directo de vecino a vecino.</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#2F7D5C] shrink-0" />
-                <span>Conocimiento real del territorio.</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#2F7D5C] shrink-0" />
-                <span>Selección cuidadosa por referencias.</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* COBERTURA ACTUAL (SECCIÓN BLANCA HARMONIOSA) */}
-      <section className="py-24 lg:py-28 bg-[#FFFDFC] text-[#1F2928] border-b border-[#DED8CF]">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#F7F3EC] text-[#173E3B] border border-[#DED8CF] text-xs font-heading font-bold uppercase tracking-wider">
-              <MapPin className="w-3.5 h-3.5 text-[#173E3B]" /> Presencia Territorial
-            </span>
-            
-            <h2 className="text-3xl lg:text-[40px] font-heading font-bold text-[#173E3B] leading-tight">
-              Hoy estamos presentes en
-            </h2>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
-              {localidades.map((ciudad, idx) => (
-                <div key={idx} className="bg-[#F7F3EC] border border-[#DED8CF] rounded-xl p-3.5 flex items-center gap-2.5">
-                  <span className="w-2 h-2 rounded-full bg-[#173E3B]" />
-                  <span className="font-heading font-bold text-[#173E3B] text-sm">{ciudad}</span>
-                </div>
-              ))}
-            </div>
-
-            <p className="text-[#68706E] text-base font-sans leading-[1.6] pt-4 border-t border-[#DED8CF] font-medium">
-              Seguimos ampliando nuestras rutas de manera progresiva, utilizando <strong className="text-[#1F2928] font-bold">Envíos Low Cost</strong> como puerta de entrada a nuevas localidades.
-            </p>
-          </div>
+      {/* SECCIÓN PREGUNTAS FRECUENTES */}
+      <section className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-10">
           
-          <div className="flex items-center justify-center lg:justify-end">
-            <div className="relative w-full max-w-[400px] aspect-square flex items-center justify-center">
-              <img 
-                src="/mapa_bsas.png" 
-                alt="Mapa de Cobertura Provincia de Buenos Aires" 
-                className="w-full h-full object-contain relative z-10 drop-shadow-xs" 
-              />
-            </div>
+          <div className="text-center space-y-3">
+            <span className="inline-block bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full">
+              PREGUNTAS FRECUENTES
+            </span>
+            <h2 className="text-3xl font-extrabold text-white">
+              Respuestas claras a tus dudas
+            </h2>
           </div>
-        </div>
-      </section>
 
-      {/* PREGUNTAS FRECUENTES (FAQ ACCORDION) */}
-      <section className="py-24 lg:py-28 max-w-3xl mx-auto px-6 space-y-4">
-        <div className="text-center mb-8 space-y-2">
-          <div className="inline-flex items-center gap-2 bg-[#FFFDFC] text-[#173E3B] border border-[#DED8CF] px-3.5 py-1.5 rounded-full text-xs font-heading font-semibold uppercase tracking-wider">
-            <HelpCircle className="w-3.5 h-3.5 text-[#173E3B]" /> Preguntas Frecuentes
-          </div>
-          <h3 className="text-3xl font-heading font-bold text-[#173E3B]">Resolvemos tus dudas sobre Cuenta Hogar</h3>
-        </div>
+          <div className="space-y-4">
+            {faqs.map((faq, idx) => (
+              <div key={idx} className="bg-[#161922] border border-[#2A2E3D] rounded-2xl overflow-hidden">
+                <button
+                  onClick={() => toggleFaq(idx)}
+                  className="w-full p-6 text-left font-bold text-white flex justify-between items-center gap-4 hover:bg-[#1A1D26] transition-colors"
+                >
+                  <span className="text-sm sm:text-base">{faq.q}</span>
+                  {openFaq === idx ? <ChevronUp className="w-5 h-5 text-[#FFD21A] shrink-0" /> : <ChevronDown className="w-5 h-5 text-[#9CA3AF] shrink-0" />}
+                </button>
 
-        <div className="space-y-3">
-          {faqs.map((faq, idx) => (
-            <div key={idx} className="bg-[#FFFDFC] border border-[#DED8CF] rounded-xl overflow-hidden shadow-xs">
-              <button
-                onClick={() => toggleFaq(idx)}
-                className="w-full p-5 text-left font-heading font-bold text-[#173E3B] flex justify-between items-center gap-4 hover:bg-[#F7F3EC]/50 transition-colors"
-              >
-                <span className="text-base">{faq.q}</span>
-                {openFaq === idx ? (
-                  <ChevronUp className="w-4 h-4 text-[#173E3B] shrink-0" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-[#68706E] shrink-0" />
+                {openFaq === idx && (
+                  <div className="px-6 pb-6 text-xs sm:text-sm text-[#9CA3AF] leading-relaxed border-t border-[#222530] pt-4">
+                    {faq.a}
+                  </div>
                 )}
-              </button>
-              {openFaq === idx && (
-                <div className="px-5 pb-5 text-xs text-[#68706E] font-sans border-t border-[#DED8CF] pt-3 leading-relaxed">
-                  {faq.a}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
+              </div>
+            ))}
+          </div>
 
-      {/* CALL TO ACTION FINAL */}
-      <section className="py-16 max-w-4xl mx-auto px-6">
-        <div className="bg-[#FFFDFC] border border-[#DED8CF] p-8 lg:p-12 rounded-xl text-center space-y-6 shadow-xs">
-          <h3 className="text-3xl font-heading font-bold text-[#173E3B] tracking-tight">
-            ¿Querés contactarte con nosotros?
-          </h3>
-          <p className="text-[#68706E] text-base font-sans max-w-xl mx-auto">
-            Ingresá a nuestra web o comunicate por WhatsApp con el vendedor afiliado de tu localidad.
-          </p>
-
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-2">
-            <Link
-              href="/#contacto"
-              className="btn-primary text-xs uppercase tracking-wider w-full sm:w-auto"
+          {/* CTA FINAL */}
+          <div className="pt-8 text-center">
+            <Link 
+              href="/#contacto" 
+              className="inline-flex items-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold text-xs uppercase tracking-wider px-8 py-4 rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20"
             >
-              📝 Contanos qué necesitás
-            </Link>
-            <Link
-              href="/flete"
-              className="btn-lowcost text-xs uppercase tracking-wider w-full sm:w-auto"
-            >
-              🚚 Cotizar Envíos Low Cost
+              <span>Solicitar Cotización de Compra</span>
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
+
         </div>
       </section>
 
       <Footer />
+
     </div>
   );
 }

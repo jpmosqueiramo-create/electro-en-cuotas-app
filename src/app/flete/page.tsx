@@ -40,12 +40,12 @@ Si podés, adjuntá una foto o link del producto.`;
   const whatsappUrl = `https://wa.me/5491125659686?text=${encodeURIComponent(whatsappText)}`;
 
   return (
-    <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] font-sans selection:bg-[#173E3B] selection:text-white">
+    <div className="min-h-screen bg-[#111318] text-white font-sans selection:bg-[#111318] selection:text-white">
       
       <Header />
 
       {/* 1. HERO ALTO CONTRASTE (BLOQUE VERDE PETRÓLEO #173E3B) */}
-      <section className="relative bg-[#173E3B] text-[#FFFDFC] pt-14 pb-20 lg:pt-20 lg:pb-28 overflow-hidden border-b border-[#173E3B]">
+      <section className="relative bg-[#111318] text-[#FFFDFC] pt-14 pb-20 lg:pt-20 lg:pb-28 overflow-hidden border-b border-[#173E3B]">
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
@@ -54,21 +54,21 @@ Si podés, adjuntá una foto o link del producto.`;
             <div className="lg:col-span-7 space-y-6 text-left">
               
               {/* TAG LOGÍSTICO */}
-              <div className="inline-flex items-center gap-3 bg-[#F4C46E]/20 border border-[#F4C46E]/40 text-[#F4C46E] px-4 py-2 rounded-full text-xs font-heading font-extrabold uppercase tracking-widest shadow-xs">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#F4C46E] animate-pulse"></span>
+              <div className="inline-flex items-center gap-3 bg-[#FFD21A]/20 border border-[#F4C46E]/40 text-[#FFD21A] px-4 py-2 rounded-full text-xs font-heading font-extrabold uppercase tracking-widest shadow-xs">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#FFD21A] animate-pulse"></span>
                 ENVÍOS LOW COST · CABA <span className="text-[#FFFDFC] font-mono">●────────→ ●</span> INTERIOR
               </div>
 
               {/* H1 PROTAGONISTA */}
               <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-heading font-extrabold tracking-tight leading-[1.1] !text-white drop-shadow-md">
                 Comprar en Capital es fácil.
-                <span className="block mt-2 text-[#F4C46E] font-heading font-extrabold drop-shadow-sm">
+                <span className="block mt-2 text-[#FFD21A] font-heading font-extrabold drop-shadow-sm">
                   Traerlo al interior es otra historia.
                 </span>
               </h1>
 
               {/* BAJADA */}
-              <p className="text-base sm:text-xl text-[#FAF8F5] font-sans font-medium leading-relaxed max-w-2xl drop-shadow-xs">
+              <p className="text-base sm:text-xl text-[#D1D5DB] font-sans font-medium leading-relaxed max-w-2xl drop-shadow-xs">
                 Recibimos tu compra en nuestro centro logístico de CABA y la llevamos hasta tu domicilio aprovechando nuestros recorridos programados.
               </p>
 
@@ -78,7 +78,7 @@ Si podés, adjuntá una foto o link del producto.`;
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2.5 bg-[#B44E2A] hover:bg-[#984021] text-white font-heading font-extrabold px-9 py-4.5 rounded-2xl text-xs uppercase tracking-wider transition-all shadow-xl shadow-black/30 hover:scale-[1.02] active:scale-95 border border-amber-400/20"
+                  className="inline-flex items-center justify-center gap-2.5 bg-[#FFD21A] hover:bg-[#984021] text-[#111318] font-extrabold px-9 py-4.5 rounded-xl text-xs uppercase tracking-wider transition-all shadow-xl shadow-[#FFD21A]/20 hover:bg-[#FFE052]"
                 >
                   <WhatsAppIcon className="w-4.5 h-4.5" />
                   Cotizar mi envío por WhatsApp
@@ -86,17 +86,17 @@ Si podés, adjuntá una foto o link del producto.`;
               </div>
 
               {/* REFUERZO SOBRIO */}
-              <div className="pt-6 border-t border-[#FFFDFC]/20 flex flex-wrap items-center gap-x-8 gap-y-3 text-xs sm:text-sm font-heading font-bold text-[#FAF8F5]">
+              <div className="pt-6 border-t border-[#FFFDFC]/20 flex flex-wrap items-center gap-x-8 gap-y-3 text-xs sm:text-sm font-heading font-bold text-[#D1D5DB]">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#F4C46E]"></span>
+                  <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
                   <span>Recepción en CABA</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#F4C46E]"></span>
+                  <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
                   <span>Transporte propio</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#F4C46E]"></span>
+                  <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
                   <span>Entrega a domicilio</span>
                 </div>
               </div>
@@ -113,13 +113,13 @@ Si podés, adjuntá una foto o link del producto.`;
                 />
                 
                 <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B] via-transparent to-transparent flex items-end p-6">
-                  <div className="bg-[#173E3B]/90 backdrop-blur-md border border-[#FFFDFC]/20 text-[#FFFDFC] p-4 rounded-xl w-full">
+                  <div className="bg-[#111318]/90 backdrop-blur-md border border-[#FFFDFC]/20 text-[#FFFDFC] p-4 rounded-xl w-full">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-[#B44E2A] rounded-lg flex items-center justify-center text-white shrink-0">
+                      <div className="w-10 h-10 bg-[#FFD21A] rounded-lg flex items-center justify-center text-white shrink-0">
                         <Truck className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="text-xs font-heading font-bold uppercase text-[#E7B86A] tracking-wider">
+                        <p className="text-xs font-heading font-bold uppercase text-[#FFD21A] tracking-wider">
                           Operación Logística Real
                         </p>
                         <p className="text-xs text-[#F7F3EC]/80 font-sans">
@@ -138,56 +138,56 @@ Si podés, adjuntá una foto o link del producto.`;
       </section>
 
       {/* 2. PUNTO DE DOLOR (FONDO CREMA #F7F3EC) */}
-      <section className="py-20 lg:py-24 bg-[#F7F3EC] border-b border-[#DED8CF]">
+      <section className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530]">
         <div className="max-w-4xl mx-auto px-6 text-center space-y-12">
           
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 text-xs font-heading font-bold uppercase tracking-widest text-[#B44E2A]">
+            <div className="inline-flex items-center gap-2 text-xs font-heading font-bold uppercase tracking-widest text-[#FFD21A]">
               <AlertCircle className="w-4 h-4" /> La realidad de comprar desde el interior
             </div>
             
-            <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-heading font-extrabold text-[#173E3B] leading-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-heading font-extrabold text-[#FFD21A] leading-tight">
               Compraste. Ahora viene la parte complicada.
             </h2>
           </div>
 
           {/* LISTA DE PROBLEMAS REALES DEL CLIENTE */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-            <div className="bg-[#FFFDFC] border border-[#DED8CF] p-6 rounded-2xl space-y-2 shadow-xs border-l-4 border-l-[#B44E2A]">
-              <h3 className="font-heading font-bold text-[#173E3B] text-base">Coordinación distante e incierta</h3>
-              <p className="text-sm text-[#68706E] font-sans leading-relaxed">
+            <div className="bg-[#161922] border border-[#222530] p-6 rounded-2xl space-y-2 shadow-xs border-l-4 border-l-[#B44E2A]">
+              <h3 className="font-heading font-bold text-[#FFD21A] text-base">Coordinación distante e incierta</h3>
+              <p className="text-sm text-[#9CA3AF] font-sans leading-relaxed">
                 Coordinar quién recibe o retira la compra en Buenos Aires desde cientos de kilómetros de distancia.
               </p>
             </div>
 
-            <div className="bg-[#FFFDFC] border border-[#DED8CF] p-6 rounded-2xl space-y-2 shadow-xs border-l-4 border-l-[#B44E2A]">
-              <h3 className="font-heading font-bold text-[#173E3B] text-base">Depender de comisionistas</h3>
-              <p className="text-sm text-[#68706E] font-sans leading-relaxed">
+            <div className="bg-[#161922] border border-[#222530] p-6 rounded-2xl space-y-2 shadow-xs border-l-4 border-l-[#B44E2A]">
+              <h3 className="font-heading font-bold text-[#FFD21A] text-base">Depender de comisionistas</h3>
+              <p className="text-sm text-[#9CA3AF] font-sans leading-relaxed">
                 Estar sujeto a los días contados que pasa el comisionista y a sus caprichos de disponibilidad.
               </p>
             </div>
 
-            <div className="bg-[#FFFDFC] border border-[#DED8CF] p-6 rounded-2xl space-y-2 shadow-xs border-l-4 border-l-[#B44E2A]">
-              <h3 className="font-heading font-bold text-[#173E3B] text-base">Horarios sin confirmar</h3>
-              <p className="text-sm text-[#68706E] font-sans leading-relaxed">
+            <div className="bg-[#161922] border border-[#222530] p-6 rounded-2xl space-y-2 shadow-xs border-l-4 border-l-[#B44E2A]">
+              <h3 className="font-heading font-bold text-[#FFD21A] text-base">Horarios sin confirmar</h3>
+              <p className="text-sm text-[#9CA3AF] font-sans leading-relaxed">
                 Organizar horarios imposibles sin saber a qué hora exacta llega o si podés estar para recibirlo.
               </p>
             </div>
 
-            <div className="bg-[#FFFDFC] border border-[#DED8CF] p-6 rounded-2xl space-y-2 shadow-xs border-l-4 border-l-[#B44E2A]">
-              <h3 className="font-heading font-bold text-[#173E3B] text-base">Desgaste operativo</h3>
-              <p className="text-sm text-[#68706E] font-sans leading-relaxed">
+            <div className="bg-[#161922] border border-[#222530] p-6 rounded-2xl space-y-2 shadow-xs border-l-4 border-l-[#B44E2A]">
+              <h3 className="font-heading font-bold text-[#FFD21A] text-base">Desgaste operativo</h3>
+              <p className="text-sm text-[#9CA3AF] font-sans leading-relaxed">
                 Depender de distintas personas desconectadas para comprar, recepcionar y transportar la compra.
               </p>
             </div>
           </div>
 
           {/* TEXTO DE CIERRE CENTRALIZADO */}
-          <div className="bg-[#FFFDFC] border border-[#DED8CF] p-8 rounded-2xl text-center space-y-3 max-w-3xl mx-auto shadow-sm">
-            <p className="text-base sm:text-lg font-heading font-bold text-[#173E3B] leading-relaxed">
+          <div className="bg-[#161922] border border-[#222530] p-8 rounded-2xl text-center space-y-3 max-w-3xl mx-auto shadow-sm">
+            <p className="text-base sm:text-lg font-heading font-bold text-[#FFD21A] leading-relaxed">
               Cuenta Hogar centraliza esa coordinación: tu proveedor entrega la compra en nuestro local de CABA y nosotros organizamos el traslado.
             </p>
-            <p className="text-xs text-[#68706E] font-sans">
+            <p className="text-xs text-[#9CA3AF] font-sans">
               Recepción centralizada en CABA (Caracas 1101) previa coordinación administrativa.
             </p>
           </div>
@@ -196,17 +196,17 @@ Si podés, adjuntá una foto o link del producto.`;
       </section>
 
       {/* 3. RECORRIDO VISUAL "Así viaja tu compra" (PROCESO LINEAL EN SUPERFICIE #FFFDFC) */}
-      <section className="py-20 lg:py-28 bg-[#FFFDFC] border-b border-[#DED8CF]">
+      <section className="py-20 lg:py-28 bg-[#161922] border-b border-[#222530]">
         <div className="max-w-6xl mx-auto px-6 space-y-16">
           
           <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <div className="inline-flex items-center gap-2 text-xs font-heading font-bold uppercase tracking-widest text-[#173E3B]">
-              <Route className="w-4 h-4 text-[#B44E2A]" /> Trazabilidad Directa CABA ➔ Interior
+            <div className="inline-flex items-center gap-2 text-xs font-heading font-bold uppercase tracking-widest text-[#FFD21A]">
+              <Route className="w-4 h-4 text-[#FFD21A]" /> Trazabilidad Directa CABA ➔ Interior
             </div>
-            <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#173E3B]">
+            <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#FFD21A]">
               Así viaja tu compra
             </h2>
-            <p className="text-[#68706E] text-sm font-sans">
+            <p className="text-[#9CA3AF] text-sm font-sans">
               Un recorrido visual transparente desde el local en Capital hasta tu casa.
             </p>
           </div>
@@ -218,19 +218,19 @@ Si podés, adjuntá una foto o link del producto.`;
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 relative z-10">
               
-              <div className="bg-[#F7F3EC] border border-[#DED8CF] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors overflow-hidden group">
+              <div className="bg-[#111318] border border-[#222530] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors overflow-hidden group">
                 <div className="space-y-2">
-                  <div className="w-9 h-9 rounded-full bg-[#173E3B] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-[#111318] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0">
                     1
                   </div>
                   <div>
-                    <h4 className="font-heading font-bold text-[#173E3B] text-sm mb-1">Despachás a CABA</h4>
-                    <p className="text-xs text-[#68706E] font-sans leading-relaxed">
-                      Tus compras se entregan en nuestro centro logístico en <strong className="text-[#1F2928] font-semibold">Caracas 1101, CABA</strong>.
+                    <h4 className="font-heading font-bold text-[#FFD21A] text-sm mb-1">Despachás a CABA</h4>
+                    <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
+                      Tus compras se entregan en nuestro centro logístico en <strong className="text-white font-semibold">Caracas 1101, CABA</strong>.
                     </p>
                   </div>
                 </div>
-                <div className="relative h-32 w-full rounded-xl overflow-hidden border border-[#DED8CF] mt-1">
+                <div className="relative h-32 w-full rounded-xl overflow-hidden border border-[#222530] mt-1">
                   <img 
                     src="/paso1-local-afuera.jpg" 
                     alt="Centro logístico Cuenta Hogar CABA Caracas 1101" 
@@ -242,72 +242,72 @@ Si podés, adjuntá una foto o link del producto.`;
                     </span>
                   </div>
                 </div>
-                <div className="text-[10px] font-mono text-[#B44E2A] font-bold">CABA ●────</div>
+                <div className="text-[10px] font-mono text-[#FFD21A] font-bold">CABA ●────</div>
               </div>
 
-              <div className="bg-[#F7F3EC] border border-[#DED8CF] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors">
-                <div className="w-9 h-9 rounded-full bg-[#173E3B] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0">
+              <div className="bg-[#111318] border border-[#222530] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors">
+                <div className="w-9 h-9 rounded-full bg-[#111318] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0">
                   2
                 </div>
                 <div>
-                  <h4 className="font-heading font-bold text-[#173E3B] text-sm mb-1">Coordinás recepción</h4>
-                  <p className="text-xs text-[#68706E] font-sans leading-relaxed">
+                  <h4 className="font-heading font-bold text-[#FFD21A] text-sm mb-1">Coordinás recepción</h4>
+                  <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
                     Avisás a Cuenta Hogar el día de llegada del bulto.
                   </p>
                 </div>
-                <div className="text-[10px] font-mono text-[#B44E2A] font-bold">───────</div>
+                <div className="text-[10px] font-mono text-[#FFD21A] font-bold">───────</div>
               </div>
 
-              <div className="bg-[#F7F3EC] border border-[#DED8CF] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors">
-                <div className="w-9 h-9 rounded-full bg-[#173E3B] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0">
+              <div className="bg-[#111318] border border-[#222530] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors">
+                <div className="w-9 h-9 rounded-full bg-[#111318] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0">
                   3
                 </div>
                 <div>
-                  <h4 className="font-heading font-bold text-[#173E3B] text-sm mb-1">Proveedor entrega</h4>
-                  <p className="text-xs text-[#68706E] font-sans leading-relaxed">
+                  <h4 className="font-heading font-bold text-[#FFD21A] text-sm mb-1">Proveedor entrega</h4>
+                  <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
                     Entregan la carga en nuestro local de Caracas 1101.
                   </p>
                 </div>
-                <div className="text-[10px] font-mono text-[#B44E2A] font-bold">───────</div>
+                <div className="text-[10px] font-mono text-[#FFD21A] font-bold">───────</div>
               </div>
 
-              <div className="bg-[#F7F3EC] border border-[#DED8CF] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors">
-                <div className="w-9 h-9 rounded-full bg-[#173E3B] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0">
+              <div className="bg-[#111318] border border-[#222530] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors">
+                <div className="w-9 h-9 rounded-full bg-[#111318] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0">
                   4
                 </div>
                 <div>
-                  <h4 className="font-heading font-bold text-[#173E3B] text-sm mb-1">Organizamos bulto</h4>
-                  <p className="text-xs text-[#68706E] font-sans leading-relaxed">
+                  <h4 className="font-heading font-bold text-[#FFD21A] text-sm mb-1">Organizamos bulto</h4>
+                  <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
                     Recibimos, verificamos y acopiamos en depósito.
                   </p>
                 </div>
-                <div className="text-[10px] font-mono text-[#B44E2A] font-bold">───────</div>
+                <div className="text-[10px] font-mono text-[#FFD21A] font-bold">───────</div>
               </div>
 
-              <div className="bg-[#F7F3EC] border border-[#DED8CF] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors">
-                <div className="w-9 h-9 rounded-full bg-[#173E3B] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0">
+              <div className="bg-[#111318] border border-[#222530] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors">
+                <div className="w-9 h-9 rounded-full bg-[#111318] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0">
                   5
                 </div>
                 <div>
-                  <h4 className="font-heading font-bold text-[#173E3B] text-sm mb-1">Recorrido activo</h4>
-                  <p className="text-xs text-[#68706E] font-sans leading-relaxed">
+                  <h4 className="font-heading font-bold text-[#FFD21A] text-sm mb-1">Recorrido activo</h4>
+                  <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
                     Lo sumamos al recorrido programado en ruta.
                   </p>
                 </div>
-                <div className="text-[10px] font-mono text-[#B44E2A] font-bold">───────</div>
+                <div className="text-[10px] font-mono text-[#FFD21A] font-bold">───────</div>
               </div>
 
-              <div className="bg-[#F7F3EC] border border-[#DED8CF] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors">
-                <div className="w-9 h-9 rounded-full bg-[#B44E2A] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0">
+              <div className="bg-[#111318] border border-[#222530] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors">
+                <div className="w-9 h-9 rounded-full bg-[#FFD21A] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0">
                   6
                 </div>
                 <div>
-                  <h4 className="font-heading font-bold text-[#173E3B] text-sm mb-1">Entrega a domicilio</h4>
-                  <p className="text-xs text-[#68706E] font-sans leading-relaxed">
+                  <h4 className="font-heading font-bold text-[#FFD21A] text-sm mb-1">Entrega a domicilio</h4>
+                  <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
                     Te lo bajamos en la puerta de tu casa.
                   </p>
                 </div>
-                <div className="text-[10px] font-mono text-[#B44E2A] font-bold">───► INTERIOR</div>
+                <div className="text-[10px] font-mono text-[#FFD21A] font-bold">───► INTERIOR</div>
               </div>
 
             </div>
@@ -317,47 +317,47 @@ Si podés, adjuntá una foto o link del producto.`;
       </section>
 
       {/* 7. RECEPCIÓN EN CABA (DESTACADO OPERATIVO EN CREMA #F7F3EC) */}
-      <section className="py-20 lg:py-24 bg-[#F7F3EC] border-b border-[#DED8CF]">
+      <section className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530]">
         <div className="max-w-5xl mx-auto px-6">
-          <div className="bg-[#FFFDFC] border-2 border-[#173E3B] rounded-3xl p-8 sm:p-12 shadow-md space-y-8">
+          <div className="bg-[#161922] border-2 border-[#173E3B] rounded-3xl p-8 sm:p-12 shadow-md space-y-8">
             
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-[#DED8CF] pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-[#222530] pb-6">
               <div className="space-y-1">
-                <span className="text-xs font-heading font-bold text-[#B44E2A] uppercase tracking-widest flex items-center gap-1.5">
+                <span className="text-xs font-heading font-bold text-[#FFD21A] uppercase tracking-widest flex items-center gap-1.5">
                   <MapPin className="w-4 h-4" /> Punto Logístico Central
                 </span>
-                <h2 className="text-3xl font-heading font-extrabold text-[#173E3B]">
+                <h2 className="text-3xl font-heading font-extrabold text-[#FFD21A]">
                   Tu punto de recepción en Capital
                 </h2>
               </div>
 
-              <div className="bg-[#F7F3EC] border border-[#DED8CF] px-5 py-3 rounded-2xl flex items-center gap-3 shrink-0">
-                <CalendarClock className="w-5 h-5 text-[#173E3B]" />
+              <div className="bg-[#111318] border border-[#222530] px-5 py-3 rounded-2xl flex items-center gap-3 shrink-0">
+                <CalendarClock className="w-5 h-5 text-[#FFD21A]" />
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-[#68706E] tracking-wider">Horario de recepción</p>
-                  <p className="text-base font-heading font-bold text-[#173E3B]">A COORDINAR</p>
+                  <p className="text-[10px] uppercase font-bold text-[#9CA3AF] tracking-wider">Horario de recepción</p>
+                  <p className="text-base font-heading font-bold text-[#FFD21A]">A COORDINAR</p>
                 </div>
               </div>
             </div>
 
-            <p className="text-base sm:text-lg text-[#1F2928] font-sans leading-relaxed">
+            <p className="text-base sm:text-lg text-white font-sans leading-relaxed">
               Tu compra debe ser entregada por el vendedor o proveedor en nuestro centro de recepción de CABA.
             </p>
 
             {/* DIRECCIÓN & FOTO REAL DEL CENTRO LOGÍSTICO CABA */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
               <div className="space-y-4">
-                <div className="bg-[#F7F3EC] border border-[#DED8CF] p-6 rounded-2xl flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[#173E3B] text-white rounded-xl flex items-center justify-center shrink-0 font-bold">
+                <div className="bg-[#111318] border border-[#222530] p-6 rounded-2xl flex items-center gap-3">
+                  <div className="w-10 h-10 bg-[#111318] text-white rounded-xl flex items-center justify-center shrink-0 font-bold">
                     <Navigation className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-xs uppercase font-bold text-[#68706E] tracking-wider">Dirección de Recepción CABA:</p>
-                    <p className="text-lg font-heading font-bold text-[#173E3B]">Caracas 1101, CABA, Argentina</p>
+                    <p className="text-xs uppercase font-bold text-[#9CA3AF] tracking-wider">Dirección de Recepción CABA:</p>
+                    <p className="text-lg font-heading font-bold text-[#FFD21A]">Caracas 1101, CABA, Argentina</p>
                   </div>
                 </div>
 
-                <div className="w-full rounded-2xl overflow-hidden border border-[#DED8CF]">
+                <div className="w-full rounded-2xl overflow-hidden border border-[#222530]">
                   <iframe
                     title="Ubicación Centro de Recepción CABA - Caracas 1101"
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3283.473539827663!2d-58.46820522346083!3d-34.61747805822394!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bcc9f3a61c572b%3A0x6b2e35a1408018e6!2sCaracas%201101%2C%20C1416AOS%20CABA!5e0!3m2!1ses!2sar!4v1700000000000!5m2!1ses!2sar"
@@ -373,7 +373,7 @@ Si podés, adjuntá una foto o link del producto.`;
               </div>
 
               {/* FOTOGRAFÍA REAL DEL LOCAL / CENTRO LOGÍSTICO CABA */}
-              <div className="relative rounded-2xl overflow-hidden border border-[#DED8CF] shadow-md h-full min-h-[300px] group">
+              <div className="relative rounded-2xl overflow-hidden border border-[#222530] shadow-md h-full min-h-[300px] group">
                 <img 
                   src="/paso1-local-afuera.jpg" 
                   alt="Centro logístico real Cuenta Hogar CABA Caracas 1101" 
@@ -381,7 +381,7 @@ Si podés, adjuntá una foto o link del producto.`;
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B]/90 via-transparent to-transparent flex items-end p-5">
                   <div>
-                    <p className="text-xs font-heading font-bold uppercase text-[#E7B86A] tracking-wider">
+                    <p className="text-xs font-heading font-bold uppercase text-[#FFD21A] tracking-wider">
                       Centro Logístico CABA
                     </p>
                     <p className="text-xs text-[#FFFDFC]/90 font-sans">
@@ -393,7 +393,7 @@ Si podés, adjuntá una foto o link del producto.`;
             </div>
 
             {/* ACLARACIÓN OBLIGATORIA */}
-            <div className="flex items-center gap-3 text-xs sm:text-sm text-[#B44E2A] font-bold bg-[#B44E2A]/10 border border-[#B44E2A]/20 p-4 rounded-xl">
+            <div className="flex items-center gap-3 text-xs sm:text-sm text-[#FFD21A] font-bold bg-[#FFD21A]/10 border border-[#B44E2A]/20 p-4 rounded-xl">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <span>Importante: no enviar mercadería sin coordinar previamente con Cuenta Hogar.</span>
             </div>
@@ -403,55 +403,55 @@ Si podés, adjuntá una foto o link del producto.`;
       </section>
 
       {/* 8. TRANSPORTE PROPIO ("De nuestro local a tu domicilio.") */}
-      <section className="py-20 lg:py-28 bg-[#FFFDFC] border-b border-[#DED8CF]">
+      <section className="py-20 lg:py-28 bg-[#161922] border-b border-[#222530]">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
             {/* IZQUIERDA: CONTENIDO */}
             <div className="lg:col-span-6 space-y-6 text-left">
-              <div className="inline-flex items-center gap-2 text-xs font-heading font-bold uppercase tracking-widest text-[#B44E2A]">
+              <div className="inline-flex items-center gap-2 text-xs font-heading font-bold uppercase tracking-widest text-[#FFD21A]">
                 <Truck className="w-4 h-4" /> Capacidad Operativa Directa
               </div>
 
-              <h2 className="text-3xl sm:text-4xl lg:text-[44px] font-heading font-extrabold text-[#173E3B] leading-tight">
+              <h2 className="text-3xl sm:text-4xl lg:text-[44px] font-heading font-extrabold text-[#FFD21A] leading-tight">
                 De nuestro local a tu domicilio.
               </h2>
 
-              <p className="text-base sm:text-lg text-[#68706E] font-sans leading-relaxed">
+              <p className="text-base sm:text-lg text-[#9CA3AF] font-sans leading-relaxed">
                 Organizamos nuestros propios recorridos para tener mayor control sobre la carga, los tiempos y las entregas.
               </p>
 
               {/* DIFERENCIALES CLAVE */}
               <div className="space-y-4 pt-2">
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#173E3B] shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-5 h-5 text-[#FFD21A] shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-heading font-bold text-[#173E3B] text-sm">Transporte propio</h4>
-                    <p className="text-xs text-[#68706E] font-sans">Unidades adaptadas para tecnología, electrodomésticos y carga general.</p>
+                    <h4 className="font-heading font-bold text-[#FFD21A] text-sm">Transporte propio</h4>
+                    <p className="text-xs text-[#9CA3AF] font-sans">Unidades adaptadas para tecnología, electrodomésticos y carga general.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#173E3B] shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-5 h-5 text-[#FFD21A] shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-heading font-bold text-[#173E3B] text-sm">Recorridos organizados</h4>
-                    <p className="text-xs text-[#68706E] font-sans">Cronogramas de ruta estructurados para dar certeza de llegada.</p>
+                    <h4 className="font-heading font-bold text-[#FFD21A] text-sm">Recorridos organizados</h4>
+                    <p className="text-xs text-[#9CA3AF] font-sans">Cronogramas de ruta estructurados para dar certeza de llegada.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#173E3B] shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-5 h-5 text-[#FFD21A] shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-heading font-bold text-[#173E3B] text-sm">Entrega en domicilio</h4>
-                    <p className="text-xs text-[#68706E] font-sans">Llegamos directo a la puerta de tu casa en el interior.</p>
+                    <h4 className="font-heading font-bold text-[#FFD21A] text-sm">Entrega en domicilio</h4>
+                    <p className="text-xs text-[#9CA3AF] font-sans">Llegamos directo a la puerta de tu casa en el interior.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#173E3B] shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-5 h-5 text-[#FFD21A] shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-heading font-bold text-[#173E3B] text-sm">Menor dependencia de terceros</h4>
-                    <p className="text-xs text-[#68706E] font-sans">Sin intermediarios ni desvíos informales durante el trayecto.</p>
+                    <h4 className="font-heading font-bold text-[#FFD21A] text-sm">Menor dependencia de terceros</h4>
+                    <p className="text-xs text-[#9CA3AF] font-sans">Sin intermediarios ni desvíos informales durante el trayecto.</p>
                   </div>
                 </div>
               </div>
@@ -459,7 +459,7 @@ Si podés, adjuntá una foto o link del producto.`;
 
             {/* DERECHA: FOTOGRAFÍA GRANDE DE LA TRANSIT */}
             <div className="lg:col-span-6">
-              <div className="relative rounded-3xl overflow-hidden border border-[#DED8CF] shadow-xl group">
+              <div className="relative rounded-3xl overflow-hidden border border-[#222530] shadow-xl group">
                 <img 
                   src="/flota-cuenta-hogar.jpg" 
                   alt="Transporte propio Renault Master Cuenta Hogar" 
@@ -478,17 +478,17 @@ Si podés, adjuntá una foto o link del producto.`;
       </section>
 
       {/* 9. COBERTURA ("¿Hasta dónde llegamos?") */}
-      <section className="py-20 lg:py-24 bg-[#F7F3EC] border-b border-[#DED8CF]">
+      <section className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530]">
         <div className="max-w-5xl mx-auto px-6 text-center space-y-12">
           
           <div className="space-y-3 max-w-2xl mx-auto">
-            <div className="inline-flex items-center gap-2 text-xs font-heading font-bold uppercase tracking-widest text-[#173E3B]">
-              <MapPin className="w-4 h-4 text-[#B44E2A]" /> Rutas y Localidades Activas
+            <div className="inline-flex items-center gap-2 text-xs font-heading font-bold uppercase tracking-widest text-[#FFD21A]">
+              <MapPin className="w-4 h-4 text-[#FFD21A]" /> Rutas y Localidades Activas
             </div>
-            <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#173E3B]">
+            <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#FFD21A]">
               ¿Hasta dónde llegamos?
             </h2>
-            <p className="text-[#68706E] text-sm font-sans">
+            <p className="text-[#9CA3AF] text-sm font-sans">
               Localidades actuales con recorridos programados:
             </p>
           </div>
@@ -496,15 +496,15 @@ Si podés, adjuntá una foto o link del producto.`;
           {/* TARJETAS DE LOCALIDADES */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {["Lincoln", "Zavalía", "Los Toldos", "Chivilcoy", "O'Brien"].map((loc) => (
-              <div key={loc} className="bg-[#FFFDFC] border border-[#DED8CF] p-5 rounded-2xl text-center space-y-1 shadow-xs hover:border-[#173E3B] transition-colors">
-                <MapPin className="w-5 h-5 text-[#B44E2A] mx-auto mb-1" />
-                <p className="font-heading font-bold text-[#173E3B] text-base">{loc}</p>
-                <p className="text-[10px] text-[#68706E] font-mono">Recorrido activo</p>
+              <div key={loc} className="bg-[#161922] border border-[#222530] p-5 rounded-2xl text-center space-y-1 shadow-xs hover:border-[#173E3B] transition-colors">
+                <MapPin className="w-5 h-5 text-[#FFD21A] mx-auto mb-1" />
+                <p className="font-heading font-bold text-[#FFD21A] text-base">{loc}</p>
+                <p className="text-[10px] text-[#9CA3AF] font-mono">Recorrido activo</p>
               </div>
             ))}
           </div>
 
-          <div className="bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-xl inline-block text-xs font-heading font-semibold text-[#68706E]">
+          <div className="bg-[#161922] border border-[#222530] p-4 rounded-xl inline-block text-xs font-heading font-semibold text-[#9CA3AF]">
             🌱 Estamos ampliando progresivamente nuestras rutas.
           </div>
 
@@ -512,12 +512,12 @@ Si podés, adjuntá una foto o link del producto.`;
       </section>
 
       {/* 10. SECCIÓN DE COTIZACIÓN FINAL (WHATSAPP BLOQUE TERRACOTA/PETRÓLEO) */}
-      <section className="py-20 lg:py-28 bg-[#173E3B] text-[#FFFDFC]">
+      <section className="py-20 lg:py-28 bg-[#111318] text-[#FFFDFC]">
         <div className="max-w-4xl mx-auto px-6 text-center space-y-8">
           
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 bg-[#E7B86A]/20 border border-[#E7B86A]/40 text-[#E7B86A] px-4 py-2 rounded-full text-xs font-heading font-extrabold uppercase tracking-widest shadow-xs">
-              <Truck className="w-4 h-4 text-[#E7B86A]" /> Presupuesto por WhatsApp
+            <div className="inline-flex items-center gap-2 bg-[#E7B86A]/20 border border-[#E7B86A]/40 text-[#FFD21A] px-4 py-2 rounded-full text-xs font-heading font-extrabold uppercase tracking-widest shadow-xs">
+              <Truck className="w-4 h-4 text-[#FFD21A]" /> Presupuesto por WhatsApp
             </div>
             
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-extrabold tracking-tight leading-tight !text-white drop-shadow-sm">
@@ -534,7 +534,7 @@ Si podés, adjuntá una foto o link del producto.`;
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2.5 bg-[#B44E2A] hover:bg-[#984021] text-white font-heading font-bold px-10 py-5 rounded-2xl text-sm uppercase tracking-wider transition-all shadow-xl shadow-black/30 hover:scale-[1.02] active:scale-95"
+              className="inline-flex items-center justify-center gap-2.5 bg-[#FFD21A] hover:bg-[#984021] text-white font-heading font-bold px-10 py-5 rounded-2xl text-sm uppercase tracking-wider transition-all shadow-xl shadow-black/30 hover:scale-[1.02] active:scale-95"
             >
               <WhatsAppIcon className="w-5 h-5" />
               Cotizar por WhatsApp
