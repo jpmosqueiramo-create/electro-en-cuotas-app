@@ -292,7 +292,7 @@ export default function HomeTechCatalog() {
           {/* MENÚ DE NAVEGACIÓN DESKTOP */}
           <nav className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-[#9CA3AF]">
             <a href="#modelo" className="hover:text-[#FFD21A] transition-colors">Cómo Funciona</a>
-            <a href="#catalogo" className="hover:text-[#FFD21A] transition-colors">Productos</a>
+            <a href="#catalogo" className="hover:text-[#FFD21A] transition-colors">Opciones de compra</a>
             <a href="#envios-low-cost" className="hover:text-[#FFD21A] transition-colors">Envíos CABA</a>
             <Link href="/nosotros" className="hover:text-white transition-colors">Nosotros</Link>
             <Link href="/flete" className="hover:text-white transition-colors">Low Cost</Link>
@@ -593,10 +593,10 @@ export default function HomeTechCatalog() {
                 CATÁLOGO DESTACADO
               </span>
               <h2 className="text-3xl font-extrabold text-[#111318]">
-                Explorá productos que podemos gestionar para vos
+                Explorá opciones de compra
               </h2>
               <p className="text-sm text-[#4B5563]">
-                Conocé ejemplos de productos y consultá una estimación del plan de pagos para gestionar tu compra.
+                Conocé algunos de los productos cuya compra podemos gestionar y una estimación del plan de pagos.
               </p>
             </div>
 
@@ -1025,7 +1025,7 @@ export default function HomeTechCatalog() {
               </h4>
               <ul className="space-y-2 text-xs text-[#9CA3AF]">
                 <li><a href="#modelo" className="hover:text-white transition-colors">Cómo Funciona</a></li>
-                <li><a href="#catalogo" className="hover:text-white transition-colors">Productos Destacados</a></li>
+                <li><a href="#catalogo" className="hover:text-white transition-colors">Opciones de compra</a></li>
                 <li><a href="#envios-low-cost" className="hover:text-white transition-colors">Envíos Low Cost</a></li>
                 <li><Link href="/nosotros" className="hover:text-white transition-colors">Sobre Nosotros</Link></li>
                 <li><Link href="/flete" className="hover:text-white transition-colors">Tarifario Fletes</Link></li>

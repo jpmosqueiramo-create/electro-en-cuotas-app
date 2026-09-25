@@ -51,7 +51,7 @@ export default function Header() {
         {/* MENÚ DE NAVEGACIÓN DESKTOP */}
         <nav className="hidden lg:flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
           <Link href="/#modelo" className={getLinkStyle("/#modelo")}>Cómo Funciona</Link>
-          <Link href="/productos" className={getLinkStyle("/productos")}>Productos</Link>
+          <Link href="/productos" className={getLinkStyle("/productos")}>Opciones de compra</Link>
           <Link href="/flete" className={getLinkStyle("/flete")}>Envíos Low Cost</Link>
           <Link href="/nosotros" className={getLinkStyle("/nosotros")}>Nosotros</Link>
           <Link href="/red-afiliados" className={getLinkStyle("/red-afiliados")}>Red de Afiliados</Link>

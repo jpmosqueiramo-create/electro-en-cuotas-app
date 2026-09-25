@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Truck, MapPin, CalendarClock, AlertCircle, CheckCircle2, Navigation, Route } from "lucide-react";
+import { Truck, MapPin, CalendarClock, AlertCircle, CheckCircle2, Navigation, Route, Briefcase, Layers, Sparkles } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Envíos Low Cost CABA al Interior | Cuenta Hogar",
@@ -476,6 +476,115 @@ Si podés, adjuntá una foto o link del producto.`;
           </div>
         </div>
       </section>
+
+      
+      {/* SECCIÓN ESPECIAL PARA COMERCIOS Y EMPRENDEDORES */}
+      <section className="py-20 lg:py-28 bg-[#161922] border-b border-[#222530]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
+          
+          {/* HEADER DE SECCIÓN */}
+          <div className="max-w-3xl space-y-4 text-left">
+            <div className="inline-flex items-center gap-2 bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] px-3.5 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider">
+              <Briefcase className="w-4 h-4 text-[#FFD21A]" /> PARA COMERCIOS Y EMPRENDEDORES
+            </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold text-white leading-tight">
+              Cuenta Hogar, cerca de los emprendedores
+            </h2>
+            <p className="text-base sm:text-lg text-[#FFD21A] font-bold leading-relaxed">
+              Comprá a distintos proveedores en Capital. Nosotros recibimos, organizamos y consolidamos tus compras para que lleguen juntas al interior.
+            </p>
+            <p className="text-sm text-[#9CA3AF] leading-relaxed">
+              Si comprás mercadería con frecuencia para tu comercio o emprendimiento, podés utilizar nuestro centro de recepción en CABA como un único punto para recibir tus pedidos.
+              <br /><br />
+              Tus proveedores entregan allí, nosotros identificamos y organizamos cada compra y las preparamos para el próximo recorrido.
+            </p>
+          </div>
+
+          {/* DESTACADO PRINCIPAL: CONSOLIDACIÓN SIN CARGO */}
+          <div className="bg-[#111318] border-2 border-[#FFD21A] rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xl relative overflow-hidden">
+            <div className="space-y-2 max-w-2xl relative z-10">
+              <span className="inline-block bg-[#FFD21A] text-[#111318] text-xs font-mono font-extrabold uppercase px-3 py-1 rounded-md tracking-wider">
+                DESTACADO COMERCIAL PRINCIPAL
+              </span>
+              <h3 className="text-2xl font-extrabold text-white">
+                CONSOLIDACIÓN SIN CARGO
+              </h3>
+              <p className="text-sm text-[#D1D5DB] leading-relaxed">
+                Comprá a distintos proveedores. Nosotros reunimos tus pedidos. Solo pagás por los bultos que trasladamos.
+              </p>
+            </div>
+            <div className="bg-[#161922] border border-[#2A2E3D] px-6 py-4 rounded-xl text-center shrink-0 w-full md:w-auto relative z-10">
+              <span className="block text-[11px] font-mono text-[#9CA3AF] uppercase font-bold">Base Logística en CABA</span>
+              <span className="block text-sm font-bold text-[#FFD21A] mt-0.5">Caracas 1101, Capital Federal</span>
+            </div>
+          </div>
+
+          {/* GRID DE 4 BENEFICIOS VISUALES */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            <div className="bg-[#111318] border border-[#2A2E3D] p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#FFD21A]/50 transition-all">
+              <div className="w-10 h-10 bg-[#1A1D26] text-[#FFD21A] rounded-xl flex items-center justify-center font-bold border border-[#FFD21A]/30">
+                <MapPin className="w-5 h-5" />
+              </div>
+              <h4 className="text-base font-bold text-white">Un solo punto de recepción</h4>
+              <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                Tus proveedores pueden enviar sus pedidos al centro de recepción de Cuenta Hogar en CABA.
+              </p>
+            </div>
+
+            <div className="bg-[#111318] border border-[#2A2E3D] p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#FFD21A]/50 transition-all">
+              <div className="w-10 h-10 bg-[#1A1D26] text-[#FFD21A] rounded-xl flex items-center justify-center font-bold border border-[#FFD21A]/30">
+                <Layers className="w-5 h-5" />
+              </div>
+              <h4 className="text-base font-bold text-white">Compras organizadas</h4>
+              <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                Identificamos y mantenemos agrupada la mercadería correspondiente a tu comercio o emprendimiento.
+              </p>
+            </div>
+
+            <div className="bg-[#111318] border border-[#2A2E3D] p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#FFD21A]/50 transition-all">
+              <div className="w-10 h-10 bg-[#1A1D26] text-[#FFD21A] rounded-xl flex items-center justify-center font-bold border border-[#FFD21A]/30">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <h4 className="text-base font-bold text-white">Consolidación sin cargo</h4>
+              <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                Reunimos compras realizadas a distintos proveedores antes del traslado.
+              </p>
+            </div>
+
+            <div className="bg-[#111318] border border-[#2A2E3D] p-6 rounded-2xl space-y-3 shadow-lg hover:border-[#FFD21A]/50 transition-all">
+              <div className="w-10 h-10 bg-[#1A1D26] text-[#FFD21A] rounded-xl flex items-center justify-center font-bold border border-[#FFD21A]/30">
+                <Truck className="w-5 h-5" />
+              </div>
+              <h4 className="text-base font-bold text-white">Entrega en tu domicilio</h4>
+              <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                Aprovechamos nuestros recorridos programados para llevar la mercadería hasta tu localidad.
+              </p>
+            </div>
+
+          </div>
+
+          {/* FRASE DE CIERRE & CTA */}
+          <div className="bg-[#111318] border border-[#2A2E3D] p-8 rounded-2xl text-center space-y-6 max-w-3xl mx-auto shadow-xl">
+            <p className="text-lg sm:text-xl font-extrabold text-[#FFD21A] tracking-tight">
+              “Tu base logística en Capital, sin tener que estar en Capital.”
+            </p>
+            <div>
+              <a
+                href="https://wa.me/5491125659686?text=Hola%2C%20quiero%20conocer%20el%20servicio%20de%20Envíos%20Low%20Cost%20de%20Cuenta%20Hogar%20para%20emprendedores%20y%20comercios."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold text-xs uppercase tracking-wider px-8 py-4 rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20"
+              >
+                <WhatsAppIcon className="w-4.5 h-4.5 text-[#111318]" />
+                <span>Quiero conocer el servicio para emprendedores</span>
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
 
       {/* 9. COBERTURA ("¿Hasta dónde llegamos?") */}
       <section className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530]">
