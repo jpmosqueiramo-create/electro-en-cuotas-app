@@ -9,6 +9,55 @@ import { useEffect, useState } from "react";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { sanitizePhoneWhatsApp } from "@/lib/phoneUtils";
 
+
+const generarMensajeRecordatorioCuota = (sol: any, cuota?: any) => {
+  const nombre = sol.datosPersonales?.nombreCompleto || sol.nombreCompleto || sol.nombre || "Cliente";
+  const producto = sol.productoDeseado || sol.productoNombre || "su producto";
+  const nroContrato = sol.nroContrato || (sol.id ? sol.id.substring(0, 8).toUpperCase() : "");
+
+  let detalleCuota = "";
+  if (cuota) {
+    let fecVenc = "vencida";
+    if (cuota.vencimiento) {
+      try {
+        const dStr = cuota.vencimiento.includes("T") ? cuota.vencimiento : cuota.vencimiento + "T12:00:00";
+        fecVenc = new Date(dStr).toLocaleDateString("es-AR");
+      } catch (e) {}
+    }
+    const monto = Number(cuota.montoOriginal || 0).toLocaleString("es-AR");
+    detalleCuota = `• *Cuota N° ${cuota.numero}*: $ ${monto} (Venció el ${fecVenc})`;
+  } else {
+    let atrasadas = 0;
+    let montcAtrasado = 0;
+    if (sol.planPagos) {
+      const hoy = new Date();
+      sol.planPagos.forEach((c: any) => {
+        if (c.estado !== "PAGADO" && new Date(c.vencimiento) < hoy) {
+          atrasadas++;
+          montcAtrasado += Number(c.montoOriginal || 0);
+        }
+      });
+    }
+    const montoTotal = Number(montcAtrasado || 0).toLocaleString("es-AR");
+    detalleCuota = `• *Saldo Vencido Pendiente*: $ ${montoTotal} (${atrasadas} ${atrasadas === 1 ? 'cuota vencida' : 'cuotas vencidas'})`;
+  }
+
+  return `Hola ${nombre}, ¿cómo estás? 👋
+
+Te escribimos desde *Cuenta Hogar* para enviarte un recordatorio amigable sobre tu plan de pagos del bien: *${producto}* ${nroContrato ? `(Legajo N° ${nroContrato})` : ''}.
+
+📌 *Detalle del pago:*
+${detalleCuota}
+
+💳 *Medios de Pago Disponibles:*
+• *Transferencia Bancaria / CBU*:
+  - Alias: CUENTA.HOGAR.OFICIAL
+  - Razón Social: LOOP GESTIÓN INTEGRAL S.R.L.
+• *Efectivo*: En nuestra sucursal o centro de atención.
+
+Por favor, una vez realizado el pago, envianos el comprobante por este medio para registrar tu cuota de inmediato. ¡Muchas gracias por tu atención! 😊`;
+};
+
 export default function CarteraPage() {
   const { user } = useAuth();
   const [solicitudes, setSolicitudes] = useState<any[]>([]);
