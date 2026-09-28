@@ -746,7 +746,7 @@ export default function HomeTechCatalog() {
                     value={qfNombre} 
                     onChange={e => setQfNombre(e.target.value)} 
                     placeholder="Ej. Juan Pérez" 
-                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
+                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all"
                   />
                 </div>
 
@@ -760,7 +760,7 @@ export default function HomeTechCatalog() {
                     value={qfDni} 
                     onChange={e => setQfDni(e.target.value)} 
                     placeholder="Ej. 30123456" 
-                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
+                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all"
                   />
                 </div>
 
@@ -774,7 +774,7 @@ export default function HomeTechCatalog() {
                     value={qfWhatsapp} 
                     onChange={e => setQfWhatsapp(e.target.value)} 
                     placeholder="Ej. 11 2345 6789" 
-                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
+                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all"
                   />
                 </div>
 
@@ -788,7 +788,7 @@ export default function HomeTechCatalog() {
                     value={qfLocalidad} 
                     onChange={e => setQfLocalidad(e.target.value)} 
                     placeholder="Ej. Lincoln, Chivilcoy, Los Toldos..." 
-                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
+                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all"
                   />
                 </div>
 
@@ -804,7 +804,7 @@ export default function HomeTechCatalog() {
                   value={qfNecesidad} 
                   onChange={e => setQfNecesidad(e.target.value)} 
                   placeholder="Ej. Heladera Gafa 380L, Smart TV 50 pulgadas, lavarropas automático..." 
-                  className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all resize-none"
+                  className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all resize-none"
                 />
               </div>
 
@@ -817,7 +817,7 @@ export default function HomeTechCatalog() {
                   value={qfReferente} 
                   onChange={e => setQfReferente(e.target.value)} 
                   placeholder="Ej. María Gómez (Vendedora afiliada)" 
-                  className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
+                  className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all"
                 />
               </div>
 

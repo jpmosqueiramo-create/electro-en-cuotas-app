@@ -998,7 +998,7 @@ export default function PublicCatalog() {
                     onChange={e=>setQfNombre(e.target.value)} 
                     type="text" 
                     placeholder="Tu nombre completo" 
-                    className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white placeholder-[#68706E]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors" 
+                    className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white placeholder-[#9CA3AF]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors" 
                   />
                 </div>
                 <div>
@@ -1009,7 +1009,7 @@ export default function PublicCatalog() {
                     onChange={e=>setQfDni(e.target.value)} 
                     type="number" 
                     placeholder="Sin puntos" 
-                    className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white placeholder-[#68706E]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors" 
+                    className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white placeholder-[#9CA3AF]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors" 
                   />
                 </div>
                 <div>
@@ -1020,7 +1020,7 @@ export default function PublicCatalog() {
                     onChange={e=>setQfWhatsapp(e.target.value)} 
                     type="tel" 
                     placeholder="Código de área + número" 
-                    className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white placeholder-[#68706E]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors" 
+                    className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white placeholder-[#9CA3AF]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors" 
                   />
                 </div>
                 <div>
@@ -1031,7 +1031,7 @@ export default function PublicCatalog() {
                     onChange={e=>setQfLocalidad(e.target.value)} 
                     type="text" 
                     placeholder="Ej: Lincoln, Chivilcoy, etc." 
-                    className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white placeholder-[#68706E]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors" 
+                    className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white placeholder-[#9CA3AF]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors" 
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -1041,7 +1041,7 @@ export default function PublicCatalog() {
                     onChange={e=>setQfReferente(e.target.value)} 
                     type="text" 
                     placeholder="Nombre del vendedor afiliado de tu localidad" 
-                    className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white placeholder-[#68706E]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors" 
+                    className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white placeholder-[#9CA3AF]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors" 
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -1052,7 +1052,7 @@ export default function PublicCatalog() {
                     onChange={e=>setQfNecesidad(e.target.value)} 
                     placeholder="Ej: Smart TV 50 pulgadas, Heladera No Frost, Celular, lavarropas..." 
                     rows={4} 
-                    className="w-full bg-[#111318] border border-[#222530] p-4 rounded-xl text-white placeholder-[#68706E]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors resize-none" 
+                    className="w-full bg-[#111318] border border-[#222530] p-4 rounded-xl text-white placeholder-[#9CA3AF]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors resize-none" 
                   />
                 </div>
               </div>

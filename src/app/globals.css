@@ -121,17 +121,46 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 
-/* Global Form Input & Textarea High-Contrast Text Rules */
+/* Global Form Input & Textarea High-Contrast & Legibility Rules */
 input, select, textarea {
-  color: #1F2928;
+  color: inherit;
+  font-family: inherit;
 }
 
 input::placeholder, textarea::placeholder {
-  color: #68706E;
-  opacity: 0.85;
+  color: #9CA3AF !important;
+  opacity: 1 !important;
 }
 
-select option {
-  background-color: #FFFDFC;
-  color: #1F2928;
+/* Dark theme form inputs legibility */
+.bg-\[\#111318\] input,
+.bg-\[\#111318\] select,
+.bg-\[\#111318\] textarea,
+.bg-\[\#161922\] input,
+.bg-\[\#161922\] select,
+.bg-\[\#161922\] textarea,
+.bg-\[\#090A0D\] input,
+.bg-\[\#090A0D\] select,
+.bg-\[\#090A0D\] textarea,
+.bg-\[\#1A1D26\] input,
+.bg-\[\#1A1D26\] select,
+.bg-\[\#1A1D26\] textarea {
+  color: #FFFFFF !important;
+  caret-color: #FFD21A;
+}
+
+.bg-\[\#111318\] select option,
+.bg-\[\#161922\] select option {
+  background-color: #161922;
+  color: #FFFFFF;
+}
+
+/* Light theme form inputs legibility (Admin & White Cards) */
+.bg-\[\#FFFDFC\] input:not([class*="text-white"]),
+.bg-\[\#FFFDFC\] select:not([class*="text-white"]),
+.bg-\[\#FFFDFC\] textarea:not([class*="text-white"]),
+.bg-\[\#F7F3EC\] input:not([class*="text-white"]),
+.bg-\[\#F7F3EC\] select:not([class*="text-white"]),
+.bg-\[\#F7F3EC\] textarea:not([class*="text-white"]) {
+  color: #111318 !important;
 }

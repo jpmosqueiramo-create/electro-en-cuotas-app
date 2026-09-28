@@ -127,7 +127,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full bg-[#111318] border border-[#222530] focus:bg-[#161922] focus:border-[#173E3B] focus:ring-2 focus:ring-[#173E3B]/20 rounded-xl p-3.5 text-white placeholder-[#68706E] focus:outline-none font-medium text-base shadow-sm transition-all"
+              className="w-full bg-[#111318] border border-[#222530] focus:bg-[#161922] focus:border-[#173E3B] focus:ring-2 focus:ring-[#173E3B]/20 rounded-xl p-3.5 text-white placeholder-[#9CA3AF] focus:outline-none font-medium text-base shadow-sm transition-all"
               placeholder="tu@correo.com"
             />
           </div>
@@ -139,7 +139,7 @@ export default function LoginPage() {
               required
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full bg-[#111318] border border-[#222530] focus:bg-[#161922] focus:border-[#173E3B] focus:ring-2 focus:ring-[#173E3B]/20 rounded-xl p-3.5 text-white placeholder-[#68706E] focus:outline-none font-medium text-base shadow-sm transition-all"
+              className="w-full bg-[#111318] border border-[#222530] focus:bg-[#161922] focus:border-[#173E3B] focus:ring-2 focus:ring-[#173E3B]/20 rounded-xl p-3.5 text-white placeholder-[#9CA3AF] focus:outline-none font-medium text-base shadow-sm transition-all"
               placeholder="••••••••"
             />
           </div>
@@ -152,7 +152,7 @@ export default function LoginPage() {
                 required
                 value={dni}
                 onChange={e => setDni(e.target.value.replace(/\D/g, ""))}
-                className="w-full bg-[#111318] border border-[#222530] focus:bg-[#161922] focus:border-[#173E3B] focus:ring-2 focus:ring-[#173E3B]/20 rounded-xl p-3.5 text-white placeholder-[#68706E] focus:outline-none font-mono font-medium text-base shadow-sm transition-all"
+                className="w-full bg-[#111318] border border-[#222530] focus:bg-[#161922] focus:border-[#173E3B] focus:ring-2 focus:ring-[#173E3B]/20 rounded-xl p-3.5 text-white placeholder-[#9CA3AF] focus:outline-none font-mono font-medium text-base shadow-sm transition-all"
                 placeholder="Solo números"
               />
             </div>
