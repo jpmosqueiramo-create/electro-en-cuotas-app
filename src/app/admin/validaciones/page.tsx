@@ -159,6 +159,7 @@ export default function AdminValidacionesPage() {
   const [pagoCuentaDestino, setPagoCuentaDestino] = useState("Caja Efectivo");
   const [vendedoresList, setVendedoresList] = useState<Vendedor[]>([]);
   const [pagoVendedorDestino, setPagoVendedorDestino] = useState("ADMINISTRADOR");
+  const listaSucursales = vendedoresList.length > 0 ? Array.from(new Set(["Depósito Central", ...vendedoresList.map(v => v.localidad).filter(Boolean)])) : sucursalesDisponibles;
 
   const [activeProductSolId, setActiveProductSolId] = useState<Record<string, string>>({});
 
@@ -3882,7 +3883,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                              onChange={e => setSelectedDestino(e.target.value)}
                                              className="bg-[#FFFDFC] text-[#1F2928] px-3 py-2 rounded-lg text-xs border border-[#DED8CF] w-full focus:border-blue-500 outline-none font-bold"
                                            >
-                                             {sucursalesDisponibles.map(suc => (
+                                             {listaSucursales.map(suc => (
                                                <option key={suc} value={suc}>{suc}</option>
                                              ))}
                                            </select>

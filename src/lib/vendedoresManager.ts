@@ -1,5 +1,5 @@
 import { db } from "./firebase";
-import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 
 export interface Vendedor {
   id?: string;
@@ -29,15 +29,19 @@ export const obtenerVendedores = async (): Promise<Vendedor[]> => {
     });
 
     if (list.length === 0) {
-      // Auto seed default vendedores into Firestore if empty
-      for (const v of DEFAULT_VENDEDORES) {
-        try {
-          const docRef = await addDoc(collection(db, "vendedores"), {
-            ...v,
-            fechaCreacion: serverTimestamp()
-          });
-          list.push({ id: docRef.id, ...v });
-        } catch (e) {}
+      // Check if we already seeded previously to avoid re-seeding if user intentionally deleted all
+      const hasSeeded = typeof window !== "undefined" && localStorage.getItem("vendedores_initial_seeded");
+      if (!hasSeeded) {
+        if (typeof window !== "undefined") localStorage.setItem("vendedores_initial_seeded", "true");
+        for (const v of DEFAULT_VENDEDORES) {
+          try {
+            const docRef = await addDoc(collection(db, "vendedores"), {
+              ...v,
+              fechaCreacion: serverTimestamp()
+            });
+            list.push({ id: docRef.id, ...v });
+          } catch (e) {}
+        }
       }
     }
     return list.filter(v => v.activo !== false);
@@ -61,4 +65,9 @@ export const crearVendedor = async (vendedor: Omit<Vendedor, "id">): Promise<Ven
 export const actualizarVendedor = async (id: string, updates: Partial<Vendedor>): Promise<void> => {
   const docRef = doc(db, "vendedores", id);
   await updateDoc(docRef, updates);
+};
+
+export const eliminarVendedor = async (id: string): Promise<void> => {
+  const docRef = doc(db, "vendedores", id);
+  await deleteDoc(docRef);
 };

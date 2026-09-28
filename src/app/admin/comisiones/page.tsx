@@ -4,7 +4,7 @@ import { AdminNav } from "@/components/AdminNav";
 import { LOGO_BASE64 } from "@/lib/logoBase64";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { db } from "@/lib/firebase";
-import { obtenerVendedores, crearVendedor, actualizarVendedor, Vendedor } from "@/lib/vendedoresManager";
+import { obtenerVendedores, crearVendedor, actualizarVendedor, eliminarVendedor, Vendedor } from "@/lib/vendedoresManager";
 import { collection, getDocs, updateDoc, addDoc, doc, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -25,6 +25,11 @@ export default function AdminComisionesPage() {
   const [nuevoVendedorPorcentaje, setNuevoVendedorPorcentaje] = useState("15");
   const [guardandoVendedor, setGuardandoVendedor] = useState(false);
   const [vendedorEditId, setVendedorEditId] = useState<string | null>(null);
+  const [vendedorAEditar, setVendedorAEditar] = useState<Vendedor | null>(null);
+  const [editNombre, setEditNombre] = useState("");
+  const [editLocalidad, setEditLocalidad] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+
   const [editPorcentaje, setEditPorcentaje] = useState("");
 
 
@@ -76,6 +81,52 @@ export default function AdminComisionesPage() {
   }, []);
 
   
+  
+  const handleEliminarVendedor = async (v: Vendedor) => {
+    if (!v.id) return;
+    if (!window.confirm(`¿Estás seguro de ELIMINAR el punto de venta / vendedor '${v.nombre}' (${v.localidad})?`)) return;
+    try {
+      await eliminarVendedor(v.id);
+      alert("Punto de venta / vendedor eliminado exitosamente.");
+      const updated = await obtenerVendedores();
+      setVendedoresList(updated);
+    } catch (err: any) {
+      console.error(err);
+      alert("Error al eliminar vendedor: " + err.message);
+    }
+  };
+
+  const handleAbrirEdicionVendedor = (v: Vendedor) => {
+    setVendedorAEditar(v);
+    setEditNombre(v.nombre || "");
+    setEditLocalidad(v.localidad || "");
+    setEditEmail(v.email || "");
+    setEditPorcentaje(String(v.porcentajeComision || 15));
+  };
+
+  const handleGuardarEdicionVendedor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!vendedorAEditar || !vendedorAEditar.id) return;
+    const pct = Number(editPorcentaje);
+    if (isNaN(pct) || pct < 0 || pct > 100) return alert("Porcentaje de comisión inválido.");
+
+    try {
+      await actualizarVendedor(vendedorAEditar.id, {
+        nombre: editNombre.trim(),
+        localidad: editLocalidad.trim(),
+        email: editEmail.trim(),
+        porcentajeComision: pct
+      });
+      alert("Punto de venta / vendedor actualizado exitosamente.");
+      setVendedorAEditar(null);
+      const updated = await obtenerVendedores();
+      setVendedoresList(updated);
+    } catch (err: any) {
+      console.error(err);
+      alert("Error al actualizar vendedor: " + err.message);
+    }
+  };
+
   const handleGuardarNuevoVendedor = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nuevoVendedorNombre.trim()) return alert("Ingresa el nombre del vendedor.");
@@ -361,50 +412,118 @@ export default function AdminComisionesPage() {
               </div>
 
               {vendedoresList.map((v) => (
-                <div key={v.id} className="bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-xl flex justify-between items-center shadow-xs">
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-base">👤</span>
-                      <h4 className="font-bold text-[#1F2928] text-sm">{v.nombre}</h4>
+                <div key={v.id} className="bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-xl flex flex-col justify-between shadow-xs space-y-3">
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-base">📍</span>
+                        <h4 className="font-bold text-[#1F2928] text-sm">{v.nombre}</h4>
+                      </div>
+                      <p className="text-[11px] text-[#B44E2A] font-bold mt-0.5 flex items-center gap-1">
+                        <span>🏙️ Localidad:</span> <span className="bg-orange-100 text-orange-900 px-2 py-0.5 rounded border border-orange-200">{v.localidad || 'Sin Loc.'}</span>
+                      </p>
+                      <p className="text-[10px] text-[#68706E] mt-0.5">{v.email}</p>
                     </div>
-                    <p className="text-[11px] text-[#68706E] font-medium">{v.localidad || 'Sin Loc.'} • {v.email}</p>
+                    <span className="bg-amber-100 text-amber-900 text-xs font-black px-2.5 py-1 rounded-full border border-amber-300">
+                      {v.porcentajeComision}% Com.
+                    </span>
                   </div>
-                  <div className="text-right flex items-center gap-2">
-                    {vendedorEditId === v.id ? (
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          value={editPorcentaje}
-                          onChange={e => setEditPorcentaje(e.target.value)}
-                          className="w-14 bg-[#F7F3EC] border border-[#DED8CF] text-xs p-1 rounded font-bold text-center"
-                        />
-                        <span className="text-xs font-bold">%</span>
-                        <button
-                          onClick={() => v.id && handleActualizarPorcentajeVendedor(v.id, Number(editPorcentaje))}
-                          className="bg-green-600 text-white p-1 rounded text-[10px] font-bold"
-                        >
-                          ✓
-                        </button>
-                        <button
-                          onClick={() => setVendedorEditId(null)}
-                          className="bg-gray-300 text-black p-1 rounded text-[10px]"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="cursor-pointer group flex items-center gap-1.5" title="Click para editar comisión" onClick={() => { if (v.id) { setVendedorEditId(v.id); setEditPorcentaje(String(v.porcentajeComision)); } }}>
-                        <span className="bg-amber-100 text-amber-900 text-xs font-black px-2.5 py-1 rounded-full border border-amber-300">
-                          {v.porcentajeComision}% Com.
-                        </span>
-                        <span className="text-[10px] text-gray-400 group-hover:text-black">✏️</span>
-                      </div>
-                    )}
+
+                  <div className="flex justify-end gap-2 border-t border-[#F7F3EC] pt-2">
+                    <button
+                      onClick={() => handleAbrirEdicionVendedor(v)}
+                      className="bg-[#F7F3EC] hover:bg-[#FFFDFC] text-[#173E3B] px-3 py-1 rounded-lg text-xs font-bold border border-[#DED8CF] transition-colors flex items-center gap-1"
+                    >
+                      ✏️ Editar Localidad / Datos
+                    </button>
+                    <button
+                      onClick={() => handleEliminarVendedor(v)}
+                      className="bg-red-50 hover:bg-red-100 text-red-600 px-2.5 py-1 rounded-lg text-xs font-bold border border-red-200 transition-colors"
+                      title="Eliminar punto de venta o vendedor"
+                    >
+                      🗑️
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
           </div>
+
+          
+          {/* MODAL EDITAR VENDEDOR Y LOCALIDAD */}
+          {vendedorAEditar && (
+            <div className="fixed inset-0 bg-[#121316]/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-[#FFFDFC] border border-[#DED8CF] rounded-3xl w-full max-w-md p-6 space-y-5 shadow-xl">
+                <div className="flex justify-between items-center border-b border-[#DED8CF] pb-3">
+                  <h3 className="text-sm font-black text-[#173E3B] uppercase tracking-wider flex items-center gap-2">
+                    ✏️ Configurar Punto de Venta / Vendedor
+                  </h3>
+                  <button onClick={() => setVendedorAEditar(null)} className="text-[#68706E] font-bold text-sm">✕</button>
+                </div>
+                <form onSubmit={handleGuardarEdicionVendedor} className="space-y-4 text-xs">
+                  <div>
+                    <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Nombre Completo / Sucursal</label>
+                    <input
+                      type="text"
+                      required
+                      value={editNombre}
+                      onChange={e => setEditNombre(e.target.value)}
+                      placeholder="Ej: Sucursal Nueve de Julio / Vendedor Junín"
+                      className="w-full bg-[#F7F3EC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] font-bold outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-[#B44E2A] font-bold uppercase mb-1">Localidad Asignada (Lugar donde se vende)</label>
+                    <input
+                      type="text"
+                      required
+                      value={editLocalidad}
+                      onChange={e => setEditLocalidad(e.target.value)}
+                      placeholder="Ej: 9 de Julio / Lincoln / Pehuajó"
+                      className="w-full bg-[#F7F3EC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] font-bold outline-none focus:border-orange-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Email de Contacto</label>
+                    <input
+                      type="email"
+                      value={editEmail}
+                      onChange={e => setEditEmail(e.target.value)}
+                      placeholder="vendedor@cuentahogar.com"
+                      className="w-full bg-[#F7F3EC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] font-bold outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Porcentaje de Comisión Acordado (%)</label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      max="100"
+                      value={editPorcentaje}
+                      onChange={e => setEditPorcentaje(e.target.value)}
+                      className="w-full bg-[#F7F3EC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] font-black text-sm outline-none"
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setVendedorAEditar(null)}
+                      className="flex-1 bg-[#F7F3EC] text-[#68706E] font-bold py-2.5 rounded-xl uppercase text-xs"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2.5 rounded-xl uppercase text-xs shadow-xs"
+                    >
+                      💾 Guardar Cambios
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
           {/* MODAL NUEVO VENDEDOR */}
           {modalAgregarVendedorOpen && (
