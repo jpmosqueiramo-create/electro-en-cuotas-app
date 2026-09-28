@@ -35,8 +35,8 @@ export interface FinancialResult {
   valorTotal: number;           // (Costo_Producto * Multiplicador) -> Total adeudado por el cliente
   baseImponible: number;        // (Valor_Total - Costo_Producto) -> Honorarios e Intereses Gravados (Con IVA 21% Incluido)
   cuotaMensualCliente: number;  // (Valor_Total - Anticipo) / Cuotas -> Cuota final cliente
-  montoExentoCuota: number;     // (Costo_Producto / Cuotas) -> Recibo X (Capital Exento)
-  montoGravadoCuota: number;    // (Base_Imponible / Cuotas) -> Total Factura B AFIP (Con IVA 21% Incluido)
+  montoExentoCuota: number;     // (Costo_Producto_Financiado / Cuotas) -> Recibo X (Capital Exento)
+  montoGravadoCuota: number;    // (Base_Imponible_Financiada / Cuotas) -> Total Factura B AFIP (Con IVA 21% Incluido)
   netoGravadoCuota: number;     // (montoGravadoCuota / 1.21) -> Base Neta de Honorarios sin IVA
   iva21Cuota: number;           // (montoGravadoCuota - netoGravadoCuota) -> Débito Fiscal IVA 21%
 }
@@ -66,10 +66,14 @@ export const calcularOperacionFinanciera = (input: FinancialInput): FinancialRes
   const baseImponible = Math.max(0, valorTotal - costoProducto);
   
   const saldoAFinanciar = Math.max(0, valorTotal - anticipo);
-  const cuotaMensualCliente = cuotas > 0 ? Math.round(saldoAFinanciar / cuotas) : 0;
+  const proporcionFinanciada = valorTotal > 0 ? (saldoAFinanciar / valorTotal) : 1;
 
-  const montoExentoCuota = cuotas > 0 ? Math.round(costoProducto / cuotas) : 0;
-  const montoGravadoCuota = cuotas > 0 ? Math.round(baseImponible / cuotas) : 0;
+  const costoProductoFinanciado = Math.round(costoProducto * proporcionFinanciada);
+  const baseImponibleFinanciada = Math.max(0, saldoAFinanciar - costoProductoFinanciado);
+
+  const cuotaMensualCliente = cuotas > 0 ? Math.round(saldoAFinanciar / cuotas) : 0;
+  const montoExentoCuota = cuotas > 0 ? Math.round(costoProductoFinanciado / cuotas) : 0;
+  const montoGravadoCuota = cuotas > 0 ? Math.round(baseImponibleFinanciada / cuotas) : 0;
   
   // Desglose del IVA 21% INCLUIDO en Factura B:
   const netoGravadoCuota = cuotas > 0 ? Math.round(montoGravadoCuota / 1.21) : 0;

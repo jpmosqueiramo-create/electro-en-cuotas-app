@@ -9,6 +9,7 @@ import { db, storage } from "@/lib/firebase";
 import { doc, getDoc, addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useAuth } from "@/components/AuthProvider";
+import { sanitizePhoneWhatsApp } from "@/lib/phoneUtils";
 
 function SolicitarForm() {
   const router = useRouter();
@@ -28,7 +29,7 @@ function SolicitarForm() {
   const [direccion, setDireccion] = useState("");
   const [ocupacion, setOcupacion] = useState("");
   const [email, setEmail] = useState("");
-  const [antiguedadLaboral, setAntiguedadLaboral] = useState("");
+  const [antiguedadLaboral, setAntiguedadLaboral] = useState("1 a 3 años");
   const [nombreAfiliado, setNombreAfiliado] = useState("");
   const [referidoPor, setReferidoPor] = useState("");
 

@@ -7,6 +7,7 @@ import { collection, doc, getDocs, query, updateDoc, deleteDoc, where, addDoc } 
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
+import { sanitizePhoneWhatsApp } from "@/lib/phoneUtils";
 
 export default function CarteraPage() {
   const { user } = useAuth();
@@ -233,7 +234,7 @@ export default function CarteraPage() {
                            </div>
                            <div className="flex gap-2">
                              <a
-                               href={`https://wa.me/${(sol.datosPersonales?.telefono || sol.whatsapp || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${sol.datosPersonales?.nombreCompleto || 'Cliente'}, podés revisar y autorizar digitalmente tu Contrato de Mandato Comercial desde el siguiente enlace seguro:
+                               href={`https://wa.me/${sanitizePhoneWhatsApp(sol.datosPersonales?.telefono || sol.whatsapp || sol.telefono || '')}?text=${encodeURIComponent(`Hola ${sol.datosPersonales?.nombreCompleto || 'Cliente'}, podés revisar y autorizar digitalmente tu Contrato de Mandato Comercial desde el siguiente enlace seguro:
 
 https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/${sol.id}`)}`}
                                target="_blank"

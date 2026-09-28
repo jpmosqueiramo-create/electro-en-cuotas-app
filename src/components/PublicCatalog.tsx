@@ -9,6 +9,8 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { 
+  Search,
+  Filter,
   ShieldCheck, 
   ChevronRight, 
   ChevronLeft, 
@@ -56,6 +58,9 @@ function WhatsAppIcon({ className = "w-5 h-5" }: { className?: string }) {
 export default function PublicCatalog() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busqueda, setBusqueda] = useState("");
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("TODAS");
+
 
   // Quick Form State
   const [qfNombre, setQfNombre] = useState("");
