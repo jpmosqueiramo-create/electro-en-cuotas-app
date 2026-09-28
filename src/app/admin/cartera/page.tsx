@@ -3,6 +3,7 @@
 import { AdminNav } from "@/components/AdminNav";
 import { useAuth } from "@/components/AuthProvider";
 import { db } from "@/lib/firebase";
+import { obtenerVendedores, Vendedor } from "@/lib/vendedoresManager";
 import { collection, doc, getDocs, query, updateDoc, deleteDoc, where, addDoc } from "firebase/firestore";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -70,6 +71,9 @@ export default function CarteraPage() {
   const [pagoMonto, setPagoMonto] = useState("");
   const [pagoComprobante, setPagoComprobante] = useState("");
   const [pagoCuentaDestino, setPagoCuentaDestino] = useState("Caja Efectivo");
+  const [vendedoresList, setVendedoresList] = useState<Vendedor[]>([]);
+  const [pagoVendedorDestino, setPagoVendedorDestino] = useState("ADMINISTRADOR");
+
   const [modalBorrar, setModalBorrar] = useState<string | null>(null);
   const [fechaPromesa, setFechaPromesa] = useState("");
 
@@ -124,6 +128,7 @@ export default function CarteraPage() {
   };
 
   useEffect(() => {
+    obtenerVendedores().then(setVendedoresList).catch(console.error);
     fetchData();
   }, []);
 
@@ -268,14 +273,38 @@ export default function CarteraPage() {
         esPagoParcial: difference !== 0
       });
 
-      // Enviar Notificación al Afiliado
-      if (sol.afiliadoEmail) {
+      // Asignación de Vendedor y Comisión
+      let vendedorInfo: any = { id: "ADMINISTRADOR", nombre: "Administrador", porcentajeComision: 0, comisionMonto: 0 };
+      if (pagoVendedorDestino !== "ADMINISTRADOR") {
+        const vFound = vendedoresList.find(v => v.id === pagoVendedorDestino);
+        if (vFound) {
+          const pct = vFound.porcentajeComision || 0;
+          const comMonto = Math.round(amountPaid * (pct / 100));
+          vendedorInfo = {
+            id: vFound.id,
+            nombre: vFound.nombre,
+            email: vFound.email,
+            porcentajeComision: pct,
+            comisionMonto: comMonto
+          };
+        }
+      }
+
+      newPlan[idx].vendedorId = vendedorInfo.id;
+      newPlan[idx].vendedorNombre = vendedorInfo.nombre;
+      newPlan[idx].porcentajeComision = vendedorInfo.porcentajeComision;
+      newPlan[idx].comisionMonto = vendedorInfo.comisionMonto;
+
+      // Enviar Notificación de Comisión al Vendedor Asignado (si no es Administrador)
+      if (vendedorInfo.id !== "ADMINISTRADOR" && vendedorInfo.email) {
         await addDoc(collection(db, "notificaciones"), {
-          afiliadoEmail: sol.afiliadoEmail,
-          mensaje: `Se acreditó el pago de cuota ${cuota.numero} de ${sol.datosPersonales?.nombreCompleto || 'cliente'} por $${amountPaid}. Comisión ganada.`,
+          afiliadoEmail: vendedorInfo.email,
+          vendedorId: vendedorInfo.id,
+          vendedorNombre: vendedorInfo.nombre,
+          mensaje: `Se acreditó el pago de cuota ${cuota.numero} de ${sol.datosPersonales?.nombreCompleto || 'cliente'} por $${amountPaid}. Comisión asignada: $${vendedorInfo.comisionMonto} (${vendedorInfo.porcentajeComision}%).`,
           fecha: new Date().toISOString(),
           leida: false,
-          comisionAsociada: amountPaid * 0.15,
+          comisionAsociada: vendedorInfo.comisionMonto,
           estadoPago: "PENDIENTE",
           cuotaAsociada: cuota.numero || idx + 1,
           clienteNombre: sol.datosPersonales?.nombreCompleto || 'Desconocido'

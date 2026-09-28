@@ -4,6 +4,7 @@ import { AdminNav } from "@/components/AdminNav";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { FACTORES_PREDETERMINADOS, calcularOperacionFinanciera, calcularTablaTodosLosPlanes } from "@/lib/financialEngine";
 import { db, storage } from "@/lib/firebase";
+import { obtenerVendedores, Vendedor } from "@/lib/vendedoresManager";
 import { collection, getDocs, getDoc, updateDoc, deleteDoc, doc, query, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { generarContratoModelo, generarPagareModelo, generarRemitoModelo, generarRemitoTipoR, generarPdfPresupuesto, generarComprobantePago, generarEstadoCuenta } from "@/lib/pdfGenerator";
@@ -156,6 +157,9 @@ export default function AdminValidacionesPage() {
   const [pagoMonto, setPagoMonto] = useState("");
   const [pagoComprobante, setPagoComprobante] = useState("");
   const [pagoCuentaDestino, setPagoCuentaDestino] = useState("Caja Efectivo");
+  const [vendedoresList, setVendedoresList] = useState<Vendedor[]>([]);
+  const [pagoVendedorDestino, setPagoVendedorDestino] = useState("ADMINISTRADOR");
+
   const [activeProductSolId, setActiveProductSolId] = useState<Record<string, string>>({});
 
   const groupSolicitudes = (items: any[]) => {
@@ -685,14 +689,38 @@ export default function AdminValidacionesPage() {
         esPagoParcial: difference !== 0
       });
 
-      // Enviar Notificación al Afiliado
-      if (sol.afiliadoEmail) {
+      // Asignación de Vendedor y Comisión
+      let vendedorInfo: any = { id: "ADMINISTRADOR", nombre: "Administrador", porcentajeComision: 0, comisionMonto: 0 };
+      if (pagoVendedorDestino !== "ADMINISTRADOR") {
+        const vFound = vendedoresList.find(v => v.id === pagoVendedorDestino);
+        if (vFound) {
+          const pct = vFound.porcentajeComision || 0;
+          const comMonto = Math.round(amountPaid * (pct / 100));
+          vendedorInfo = {
+            id: vFound.id,
+            nombre: vFound.nombre,
+            email: vFound.email,
+            porcentajeComision: pct,
+            comisionMonto: comMonto
+          };
+        }
+      }
+
+      newPlan[idx].vendedorId = vendedorInfo.id;
+      newPlan[idx].vendedorNombre = vendedorInfo.nombre;
+      newPlan[idx].porcentajeComision = vendedorInfo.porcentajeComision;
+      newPlan[idx].comisionMonto = vendedorInfo.comisionMonto;
+
+      // Enviar Notificación de Comisión al Vendedor Asignado (si no es Administrador)
+      if (vendedorInfo.id !== "ADMINISTRADOR" && vendedorInfo.email) {
         await addDoc(collection(db, "notificaciones"), {
-          afiliadoEmail: sol.afiliadoEmail,
-          mensaje: `Se acreditó el pago de cuota ${cuota.numero} de ${sol.datosPersonales?.nombreCompleto || 'cliente'} por $${amountPaid}. Comisión ganada.`,
+          afiliadoEmail: vendedorInfo.email,
+          vendedorId: vendedorInfo.id,
+          vendedorNombre: vendedorInfo.nombre,
+          mensaje: `Se acreditó el pago de cuota ${cuota.numero} de ${sol.datosPersonales?.nombreCompleto || 'cliente'} por $${amountPaid}. Comisión asignada: $${vendedorInfo.comisionMonto} (${vendedorInfo.porcentajeComision}%).`,
           fecha: new Date().toISOString(),
           leida: false,
-          comisionAsociada: amountPaid * 0.15,
+          comisionAsociada: vendedorInfo.comisionMonto,
           estadoPago: "PENDIENTE",
           cuotaAsociada: cuota.numero || idx + 1,
           clienteNombre: sol.datosPersonales?.nombreCompleto || 'Desconocido'
@@ -1820,6 +1848,7 @@ Quedamos a tu disposición para coordinar la entrega.`;
   };
 
   useEffect(() => {
+    obtenerVendedores().then(setVendedoresList).catch(console.error);
     fetchSolicitudes();
     getDoc(doc(db, "configuraciones", "empresa_remitos")).then(snap => {
       if (snap.exists()) setEmpresaRemitosConfig(snap.data());
@@ -1829,6 +1858,7 @@ Quedamos a tu disposición para coordinar la entrega.`;
   }, []);
 
   useEffect(() => {
+    obtenerVendedores().then(setVendedoresList).catch(console.error);
     if (expandedId) {
       const sol = solicitudes.find(s => s.id === expandedId);
       if (sol) {

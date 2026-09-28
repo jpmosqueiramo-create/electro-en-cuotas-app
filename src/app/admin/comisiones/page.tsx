@@ -4,6 +4,7 @@ import { AdminNav } from "@/components/AdminNav";
 import { LOGO_BASE64 } from "@/lib/logoBase64";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { db } from "@/lib/firebase";
+import { obtenerVendedores, crearVendedor, actualizarVendedor, Vendedor } from "@/lib/vendedoresManager";
 import { collection, getDocs, updateDoc, addDoc, doc, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -16,6 +17,16 @@ export default function AdminComisionesPage() {
   const [historialPagos, setHistorialPagos] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
   const [expandedEmail, setExpandedEmail] = useState<string | null>(null);
+  const [vendedoresList, setVendedoresList] = useState<Vendedor[]>([]);
+  const [modalAgregarVendedorOpen, setModalAgregarVendedorOpen] = useState(false);
+  const [nuevoVendedorNombre, setNuevoVendedorNombre] = useState("");
+  const [nuevoVendedorEmail, setNuevoVendedorEmail] = useState("");
+  const [nuevoVendedorLocalidad, setNuevoVendedorLocalidad] = useState("");
+  const [nuevoVendedorPorcentaje, setNuevoVendedorPorcentaje] = useState("15");
+  const [guardandoVendedor, setGuardandoVendedor] = useState(false);
+  const [vendedorEditId, setVendedorEditId] = useState<string | null>(null);
+  const [editPorcentaje, setEditPorcentaje] = useState("");
+
 
   // Modal de Pago Total / Parcial
   const [modalPagoOpen, setModalPagoOpen] = useState(false);
@@ -39,6 +50,7 @@ export default function AdminComisionesPage() {
       });
       itemsCom.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
       setComisiones(itemsCom);
+      try { const vends = await obtenerVendedores(); setVendedoresList(vends); } catch(e){}
 
       try {
         const snapPagos = await getDocs(collection(db, "pagos_comisiones"));
@@ -62,6 +74,51 @@ export default function AdminComisionesPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  
+  const handleGuardarNuevoVendedor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nuevoVendedorNombre.trim()) return alert("Ingresa el nombre del vendedor.");
+    if (!nuevoVendedorLocalidad.trim()) return alert("Ingresa la localidad.");
+    const pct = Number(nuevoVendedorPorcentaje);
+    if (isNaN(pct) || pct < 0 || pct > 100) return alert("Porcentaje de comisión inválido.");
+
+    setGuardandoVendedor(true);
+    try {
+      await crearVendedor({
+        nombre: nuevoVendedorNombre.trim(),
+        email: nuevoVendedorEmail.trim() || `${nuevoVendedorNombre.toLowerCase().replace(/\s+/g, '')}@cuentahogar.com`,
+        localidad: nuevoVendedorLocalidad.trim(),
+        porcentajeComision: pct,
+        activo: true
+      });
+      alert("Vendedor registrado exitosamente.");
+      setNuevoVendedorNombre("");
+      setNuevoVendedorEmail("");
+      setNuevoVendedorLocalidad("");
+      setNuevoVendedorPorcentaje("15");
+      setModalAgregarVendedorOpen(false);
+      const updated = await obtenerVendedores();
+      setVendedoresList(updated);
+    } catch (err: any) {
+      console.error(err);
+      alert("Error al guardar vendedor: " + err.message);
+    } finally {
+      setGuardandoVendedor(false);
+    }
+  };
+
+  const handleActualizarPorcentajeVendedor = async (id: string, nuevoPct: number) => {
+    try {
+      await actualizarVendedor(id, { porcentajeComision: nuevoPct });
+      alert("Porcentaje de comisión actualizado.");
+      setVendedorEditId(null);
+      const updated = await obtenerVendedores();
+      setVendedoresList(updated);
+    } catch (err: any) {
+      alert("Error al actualizar porcentaje: " + err.message);
+    }
+  };
 
   const handleAbrirModalPago = (email: string, totalPendiente: number, tipo: "TOTAL" | "PARCIAL") => {
     setPagoAfiliadoEmail(email);
@@ -266,6 +323,165 @@ export default function AdminComisionesPage() {
       <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           <AdminNav title="Comisiones Afiliados" subtitle="Resumen de comisiones ganadas por fuerza de ventas y liquidación de comprobantes" />
+
+          {/* BASE DE VENDEDORES Y AFILIADOS */}
+          <div className="bg-[#FFFDFC] border border-[#DED8CF] rounded-2xl p-6 shadow-xs space-y-4 my-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#DED8CF] pb-4">
+              <div>
+                <h2 className="text-lg font-black text-[#173E3B] uppercase tracking-wider flex items-center gap-2">
+                  👥 Base de Vendedores / Afiliados
+                </h2>
+                <p className="text-xs text-[#68706E]">
+                  Fuerza de ventas, localidades y porcentaje de comisión pactada
+                </p>
+              </div>
+              <button
+                onClick={() => setModalAgregarVendedorOpen(true)}
+                className="bg-[#173E3B] hover:bg-[#2F7D5C] text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 uppercase tracking-wider"
+              >
+                <span>➕</span> Nuevo Vendedor / Afiliado
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Administrador / Propietario */}
+              <div className="bg-[#F7F3EC] border border-[#DED8CF] p-4 rounded-xl flex justify-between items-center">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base">👑</span>
+                    <h4 className="font-bold text-[#173E3B] text-sm">Administrador / Dueño</h4>
+                  </div>
+                  <p className="text-[11px] text-[#68706E]">Cobranza Directa Central</p>
+                </div>
+                <div className="text-right">
+                  <span className="bg-[#173E3B]/10 text-[#173E3B] text-xs font-black px-2.5 py-1 rounded-full border border-[#173E3B]/20">
+                    0% Com.
+                  </span>
+                </div>
+              </div>
+
+              {vendedoresList.map((v) => (
+                <div key={v.id} className="bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-xl flex justify-between items-center shadow-xs">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-base">👤</span>
+                      <h4 className="font-bold text-[#1F2928] text-sm">{v.nombre}</h4>
+                    </div>
+                    <p className="text-[11px] text-[#68706E] font-medium">{v.localidad || 'Sin Loc.'} • {v.email}</p>
+                  </div>
+                  <div className="text-right flex items-center gap-2">
+                    {vendedorEditId === v.id ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          value={editPorcentaje}
+                          onChange={e => setEditPorcentaje(e.target.value)}
+                          className="w-14 bg-[#F7F3EC] border border-[#DED8CF] text-xs p-1 rounded font-bold text-center"
+                        />
+                        <span className="text-xs font-bold">%</span>
+                        <button
+                          onClick={() => v.id && handleActualizarPorcentajeVendedor(v.id, Number(editPorcentaje))}
+                          className="bg-green-600 text-white p-1 rounded text-[10px] font-bold"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          onClick={() => setVendedorEditId(null)}
+                          className="bg-gray-300 text-black p-1 rounded text-[10px]"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="cursor-pointer group flex items-center gap-1.5" title="Click para editar comisión" onClick={() => { if (v.id) { setVendedorEditId(v.id); setEditPorcentaje(String(v.porcentajeComision)); } }}>
+                        <span className="bg-amber-100 text-amber-900 text-xs font-black px-2.5 py-1 rounded-full border border-amber-300">
+                          {v.porcentajeComision}% Com.
+                        </span>
+                        <span className="text-[10px] text-gray-400 group-hover:text-black">✏️</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* MODAL NUEVO VENDEDOR */}
+          {modalAgregarVendedorOpen && (
+            <div className="fixed inset-0 bg-[#121316]/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-[#FFFDFC] border border-[#DED8CF] rounded-3xl w-full max-w-md p-6 space-y-5 shadow-xl">
+                <div className="flex justify-between items-center border-b border-[#DED8CF] pb-3">
+                  <h3 className="text-sm font-black text-[#173E3B] uppercase tracking-wider">
+                    ➕ Alta de Nuevo Vendedor / Afiliado
+                  </h3>
+                  <button onClick={() => setModalAgregarVendedorOpen(false)} className="text-[#68706E] font-bold text-sm">✕</button>
+                </div>
+                <form onSubmit={handleGuardarNuevoVendedor} className="space-y-4 text-xs">
+                  <div>
+                    <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Nombre Completo</label>
+                    <input
+                      type="text"
+                      required
+                      value={nuevoVendedorNombre}
+                      onChange={e => setNuevoVendedorNombre(e.target.value)}
+                      placeholder="Ej: Maria Gonzalez"
+                      className="w-full bg-[#F7F3EC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] font-bold outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Localidad Asignada</label>
+                    <input
+                      type="text"
+                      required
+                      value={nuevoVendedorLocalidad}
+                      onChange={e => setNuevoVendedorLocalidad(e.target.value)}
+                      placeholder="Ej: Junín / Lincoln / Bragado"
+                      className="w-full bg-[#F7F3EC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] font-bold outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Email de Contacto (Opcional)</label>
+                    <input
+                      type="email"
+                      value={nuevoVendedorEmail}
+                      onChange={e => setNuevoVendedorEmail(e.target.value)}
+                      placeholder="vendedor@cuentahogar.com"
+                      className="w-full bg-[#F7F3EC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] font-bold outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Porcentaje de Comisión Acordado (%)</label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      max="100"
+                      value={nuevoVendedorPorcentaje}
+                      onChange={e => setNuevoVendedorPorcentaje(e.target.value)}
+                      className="w-full bg-[#F7F3EC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] font-black text-sm outline-none"
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setModalAgregarVendedorOpen(false)}
+                      className="flex-1 bg-[#F7F3EC] text-[#68706E] font-bold py-2.5 rounded-xl uppercase text-xs"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={guardandoVendedor}
+                      className="flex-1 bg-[#173E3B] hover:bg-[#2F7D5C] text-white font-bold py-2.5 rounded-xl uppercase text-xs shadow-xs"
+                    >
+                      {guardandoVendedor ? "Guardando..." : "Guardar Vendedor"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
 
           {cargando ? (
              <div className="text-center py-20 text-[#68706E] font-bold animate-pulse">
