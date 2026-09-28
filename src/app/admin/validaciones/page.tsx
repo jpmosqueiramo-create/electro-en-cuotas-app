@@ -1048,6 +1048,8 @@ export default function AdminValidacionesPage() {
         nombreCompleto: contratoAEditar.nombreComprador,
         numeroDni: contratoAEditar.dni,
         direccion: contratoAEditar.domicilio,
+        localidad: contratoAEditar.localidad,
+        codigoPostal: contratoAEditar.codigoPostal,
         email: contratoAEditar.email,
         whatsapp: contratoAEditar.whatsapp,
         productoDeseado: contratoAEditar.producto,
@@ -1158,9 +1160,9 @@ export default function AdminValidacionesPage() {
 
     const nombre = sol.datosPersonales?.nombreCompleto || sol.nombreCompleto || sol.nombre || "";
     const dni = sol.datosPersonales?.numeroDni || sol.numeroDni || sol.dni || "";
-    const dom = sol.datosPersonales?.direccion 
-      ? `${sol.datosPersonales.direccion}, ${sol.datosPersonales.localidad || ""}` 
-      : (sol.direccion || "");
+    const dom = sol.datosPersonales?.direccion || sol.direccion || "";
+    const loc = sol.datosPersonales?.localidad || sol.localidad || "";
+    const cp = sol.datosPersonales?.codigoPostal || sol.codigoPostal || sol.cp || "";
     const tel = sol.datosPersonales?.telefono || sol.whatsapp || "";
 
     // Priority: Supplier Product Cost (Costo de Proveedor / Costo del Bien)
@@ -1246,6 +1248,8 @@ export default function AdminValidacionesPage() {
       nombreComprador: nombre,
       dni: dni,
       domicilio: dom,
+      localidad: loc,
+      codigoPostal: cp,
       email: sol.clienteEmail || sol.email || sol.datosPersonales?.email || "",
       whatsapp: tel,
       producto: prod,

@@ -79,6 +79,7 @@ export interface DatosContrato {
   cuil?: string;
   domicilio: string;
   localidad?: string;
+  codigoPostal?: string;
   provincia?: string;
   email: string;
   whatsapp: string;
@@ -195,12 +196,14 @@ export const generarContratoModelo = (datos: DatosContrato) => {
 
   const cuitSrl = "30-71829384-9";
   const cuilCli = datos.cuil || datos.dni || "-";
-  const locCli = datos.localidad || "CABA";
-  const provCli = datos.provincia || "Buenos Aires";
+  const domCli = (datos.domicilio || "-").toUpperCase();
+  const locCli = (datos.localidad || "CABA").toUpperCase();
+  const cpCli = datos.codigoPostal ? ` (CP ${datos.codigoPostal})` : "";
+  const provCli = (datos.provincia || "Buenos Aires").toUpperCase();
   const emailCli = datos.email || "-";
   const telCli = datos.whatsapp || "-";
 
-  const textIntro = `Entre LOOP GESTIÓN INTEGRAL S.R.L. (operando comercialmente bajo su nombre de fantasía "Cuenta Hogar"), CUIT N° ${cuitSrl}, con domicilio legal en Caracas 1101, Ciudad Autónoma de Buenos Aires, representada en este acto por su Socio Gerente, Sr. Juan Pablo Mosqueira Morales, en adelante denominado el "MANDATARIO" o la "EMPRESA", por una parte; y por la otra el/la Sr./Sra. ${datos.nombreComprador.toUpperCase()}, D.N.I. N° ${datos.dni}, CUIT/CUIL N° ${cuilCli}, con domicilio en la calle ${datos.domicilio.toUpperCase()}, de la localidad de ${locCli.toUpperCase()}, provincia de ${provCli.toUpperCase()}, correo electrónico ${emailCli}, teléfono ${telCli}, en adelante denominado el "MANDANTE" o el "CLIENTE", convienen en celebrar el presente Contrato de Mandato Comercial, sujeto a las disposiciones del Código Civil y Comercial de la Nación y a las siguientes cláusulas y condiciones:`;
+  const textIntro = `Entre LOOP GESTIÓN INTEGRAL S.R.L. (operando comercialmente bajo su nombre de fantasía "Cuenta Hogar"), CUIT N° ${cuitSrl}, con domicilio legal en Caracas 1101, Ciudad Autónoma de Buenos Aires, representada en este acto por su Socio Gerente, Sr. Juan Pablo Mosqueira Morales, en adelante denominado el "MANDATARIO" o la "EMPRESA", por una parte; y por la otra el/la Sr./Sra. ${datos.nombreComprador.toUpperCase()}, D.N.I. N° ${datos.dni}, CUIT/CUIL N° ${cuilCli}, con domicilio en la calle ${domCli}, de la localidad de ${locCli}${cpCli}, provincia de ${provCli}, correo electrónico ${emailCli}, teléfono ${telCli}, en adelante denominado el "MANDANTE" o el "CLIENTE", convienen en celebrar el presente Contrato de Mandato Comercial, sujeto a las disposiciones del Código Civil y Comercial de la Nación y a las siguientes cláusulas y condiciones:`;
 
   const linesIntro = doc.splitTextToSize(textIntro, contentWidth);
   doc.text(linesIntro, marginLeft, y);
@@ -779,9 +782,9 @@ export const generarPagareModelo = (datos: DatosContrato) => {
 
   // DATOS DEUDOR PRINCIPAL BOX
   doc.setFillColor(248, 250, 252);
-  doc.rect(15, y, 180, 32, "F");
+  doc.rect(15, y, 180, 36, "F");
   doc.setDrawColor(203, 213, 225);
-  doc.rect(15, y, 180, 32, "S");
+  doc.rect(15, y, 180, 36, "S");
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
@@ -792,12 +795,14 @@ export const generarPagareModelo = (datos: DatosContrato) => {
   doc.setFontSize(8.5);
   doc.setTextColor(51, 65, 85);
   doc.text(`Nombre y Apellido: ${datos.nombreComprador.toUpperCase()}`, 20, y + 13);
-  doc.text(`DNI: ${datos.dni} ${datos.cuil ? " | CUIT/CUIL: " + datos.cuil : ""}`, 120, y + 13);
-  doc.text(`Domicilio: ${datos.domicilio.toUpperCase()} (${datos.localidad || "CABA"})`, 20, y + 20);
-  doc.text(`Teléfono / WhatsApp: ${datos.whatsapp}`, 120, y + 20);
-  doc.text(`Email: ${datos.email || "-"}`, 20, y + 27);
+  doc.text(`DNI: ${datos.dni}${datos.cuil ? " | CUIT/CUIL: " + datos.cuil : ""}`, 115, y + 13);
+  doc.text(`Domicilio: ${(datos.domicilio || "-").toUpperCase()}`, 20, y + 20);
+  doc.text(`Localidad: ${(datos.localidad || "CABA").toUpperCase()}`, 115, y + 20);
+  doc.text(`Código Postal: ${datos.codigoPostal || "-"}`, 20, y + 27);
+  doc.text(`Teléfono / WhatsApp: ${datos.whatsapp || "-"}`, 115, y + 27);
+  doc.text(`Email: ${datos.email || "-"}`, 20, y + 33);
 
-  y += 40;
+  y += 44;
 
   // LÓGICA CONDICIONAL DE GARANTE / AVALISTA
   const tieneGarante = datos.tieneGarante || (datos.garanteNombre && datos.garanteNombre.trim().length > 0);

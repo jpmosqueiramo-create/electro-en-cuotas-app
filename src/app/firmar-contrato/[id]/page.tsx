@@ -144,6 +144,7 @@ export default function FirmarContratoPage({ params }: { params: Promise<{ id: s
     const cuil = solicitud.cuil || solicitud.datosPersonales?.cuil || dni;
     const domicilio = solicitud.direccion || solicitud.datosPersonales?.direccion || "-";
     const localidad = solicitud.localidad || solicitud.datosPersonales?.localidad || "CABA";
+    const codigoPostal = solicitud.codigoPostal || solicitud.datosPersonales?.codigoPostal || solicitud.cp || "-";
     const producto = solicitud.productoDeseado || solicitud.productoNombre || solicitud.necesidad || "Electrodoméstico / Producto";
     const nroContrato = generarNumeroContratoEstructurado(solicitud);
 
@@ -159,6 +160,7 @@ export default function FirmarContratoPage({ params }: { params: Promise<{ id: s
       cuil: cuil,
       domicilio: domicilio,
       localidad: localidad,
+      codigoPostal: codigoPostal,
       email: solicitud.email || solicitud.clienteEmail || "-",
       whatsapp: solicitud.whatsapp || solicitud.telefono || "-",
       producto: producto,
@@ -207,6 +209,7 @@ export default function FirmarContratoPage({ params }: { params: Promise<{ id: s
   const dniCliente = solicitud.numeroDni || solicitud.dni || solicitud.datosPersonales?.numeroDni || "S/D";
   const domicilioCliente = solicitud.direccion || solicitud.datosPersonales?.direccion || "S/D";
   const localidadCliente = solicitud.localidad || solicitud.datosPersonales?.localidad || "S/D";
+  const codigoPostalCliente = solicitud.codigoPostal || solicitud.datosPersonales?.codigoPostal || solicitud.cp || "S/D";
   const productoNombre = solicitud.productoDeseado || solicitud.productoNombre || solicitud.necesidad || "Producto Seleccionado";
   const planCuotas = solicitud.cuotas || solicitud.planElegido || "12";
   const cuotaValor = solicitud.montoCuota || 0;
@@ -351,9 +354,9 @@ export default function FirmarContratoPage({ params }: { params: Promise<{ id: s
                 </div>
 
                 <div className="bg-[#F7F3EC] p-3 rounded-xl border border-[#DED8CF]">
-                  <span className="text-[#68706E] block font-sans">Domicilio Registrado:</span>
+                  <span className="text-[#68706E] block font-sans">Domicilio y Ubicación:</span>
                   <strong className="text-[#1F2928] font-sans font-semibold block mt-0.5">{domicilioCliente}</strong>
-                  <span className="text-[#68706E]">{localidadCliente}</span>
+                  <span className="text-[#68706E]">{localidadCliente} {codigoPostalCliente !== "S/D" ? `(CP ${codigoPostalCliente})` : ""}</span>
                 </div>
 
                 <div className="bg-[#F7F3EC] p-3 rounded-xl border border-[#DED8CF]">

@@ -27,6 +27,8 @@ function SolicitarForm() {
   const [fechaNacimiento, setFechaNacimiento] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [direccion, setDireccion] = useState("");
+  const [localidad, setLocalidad] = useState("");
+  const [codigoPostal, setCodigoPostal] = useState("");
   const [ocupacion, setOcupacion] = useState("");
   const [email, setEmail] = useState("");
   const [antiguedadLaboral, setAntiguedadLaboral] = useState("1 a 3 años");
@@ -106,6 +108,8 @@ function SolicitarForm() {
         fechaNacimiento,
         whatsapp, 
         direccion, 
+        localidad,
+        codigoPostal,
         ocupacion,
         nombreAfiliado,
         referidoPor,
@@ -321,9 +325,19 @@ function SolicitarForm() {
                 <input required value={antiguedadLaboral} onChange={e=>setAntiguedadLaboral(e.target.value)} type="date" className="w-full bg-[#161922] border border-[#222530] p-3.5 rounded-xl text-white placeholder-[#9CA3AF] outline-none focus:border-[#FFD21A] focus:ring-2 focus:ring-[#173E3B]/20 transition-all font-medium text-base shadow-sm" />
               </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-sm text-white mb-1.5 font-bold">Localidad y Dirección Exacta</label>
-                <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" placeholder="Ej: Av. San Martín 1500, Piso 2A, Junín" className="w-full bg-[#161922] border border-[#222530] p-3.5 rounded-xl text-white placeholder-[#9CA3AF] outline-none focus:border-[#FFD21A] focus:ring-2 focus:ring-[#173E3B]/20 transition-all font-medium text-base shadow-sm" />
+              <div>
+                <label className="block text-sm text-white mb-1.5 font-bold">Domicilio (Calle y N°)</label>
+                <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" placeholder="Ej: Av. San Martín 1500, Piso 2A" className="w-full bg-[#161922] border border-[#222530] p-3.5 rounded-xl text-white placeholder-[#9CA3AF] outline-none focus:border-[#FFD21A] focus:ring-2 focus:ring-[#173E3B]/20 transition-all font-medium text-base shadow-sm" />
+              </div>
+
+              <div>
+                <label className="block text-sm text-white mb-1.5 font-bold">Localidad</label>
+                <input required value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" placeholder="Ej: Junín" className="w-full bg-[#161922] border border-[#222530] p-3.5 rounded-xl text-white placeholder-[#9CA3AF] outline-none focus:border-[#FFD21A] focus:ring-2 focus:ring-[#173E3B]/20 transition-all font-medium text-base shadow-sm" />
+              </div>
+
+              <div>
+                <label className="block text-sm text-white mb-1.5 font-bold">Código Postal</label>
+                <input required value={codigoPostal} onChange={e=>setCodigoPostal(e.target.value)} type="text" placeholder="Ej: 6000" className="w-full bg-[#161922] border border-[#222530] p-3.5 rounded-xl text-white placeholder-[#9CA3AF] outline-none focus:border-[#FFD21A] focus:ring-2 focus:ring-[#173E3B]/20 transition-all font-medium text-base shadow-sm" />
               </div>
 
               
