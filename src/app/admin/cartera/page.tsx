@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { sanitizePhoneWhatsApp } from "@/lib/phoneUtils";
+import { generarComprobantePago } from "@/lib/pdfGenerator";
 
 
 const generarMensajeRecordatorioCuota = (sol: any, cuota?: any) => {
@@ -65,9 +66,10 @@ export default function CarteraPage() {
   
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [nuevaNota, setNuevaNota] = useState("");
-  const [modalConfirmacion, setModalConfirmacion] = useState<{solId: string, idxCuota: number, planPagos: any[]} | null>(null);
-  const [montoIngresado, setMontoIngresado] = useState("");
-  const [metodoPagoCuota, setMetodoPagoCuota] = useState("Efectivo");
+  const [pagoAConfirmar, setPagoAConfirmar] = useState<any | null>(null);
+  const [pagoMonto, setPagoMonto] = useState("");
+  const [pagoComprobante, setPagoComprobante] = useState("");
+  const [pagoCuentaDestino, setPagoCuentaDestino] = useState("Caja Efectivo");
   const [modalBorrar, setModalBorrar] = useState<string | null>(null);
   const [fechaPromesa, setFechaPromesa] = useState("");
 
@@ -186,6 +188,107 @@ export default function CarteraPage() {
       }
     });
     return { pagadas, restantes, atrasadas, montcAtrasado };
+  };
+
+
+  const handleProcesarPagoFinal = async () => {
+    if (!pagoAConfirmar) return;
+    const { solId, idx, metodo, originalAmount, isClientApprove } = pagoAConfirmar;
+    
+    const amountPaid = Number(pagoMonto);
+    if (isNaN(amountPaid) || amountPaid < 0) {
+      alert("Por favor, ingrese un monto válido.");
+      return;
+    }
+
+    try {
+      const sol = solicitudes.find(s => s.id === solId);
+      if (!sol) return;
+
+      const newPlan = [...(sol.planPagos || [])];
+      const cuota = newPlan[idx];
+
+      newPlan[idx].estado = "PAGADO";
+      newPlan[idx].montoAbonado = amountPaid;
+      newPlan[idx].fechaPago = new Date().toISOString();
+      newPlan[idx].nroComprobante = pagoComprobante.trim();
+      newPlan[idx].cuentaDestino = pagoCuentaDestino.trim();
+      if (!isClientApprove) {
+        newPlan[idx].metodoPagoManual = metodo;
+      }
+
+      const difference = originalAmount - amountPaid;
+      let nextCuotaVal: number | undefined = undefined;
+      let nextCuotaNum: number | undefined = undefined;
+      let feedbackMsg = "Pago registrado y acreditado con éxito.";
+
+      if (difference !== 0) {
+        const nextPendingIdx = newPlan.findIndex((c, i) => i > idx && c.estado === "PENDIENTE");
+        if (nextPendingIdx !== -1) {
+          const oldVal = newPlan[nextPendingIdx].montoOriginal;
+          const newVal = Math.max(0, oldVal + difference);
+          newPlan[nextPendingIdx].montoOriginal = newVal;
+          nextCuotaVal = newVal;
+          nextCuotaNum = newPlan[nextPendingIdx].numero;
+          feedbackMsg = `Pago registrado. Diferencia de $${difference > 0 ? '+' : ''}${difference} trasladada a la Cuota ${newPlan[nextPendingIdx].numero} (Nuevo valor: $${newVal}).`;
+        } else {
+          feedbackMsg = `Pago registrado. Diferencia residual de $${difference} asentada en la cuota final del plan.`;
+        }
+      }
+
+      // Guardar en Firebase
+      await updateDoc(doc(db, "solicitudes", solId), { planPagos: newPlan });
+
+      // Generar Comprobante en PDF e iniciar descarga automática
+      const receiptId = `REC-${solId.substring(0, 5).toUpperCase()}-${cuota.numero}`;
+      const numCuotasTotal = sol.planPagos?.length || parseInt(sol.planElegido || "12") || 12;
+      const cProdVal = Number((sol as any).precioContado || (sol as any).costoProducto || (sol as any).costoBien) || 0;
+      const totalFinVal = Number((sol as any).totalFinanciado) || (amountPaid * numCuotasTotal);
+      const baseGravVal = Math.max(0, totalFinVal - cProdVal);
+      
+      const mExentoCuota = numCuotasTotal > 0 ? Math.round(cProdVal / numCuotasTotal) : 0;
+      const mGravadoCuota = numCuotasTotal > 0 ? Math.round(baseGravVal / numCuotasTotal) : 0;
+
+      generarComprobantePago({
+        nroContrato: (sol as any).nroContrato || `CH-${sol.id.substring(0, 8).toUpperCase()}`,
+        nroRecibo: receiptId,
+        fecha: new Date().toLocaleDateString("es-AR"),
+        clienteNombre: sol.datosPersonales?.nombreCompleto || (sol as any).nombreCompleto || "Cliente",
+        clienteDni: sol.datosPersonales?.numeroDni || (sol as any).numeroDni || "-",
+        cuotaNumero: cuota.numero,
+        cuotasTotal: numCuotasTotal,
+        montoAbonado: amountPaid,
+        montoExento: mExentoCuota,
+        montoGravado: mGravadoCuota,
+        metodoPago: isClientApprove ? "Aprobación Recibo Online" : metodo,
+        nroComprobante: pagoComprobante.trim() || undefined,
+        cuentaDestino: pagoCuentaDestino.trim() || undefined,
+        proximaCuotaValor: nextCuotaVal,
+        proximaCuotaNumero: nextCuotaNum,
+        esPagoParcial: difference !== 0
+      });
+
+      // Enviar Notificación al Afiliado
+      if (sol.afiliadoEmail) {
+        await addDoc(collection(db, "notificaciones"), {
+          afiliadoEmail: sol.afiliadoEmail,
+          mensaje: `Se acreditó el pago de cuota ${cuota.numero} de ${sol.datosPersonales?.nombreCompleto || 'cliente'} por $${amountPaid}. Comisión ganada.`,
+          fecha: new Date().toISOString(),
+          leida: false,
+          comisionAsociada: amountPaid * 0.15,
+          estadoPago: "PENDIENTE",
+          cuotaAsociada: cuota.numero || idx + 1,
+          clienteNombre: sol.datosPersonales?.nombreCompleto || 'Desconocido'
+        });
+      }
+
+      await fetchData();
+      setPagoAConfirmar(null);
+      alert(`${feedbackMsg}\n\n¡El comprobante de pago PDF ha sido generado y descargado!`);
+    } catch (e: any) {
+      console.error(e);
+      alert("Error al procesar el pago: " + e.message);
+    }
   };
 
   const hoyStr = new Date().toISOString().split("T")[0];
@@ -345,34 +448,156 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                                </div>
                            ) : (
                                <div className="space-y-3">
-                                  {sol.planPagos.map((cuota: any, idx: number) => {
-                                      const isAtrasada = cuota.estado !== "PAGADO" && new Date(cuota.vencimiento) < new Date();
-                                      return (
-                                        <div key={idx} className={`p-3 rounded border flex flex-col md:flex-row md:items-center justify-between gap-3 text-sm ${cuota.estado === 'PAGADO' ? 'bg-green-900/10 border-green-500/10' : cuota.estado === 'EN_REVISION' ? 'bg-blue-900/20 border-blue-500/50' : isAtrasada ? 'bg-red-900/20 border-red-500/10' : 'bg-[#FFFDFC] border-[#DED8CF]'}`}>
-                                            <div>
-                                               <p className="font-bold text-[#1F2928]">Cuota {cuota.numero} <span className="text-[#B44E2A] ml-2">${cuota.montoOriginal}</span></p>
-                                               <p className="text-xs text-[#68706E]">Vence: {new Date(cuota.vencimiento).toLocaleDateString()}</p>
-                                            </div>
-                                            <div className="flex flex-col md:items-end gap-1">
-                                               <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider w-fit ${cuota.estado === 'PAGADO' ? 'bg-green-500/20 text-[#2F7D5C]' : cuota.estado === 'EN_REVISION' ? 'bg-blue-500 text-white animate-pulse' : isAtrasada ? 'bg-red-500/20 text-red-500' : 'bg-orange-500/20 text-[#B44E2A]'}`}>
-                                                  {isAtrasada && cuota.estado !== 'PAGADO' && cuota.estado !== 'EN_REVISION' ? 'VENCIDA' : cuota.estado}
-                                               </span>
-                                               
-                                               {cuota.comprobanteUrl && (
-                                                  <div className="flex gap-2 mt-2">
-                                                     <a href={cuota.comprobanteUrl} target="_blank" rel="noreferrer" className="text-[10px] bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded font-bold shadow-md">👀 Ver Recibo</a>
-                                                     {cuota.estado === "EN_REVISION" && (
-                                                     <button onClick={() => {
-                                                         setModalConfirmacion({solId: sol.id, idxCuota: idx, planPagos: sol.planPagos});
-                                                         setMontoIngresado(cuota.montoOriginal.toString());
-                                                      }} className="text-[10px] bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded font-bold shadow-md hover:scale-105 transition-transform">✓ Aprobar Pago Central</button>
-                                                     )}
-                                                  </div>
-                                               )}
-                                            </div>
-                                        </div>
-                                      )
-                                  })}
+                                   {sol.planPagos.map((cuota: any, idx: number) => {
+                                       const isAtrasada = cuota.estado !== "PAGADO" && new Date(cuota.vencimiento) < new Date();
+                                       return (
+                                         <div key={idx} className={`p-3 rounded-xl border flex flex-col justify-between gap-3 text-sm ${cuota.estado === 'PAGADO' ? 'bg-green-950/10 border-green-500/20' : cuota.estado === 'EN_REVISION' ? 'bg-blue-950/20 border-blue-500/50' : isAtrasada ? 'bg-red-950/20 border-red-500/20' : 'bg-[#FFFDFC] border-[#DED8CF]'}`}>
+                                             <div className="flex items-center justify-between">
+                                                <div>
+                                                   <p className="font-bold text-[#1F2928]">Cuota {cuota.numero} <span className="text-[#B44E2A] ml-2 font-mono">${cuota.montoOriginal}</span></p>
+                                                   <p className="text-xs text-[#68706E]">Vence: {new Date(cuota.vencimiento).toLocaleDateString("es-AR")}</p>
+                                                </div>
+                                                <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${cuota.estado === 'PAGADO' ? 'bg-green-500/20 text-[#2F7D5C]' : cuota.estado === 'EN_REVISION' ? 'bg-blue-500 text-white animate-pulse' : isAtrasada ? 'bg-red-500/20 text-red-500' : 'bg-orange-500/20 text-[#B44E2A]'}`}>
+                                                   {isAtrasada && cuota.estado !== 'PAGADO' && cuota.estado !== 'EN_REVISION' ? 'VENCIDA' : cuota.estado}
+                                                </span>
+                                             </div>
+
+                                             {cuota.estado === "PAGADO" && (
+                                                <div className="flex flex-col gap-1.5 mt-1 bg-[#FFFDFC] p-2.5 rounded-lg border border-[#DED8CF]">
+                                                   <div className="flex justify-between items-center text-[10px]">
+                                                      <span className="text-[#68706E] font-bold uppercase">Abonado:</span>
+                                                      <span className="text-[#2F7D5C] font-black">${cuota.montoAbonado || cuota.montoOriginal}</span>
+                                                   </div>
+                                                   {cuota.fechaPago && (
+                                                      <div className="flex justify-between items-center text-[10px]">
+                                                         <span className="text-[#68706E]">Fecha de Pago:</span>
+                                                         <span className="text-[#1F2928]">{new Date(cuota.fechaPago).toLocaleDateString("es-AR")}</span>
+                                                      </div>
+                                                   )}
+                                                   {(cuota.cuentaDestino || cuota.metodoPagoManual || cuota.metodoPago) && (
+                                                      <div className="flex justify-between items-center text-[10px]">
+                                                         <span className="text-[#68706E]">Medio / Cuenta:</span>
+                                                         <span className="text-[#1F2928]">{cuota.cuentaDestino || cuota.metodoPagoManual || cuota.metodoPago}</span>
+                                                      </div>
+                                                   )}
+                                                   {cuota.nroComprobante && (
+                                                      <div className="flex justify-between items-center text-[10px]">
+                                                         <span className="text-[#68706E]">Transacción:</span>
+                                                         <span className="text-[#1F2928] font-mono">{cuota.nroComprobante}</span>
+                                                      </div>
+                                                   )}
+                                                   <div className="flex gap-2 mt-2 pt-2 border-t border-[#DED8CF]">
+                                                      {cuota.comprobanteUrl && (
+                                                         <a 
+                                                           href={cuota.comprobanteUrl} 
+                                                           target="_blank" 
+                                                           rel="noreferrer" 
+                                                           className="flex-1 bg-blue-950/20 text-blue-400 border border-blue-500/20 text-center py-1 rounded text-[9px] font-bold hover:bg-blue-600 hover:text-[#173E3B] transition"
+                                                         >
+                                                           📄 Ver Adjunto
+                                                         </a>
+                                                      )}
+                                                      <button
+                                                         onClick={() => {
+                                                            const isPartial = cuota.montoAbonado !== undefined && cuota.montoAbonado !== cuota.montoOriginal;
+                                                            const receiptId = `REC-${sol.id.substring(0, 5).toUpperCase()}-${cuota.numero}`;
+                                                            const numCuotasTotal = sol.planPagos?.length || 12;
+                                                            const cProdVal = Number(sol.precioContado || sol.costoProducto || sol.costoBien) || 0;
+                                                            const totalFinVal = Number(sol.totalFinanciado) || ((cuota.montoAbonado || cuota.montoOriginal) * numCuotasTotal);
+                                                            const baseGravVal = Math.max(0, totalFinVal - cProdVal);
+                                                            
+                                                            generarComprobantePago({
+                                                               nroContrato: sol.nroContrato || `CH-${sol.id.substring(0, 8).toUpperCase()}`,
+                                                               nroRecibo: receiptId,
+                                                               fecha: cuota.fechaPago ? new Date(cuota.fechaPago).toLocaleDateString("es-AR") : new Date().toLocaleDateString("es-AR"),
+                                                               clienteNombre: sol.datosPersonales?.nombreCompleto || sol.nombreCompleto || "Cliente",
+                                                               clienteDni: sol.datosPersonales?.numeroDni || sol.numeroDni || "-",
+                                                               cuotaNumero: cuota.numero,
+                                                               cuotasTotal: numCuotasTotal,
+                                                               montoAbonado: cuota.montoAbonado || cuota.montoOriginal,
+                                                               montoExento: numCuotasTotal > 0 ? Math.round(cProdVal / numCuotasTotal) : 0,
+                                                               montoGravado: numCuotasTotal > 0 ? Math.round(baseGravVal / numCuotasTotal) : 0,
+                                                               metodoPago: cuota.metodoPagoManual || cuota.metodoPago || "Acreditado",
+                                                               nroComprobante: cuota.nroComprobante,
+                                                               cuentaDestino: cuota.cuentaDestino,
+                                                               esPagoParcial: isPartial
+                                                            });
+                                                         }}
+                                                         className="flex-1 bg-green-950/20 text-[#2F7D5C] border border-green-500/20 py-1 rounded text-[9px] font-bold hover:bg-green-600 hover:text-[#173E3B] transition uppercase tracking-wider flex items-center justify-center gap-1"
+                                                      >
+                                                         📥 Recibo PDF
+                                                      </button>
+                                                   </div>
+                                                </div>
+                                             )}
+
+                                             {cuota.estado === "EN_REVISION" && (
+                                                <div className="bg-[#F7F3EC] p-3 rounded-xl border border-[#DED8CF] flex flex-col gap-3 mt-1">
+                                                   {cuota.comprobanteUrl && (
+                                                      <a href={cuota.comprobanteUrl} target="_blank" rel="noreferrer" className="bg-blue-600/20 text-blue-400 border border-blue-500/50 text-xs font-bold py-2 rounded text-center hover:bg-blue-600 hover:text-[#173E3B] transition-colors">📄 Abrir Comprobante Adjunto</a>
+                                                   )}
+                                                   <div className="flex gap-2">
+                                                      <button onClick={async () => {
+                                                          const m = prompt("Motivo de rechazo (Ej: borroso, falso):");
+                                                          if (m === null) return;
+                                                          const newPlan = [...(sol.planPagos || [])];
+                                                          newPlan[idx].estado = "PENDIENTE";
+                                                          newPlan[idx].comprobanteUrl = null;
+                                                          await updateDoc(doc(db, "solicitudes", sol.id), { planPagos: newPlan });
+                                                          await fetchData();
+                                                          alert("Pago Rechazado.");
+                                                      }} className="flex-1 bg-red-900/40 text-red-400 border border-red-500/10 hover:bg-red-600 hover:text-[#173E3B] py-2 rounded text-xs font-bold transition">Rechazar</button>
+                                                      <button onClick={() => {
+                                                          setPagoAConfirmar({ solId: sol.id, idx, metodo: 'Transferencia', originalAmount: cuota.montoOriginal, isClientApprove: true });
+                                                          setPagoMonto(String(cuota.montoOriginal));
+                                                          setPagoComprobante(cuota.nroComprobante || "");
+                                                          setPagoCuentaDestino(cuota.cuentaDestino || "Mercado Pago (Fintech)");
+                                                      }} className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2 rounded text-xs font-black transition shadow-xs">✓ Aprobar</button>
+                                                   </div>
+                                                </div>
+                                             )}
+
+                                             {cuota.estado !== "PAGADO" && cuota.estado !== "EN_REVISION" && (
+                                                <div className="bg-[#FFFDFC]/60 p-3 rounded-lg border border-[#DED8CF]/60 flex flex-col gap-2 mt-1">
+                                                   <p className="text-[10px] text-[#68706E] font-medium">Registrar cobro manual realizado en efectivo o transferencia:</p>
+                                                   <div className="flex flex-wrap gap-2">
+                                                      <button
+                                                        onClick={() => {
+                                                          setPagoAConfirmar({ solId: sol.id, idx, metodo: 'Efectivo', originalAmount: cuota.montoOriginal, isClientApprove: false });
+                                                          setPagoMonto(String(cuota.montoOriginal));
+                                                          setPagoComprobante("");
+                                                          setPagoCuentaDestino("Caja Efectivo");
+                                                        }}
+                                                        className="flex-1 bg-green-950/30 hover:bg-green-600 border border-green-500/20 text-[#2F7D5C] hover:text-[#173E3B] py-1.5 rounded text-[10px] font-black transition uppercase tracking-wider min-w-[70px]"
+                                                      >
+                                                        💵 Efectivo
+                                                      </button>
+                                                      <button
+                                                        onClick={() => {
+                                                          setPagoAConfirmar({ solId: sol.id, idx, metodo: 'Transferencia', originalAmount: cuota.montoOriginal, isClientApprove: false });
+                                                          setPagoMonto(String(cuota.montoOriginal));
+                                                          setPagoComprobante("");
+                                                          setPagoCuentaDestino("Mercado Pago (Fintech)");
+                                                        }}
+                                                        className="flex-1 bg-blue-950/30 hover:bg-blue-600 border border-blue-500/20 text-blue-400 hover:text-[#173E3B] py-1.5 rounded text-[10px] font-black transition uppercase tracking-wider min-w-[70px]"
+                                                      >
+                                                        📱 Transf.
+                                                      </button>
+                                                      <a
+                                                         href={`https://wa.me/${sanitizePhoneWhatsApp(sol.datosPersonales?.telefono || sol.whatsapp || sol.telefono || '')}?text=${encodeURIComponent(generarMensajeRecordatorioCuota(sol, cuota))}`}
+                                                         target="_blank"
+                                                         rel="noopener noreferrer"
+                                                         className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded text-[10px] font-bold shadow-md flex items-center justify-center gap-1 min-w-[120px]"
+                                                         title="Enviar recordatorio predeterminado de esta cuota por WhatsApp"
+                                                      >
+                                                         💬 Recordatorio WA
+                                                      </a>
+                                                   </div>
+                                                </div>
+                                             )}
+                                         </div>
+                                       )
+                                   })}
                                </div>
                            )}
                         </div>
@@ -426,106 +651,77 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
 
       </div>
 
-      {/* MODAL DE CONFIRMACION REACTIVO */}
-      {modalConfirmacion && (
-         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1F2928]/60 backdrop-blur-sm backdrop-blur-sm p-4">
-            <div className="bg-[#FFFDFC] border border-yellow-500/50 rounded-2xl p-8 max-w-sm w-full shadow-xs flex flex-col items-center animate-fade-in text-center">
-               <div className="bg-green-500/5 w-20 h-20 rounded-full flex items-center justify-center mb-6 border border-green-500/10">
-                  <span className="text-[#2F7D5C] text-4xl font-black">✓</span>
+      {/* MODAL DE CONFIRMACIÓN DE COBRO Y EMISIÓN DE COMPROBANTE */}
+      {pagoAConfirmar && (
+         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1F2928]/60 backdrop-blur-sm p-4">
+            <div className="bg-[#FFFDFC] border-2 border-green-500/20 rounded-3xl w-full max-w-md p-6 shadow-xs space-y-5">
+               <div className="border-b border-[#DED8CF] pb-3 flex justify-between items-center">
+                  <div>
+                     <h3 className="text-sm font-black text-[#2F7D5C] uppercase tracking-widest">💰 Acreditación de Pago</h3>
+                     <p className="text-[10px] text-[#68706E]">Registre los datos de la transacción para emitir comprobante PDF</p>
+                  </div>
+                  <button onClick={() => setPagoAConfirmar(null)} className="text-[#68706E] hover:text-[#173E3B] text-xs font-bold">✕</button>
                </div>
-               <h3 className="text-2xl font-heading font-extrabold text-[#173E3B] mb-3">Liquidar Cuota</h3>
-               <p className="text-[#68706E] text-sm mb-4 leading-relaxed">¿Estás completamente seguro de que el importe de esta cuota impactó en tu cuenta bancaria y deseas marcarla como cerrada permanentemente?</p>
                
-               <div className="w-full text-left mb-6 bg-[#FFFDFC] p-4 rounded-lg border border-[#DED8CF]">
-                  <label className="text-xs text-[#B44E2A] font-bold uppercase mb-2 block">Monto Realmente Pagado ($)</label>
-                  <input 
-                     type="number" 
-                     value={montoIngresado} 
-                     onChange={(e) => setMontoIngresado(e.target.value)}
-                     className="w-full bg-[#FFFDFC] border border-[#DED8CF] text-[#1F2928] p-3 rounded-lg focus:border-yellow-500 outline-none transition-colors font-bold text-lg"
-                     min="0"
-                  />
-                  <p className="text-[10px] text-[#68706E] mt-2">Si el pago es parcial, el saldo restante se sumará automáticamente a la próxima cuota o creará una nueva.</p>
+               <div className="space-y-4 text-xs">
+                  <div>
+                     <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Monto Real Cobrado ($)</label>
+                     <input 
+                        type="number" 
+                        value={pagoMonto} 
+                        onChange={e => setPagoMonto(e.target.value)} 
+                        className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#173E3B] font-bold text-sm outline-none focus:border-green-500" 
+                        placeholder="Monto"
+                     />
+                  </div>
+                  <div>
+                     <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Nº Comprobante / Transacción (Opcional)</label>
+                     <input 
+                        type="text" 
+                        value={pagoComprobante} 
+                        onChange={e => setPagoComprobante(e.target.value)} 
+                        className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] font-mono outline-none focus:border-green-500" 
+                        placeholder="Ej: TXN-99887766"
+                     />
+                  </div>
+                  <div>
+                     <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Cuenta de Destino / Depósito</label>
+                     <select 
+                        value={pagoCuentaDestino} 
+                        onChange={e => setPagoCuentaDestino(e.target.value)} 
+                        className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2.5 rounded-lg text-[#1F2928] outline-none focus:border-green-500 font-medium"
+                     >
+                        <option value="Caja Efectivo">💵 Caja Efectivo</option>
+                        <option value="Mercado Pago (Fintech)">📱 Mercado Pago (Fintech)</option>
+                        <option value="Banco Galicia">🏢 Banco Galicia</option>
+                        <option value="Banco Provincia">🏢 Banco Provincia</option>
+                        <option value="Ualá">📱 Ualá</option>
+                        <option value="Otra Cuenta / Cheque">📄 Otra Cuenta / Cheque</option>
+                     </select>
+                  </div>
                </div>
-               <div className="w-full text-left mb-6 bg-[#FFFDFC] p-4 rounded-lg border border-[#DED8CF]">
-                  <label className="text-xs text-[#B44E2A] font-bold uppercase mb-2 block">Método de Pago</label>
-                  <select value={metodoPagoCuota} onChange={e=>setMetodoPagoCuota(e.target.value)} className="w-full bg-[#FFFDFC] border border-[#DED8CF] text-[#1F2928] p-3 rounded-lg focus:border-yellow-500 outline-none font-bold">
-                     <option value="Efectivo">Efectivo 💵</option>
-                     <option value="Transferencia">Transferencia Bancaria 🏦</option>
-                  </select>
-               </div>
 
-               <div className="w-full flex gap-3">
-                  <button onClick={() => setModalConfirmacion(null)} className="flex-1 bg-[#F7F3EC] text-[#1F2928] py-3.5 rounded-xl font-bold hover:bg-[#FFFDFC] transition">Regresar</button>
-                  <button onClick={async () => {
-                     try {
-                        const { solId, idxCuota, planPagos } = modalConfirmacion;
-                        const montoFijo = parseFloat(montoIngresado);
-                        if (isNaN(montoFijo) || montoFijo < 0) return alert("Ingresa un monto válido.");
-
-                        const nuevoPlan = [...planPagos];
-                        const cuotaActual = nuevoPlan[idxCuota];
-                        const faltante = (cuotaActual.montoOriginal || 0) - montoFijo;
-
-                        nuevoPlan[idxCuota] = {
-                           ...cuotaActual,
-                           estado: "PAGADO",
-                           montoAbonadoReal: montoFijo,
-                           fechaResolucionAdmin: new Date().toISOString(),
-                           adminFirma: user?.email || "Central"
-                        };
-
-                        if (faltante > 0) {
-                           if (idxCuota + 1 < nuevoPlan.length) {
-                              const prox = nuevoPlan[idxCuota+1];
-                              nuevoPlan[idxCuota+1] = {
-                                  ...prox,
-                                  montoOriginal: (prox.montoOriginal || 0) + faltante,
-                                  notaAcumulacion: `Incluye saldo pendiente de $${faltante} arrastrado de la cuota ${cuotaActual.numero || idxCuota + 1}.`
-                              };
-                           } else {
-                              const numProx = (cuotaActual.numero || idxCuota + 1) + 1;
-                              const currentVec = new Date(cuotaActual.vencimiento);
-                              currentVec.setMonth(currentVec.getMonth() + 1);
-                              nuevoPlan.push({
-                                 numero: numProx,
-                                 montoOriginal: faltante,
-                                 montoAbonado: 0,
-                                 estado: "PENDIENTE",
-                                 vencimiento: currentVec.toISOString(),
-                                 fechaPago: null,
-                                 metodoPago: null,
-                                 comprobanteUrl: null,
-                                 notaAcumulacion: `Cuota generada automáticamente por saldo pendiente de la cuota anterior.`
-                              });
-                           }
-                        }
-
-                        await updateDoc(doc(db, "solicitudes", solId), { planPagos: nuevoPlan });
-                        
-                        const curSol = solicitudes.find(s => s.id === solId);
-                        if (curSol && curSol.afiliadoEmail && metodoPagoCuota === "Transferencia") {
-                           await addDoc(collection(db, "notificaciones"), {
-                              afiliadoEmail: curSol.afiliadoEmail,
-                              mensaje: '¡Excelente! Se registró el pago de ' + (curSol.datosPersonales?.nombreCompleto || 'un cliente') + ' por $' + montoFijo + '. Ya podés ver en la plataforma la comisión asociada.',
-                              fecha: new Date().toISOString(),
-                              leida: false,
-                              comisionAsociada: montoFijo * 0.15,
-                              estadoPago: "PENDIENTE",
-                              cuotaAsociada: cuotaActual.numero || idxCuota + 1,
-                              clienteNombre: curSol.datosPersonales?.nombreCompleto || 'Desconocido'
-                           });
-                        }
-                        alert("¡Cuota liquidada exitosamente!");
-                        setModalConfirmacion(null);
-                        fetchData();
-                     } catch(e) { alert("Error al aprobar."); }
-                  }} className="flex-1 bg-green-600 text-white py-3.5 rounded-xl font-bold hover:bg-green-500 transition shadow-[0_0_20px_rgba(34,197,94,0.4)]">Sí, cobrar</button>
+               <div className="flex gap-3 pt-2">
+                  <button 
+                     onClick={() => setPagoAConfirmar(null)} 
+                     className="flex-1 bg-[#F7F3EC] hover:bg-[#FFFDFC] text-[#1F2928] font-bold py-2 rounded-lg text-xs transition uppercase tracking-wider"
+                  >
+                     Cancelar
+                  </button>
+                  <button 
+                     onClick={handleProcesarPagoFinal} 
+                     className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-lg text-xs transition shadow-xs shadow-green-900/30 uppercase tracking-wider"
+                  >
+                     💾 Confirmar y Generar PDF
+                  </button>
                </div>
             </div>
          </div>
       )}
 
+      
+
+               <div className="w-full flex gap-3">
       {/* MODAL DE ELIMINACION DEFINITIVA */}
       {modalBorrar && (
          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#1F2928]/60 backdrop-blur-sm backdrop-blur-sm p-4">
@@ -555,9 +751,8 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #52525b; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #eab308; }
-        .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
       `}} />
+    </div>
     </div>
     </AdminProtectedRoute>
   );
