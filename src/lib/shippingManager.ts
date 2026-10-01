@@ -243,12 +243,12 @@ export const publishShippingConfig = async (config: ShippingConfig, adminUser: s
 
 // ⚠️ REGLA OBLIGATORIA: getShippingPublishedConfig() NUNCA debe devolver draft_config ni getInitialConfig()
 // Deuelve null si no existe configuración publicada o no está disponible.
-export const getShippingPublishedConfig = async (): Promise<ShippingConfig | null> => {
+export const getShippingPublishedConfig = async (): Promise<PublicShippingConfig | null> => {
   try {
     const docRef = doc(db, "shipping_settings", "published_config");
     const snap = await getDoc(docRef);
     if (snap.exists()) {
-      const data = snap.data() as ShippingConfig;
+      const data = snap.data() as PublicShippingConfig;
       if (!data || !data.destinations || !data.loadTypes || !data.rates) {
         console.warn("Aviso: Documento published_config incompleto o inválido. Retornando estado NO DISPONIBLE (null).");
         return null;
@@ -268,8 +268,15 @@ export const getShippingPublishedConfig = async (): Promise<ShippingConfig | nul
 };
 
 // EVALUADOR DE TARIFAS Y COTIZACIÓN MANUAL
+export type ShippingEvalInput = {
+  destinations: Array<{ id: string; active?: boolean; visible?: boolean; manualQuote?: boolean }>;
+  loadTypes: Array<{ id: string; active?: boolean; visible?: boolean; manualQuote?: boolean }>;
+  rates: Record<string, { price: number; manualQuote?: boolean; active?: boolean }>;
+  settings?: Partial<ShippingSettings>;
+};
+
 export const evaluateRateQuote = (
-  config: ShippingConfig,
+  config: ShippingEvalInput,
   destinationId: string,
   loadTypeId: string,
   quantity: number

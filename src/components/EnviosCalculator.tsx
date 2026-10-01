@@ -5,13 +5,13 @@ import { Calculator, MapPin, Package, Truck, ArrowRight, CheckCircle2, ShieldChe
 import { 
   getShippingPublishedConfig, 
   evaluateRateQuote, 
-  ShippingConfig, 
-  ShippingDestination, 
-  ShippingLoadType 
+  PublicShippingConfig, 
+  PublicShippingDestination, 
+  PublicShippingLoadType 
 } from "@/lib/shippingManager";
 
 export function EnviosCalculator() {
-  const [config, setConfig] = useState<ShippingConfig | null>(null);
+  const [config, setConfig] = useState<PublicShippingConfig | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   const [selectedDest, setSelectedDest] = useState<string>("");
@@ -46,11 +46,11 @@ export function EnviosCalculator() {
     loadConfig();
   }, []);
 
-  const activeDestinations: ShippingDestination[] = (config?.destinations || [])
+  const activeDestinations: PublicShippingDestination[] = (config?.destinations || [])
     .filter((d) => d.active !== false && d.visible !== false)
     .sort((a, b) => a.order - b.order);
 
-  const activeLoadTypes: ShippingLoadType[] = (config?.loadTypes || [])
+  const activeLoadTypes: PublicShippingLoadType[] = (config?.loadTypes || [])
     .filter((l) => l.active !== false && l.visible !== false)
     .sort((a, b) => a.order - b.order);
 
