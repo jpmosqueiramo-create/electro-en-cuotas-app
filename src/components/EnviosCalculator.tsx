@@ -263,7 +263,7 @@ ${observaciones ? `📝 *Detalles Adicionales:* ${observaciones}
               ) : (
                 <>
                   <div className="text-3xl font-heading font-extrabold text-[#FFD21A] font-mono">
-                    $${evaluation.price.toLocaleString("es-AR")}
+                    ${evaluation.price.toLocaleString("es-AR")}
                   </div>
                   <p className="text-[10px] text-[#9CA3AF] font-sans">
                     *Sujeto a confirmación según dimensiones exactas y fragilidad.
