@@ -6,6 +6,7 @@ import {
   getShippingDraftConfig, 
   saveShippingDraftConfig, 
   publishShippingConfig, 
+  evaluateRateQuote,
   ShippingConfig, 
   ShippingDestination, 
   ShippingLoadType, 
@@ -14,7 +15,7 @@ import {
 } from "@/lib/shippingManager";
 import { 
   Truck, MapPin, Package, DollarSign, Save, Send, Eye, Settings, 
-  Plus, Edit, Check, X, AlertCircle, CheckCircle2, ShieldCheck, Sparkles, RefreshCw
+  Plus, Edit, Check, X, AlertCircle, CheckCircle2, ShieldCheck, Sparkles, RefreshCw, Info, Power
 } from "lucide-react";
 
 export default function AdminEnviosPage() {
@@ -126,6 +127,7 @@ export default function AdminEnviosPage() {
 
     updatedDestinations.sort((a, b) => a.order - b.order);
 
+    const maxBultos = config.settings?.maxAutoBultos || 4;
     const updatedRates = { ...config.rates };
     for (const load of config.loadTypes) {
       for (let q = 1; q <= 5; q++) {
@@ -138,7 +140,7 @@ export default function AdminEnviosPage() {
             loadTypeId: load.id,
             quantity: q,
             price: calcPrice,
-            manualQuote: newDestObj.manualQuote || load.manualQuote || q === 5,
+            manualQuote: newDestObj.manualQuote || load.manualQuote || q > maxBultos,
             active: true
           };
         }
@@ -200,6 +202,7 @@ export default function AdminEnviosPage() {
 
     updatedLoadTypes.sort((a, b) => a.order - b.order);
 
+    const maxBultos = config.settings?.maxAutoBultos || 4;
     const updatedRates = { ...config.rates };
     for (const dest of config.destinations) {
       for (let q = 1; q <= 5; q++) {
@@ -212,7 +215,7 @@ export default function AdminEnviosPage() {
             loadTypeId: cleanId,
             quantity: q,
             price: calcPrice,
-            manualQuote: dest.manualQuote || newLoadObj.manualQuote || q === 5,
+            manualQuote: dest.manualQuote || newLoadObj.manualQuote || q > maxBultos,
             active: true
           };
         }
@@ -240,13 +243,14 @@ export default function AdminEnviosPage() {
   const handleUpdateRate = (destinationId: string, loadTypeId: string, quantity: number, field: "price" | "manualQuote" | "active", value: any) => {
     if (!config) return;
     const rateId = `${destinationId}_${loadTypeId}_${quantity}`;
+    const maxBultos = config.settings?.maxAutoBultos || 4;
     const existingRate = config.rates[rateId] || {
       id: rateId,
       destinationId,
       loadTypeId,
       quantity,
       price: 0,
-      manualQuote: false,
+      manualQuote: quantity > maxBultos,
       active: true
     };
 
@@ -280,18 +284,10 @@ export default function AdminEnviosPage() {
     );
   }
 
-  // Preview Calculation logic
-  const selectedPreviewRate = config.rates[`${prevDestId}_${prevLoadId}_${prevBultos}`];
+  const maxAutoBultos = config.settings?.maxAutoBultos || 4;
+  const previewEvaluation = evaluateRateQuote(config, prevDestId, prevLoadId, prevBultos);
   const currentPreviewDest = config.destinations.find(d => d.id === prevDestId);
   const currentPreviewLoad = config.loadTypes.find(l => l.id === prevLoadId);
-  const isPreviewManual = Boolean(
-    selectedPreviewRate?.manualQuote || 
-    currentPreviewDest?.manualQuote || 
-    currentPreviewLoad?.manualQuote || 
-    prevBultos >= 5 || 
-    !selectedPreviewRate
-  );
-  const previewPrice = selectedPreviewRate?.price || 0;
 
   return (
     <div className="min-h-screen bg-[#F7F3EC] p-4 sm:p-8 space-y-6">
@@ -595,7 +591,7 @@ export default function AdminEnviosPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#DED8CF] pb-4">
             <div>
               <h3 className="text-lg font-heading font-extrabold text-[#173E3B]">Matriz de Tarifas por Bultos</h3>
-              <p className="text-xs text-[#68706E]">Definí el precio en pesos o marcá cotización manual para cada combinación de localidad, carga y bultos.</p>
+              <p className="text-xs text-[#68706E]">Definí el precio en pesos, la activación y la cotización manual celda por celda (Fuente Única de Verdad).</p>
             </div>
             
             {/* SELECTOR DE LOCALIDAD */}
@@ -619,8 +615,8 @@ export default function AdminEnviosPage() {
                 <tr className="bg-[#F7F3EC] border-b border-[#DED8CF] text-[#173E3B] font-heading font-extrabold uppercase">
                   <th className="p-3 min-w-[200px]">Tipo de Carga</th>
                   {[1, 2, 3, 4, 5].map(q => (
-                    <th key={q} className="p-3 text-center min-w-[140px]">
-                      {q === 5 ? "5 o más Bultos" : `${q} ${q === 1 ? "Bulto" : "Bultos"}`}
+                    <th key={q} className="p-3 text-center min-w-[150px]">
+                      {q > maxAutoBultos ? `${q} o más Bultos (Manual)` : `${q} ${q === 1 ? "Bulto" : "Bultos"}`}
                     </th>
                   ))}
                 </tr>
@@ -645,41 +641,63 @@ export default function AdminEnviosPage() {
                         loadTypeId: load.id,
                         quantity: q,
                         price: 0,
-                        manualQuote: q === 5,
+                        manualQuote: q > maxAutoBultos,
                         active: true
                       };
 
                       return (
                         <td key={q} className="p-2 text-center bg-[#FFFDFC]">
-                          <div className="space-y-1.5 p-2 bg-[#F7F3EC] border border-[#DED8CF] rounded-xl">
+                          <div className={`space-y-1.5 p-2 border rounded-xl transition ${
+                            !rate.active 
+                              ? "bg-zinc-100 border-zinc-300 opacity-60" 
+                              : rate.manualQuote 
+                              ? "bg-amber-50 border-amber-300" 
+                              : "bg-[#F7F3EC] border-[#DED8CF]"
+                          }`}>
+                            
                             {/* CAMPO DE PRECIO */}
                             <div className="relative">
                               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-[#68706E] font-bold">$</span>
                               <input
                                 type="number"
                                 min="0"
-                                disabled={rate.manualQuote}
-                                value={rate.manualQuote ? "" : rate.price}
+                                disabled={rate.manualQuote || !rate.active}
+                                value={rate.manualQuote || !rate.active ? "" : rate.price}
                                 onChange={(e) => handleUpdateRate(matrixDestId, load.id, q, "price", e.target.value)}
-                                placeholder={rate.manualQuote ? "Manual" : "0"}
+                                placeholder={!rate.active ? "Inactiva" : rate.manualQuote ? "Manual" : "0"}
                                 className={`w-full text-right pl-6 pr-2 py-1.5 text-xs font-mono font-bold rounded-lg border outline-none ${
-                                  rate.manualQuote 
+                                  !rate.active
+                                    ? "bg-zinc-200 text-zinc-500 border-zinc-300"
+                                    : rate.manualQuote 
                                     ? "bg-amber-50 text-amber-800 border-amber-300 italic" 
                                     : "bg-white text-[#173E3B] border-[#DED8CF] focus:border-[#173E3B]"
                                 }`}
                               />
                             </div>
 
-                            {/* CHECKBOX COTIZACIÓN MANUAL */}
-                            <label className="flex items-center justify-center gap-1 text-[10px] font-bold text-[#68706E] cursor-pointer select-none">
-                              <input
-                                type="checkbox"
-                                checked={rate.manualQuote}
-                                onChange={(e) => handleUpdateRate(matrixDestId, load.id, q, "manualQuote", e.target.checked)}
-                                className="rounded border-gray-300 text-[#173E3B] focus:ring-0"
-                              />
-                              <span>Manual</span>
-                            </label>
+                            {/* CHECKBOXES ACTIVA Y MANUAL */}
+                            <div className="flex items-center justify-between gap-1 text-[10px] font-bold text-[#68706E] pt-1">
+                              <label className="flex items-center gap-1 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={rate.active !== false}
+                                  onChange={(e) => handleUpdateRate(matrixDestId, load.id, q, "active", e.target.checked)}
+                                  className="rounded text-[#173E3B] focus:ring-0"
+                                />
+                                <span>Activa</span>
+                              </label>
+
+                              <label className="flex items-center gap-1 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={rate.manualQuote}
+                                  onChange={(e) => handleUpdateRate(matrixDestId, load.id, q, "manualQuote", e.target.checked)}
+                                  className="rounded text-amber-600 focus:ring-0"
+                                />
+                                <span>Manual</span>
+                              </label>
+                            </div>
+
                           </div>
                         </td>
                       );
@@ -696,8 +714,8 @@ export default function AdminEnviosPage() {
       {activeTab === "preview" && (
         <div className="bg-[#FFFDFC] border border-[#DED8CF] rounded-2xl p-6 space-y-6 shadow-xs">
           <div className="border-b border-[#DED8CF] pb-4">
-            <h3 className="text-lg font-heading font-extrabold text-[#173E3B]">Vista Previa de Cotización (Borrador)</h3>
-            <p className="text-xs text-[#68706E]">Proba la combinación exacta que verá el cliente antes de publicar los cambios.</p>
+            <h3 className="text-lg font-heading font-extrabold text-[#173E3B]">Vista Previa de Cotización (Evaluación de Borrador)</h3>
+            <p className="text-xs text-[#68706E]">Evalúa combinaciones utilizando estrictamente la lógica de producción (maxAutoBultos: {maxAutoBultos}, Cotización Automática: {config.settings?.allowAutoQuote !== false ? "Habilitada" : "Inhabilitada"}).</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
@@ -712,7 +730,7 @@ export default function AdminEnviosPage() {
                   className="w-full bg-white border border-[#DED8CF] rounded-xl p-3 text-xs font-bold text-[#111318]"
                 >
                   {config.destinations.map(d => (
-                    <option key={d.id} value={d.id}>{d.name} ({d.code}) - {d.timeframe}</option>
+                    <option key={d.id} value={d.id}>{d.name} ({d.code}) - {d.timeframe} {!d.active ? "[Inactiva]" : !d.visible ? "[Oculta]" : ""}</option>
                   ))}
                 </select>
               </div>
@@ -725,7 +743,7 @@ export default function AdminEnviosPage() {
                   className="w-full bg-white border border-[#DED8CF] rounded-xl p-3 text-xs font-bold text-[#111318]"
                 >
                   {config.loadTypes.map(l => (
-                    <option key={l.id} value={l.id}>{l.icon} {l.name} ({l.desc})</option>
+                    <option key={l.id} value={l.id}>{l.icon} {l.name} ({l.desc}) {!l.active ? "[Inactivo]" : ""}</option>
                   ))}
                 </select>
               </div>
@@ -744,7 +762,7 @@ export default function AdminEnviosPage() {
                           : "bg-white text-[#68706E] border-[#DED8CF] hover:border-[#173E3B]"
                       }`}
                     >
-                      {n === 5 ? "5+" : n}
+                      {n > maxAutoBultos ? `${n}+` : n}
                     </button>
                   ))}
                 </div>
@@ -773,22 +791,24 @@ export default function AdminEnviosPage() {
                 </div>
                 <div className="flex justify-between py-1 border-b border-[#222530]">
                   <span className="text-[#9CA3AF]">Bultos:</span>
-                  <strong className="text-white">{prevBultos === 5 ? "5 o más" : prevBultos}</strong>
+                  <strong className="text-white">{prevBultos > maxAutoBultos ? `${prevBultos} o más (Excede Límite Auto)` : prevBultos}</strong>
                 </div>
               </div>
 
               <div className="bg-[#161922] border border-[#173E3B] p-5 rounded-xl text-center space-y-1">
                 <span className="text-[10px] font-mono uppercase text-[#9CA3AF] font-bold">Costo Estimado Calculado</span>
-                {isPreviewManual ? (
-                  <div className="py-2">
-                    <span className="inline-block bg-amber-500/20 text-amber-400 border border-amber-500/40 text-sm font-bold px-4 py-2 rounded-xl">
+                {previewEvaluation.manualQuote ? (
+                  <div className="py-2 space-y-1.5">
+                    <span className="inline-block bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs font-bold px-3 py-1.5 rounded-xl">
                       Cotización Manual Requerida
                     </span>
-                    <p className="text-[10px] text-[#9CA3AF] mt-2">Requiere confirmación personalizada por WhatsApp.</p>
+                    {previewEvaluation.reason && (
+                      <p className="text-[10px] text-[#9CA3AF] font-sans italic">{previewEvaluation.reason}</p>
+                    )}
                   </div>
                 ) : (
                   <div className="text-3xl font-heading font-extrabold text-[#FFD21A] font-mono">
-                    ~${previewPrice.toLocaleString("es-AR")}
+                    ~${previewEvaluation.price.toLocaleString("es-AR")}
                   </div>
                 )}
               </div>
@@ -803,18 +823,18 @@ export default function AdminEnviosPage() {
         <div className="bg-[#FFFDFC] border border-[#DED8CF] rounded-2xl p-6 space-y-6 shadow-xs max-w-3xl">
           <div className="border-b border-[#DED8CF] pb-4">
             <h3 className="text-lg font-heading font-extrabold text-[#173E3B]">Configuración General del Módulo</h3>
-            <p className="text-xs text-[#68706E]">Parámetros globales de la calculadora de envíos.</p>
+            <p className="text-xs text-[#68706E]">Parámetros globales de cotización automática y límites de bultos.</p>
           </div>
 
           <div className="space-y-4 text-xs">
             <div className="flex items-center justify-between p-4 bg-[#F7F3EC] border border-[#DED8CF] rounded-xl">
               <div>
                 <span className="font-bold text-[#173E3B] block">Calculadora Activa en la Web</span>
-                <span className="text-[#68706E] block text-[11px]">Habilita o deshabilita la calculadora pública.</span>
+                <span className="text-[#68706E] block text-[11px]">Habilita o deshabilita la calculadora pública globalmente.</span>
               </div>
               <input
                 type="checkbox"
-                checked={config.settings.calculatorActive}
+                checked={config.settings?.calculatorActive !== false}
                 onChange={(e) => {
                   setConfig({
                     ...config,
@@ -822,8 +842,50 @@ export default function AdminEnviosPage() {
                   });
                   setHasUnsavedChanges(true);
                 }}
-                className="w-5 h-5 rounded border-gray-300 text-[#173E3B] focus:ring-0"
+                className="w-5 h-5 rounded border-gray-300 text-[#173E3B] focus:ring-0 cursor-pointer"
               />
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-[#F7F3EC] border border-[#DED8CF] rounded-xl">
+              <div>
+                <span className="font-bold text-[#173E3B] block">Permitir Cotización Automática (allowAutoQuote)</span>
+                <span className="text-[#68706E] block text-[11px]">Si se desactiva (OFF), todas las cotizaciones requerirán confirmación manual por WhatsApp.</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={config.settings?.allowAutoQuote !== false}
+                onChange={(e) => {
+                  setConfig({
+                    ...config,
+                    settings: { ...config.settings, allowAutoQuote: e.target.checked }
+                  });
+                  setHasUnsavedChanges(true);
+                }}
+                className="w-5 h-5 rounded border-gray-300 text-[#173E3B] focus:ring-0 cursor-pointer"
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-[#F7F3EC] border border-[#DED8CF] rounded-xl">
+              <div>
+                <span className="font-bold text-[#173E3B] block">Límite Máximo de Bultos Automáticos (maxAutoBultos)</span>
+                <span className="text-[#68706E] block text-[11px]">Bultos a partir de los cuales las cotizaciones son obligatoriamente manuales.</span>
+              </div>
+              <select
+                value={config.settings?.maxAutoBultos || 4}
+                onChange={(e) => {
+                  setConfig({
+                    ...config,
+                    settings: { ...config.settings, maxAutoBultos: Number(e.target.value) }
+                  });
+                  setHasUnsavedChanges(true);
+                }}
+                className="bg-white border border-[#DED8CF] rounded-xl px-3 py-1.5 font-mono font-bold text-[#173E3B] outline-none"
+              >
+                <option value={1}>1 Bulto (2+ Manual)</option>
+                <option value={2}>2 Bultos (3+ Manual)</option>
+                <option value={3}>3 Bultos (4+ Manual)</option>
+                <option value={4}>4 Bultos (5+ Manual)</option>
+              </select>
             </div>
 
             <div className="flex items-center justify-between p-4 bg-[#F7F3EC] border border-[#DED8CF] rounded-xl">
@@ -832,14 +894,6 @@ export default function AdminEnviosPage() {
                 <span className="text-[#68706E] block text-[11px]">Formato monetario aplicado en cotizaciones.</span>
               </div>
               <span className="font-mono font-bold bg-white px-3 py-1.5 rounded-lg border border-[#DED8CF]">ARS ($)</span>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-[#F7F3EC] border border-[#DED8CF] rounded-xl">
-              <div>
-                <span className="font-bold text-[#173E3B] block">Cotización Automática Máxima</span>
-                <span className="text-[#68706E] block text-[11px]">Bultos a partir de los cuales se fuerza cotización manual.</span>
-              </div>
-              <span className="font-mono font-bold bg-white px-3 py-1.5 rounded-lg border border-[#DED8CF]">4 Bultos (5+ Manual)</span>
             </div>
           </div>
         </div>
@@ -914,14 +968,18 @@ export default function AdminEnviosPage() {
                 />
               </div>
 
-              <div>
-                <label className="block font-bold text-[#173E3B] mb-1">Precio Base de Referencia ($):</label>
+              <div className="space-y-1">
+                <label className="block font-bold text-[#173E3B]">Precio Base de Referencia ($):</label>
                 <input
                   type="number"
                   value={currentDest.estimatedBase || 12000}
                   onChange={(e) => setCurrentDest({ ...currentDest, estimatedBase: Number(e.target.value) })}
                   className="w-full bg-[#F7F3EC] border border-[#DED8CF] rounded-xl p-2.5 font-mono text-xs"
                 />
+                <p className="text-[10px] text-[#68706E] italic flex items-center gap-1">
+                  <Info className="w-3 h-3 text-[#B44E2A] shrink-0" />
+                  Se utiliza únicamente para sugerir tarifas al crear nuevas combinaciones. No modifica tarifas existentes.
+                </p>
               </div>
 
               <div className="flex items-center justify-between pt-2">
@@ -1014,8 +1072,8 @@ export default function AdminEnviosPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-[#173E3B] mb-1">Multiplicador Base:</label>
+                <div className="space-y-1">
+                  <label className="block font-bold text-[#173E3B]">Multiplicador Base:</label>
                   <input
                     type="number"
                     step="0.1"
@@ -1023,6 +1081,10 @@ export default function AdminEnviosPage() {
                     onChange={(e) => setCurrentLoad({ ...currentLoad, multiplier: Number(e.target.value) })}
                     className="w-full bg-[#F7F3EC] border border-[#DED8CF] rounded-xl p-2.5 font-mono text-xs"
                   />
+                  <p className="text-[10px] text-[#68706E] italic flex items-center gap-1">
+                    <Info className="w-3 h-3 text-[#B44E2A] shrink-0" />
+                    Se utiliza únicamente para generar valores sugeridos en nuevas combinaciones.
+                  </p>
                 </div>
                 <div>
                   <label className="block font-bold text-[#173E3B] mb-1">Orden de Aparición:</label>

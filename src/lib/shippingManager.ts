@@ -1,7 +1,7 @@
 "use client";
 
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 export type ShippingDestination = {
   id: string;
@@ -30,7 +30,7 @@ export type ShippingLoadType = {
 };
 
 export type ShippingRate = {
-  id: string; // ${destinationId}_${loadTypeId}_${quantity}
+  id: string; // destinationId_loadTypeId_quantity
   destinationId: string;
   loadTypeId: string;
   quantity: number; // 1, 2, 3, 4, 5 (para 5+)
@@ -42,8 +42,8 @@ export type ShippingRate = {
 export type ShippingSettings = {
   calculatorActive: boolean;
   currency: string;
-  maxAutoBultos: number;
-  allowAutoQuote: boolean;
+  maxAutoBultos: number; // Defecto 4 (bultos > maxAutoBultos requieren cotización manual)
+  allowAutoQuote: boolean; // Defecto true (si es false, fuerza cotización manual global)
 };
 
 export type ShippingConfig = {
@@ -78,14 +78,21 @@ export const SEED_LOAD_TYPES: ShippingLoadType[] = [
   { id: "comercio", name: "Carga Múltiple (Comercio)", desc: "Múltiples bultos consolidables", icon: "🏭", multiplier: 2.2, order: 5, active: true, visible: true, manualQuote: false },
 ];
 
-export const generateSeedRates = (): Record<string, ShippingRate> => {
+export const DEFAULT_SHIPPING_SETTINGS: ShippingSettings = {
+  calculatorActive: true,
+  currency: "ARS",
+  maxAutoBultos: 4,
+  allowAutoQuote: true,
+};
+
+export const generateSeedRates = (maxAutoBultos: number = 4): Record<string, ShippingRate> => {
   const rates: Record<string, ShippingRate> = {};
   for (const d of SEED_DESTINATIONS) {
     for (const c of SEED_LOAD_TYPES) {
       for (let q = 1; q <= 5; q++) {
         const rateId = `${d.id}_${c.id}_${q}`;
         const calculatedPrice = Math.round(d.estimatedBase * c.multiplier * (1 + (q - 1) * 0.4));
-        const isManual = d.manualQuote || c.manualQuote || q === 5;
+        const isManual = d.manualQuote || c.manualQuote || q > maxAutoBultos;
         rates[rateId] = {
           id: rateId,
           destinationId: d.id,
@@ -101,21 +108,15 @@ export const generateSeedRates = (): Record<string, ShippingRate> => {
   return rates;
 };
 
-export const DEFAULT_SHIPPING_SETTINGS: ShippingSettings = {
-  calculatorActive: true,
-  currency: "ARS",
-  maxAutoBultos: 4,
-  allowAutoQuote: true,
-};
-
 export const getInitialConfig = (): ShippingConfig => {
+  const now = new Date().toISOString();
   return {
     destinations: SEED_DESTINATIONS,
     loadTypes: SEED_LOAD_TYPES,
-    rates: generateSeedRates(),
+    rates: generateSeedRates(DEFAULT_SHIPPING_SETTINGS.maxAutoBultos),
     settings: DEFAULT_SHIPPING_SETTINGS,
-    draftUpdatedAt: new Date().toISOString(),
-    publishedAt: new Date().toISOString(),
+    draftUpdatedAt: now,
+    publishedAt: now,
   };
 };
 
@@ -125,15 +126,18 @@ export const getShippingDraftConfig = async (): Promise<ShippingConfig> => {
     const docRef = doc(db, "shipping_settings", "draft_config");
     const snap = await getDoc(docRef);
     if (snap.exists()) {
-      return snap.data() as ShippingConfig;
+      const data = snap.data() as ShippingConfig;
+      return {
+        ...data,
+        settings: { ...DEFAULT_SHIPPING_SETTINGS, ...(data.settings || {}) }
+      };
     } else {
-      // Auto-seed draft if not existing
       const initial = getInitialConfig();
       await setDoc(docRef, initial);
       return initial;
     }
   } catch (error) {
-    console.warn("Using local fallback config for shipping draft:", error);
+    console.warn("Aviso: Utilizando configuración borrador inicial local por permisos o falla de red:", error);
     return getInitialConfig();
   }
 };
@@ -156,7 +160,6 @@ export const publishShippingConfig = async (config: ShippingConfig, adminUser: s
     publishedBy: adminUser,
   };
   
-  // Save both draft and published documents
   const draftRef = doc(db, "shipping_settings", "draft_config");
   const publishedRef = doc(db, "shipping_settings", "published_config");
   
@@ -164,18 +167,60 @@ export const publishShippingConfig = async (config: ShippingConfig, adminUser: s
   await setDoc(publishedRef, updatedConfig);
 };
 
+// ⚠️ REGLA OBLIGATORIA: getShippingPublishedConfig() NUNCA debe devolver draft_config
 export const getShippingPublishedConfig = async (): Promise<ShippingConfig> => {
   try {
     const docRef = doc(db, "shipping_settings", "published_config");
     const snap = await getDoc(docRef);
     if (snap.exists()) {
-      return snap.data() as ShippingConfig;
+      const data = snap.data() as ShippingConfig;
+      return {
+        ...data,
+        settings: { ...DEFAULT_SHIPPING_SETTINGS, ...(data.settings || {}) }
+      };
     } else {
-      // Fall back to draft or initial seed
-      return await getShippingDraftConfig();
+      console.warn("Aviso: No existe published_config en Firestore. Retornando configuración pública inicial segura.");
+      return getInitialConfig();
     }
   } catch (error) {
-    console.warn("Using local fallback config for shipping published:", error);
+    console.warn("Aviso: Fallback a configuración pública inicial segura:", error);
     return getInitialConfig();
   }
+};
+
+// EVALUADOR DE TARIFAS Y COTIZACIÓN MANUAL
+export const evaluateRateQuote = (
+  config: ShippingConfig,
+  destinationId: string,
+  loadTypeId: string,
+  quantity: number
+): { price: number; manualQuote: boolean; reason?: string } => {
+  const settings = { ...DEFAULT_SHIPPING_SETTINGS, ...(config.settings || {}) };
+
+  if (!settings.calculatorActive || !settings.allowAutoQuote) {
+    return { price: 0, manualQuote: true, reason: "Cotización automática inhabilitada globalmente" };
+  }
+
+  if (quantity > settings.maxAutoBultos) {
+    return { price: 0, manualQuote: true, reason: `Cantidad de bultos excede el límite automático (${settings.maxAutoBultos})` };
+  }
+
+  const dest = config.destinations.find(d => d.id === destinationId);
+  if (!dest || !dest.active || !dest.visible || dest.manualQuote) {
+    return { price: 0, manualQuote: true, reason: "Localidad requiere cotización manual o no está activa" };
+  }
+
+  const load = config.loadTypes.find(l => l.id === loadTypeId);
+  if (!load || !load.active || !load.visible || load.manualQuote) {
+    return { price: 0, manualQuote: true, reason: "Tipo de carga requiere cotización manual o no está activo" };
+  }
+
+  const rateId = `${destinationId}_${loadTypeId}_${quantity}`;
+  const rate = config.rates[rateId];
+
+  if (!rate || !rate.active || rate.manualQuote || isNaN(rate.price) || rate.price <= 0) {
+    return { price: 0, manualQuote: true, reason: "Tarifa inactiva, no configurada o cotización manual en matriz" };
+  }
+
+  return { price: rate.price, manualQuote: false };
 };
