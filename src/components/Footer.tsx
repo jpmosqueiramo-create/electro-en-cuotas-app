@@ -18,7 +18,7 @@ export default function Footer() {
               </div>
               <div>
                 <span className="font-bold text-white text-base block tracking-tight">CUENTA HOGAR</span>
-                <span className="font-mono text-[10px] text-[#FFD21A] uppercase block">LOOP GESTIÓN INTEGRAL S.R.L. · CUIT 30-71859402-4</span>
+                <span className="font-mono text-[10px] text-[#FFD21A] uppercase block">LOOP GESTIÓN INTEGRAL S.R.L.</span>
               </div>
             </div>
 
