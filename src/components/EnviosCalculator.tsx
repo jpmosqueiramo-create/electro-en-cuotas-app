@@ -71,7 +71,7 @@ export function EnviosCalculator() {
 
     let priceText = "";
     if (config && !evaluation.manualQuote && evaluation.price > 0) {
-      priceText = `💰 *Estimado de Referencia:* ~$${evaluation.price.toLocaleString("es-AR")}`;
+      priceText = `💰 *Estimado de Referencia:* $${evaluation.price.toLocaleString("es-AR")}`;
     } else {
       priceText = `💰 *Cotización:* Requiere Cotización Personalizada`;
     }
@@ -263,7 +263,7 @@ ${observaciones ? `📝 *Detalles Adicionales:* ${observaciones}
               ) : (
                 <>
                   <div className="text-3xl font-heading font-extrabold text-[#FFD21A] font-mono">
-                    ~$${evaluation.price.toLocaleString("es-AR")}
+                    $${evaluation.price.toLocaleString("es-AR")}
                   </div>
                   <p className="text-[10px] text-[#9CA3AF] font-sans">
                     *Sujeto a confirmación según dimensiones exactas y fragilidad.
