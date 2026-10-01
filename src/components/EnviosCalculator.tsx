@@ -80,7 +80,7 @@ export function EnviosCalculator() {
 
 📍 *Destino:* ${destName}
 📦 *Categoría:* ${catName}${catDesc ? ` (${catDesc})` : ""}
-🔢 *Cantidad de Bultos:* ${bultos > maxAutoBultos ? `${bultos}+` : bultos}
+🔢 *Cantidad de Bultos:* ${bultos === 5 ? "5+" : bultos}
 ${priceText}
 
 ${observaciones ? `📝 *Detalles Adicionales:* ${observaciones}
@@ -172,7 +172,7 @@ ${observaciones ? `📝 *Detalles Adicionales:* ${observaciones}
                 <Truck className="w-4 h-4 text-[#FFD21A]" /> 3. Cantidad de Bultos o Paquetes
               </label>
               <span className="text-xs font-mono font-bold text-[#FFD21A] bg-[#161922] px-3 py-1 rounded-md border border-[#222530]">
-                {bultos > maxAutoBultos ? `${bultos}+` : bultos} {bultos === 1 ? "bulto" : "bultos"}
+                {bultos === 5 ? "5+" : bultos} {bultos === 1 ? "bulto" : "bultos"}
               </span>
             </div>
             

@@ -152,19 +152,93 @@ export const saveShippingDraftConfig = async (config: ShippingConfig, adminUser:
   await setDoc(docRef, updatedConfig);
 };
 
+export type PublicShippingDestination = Omit<ShippingDestination, "notes" | "estimatedBase">;
+export type PublicShippingLoadType = Omit<ShippingLoadType, "notes" | "multiplier">;
+
+export type PublicShippingConfig = {
+  destinations: PublicShippingDestination[];
+  loadTypes: PublicShippingLoadType[];
+  rates: Record<string, ShippingRate>;
+  settings: ShippingSettings;
+  publishedAt?: string;
+};
+
+export const sanitizePublishedConfig = (config: ShippingConfig, publishedTime: string): PublicShippingConfig => {
+  const sanitizedDestinations: PublicShippingDestination[] = (config.destinations || [])
+    .filter(d => d.active !== false && d.visible !== false)
+    .map(d => ({
+      id: d.id,
+      name: d.name,
+      code: d.code,
+      timeframe: d.timeframe,
+      order: d.order,
+      active: d.active,
+      visible: d.visible,
+      manualQuote: Boolean(d.manualQuote),
+    }));
+
+  const sanitizedLoadTypes: PublicShippingLoadType[] = (config.loadTypes || [])
+    .filter(l => l.active !== false && l.visible !== false)
+    .map(l => ({
+      id: l.id,
+      name: l.name,
+      desc: l.desc,
+      icon: l.icon,
+      order: l.order,
+      active: l.active,
+      visible: l.visible,
+      manualQuote: Boolean(l.manualQuote),
+    }));
+
+  const validDestIds = new Set(sanitizedDestinations.map(d => d.id));
+  const validLoadIds = new Set(sanitizedLoadTypes.map(l => l.id));
+
+  const sanitizedRates: Record<string, ShippingRate> = {};
+  if (config.rates) {
+    for (const [key, rate] of Object.entries(config.rates)) {
+      if (validDestIds.has(rate.destinationId) && validLoadIds.has(rate.loadTypeId) && rate.active !== false) {
+        sanitizedRates[key] = {
+          id: rate.id,
+          destinationId: rate.destinationId,
+          loadTypeId: rate.loadTypeId,
+          quantity: rate.quantity,
+          price: rate.price,
+          manualQuote: Boolean(rate.manualQuote),
+          active: rate.active,
+        };
+      }
+    }
+  }
+
+  return {
+    destinations: sanitizedDestinations,
+    loadTypes: sanitizedLoadTypes,
+    rates: sanitizedRates,
+    settings: {
+      calculatorActive: config.settings?.calculatorActive !== false,
+      currency: config.settings?.currency || "ARS",
+      maxAutoBultos: config.settings?.maxAutoBultos ?? 4,
+      allowAutoQuote: config.settings?.allowAutoQuote !== false,
+    },
+    publishedAt: publishedTime,
+  };
+};
+
 export const publishShippingConfig = async (config: ShippingConfig, adminUser: string = "Admin"): Promise<void> => {
   const publishedTime = new Date().toISOString();
-  const updatedConfig: ShippingConfig = {
+  const updatedDraftConfig: ShippingConfig = {
     ...config,
     publishedAt: publishedTime,
     publishedBy: adminUser,
   };
   
+  const publicConfig = sanitizePublishedConfig(config, publishedTime);
+
   const draftRef = doc(db, "shipping_settings", "draft_config");
   const publishedRef = doc(db, "shipping_settings", "published_config");
   
-  await setDoc(draftRef, updatedConfig);
-  await setDoc(publishedRef, updatedConfig);
+  await setDoc(draftRef, updatedDraftConfig);
+  await setDoc(publishedRef, publicConfig);
 };
 
 // ⚠️ REGLA OBLIGATORIA: getShippingPublishedConfig() NUNCA debe devolver draft_config ni getInitialConfig()
