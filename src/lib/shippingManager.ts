@@ -167,24 +167,29 @@ export const publishShippingConfig = async (config: ShippingConfig, adminUser: s
   await setDoc(publishedRef, updatedConfig);
 };
 
-// ⚠️ REGLA OBLIGATORIA: getShippingPublishedConfig() NUNCA debe devolver draft_config
-export const getShippingPublishedConfig = async (): Promise<ShippingConfig> => {
+// ⚠️ REGLA OBLIGATORIA: getShippingPublishedConfig() NUNCA debe devolver draft_config ni getInitialConfig()
+// Deuelve null si no existe configuración publicada o no está disponible.
+export const getShippingPublishedConfig = async (): Promise<ShippingConfig | null> => {
   try {
     const docRef = doc(db, "shipping_settings", "published_config");
     const snap = await getDoc(docRef);
     if (snap.exists()) {
       const data = snap.data() as ShippingConfig;
+      if (!data || !data.destinations || !data.loadTypes || !data.rates) {
+        console.warn("Aviso: Documento published_config incompleto o inválido. Retornando estado NO DISPONIBLE (null).");
+        return null;
+      }
       return {
         ...data,
         settings: { ...DEFAULT_SHIPPING_SETTINGS, ...(data.settings || {}) }
       };
     } else {
-      console.warn("Aviso: No existe published_config en Firestore. Retornando configuración pública inicial segura.");
-      return getInitialConfig();
+      console.warn("Aviso: No existe published_config en Firestore. Retornando estado NO DISPONIBLE (null).");
+      return null;
     }
   } catch (error) {
-    console.warn("Aviso: Fallback a configuración pública inicial segura:", error);
-    return getInitialConfig();
+    console.warn("Aviso: Fallo al leer published_config en Firestore. Retornando estado NO DISPONIBLE (null):", error);
+    return null;
   }
 };
 
