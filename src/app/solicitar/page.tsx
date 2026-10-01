@@ -211,6 +211,7 @@ function SolicitarForm() {
                       src={activeSolImage || productoData.imagenUrl} 
                       alt={productoData.nombre} 
                       className="max-w-full max-h-full object-contain" 
+                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/logo-cuenta-hogar-oficial.png"; }} 
                     />
                   </div>
                   {/* Pequeñas miniaturas si hay más de 1 imagen */}

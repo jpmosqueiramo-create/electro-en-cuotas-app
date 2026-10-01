@@ -295,7 +295,7 @@ export default function HomeTechCatalog() {
             <a href="#catalogo" className="hover:text-[#FFD21A] transition-colors">Opciones de compra</a>
             <a href="#envios-low-cost" className="hover:text-[#FFD21A] transition-colors">Envíos CABA</a>
             <Link href="/nosotros" className="hover:text-white transition-colors">Nosotros</Link>
-            <Link href="/flete" className="hover:text-white transition-colors">Low Cost</Link>
+            <Link href="/envios" className="hover:text-white transition-colors">Low Cost</Link>
           </nav>
 
           {/* ACCIONES DEL HEADER */}
@@ -505,7 +505,7 @@ export default function HomeTechCatalog() {
               </div>
 
               <Link 
-                href="/flete" 
+                href="/envios" 
                 className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs font-extrabold uppercase tracking-wider py-3.5 px-6 rounded-xl transition-all shadow-md shadow-[#FFD21A]/20 relative z-10"
               >
                 <span>Cotizar Servicio de Envío Low Cost</span>
@@ -570,7 +570,7 @@ export default function HomeTechCatalog() {
 
             <div className="text-center pt-4">
               <Link 
-                href="/flete" 
+                href="/envios" 
                 className="inline-flex items-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold text-xs uppercase tracking-wider px-8 py-4 rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20"
               >
                 <span>Ver Tarifas y Ciudades del Recorrido</span>
@@ -647,7 +647,8 @@ export default function HomeTechCatalog() {
                         <img 
                           src={prod.imagenUrl || "/logo-cuenta-hogar-oficial.png"} 
                           alt={prod.nombre} 
-                          className="max-h-48 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+                          className="max-h-48 w-auto object-contain group-hover:scale-105 transition-transform duration-300" 
+                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/logo-cuenta-hogar-oficial.png"; }}
                         />
                         <div className="absolute top-3 right-3 bg-[#111318] text-[#FFD21A] text-[10px] font-mono font-bold px-2.5 py-1 rounded-md">
                           ENTREGA CABA & INTERIOR
@@ -1028,7 +1029,7 @@ export default function HomeTechCatalog() {
                 <li><a href="#catalogo" className="hover:text-white transition-colors">Opciones de compra</a></li>
                 <li><a href="#envios-low-cost" className="hover:text-white transition-colors">Envíos Low Cost</a></li>
                 <li><Link href="/nosotros" className="hover:text-white transition-colors">Sobre Nosotros</Link></li>
-                <li><Link href="/flete" className="hover:text-white transition-colors">Tarifario Fletes</Link></li>
+                <li><Link href="/envios" className="hover:text-white transition-colors">Tarifario Fletes</Link></li>
               </ul>
             </div>
 

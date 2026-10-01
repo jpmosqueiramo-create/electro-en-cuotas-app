@@ -591,7 +591,7 @@ export default function PublicCatalog() {
                   </div>
                 </div>
                 <Link
-                  href="/flete"
+                  href="/envios"
                   className="text-xs font-heading font-semibold text-[#FFD21A] hover:underline flex items-center gap-1"
                 >
                   Ver guía detallada de Envíos Low Cost →
@@ -1257,6 +1257,7 @@ function ProductCard({ p, formatPrice }: { p: Producto; formatPrice: (price: num
             src={images[activeIdx]} 
             alt={p.nombre} 
             className="w-full h-full object-contain" 
+            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/logo-cuenta-hogar-oficial.png"; }} 
           />
         ) : (
           <span className="text-[#9CA3AF] text-xs italic font-sans">Imagen de equipo sugerido</span>

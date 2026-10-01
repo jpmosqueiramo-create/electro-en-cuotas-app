@@ -40,7 +40,7 @@ export default function Footer() {
             <ul className="space-y-2 text-xs text-[#9CA3AF]">
               <li><Link href="/#modelo" className="hover:text-white transition-colors">Cómo Funciona</Link></li>
               <li><Link href="/productos" className="hover:text-white transition-colors">Opciones de compra</Link></li>
-              <li><Link href="/flete" className="hover:text-white transition-colors">Envíos Low Cost CABA</Link></li>
+              <li><Link href="/envios" className="hover:text-white transition-colors">Envíos Low Cost CABA</Link></li>
               <li><Link href="/nosotros" className="hover:text-white transition-colors">Sobre Nosotros</Link></li>
               <li><Link href="/red-afiliados" className="hover:text-white transition-colors">Red de Afiliados</Link></li>
             </ul>

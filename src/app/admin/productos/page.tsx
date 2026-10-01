@@ -681,7 +681,7 @@ export default function AdminProductosPage() {
                   <div className="grid grid-cols-4 gap-2 mb-3">
                     {existingImagenUrls.map((url, idx) => (
                       <div key={`existing-${idx}`} className="relative aspect-square bg-[#FFFDFC] border border-[#DED8CF] rounded-lg overflow-hidden flex items-center justify-center group">
-                        <img src={url} alt={`Imagen ${idx + 1}`} className="w-full h-full object-contain" />
+                        <img src={url} alt={`Imagen ${idx + 1}`} className="w-full h-full object-contain" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/logo-cuenta-hogar-oficial.png"; }} />
                         <button
                           type="button"
                           onClick={() => {
@@ -1149,7 +1149,7 @@ function AdminProductCard({
     <div className={`border rounded-xl bg-[#FFFDFC] flex flex-col shadow-xs overflow-hidden transition-all ${editandoId === p.id ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'border-[#DED8CF]'}`}>
       <div className="h-40 relative bg-[#F7F3EC] p-2 flex items-center justify-center group">
         {images.length > 0 ? (
-          <img src={images[activeIdx]} alt={p.nombre} className="max-w-full max-h-full object-contain" />
+          <img src={images[activeIdx]} alt={p.nombre} className="max-w-full max-h-full object-contain" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/logo-cuenta-hogar-oficial.png"; }} />
         ) : (
           <span className="text-zinc-600 text-xs italic">Sin imagen</span>
         )}
