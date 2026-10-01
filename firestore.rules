@@ -2,19 +2,27 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // Función de verificación de Administrador Real
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.email == 'jpmosqueiramo@gmail.com' ||
+        request.auth.token.admin == true
+      );
+    }
+
     // ==========================================
     // REGLAS DE SEGURIDAD - ENVÍOS LOW COST
     // ==========================================
 
-    // Borrador administrativo: Lectura y Escritura únicamente para Administradores
+    // Borrador administrativo: Lectura y Escritura únicamente para Administradores Reales
     match /shipping_settings/draft_config {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAdmin();
     }
 
-    // Configuración Publicada: Lectura Pública, Escritura exclusivamente para Administradores
+    // Configuración Publicada: Lectura Pública, Escritura exclusivamente para Administradores Reales
     match /shipping_settings/published_config {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
 
     // Reglas por defecto para el resto de colecciones de la aplicación
