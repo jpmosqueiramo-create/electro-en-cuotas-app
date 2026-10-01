@@ -1050,7 +1050,7 @@ export default function HomeTechCatalog() {
 
           <div className="pt-8 border-t border-[#1C1E26] flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-[#6B7280]">
             <p>© {new Date().getFullYear()} Cuenta Hogar. Todos los derechos reservados.</p>
-            <p className="text-[11px] font-mono">Dirección de Arte — Negro & Amarillo (#FFD21A)</p>
+            
           </div>
 
         </div>
