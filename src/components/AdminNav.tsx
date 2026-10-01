@@ -13,7 +13,8 @@ import {
   Users, 
   FileSpreadsheet, 
   Home, 
-  LogOut
+  LogOut,
+  Truck
 } from "lucide-react";
 
 interface AdminNavProps {
@@ -32,6 +33,7 @@ const ADMIN_MODULES = [
   { name: "Presupuestos", href: "/admin/presupuestos", icon: FileText },
   { name: "Clientes", href: "/admin/clientes", icon: Users },
   { name: "Reportes Excel", href: "/admin/reportes", icon: FileSpreadsheet },
+  { name: "Envíos Low Cost", href: "/admin/envios", icon: Truck },
 ];
 
 export function AdminNav({ title, subtitle }: AdminNavProps) {
