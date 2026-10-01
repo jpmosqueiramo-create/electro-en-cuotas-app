@@ -417,7 +417,7 @@ export default function HomeTechCatalog() {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-transparent to-transparent opacity-70 pointer-events-none" />
               </div>
               <p className="text-xs font-mono text-[#9CA3AF] text-right mt-2.5">
-                Flota oficial Renault Master · Recorridos programados CABA → Interior
+                Flota habilitada para transporte de mercaderia · Recorridos programados CABA → Interior
               </p>
             </div>
 
