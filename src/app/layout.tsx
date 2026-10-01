@@ -16,6 +16,11 @@ const sourceSans = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
+  icons: {
+    icon: "/logo-cuenta-hogar-oficial.png",
+    shortcut: "/logo-cuenta-hogar-oficial.png",
+    apple: "/logo-cuenta-hogar-oficial.png"
+  },
   metadataBase: new URL("https://cuenta-hogar.web.app"),
   title: {
     default: "Cuenta Hogar | Envíos Low Cost CABA al Interior y Cuotas sin Tarjeta",
