@@ -1,5 +1,7 @@
 "use client";
 
+import PublicLocationMarquee from "@/components/PublicLocationMarquee";
+
 import { registrarProductoBorradorSiNoExiste } from "@/lib/catalogManager";
 import { calcularTablaTodosLosPlanes } from "@/lib/financialEngine";
 import { useEffect, useState } from "react";
@@ -264,6 +266,7 @@ export default function HomeTechCatalog() {
 
   return (
     <div className="min-h-screen bg-[#111318] text-white font-sans selection:bg-[#FFD21A] selection:text-black">
+      <PublicLocationMarquee />
       
       {/* 0. HEADER / NAVBAR PROFESIONAL CON ALTO IMPACTO */}
             {/* 0. HEADER / NAVBAR OPTIMIZADO */}

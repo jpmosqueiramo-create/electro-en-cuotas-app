@@ -164,3 +164,28 @@ input::placeholder, textarea::placeholder {
 .bg-\[\#F7F3EC\] textarea:not([class*="text-white"]) {
   color: #111318 !important;
 }
+
+
+/* Seamless Marquee Animation for PublicLocationMarquee */
+@keyframes marquee-horizontal {
+  0% {
+    transform: translate3d(0%, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-marquee-continuous {
+  display: flex;
+  width: max-content;
+  animation: marquee-horizontal 25s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee-continuous {
+    animation: none !important;
+    transform: none !important;
+  }
+}
