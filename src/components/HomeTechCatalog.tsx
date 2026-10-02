@@ -369,13 +369,13 @@ export default function HomeTechCatalog() {
               {/* 3. DOS CTAs COMERCIALES CON ORIENTACIÓN A CONSULTA EN PRELANZAMIENTO */}
               <div className="pt-1 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                 <a 
-                  href="https://wa.me/5491125659686?text=Hola%20Cuenta%20Hogar%2C%20estoy%20consultando%20por%20el%20prelanzamiento%20y%20quiero%20saber%20c%C3%B3mo%20funcionar%C3%A1%20el%20servicio%20en%20mi%20localidad." 
+                  href="https://wa.me/5491125659686?text=Hola%2C%20quiero%20consultar%20por%20el%20Servicio%20de%20Compra%20de%20Cuenta%20Hogar.%0A%0ANecesito%20comprar%20un%20producto%20y%20quisiera%20conocer%20c%C3%B3mo%20funciona%20la%20gesti%C3%B3n%20mediante%20mandato%2C%20el%20plan%20de%20cuotas%20y%20la%20entrega%20en%20mi%20localidad.%0A%0A%F0%9F%93%8D%20Localidad%3A%0A%F0%9F%9B%92%20Producto%20que%20necesito%3A%0A%F0%9F%94%97%20Si%20ya%20vi%20alguno%2C%20puedo%20enviarles%20el%20modelo%2C%20link%20o%20presupuesto.%0A%0A%C2%BFMe%20cuentan%20c%C3%B3mo%20ser%C3%ADa%20la%20propuesta%20y%20el%20plan%20de%20cuotas%3F" 
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs sm:text-sm font-extrabold uppercase tracking-wider px-7 h-[50px] rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95 shrink-0"
                 >
                   <WhatsAppIcon className="w-4.5 h-4.5 text-[#111318]" />
-                  <span>Consultar Ahora</span>
+                  <span>CONSULTAR POR UNA COMPRA</span>
                 </a>
 
                 <a 
