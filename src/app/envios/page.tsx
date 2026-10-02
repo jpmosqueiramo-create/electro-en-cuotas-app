@@ -596,73 +596,102 @@ Quiero saber cómo funcionará el servicio y los recorridos programados en mi lo
         </div>
       </section>
 
-      {/* 6. TRANSPORTE PROPIO ("De nuestro local a tu domicilio") */}
+      {/* 6. LOGÍSTICA ORGANIZADA ("De nuestro centro en CABA a tu domicilio.") */}
       <section className="py-20 lg:py-28 bg-[#161922] border-b border-[#222530]">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
             {/* IZQUIERDA: CONTENIDO */}
             <div className="lg:col-span-6 space-y-6 text-left">
-              <div className="inline-flex items-center gap-2 text-xs font-heading font-bold uppercase tracking-widest text-[#FFD21A]">
-                <Truck className="w-4 h-4" /> Flota Propia Adaptada
-              </div>
+              
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#FFD21A] bg-[#111318] border border-[#FFD21A]/30 px-3.5 py-1.5 rounded-full">
+                  <Layers className="w-3.5 h-3.5 text-[#FFD21A]" /> LOGÍSTICA ORGANIZADA · CABA → INTERIOR
+                </div>
 
-              <h2 className="text-3xl sm:text-4xl lg:text-[44px] font-heading font-extrabold text-[#FFD21A] leading-tight">
-                De nuestro local a tu domicilio.
-              </h2>
+                <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-heading font-extrabold text-[#FFD21A] leading-tight">
+                  De nuestro centro en CABA a tu domicilio.
+                </h2>
+              </div>
 
               <p className="text-base sm:text-lg text-[#9CA3AF] font-sans leading-relaxed">
-                Organizamos nuestros propios recorridos para tener mayor control sobre la carga, los tiempos y las entregas.
+                Recibimos y organizamos cada compra en nuestro centro de CABA, la preparamos para el recorrido correspondiente y coordinamos la entrega en tu domicilio.
               </p>
 
-              {/* DIFERENCIALES CLAVE */}
-              <div className="space-y-4 pt-2">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#2F7D5C] shrink-0 mt-0.5" />
+              {/* AVISO DISCRETO DE PRELANZAMIENTO */}
+              <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#FFD21A] bg-[#FFD21A]/10 border border-[#FFD21A]/20 px-3.5 py-2 rounded-xl">
+                <CalendarClock className="w-4 h-4 text-[#FFD21A]" />
+                <span>Disponible desde noviembre · Ya estamos recibiendo consultas</span>
+              </div>
+
+              {/* LOS CUATRO BENEFICIOS ORGANIZACIONALES */}
+              <div className="space-y-3.5 pt-2">
+                <div className="flex items-start gap-3.5 bg-[#111318] border border-[#222530] p-4 rounded-2xl hover:border-[#FFD21A]/30 transition-all">
+                  <div className="w-8 h-8 rounded-xl bg-[#FFD21A]/10 border border-[#FFD21A]/30 flex items-center justify-center shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-4.5 h-4.5 text-[#FFD21A]" />
+                  </div>
                   <div>
-                    <h4 className="font-heading font-bold text-white text-sm">Flota propia acondicionada</h4>
-                    <p className="text-xs text-[#9CA3AF] font-sans">Unidades adaptadas para tecnología, electrodomésticos y carga general.</p>
+                    <h4 className="font-heading font-bold text-white text-sm sm:text-base">Recepción coordinada en CABA</h4>
+                    <p className="text-xs sm:text-sm text-[#9CA3AF] font-sans mt-0.5 leading-relaxed">
+                      Identificamos cada compra desde que llega a nuestro centro de recepción.
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#2F7D5C] shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3.5 bg-[#111318] border border-[#222530] p-4 rounded-2xl hover:border-[#FFD21A]/30 transition-all">
+                  <div className="w-8 h-8 rounded-xl bg-[#FFD21A]/10 border border-[#FFD21A]/30 flex items-center justify-center shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-4.5 h-4.5 text-[#FFD21A]" />
+                  </div>
                   <div>
-                    <h4 className="font-heading font-bold text-white text-sm">Recorridos organizados</h4>
-                    <p className="text-xs text-[#9CA3AF] font-sans">Cronogramas de ruta estructurados para dar certeza de llegada.</p>
+                    <h4 className="font-heading font-bold text-white text-sm sm:text-base">Preparación por recorrido</h4>
+                    <p className="text-xs sm:text-sm text-[#9CA3AF] font-sans mt-0.5 leading-relaxed">
+                      Organizamos los bultos según localidad, tipo de carga y próxima salida.
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#2F7D5C] shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3.5 bg-[#111318] border border-[#222530] p-4 rounded-2xl hover:border-[#FFD21A]/30 transition-all">
+                  <div className="w-8 h-8 rounded-xl bg-[#FFD21A]/10 border border-[#FFD21A]/30 flex items-center justify-center shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-4.5 h-4.5 text-[#FFD21A]" />
+                  </div>
                   <div>
-                    <h4 className="font-heading font-bold text-white text-sm">Entrega en la puerta de tu casa</h4>
-                    <p className="text-xs text-[#9CA3AF] font-sans">Llegamos directo a tu domicilio en las localidades de cobertura.</p>
+                    <h4 className="font-heading font-bold text-white text-sm sm:text-base">Traslado programado</h4>
+                    <p className="text-xs sm:text-sm text-[#9CA3AF] font-sans mt-0.5 leading-relaxed">
+                      Planificamos los recorridos para tener mayor control sobre tiempos y entregas.
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#2F7D5C] shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3.5 bg-[#111318] border border-[#222530] p-4 rounded-2xl hover:border-[#FFD21A]/30 transition-all">
+                  <div className="w-8 h-8 rounded-xl bg-[#FFD21A]/10 border border-[#FFD21A]/30 flex items-center justify-center shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-4.5 h-4.5 text-[#FFD21A]" />
+                  </div>
                   <div>
-                    <h4 className="font-heading font-bold text-white text-sm">Atención directa sin intermediarios</h4>
-                    <p className="text-xs text-[#9CA3AF] font-sans">Sin intermediarios informales ni desvíos durante el trayecto.</p>
+                    <h4 className="font-heading font-bold text-white text-sm sm:text-base">Entrega en tu domicilio</h4>
+                    <p className="text-xs sm:text-sm text-[#9CA3AF] font-sans mt-0.5 leading-relaxed">
+                      Llevamos la compra hasta tu dirección dentro de las localidades de cobertura.
+                    </p>
                   </div>
                 </div>
               </div>
+
             </div>
 
-            {/* DERECHA: FOTOGRAFÍA GRANDE DE LA FLOTA */}
+            {/* DERECHA: FOTOGRAFÍA REAL DEL CENTRO DE RECEPCIÓN Y PREPARACIÓN */}
             <div className="lg:col-span-6">
-              <div className="relative rounded-3xl overflow-hidden border border-[#222530] shadow-xl group">
+              <div className="relative rounded-3xl overflow-hidden border-2 border-[#222530] shadow-2xl group">
                 <img 
-                  src="/flota-cuenta-hogar.jpg" 
-                  alt="Transporte propio Renault Master Cuenta Hogar" 
-                  className="w-full h-[400px] sm:h-[480px] object-cover group-hover:scale-102 transition-transform duration-700" 
+                  src="/centro-logistico-caba.jpg" 
+                  alt="Centro de recepción y preparación Cuenta Hogar CABA" 
+                  className="w-full h-[420px] sm:h-[500px] object-cover group-hover:scale-105 transition-transform duration-700" 
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B]/90 via-transparent to-transparent flex items-end p-6">
-                  <p className="text-xs font-heading font-bold text-[#FFFDFC] uppercase tracking-wider">
-                    Unidades de transporte propio en ruta CABA ➔ Interior
-                  </p>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#111318]/90 via-transparent to-transparent flex items-end p-6 sm:p-8">
+                  <div className="flex items-center gap-3 bg-[#111318]/85 backdrop-blur-md border border-[#FFD21A]/30 px-4 py-2.5 rounded-xl text-white shadow-lg">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#FFD21A] shrink-0 animate-pulse"></span>
+                    <p className="text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider">
+                      CENTRO DE RECEPCIÓN Y PREPARACIÓN · CABA → INTERIOR
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
