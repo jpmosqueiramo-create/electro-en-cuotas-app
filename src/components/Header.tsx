@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X, ArrowRight, UserCheck } from "lucide-react";
+import PublicLocationMarquee from "@/components/PublicLocationMarquee";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -27,6 +28,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-[#111318]/95 backdrop-blur-md border-b border-[#222530] text-white">
+      <PublicLocationMarquee />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-4">
         
         {/* BRANDING LOGO */}

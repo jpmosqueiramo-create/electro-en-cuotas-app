@@ -2,7 +2,6 @@
 
 import Header from "@/components/Header";
 
-import PublicLocationMarquee from "@/components/PublicLocationMarquee";
 
 import { registrarProductoBorradorSiNoExiste } from "@/lib/catalogManager";
 import { calcularTablaTodosLosPlanes } from "@/lib/financialEngine";
@@ -268,7 +267,6 @@ export default function HomeTechCatalog() {
 
   return (
     <div className="min-h-screen bg-[#111318] text-white font-sans selection:bg-[#FFD21A] selection:text-black">
-      <PublicLocationMarquee />
       
       <Header />
 
