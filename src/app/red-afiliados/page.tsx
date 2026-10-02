@@ -12,7 +12,13 @@ import {
   Smartphone, 
   ShoppingBag, 
   ShieldCheck, 
-  UserCheck
+  UserCheck,
+  MessageSquareText,
+  FileSearch,
+  ShoppingCart,
+  Coins,
+  ChevronRight,
+  ChevronDown
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -158,69 +164,240 @@ export default function RedAfiliadosPage() {
         </div>
       </section>
 
-      {/* 3. SECCIÓN 3: "Cómo funciona" (PROCESO VISUAL DE 5 PASOS EN SUPERFICIE #FFFDFC) */}
-      <section className="py-20 lg:py-28 bg-[#161922] border-b border-[#222530]">
-        <div className="max-w-6xl mx-auto px-6 space-y-16">
+      {/* 3. SECCIÓN "CÓMO FUNCIONA" - INFOGRAFÍA WEB NATIVA DE 5 PASOS */}
+      <section className="py-20 lg:py-28 bg-[#161922] border-b border-[#222530] relative overflow-hidden">
+        
+        {/* LUZ DE FONDO DECORATIVA */}
+        <div className="absolute top-1/2 right-0 w-96 h-96 bg-[#FFD21A]/5 rounded-full blur-3xl pointer-events-none -translate-y-1/2" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-14 sm:space-y-16 relative z-10">
           
-          <div className="text-center max-w-2xl mx-auto space-y-3">
-            <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#FFD21A]">
-              Cómo funciona
+          {/* ENCABEZADO */}
+          <div className="text-center space-y-4 max-w-2xl mx-auto">
+            <div className="inline-flex items-center gap-2 bg-[#111318] border border-[#FFD21A]/30 px-4 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider text-[#FFD21A] shadow-xs">
+              RED DE AFILIADOS
+            </div>
+
+            <h2 className="text-4xl sm:text-5xl font-heading font-extrabold tracking-tight">
+              <span className="text-[#FFD21A]">Cómo</span> <span className="text-white">funciona</span>
             </h2>
-            <p className="text-[#9CA3AF] text-base font-sans">
+
+            <p className="text-[#9CA3AF] text-base sm:text-lg font-sans leading-relaxed">
               El circuito operativo de trabajo diario en 5 pasos claros
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          {/* VISTA DESKTOP: INFOGRAFÍA HORIZONTAL CONTINUA CON CONECTORES (lg:block hidden) */}
+          <div className="hidden lg:block relative pt-6 pb-4">
             
-            <div className="bg-[#111318] border border-[#222530] p-6 rounded-2xl flex flex-col justify-between space-y-4">
-              <div>
-                <div className="text-2xl font-heading font-extrabold text-[#FFD21A] mb-3">01</div>
-                <h4 className="font-heading font-bold text-[#FFD21A] text-base mb-2">Detecta una necesidad</h4>
-                <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                  El vendedor afiliado conversa con el cliente y transmite a Cuenta Hogar qué producto necesita.
-                </p>
-              </div>
-            </div>
+            {/* LÍNEA ONDULADA / CONECTORA HORIZONTAL DETRÁS DE LOS NODOS */}
+            <div className="absolute top-[48px] left-[8%] right-[8%] h-[3px] bg-[#222530] z-0 rounded-full" />
+            <div className="absolute top-[48px] left-[8%] right-[8%] h-[3px] bg-gradient-to-r from-[#FFD21A]/40 via-[#FFD21A] to-[#FFD21A] z-0 rounded-full opacity-80" />
 
-            <div className="bg-[#111318] border border-[#222530] p-6 rounded-2xl flex flex-col justify-between space-y-4">
-              <div>
-                <div className="text-2xl font-heading font-extrabold text-[#FFD21A] mb-3">02</div>
-                <h4 className="font-heading font-bold text-[#FFD21A] text-base mb-2">Cuenta Hogar analiza la solicitud</h4>
-                <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                  Con la información disponible y las referencias aportadas, Cuenta Hogar evalúa si puede avanzar con la operación.
-                </p>
-              </div>
-            </div>
+            <div className="grid grid-cols-5 gap-4 relative z-10">
+              {[
+                {
+                  paso: "01",
+                  titulo: "Detecta una necesidad",
+                  texto: "El vendedor afiliado conversa con el cliente y transmite a Cuenta Hogar qué producto necesita.",
+                  icon: MessageSquareText,
+                  destacado: false
+                },
+                {
+                  paso: "02",
+                  titulo: "Cuenta Hogar analiza la solicitud",
+                  texto: "Con la información disponible y las referencias aportadas, Cuenta Hogar evalúa si puede avanzar con la operación.",
+                  icon: FileSearch,
+                  destacado: false
+                },
+                {
+                  paso: "03",
+                  titulo: "Gestionamos la compra",
+                  texto: "Una vez aceptada la propuesta y formalizado el mandato de compra, Cuenta Hogar gestiona la adquisición solicitada en Capital Federal.",
+                  icon: ShoppingCart,
+                  destacado: false
+                },
+                {
+                  paso: "04",
+                  titulo: "Acompaña al cliente",
+                  texto: "El vendedor afiliado mantiene el vínculo local y realiza el seguimiento durante el período acordado.",
+                  icon: UserCheck,
+                  destacado: false
+                },
+                {
+                  paso: "05",
+                  titulo: "Comisiones por cuotas cobradas",
+                  texto: "Las comisiones del vendedor afiliado se generan sobre las cuotas que el cliente efectivamente paga por esa compra.",
+                  icon: Coins,
+                  destacado: true
+                }
+              ].map((item, idx) => {
+                const IconComponent = item.icon;
+                return (
+                  <div key={idx} className="relative group flex flex-col items-center">
+                    
+                    {/* FLECHA DE CONEXIÓN ENTRE NODOS EN EL GAP */}
+                    {idx < 4 && (
+                      <div className="absolute -right-3.5 xl:-right-4 top-[24px] -translate-y-1/2 z-30 pointer-events-none flex items-center justify-center">
+                        <div className="w-5 h-5 rounded-full bg-[#161922] border border-[#FFD21A]/40 flex items-center justify-center text-[#FFD21A] shadow-md">
+                          <ChevronRight className="w-3 h-3 text-[#FFD21A]" />
+                        </div>
+                      </div>
+                    )}
 
-            <div className="bg-[#111318] border border-[#222530] p-6 rounded-2xl flex flex-col justify-between space-y-4">
-              <div>
-                <div className="text-2xl font-heading font-extrabold text-[#FFD21A] mb-3">03</div>
-                <h4 className="font-heading font-bold text-[#FFD21A] text-base mb-2">Gestionamos la compra</h4>
-                <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                  Una vez aceptada la propuesta y formalizado el mandato de compra, Cuenta Hogar gestiona la adquisición solicitada en Capital Federal.
-                </p>
-              </div>
-            </div>
+                    {/* NODO NUMERADO EN EL EJE DEL TIMELINE */}
+                    <div className="mb-6 relative">
+                      <div className={`w-12 h-12 rounded-full font-mono font-extrabold text-sm flex items-center justify-center border-2 transition-transform duration-300 group-hover:scale-110 shadow-xl ${
+                        item.destacado
+                          ? 'bg-[#FFD21A] text-[#111318] border-[#FFD21A] ring-4 ring-[#FFD21A]/30 shadow-[#FFD21A]/40'
+                          : 'bg-[#111318] text-white border-[#FFD21A]/50 group-hover:border-[#FFD21A] ring-4 ring-[#161922]'
+                      }`}>
+                        {item.paso}
+                      </div>
+                    </div>
 
-            <div className="bg-[#111318] border border-[#222530] p-6 rounded-2xl flex flex-col justify-between space-y-4">
-              <div>
-                <div className="text-2xl font-heading font-extrabold text-[#FFD21A] mb-3">04</div>
-                <h4 className="font-heading font-bold text-[#FFD21A] text-base mb-2">Acompaña al cliente</h4>
-                <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                  El vendedor afiliado mantiene el vínculo local y realiza el seguimiento durante el período acordado.
-                </p>
-              </div>
-            </div>
+                    {/* PANEL DE CONTENIDO DE CADA PASO */}
+                    <div className={`w-full flex-1 bg-[#111318] border rounded-3xl p-6 text-center flex flex-col items-center justify-between space-y-4 shadow-xl transition-all duration-300 group-hover:border-[#FFD21A]/60 ${
+                      item.destacado
+                        ? 'border-[#FFD21A]/60 bg-gradient-to-b from-[#111318] via-[#111318] to-[#161922] shadow-2xl shadow-[#FFD21A]/10 ring-1 ring-[#FFD21A]/30'
+                        : 'border-[#222530]'
+                    }`}>
+                      <div className="space-y-4 flex flex-col items-center">
+                        {/* ÍCONO CENTRAL EN CÍRCULO */}
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all duration-300 ${
+                          item.destacado
+                            ? 'bg-[#FFD21A]/15 border-[#FFD21A] text-[#FFD21A] shadow-lg shadow-[#FFD21A]/20'
+                            : 'bg-[#161922] border-[#222530] text-[#FFD21A] group-hover:border-[#FFD21A]/40'
+                        }`}>
+                          <IconComponent className="w-6 h-6" />
+                        </div>
 
-            <div className="bg-[#111318] border border-[#222530] p-6 rounded-2xl flex flex-col justify-between space-y-4">
-              <div>
-                <div className="text-2xl font-heading font-extrabold text-[#FFD21A] mb-3">05</div>
-                <h4 className="font-heading font-bold text-[#FFD21A] text-base mb-2">Comisiones por cuotas cobradas</h4>
-                <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                  Las comisiones del vendedor afiliado se generan sobre las cuotas efectivamente cobradas.
-                </p>
-              </div>
+                        {/* TÍTULO Y DIVISOR */}
+                        <div className="space-y-2.5">
+                          <h3 className="font-heading font-bold text-[#FFD21A] text-sm sm:text-base leading-snug">
+                            {item.titulo}
+                          </h3>
+                          <div className="w-8 h-[2px] bg-[#FFD21A]/40 mx-auto rounded-full" />
+                        </div>
+
+                        {/* DESCRIPCIÓN */}
+                        <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
+                          {item.texto}
+                        </p>
+                      </div>
+
+                      {/* BADGE INFERIOR DE PROCESO */}
+                      <div className="pt-3 w-full border-t border-[#222530]/60 text-[10px] font-mono font-bold tracking-wider text-[#9CA3AF]">
+                        {item.destacado ? (
+                          <span className="text-[#FFD21A] uppercase">ETAPA DE GANANCIA ★</span>
+                        ) : (
+                          <span>PASO {item.paso} DE 05</span>
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* VISTA MOBILE Y TABLET: TIMELINE VERTICAL CONTINUO (lg:hidden block) */}
+          <div className="block lg:hidden relative pl-4 sm:pl-6">
+            
+            {/* LÍNEA VERTICAL CONTINUA CON DEGRADADO AMARILLO */}
+            <div className="absolute left-[23px] sm:left-[31px] top-6 bottom-6 w-[3px] bg-gradient-to-b from-[#FFD21A] via-[#FFD21A] to-[#FFD21A] rounded-full z-0 opacity-80" />
+
+            <div className="space-y-6 relative z-10">
+              {[
+                {
+                  paso: "01",
+                  titulo: "Detecta una necesidad",
+                  texto: "El vendedor afiliado conversa con el cliente y transmite a Cuenta Hogar qué producto necesita.",
+                  icon: MessageSquareText,
+                  destacado: false
+                },
+                {
+                  paso: "02",
+                  titulo: "Cuenta Hogar analiza la solicitud",
+                  texto: "Con la información disponible y las referencias aportadas, Cuenta Hogar evalúa si puede avanzar con la operación.",
+                  icon: FileSearch,
+                  destacado: false
+                },
+                {
+                  paso: "03",
+                  titulo: "Gestionamos la compra",
+                  texto: "Una vez aceptada la propuesta y formalizado el mandato de compra, Cuenta Hogar gestiona la adquisición solicitada en Capital Federal.",
+                  icon: ShoppingCart,
+                  destacado: false
+                },
+                {
+                  paso: "04",
+                  titulo: "Acompaña al cliente",
+                  texto: "El vendedor afiliado mantiene el vínculo local y realiza el seguimiento durante el período acordado.",
+                  icon: UserCheck,
+                  destacado: false
+                },
+                {
+                  paso: "05",
+                  titulo: "Comisiones por cuotas cobradas",
+                  texto: "Las comisiones del vendedor afiliado se generan sobre las cuotas que el cliente efectivamente paga por esa compra.",
+                  icon: Coins,
+                  destacado: true
+                }
+              ].map((item, idx) => {
+                const IconComponent = item.icon;
+                return (
+                  <div key={idx} className="relative pl-9 sm:pl-11 flex flex-col">
+                    
+                    {/* NODO CIRCULAR SOBRE LA LÍNEA VERTICAL */}
+                    <div className={`absolute left-0 top-1 -translate-x-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full font-mono font-extrabold text-xs sm:text-sm flex items-center justify-center z-10 border-2 shadow-lg ${
+                      item.destacado
+                        ? 'bg-[#FFD21A] text-[#111318] border-[#FFD21A] ring-4 ring-[#FFD21A]/30'
+                        : 'bg-[#111318] text-white border-[#FFD21A]/60 ring-4 ring-[#161922]'
+                    }`}>
+                      {item.paso}
+                    </div>
+
+                    {/* TARJETA DEL PASO EN MOBILE/TABLET */}
+                    <div className={`bg-[#111318] border rounded-2xl p-5 space-y-3 shadow-xl ${
+                      item.destacado
+                        ? 'border-[#FFD21A] bg-gradient-to-r from-[#111318] to-[#161922] ring-1 ring-[#FFD21A]/30'
+                        : 'border-[#222530]'
+                    }`}>
+                      <div className="flex items-center gap-3 border-b border-[#222530] pb-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${
+                          item.destacado
+                            ? 'bg-[#FFD21A]/20 border-[#FFD21A] text-[#FFD21A]'
+                            : 'bg-[#161922] border-[#222530] text-[#FFD21A]'
+                        }`}>
+                          <IconComponent className="w-5 h-5" />
+                        </div>
+                        <h3 className="font-heading font-bold text-[#FFD21A] text-sm sm:text-base">
+                          {item.titulo}
+                        </h3>
+                      </div>
+
+                      <p className="text-xs sm:text-sm text-[#9CA3AF] font-sans leading-relaxed">
+                        {item.texto}
+                      </p>
+
+                      <div className="pt-2 border-t border-[#222530]/60 flex items-center justify-between text-[11px] font-mono text-[#9CA3AF]">
+                        <span className={item.destacado ? "text-[#FFD21A] font-bold" : ""}>
+                          {item.destacado ? "ETAPA DE COBRO DE COMISIONES" : `Paso ${item.paso} de 05`}
+                        </span>
+                        {idx < 4 && (
+                          <div className="flex items-center gap-1 text-[#FFD21A] text-xs">
+                            <span>Siguiente</span>
+                            <ChevronDown className="w-3.5 h-3.5 text-[#FFD21A]" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+                );
+              })}
             </div>
 
           </div>
