@@ -51,7 +51,7 @@ export default function Header() {
         {/* MENÚ DE NAVEGACIÓN DESKTOP */}
         <nav className="hidden lg:flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
           <Link href="/#modelo" className={getLinkStyle("/#modelo")}>Cómo Funciona</Link>
-          <Link href="/productos" className={getLinkStyle("/productos")}>Opciones de compra</Link>
+          <Link href="/servicio-de-compra" className={getLinkStyle("/servicio-de-compra")}>Servicio de compra</Link>
           <Link href="/envios" className={getLinkStyle("/envios")}>Envíos Low Cost</Link>
           <Link href="/nosotros" className={getLinkStyle("/nosotros")}>Nosotros</Link>
           <Link href="/red-afiliados" className={getLinkStyle("/red-afiliados")}>Red de Afiliados</Link>
@@ -93,8 +93,8 @@ export default function Header() {
           <Link href="/#modelo" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/#modelo")}>
             Cómo Funciona
           </Link>
-          <Link href="/productos" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/productos")}>
-            Productos
+          <Link href="/servicio-de-compra" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/servicio-de-compra")}>
+            Servicio de compra
           </Link>
           <Link href="/envios" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/envios")}>
             Envíos Low Cost CABA
