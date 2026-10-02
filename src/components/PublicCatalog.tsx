@@ -669,60 +669,132 @@ export default function PublicCatalog() {
         </div>
       </section>
 
-      {/* 4. COBERTURA GEOGRÁFICA CORREGIDA */}
-      <section className="py-24 lg:py-28 bg-[#161922] text-white border-b border-[#222530]">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      {/* 4. COBERTURA GEOGRÁFICA REDISEÑADA (CABA ➔ INTERIOR) */}
+      <section className="py-20 lg:py-24 bg-[#161922] text-white border-b border-[#222530]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          
+          {/* COLUMNA IZQUIERDA: MENSAJE E INFORMACIÓN DE COBERTURA */}
           <div className="space-y-6">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#111318] text-[#FFD21A] border border-[#222530] text-xs font-heading font-bold uppercase tracking-wider">
-              <MapPin className="w-3.5 h-3.5 text-[#FFD21A]" /> Cobertura Geográfica
-            </span>
             
-            <h2 className="text-3xl lg:text-[40px] font-heading font-bold text-[#FFD21A] leading-tight">
-              ¿En qué localidades estamos?
-            </h2>
+            {/* EYEBROW & CHIP DE LOCALIDADES ACTIVAS */}
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#111318] text-[#FFD21A] border border-[#FFD21A]/30 text-xs font-mono font-bold uppercase tracking-wider">
+                <MapPin className="w-3.5 h-3.5 text-[#FFD21A]" /> COBERTURA GEOGRÁFICA
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFD21A] text-[#111318] text-xs font-mono font-extrabold uppercase tracking-wider">
+                5 localidades activas
+              </span>
+            </div>
             
-            <p className="text-white text-lg font-sans font-bold leading-[1.6]">
-              Actualmente llegamos a Lincoln, Zavalía, Los Toldos, Chivilcoy y O'Brien.
-            </p>
+            {/* TÍTULO PRINCIPAL Y BAJADA */}
+            <div className="space-y-3">
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-[#FFD21A] tracking-tight leading-tight">
+                Estamos cerca tuyo
+              </h2>
+              
+              <p className="text-white text-base sm:text-lg font-bold leading-relaxed">
+                Hoy trabajamos en Lincoln, Zavalía, Los Toldos, Chivilcoy y O’Brien.
+              </p>
 
-            <p className="text-[#9CA3AF] text-base font-sans leading-[1.6]">
-              Estamos ampliando progresivamente nuestras rutas para llegar cada vez a más hogares y negocios del interior.
-            </p>
-            
-            {/* CIUDADES ACTIVAS (#173E3B) */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
-              {["Lincoln", "Zavalía", "Los Toldos", "Chivilcoy", "O'Brien"].map((ciudad, idx) => (
-                <div key={idx} className="bg-[#111318] border border-[#222530] rounded-xl p-3.5 flex items-center gap-2.5">
-                  <span className="w-2 h-2 rounded-full bg-[#111318]" />
-                  <span className="font-heading font-bold text-[#FFD21A] text-sm">{ciudad}</span>
-                </div>
-              ))}
+              <p className="text-[#9CA3AF] text-sm sm:text-base leading-relaxed">
+                Seguimos ampliando nuestros recorridos para llegar a más localidades del interior.
+              </p>
             </div>
 
-            {/* CTA SOLICITAR NUEVA LOCALIDAD (#B44E2A TERRASOTA) */}
-            <div className="pt-6 border-t border-[#222530] space-y-3">
-              <p className="text-sm font-heading font-bold text-[#FFD21A]">
-                ¿Tu localidad todavía no está en nuestra ruta?
-              </p>
-              <button
-                type="button"
-                onClick={() => setModalLocalidadOpen(true)}
-                className="btn-lowcost text-xs uppercase tracking-wider"
+            {/* CHIPS DE LOCALIDADES EN RECORRIDO */}
+            <div className="space-y-2 pt-1">
+              <p className="text-[11px] font-mono font-bold text-[#9CA3AF] uppercase tracking-wider">Localidades en recorrido actual:</p>
+              <div className="flex flex-wrap gap-2.5">
+                {["Lincoln", "Zavalía", "Los Toldos", "Chivilcoy", "O’Brien"].map((ciudad, idx) => (
+                  <div key={idx} className="bg-[#111318] border border-[#FFD21A]/30 hover:border-[#FFD21A] rounded-xl px-4 py-2.5 flex items-center gap-2.5 transition-all">
+                    <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
+                    <span className="font-bold text-white text-xs sm:text-sm">{ciudad}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* MENSAJE DE EXPANSIÓN Y CTA EN AMARILLO OFICIAL (#FFD21A) */}
+            <div className="pt-6 border-t border-[#222530] space-y-4">
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-[#FFD21A]">
+                  ¿Tu localidad todavía no está en nuestra cobertura?
+                </p>
+                <p className="text-xs text-[#9CA3AF]">
+                  Contanos dónde estás. Estamos evaluando nuevas rutas.
+                </p>
+              </div>
+
+              <a
+                href="https://wa.me/5491125659686?text=Hola%2C%20quer%C3%ADa%20consultar%20si%20Cuenta%20Hogar%20tiene%20previsto%20llegar%20a%20mi%20localidad.%0A%0ALocalidad%3A%20%0AProvincia%3A%20%0A%0AMe%20interesa%20conocer%20los%20servicios%20disponibles%20y%20si%20tienen%20previsto%20incorporar%20esta%20zona."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-heading font-extrabold text-xs uppercase tracking-wider px-7 py-3.5 rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95"
               >
-                <MapPin className="w-3.5 h-3.5" /> Quiero solicitar mi localidad
-              </button>
+                <WhatsAppIcon className="w-4.5 h-4.5 text-[#111318]" />
+                <span>CONSULTAR POR MI LOCALIDAD</span>
+              </a>
             </div>
           </div>
           
+          {/* COLUMNA DERECHA: GRÁFICO ESQUEMÁTICO DE RED CABA ➔ INTERIOR */}
           <div className="flex items-center justify-center lg:justify-end">
-            <div className="relative w-full max-w-[400px] aspect-square flex items-center justify-center">
-              <img 
-                src="/mapa_bsas.png" 
-                alt="Mapa de Cobertura Provincia de Buenos Aires" 
-                className="w-full h-full object-contain relative z-10 drop-shadow-xs" 
-              />
+            <div className="bg-[#111318] border-2 border-[#222530] rounded-3xl p-6 sm:p-8 space-y-6 w-full max-w-lg shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFD21A]/10 rounded-full blur-3xl pointer-events-none" />
+              
+              <div className="flex items-center justify-between border-b border-[#222530] pb-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#FFD21A] animate-pulse"></span>
+                  <span className="font-mono text-xs font-bold text-[#FFD21A] uppercase tracking-wider">
+                    Red de Recorridos CABA ➔ Interior
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono text-[#9CA3AF] bg-[#161922] border border-[#222530] px-2.5 py-1 rounded-md">
+                  Ruta Activa
+                </span>
+              </div>
+
+              {/* ORIGEN CABA */}
+              <div className="flex items-center gap-4 bg-[#161922] border border-[#FFD21A]/40 p-4 rounded-2xl">
+                <div className="w-10 h-10 bg-[#FFD21A] text-[#111318] rounded-xl flex items-center justify-center font-extrabold text-sm shrink-0">
+                  CABA
+                </div>
+                <div>
+                  <p className="text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider">Punto de Origen Logístico</p>
+                  <p className="text-sm font-bold text-white">Caracas 1101, Capital Federal</p>
+                </div>
+              </div>
+
+              {/* LÍNEA DE CONEXIÓN Y NODOS DE RECORRIDO */}
+              <div className="relative pl-6 space-y-3.5 border-l-2 border-dashed border-[#FFD21A]/40 my-2 ml-5">
+                {[
+                  { name: "Chivilcoy", tag: "Recorrido Activo" },
+                  { name: "O’Brien", tag: "Recorrido Activo" },
+                  { name: "Los Toldos", tag: "Recorrido Activo" },
+                  { name: "Lincoln", tag: "Recorrido Activo" },
+                  { name: "Zavalía", tag: "Recorrido Activo" }
+                ].map((nodo, idx) => (
+                  <div key={idx} className="relative flex items-center justify-between bg-[#161922]/80 border border-[#222530] hover:border-[#FFD21A]/50 p-3 rounded-xl transition-all">
+                    <div className="absolute -left-[31px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#111318] border-2 border-[#FFD21A] flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#FFD21A]"></div>
+                    </div>
+                    <span className="font-bold text-xs sm:text-sm text-white">{nodo.name}</span>
+                    <span className="text-[10px] font-mono font-bold text-[#FFD21A] bg-[#111318] px-2 py-0.5 rounded border border-[#FFD21A]/20">
+                      {nodo.tag}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-2 text-center">
+                <p className="text-[11px] font-mono text-[#9CA3AF] flex items-center justify-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFD21A]"></span>
+                  Expansión progresiva en evaluación continua
+                </p>
+              </div>
             </div>
           </div>
+
         </div>
       </section>
 
