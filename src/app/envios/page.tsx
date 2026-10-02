@@ -17,7 +17,9 @@ import {
   ShieldCheck,
   Calculator,
   HelpCircle,
-  ArrowRight
+  ArrowRight,
+  ChevronRight,
+  ChevronDown
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -269,10 +271,11 @@ Quiero saber cómo funcionará el servicio y los recorridos programados en mi lo
         </div>
       </section>
 
-      {/* 4. RECORRIDO VISUAL "Así viaja tu compra" */}
+      {/* 4. RECORRIDO VISUAL "Así viaja tu compra" REDISEÑADO */}
       <section className="py-20 lg:py-28 bg-[#161922] border-b border-[#222530]">
-        <div className="max-w-6xl mx-auto px-6 space-y-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12 lg:space-y-16">
           
+          {/* ENCABEZADO DE LA SECCIÓN */}
           <div className="text-center space-y-3 max-w-2xl mx-auto">
             <div className="inline-flex items-center gap-2 text-xs font-heading font-bold uppercase tracking-widest text-[#FFD21A]">
               <Route className="w-4 h-4 text-[#FFD21A]" /> Trazabilidad Directa CABA ➔ Interior
@@ -280,100 +283,228 @@ Quiero saber cómo funcionará el servicio y los recorridos programados en mi lo
             <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#FFD21A]">
               Así viaja tu compra
             </h2>
-            <p className="text-[#9CA3AF] text-sm font-sans">
+            <p className="text-[#9CA3AF] text-sm sm:text-base font-sans leading-relaxed">
               Un proceso transparente de 6 pasos desde el local en Capital hasta la puerta de tu casa.
             </p>
           </div>
 
-          {/* LÍNEA VISUAL DE RECORRIDO EN 6 PASOS */}
-          <div className="relative">
-            <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-[#222530] -translate-y-1/2 z-0" />
+          {/* VISTA DESKTOP: SECUENCIA HORIZONTAL CONECTADA (lg:block hidden) */}
+          <div className="hidden lg:block relative pt-4 pb-2">
+            
+            {/* LÍNEA DE CONEXIÓN HORIZONTAL CONTINUA DETRÁS DE LAS TARJETAS */}
+            <div className="absolute top-[48px] left-[6%] right-[6%] h-[3px] bg-[#222530] z-0 rounded-full" />
+            <div className="absolute top-[48px] left-[6%] right-[6%] h-[3px] bg-gradient-to-r from-[#FFD21A] via-[#FFD21A]/70 to-[#FFD21A] z-0 rounded-full opacity-80" />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 relative z-10">
-              
-              <div className="bg-[#111318] border border-[#222530] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors overflow-hidden group">
-                <div className="space-y-2">
-                  <div className="w-9 h-9 rounded-full bg-[#173E3B] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0">
-                    1
+            {/* GRID DE 6 PASOS CON GAP REDUCIDO */}
+            <div className="grid grid-cols-6 gap-3 xl:gap-4 relative z-10">
+              {[
+                {
+                  numero: "01",
+                  titulo: "Cotizás tu envío",
+                  descripcion: "Nos enviás el origen y detalles del paquete para coordinar.",
+                  badge: "INICIO"
+                },
+                {
+                  numero: "02",
+                  titulo: "Despachás a CABA",
+                  descripcion: "Tu proveedor entrega en Caracas 1101, CABA.",
+                  badge: "RECEPCIÓN",
+                  destacadoDesc: true
+                },
+                {
+                  numero: "03",
+                  titulo: "Verificación",
+                  descripcion: "Recibimos, etiquetamos e identificamos tus bultos.",
+                  badge: "CONTROL"
+                },
+                {
+                  numero: "04",
+                  titulo: "Consolidación",
+                  descripcion: "Agrupamos tus compras de distintos locales sin costo extra.",
+                  badge: "SIN CARGO"
+                },
+                {
+                  numero: "05",
+                  titulo: "Recorrido activo",
+                  descripcion: "Cargamos en nuestra flota propia según la ruta programada.",
+                  badge: "EN RUTA"
+                },
+                {
+                  numero: "06",
+                  titulo: "Entrega en domicilio",
+                  descripcion: "Te lo bajamos en la puerta de tu casa en el interior.",
+                  badge: "DESTINO"
+                }
+              ].map((paso, idx) => (
+                <div key={idx} className="relative group flex flex-col">
+                  
+                  {/* CONECTOR EN EL GAP ENTRE TARJETAS ADYACENTES */}
+                  {idx < 5 && (
+                    <div className="absolute -right-3.5 xl:-right-4 top-[24px] -translate-y-1/2 z-30 pointer-events-none flex items-center justify-center">
+                      <div className="w-5 h-5 rounded-full bg-[#161922] border border-[#FFD21A]/40 flex items-center justify-center text-[#FFD21A] shadow-md">
+                        <ChevronRight className="w-3 h-3 text-[#FFD21A]" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CABECERA DEL PASO CON CIRCULO NUMERADO Y BADGE */}
+                  <div className="flex items-center justify-between mb-4 px-1">
+                    <div className={`w-10 h-10 rounded-full font-mono font-extrabold text-xs flex items-center justify-center shrink-0 border-2 transition-transform duration-200 group-hover:scale-105 ${
+                      idx === 0 || idx === 5 
+                        ? 'bg-[#FFD21A] text-[#111318] border-[#FFD21A] shadow-lg shadow-[#FFD21A]/20' 
+                        : 'bg-[#111318] text-white border-[#FFD21A]/40 group-hover:border-[#FFD21A]'
+                    }`}>
+                      {paso.numero}
+                    </div>
+
+                    <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
+                      idx === 0 || idx === 5 
+                        ? 'bg-[#FFD21A]/10 text-[#FFD21A] border-[#FFD21A]/40' 
+                        : 'bg-[#161922] text-[#9CA3AF] border-[#222530]'
+                    }`}>
+                      {paso.badge}
+                    </span>
                   </div>
-                  <div>
-                    <h4 className="font-heading font-bold text-[#FFD21A] text-sm mb-1">Cotizás tu envío</h4>
-                    <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                      Nos enviás el origen y detalles del paquete para coordinar.
-                    </p>
+
+                  {/* CUERPO DE LA TARJETA */}
+                  <div className={`bg-[#111318] border transition-all duration-200 rounded-2xl p-4 xl:p-5 flex-1 flex flex-col justify-between space-y-4 shadow-lg group-hover:border-[#FFD21A]/50 ${
+                    idx === 0 || idx === 5 
+                      ? 'border-[#FFD21A]/40 bg-gradient-to-b from-[#111318] to-[#161922]' 
+                      : 'border-[#222530]'
+                  }`}>
+                    <div className="space-y-2">
+                      <h4 className="font-heading font-bold text-white group-hover:text-[#FFD21A] text-sm leading-snug transition-colors">
+                        {paso.titulo}
+                      </h4>
+                      <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
+                        {paso.destacadoDesc ? (
+                          <>Tu proveedor entrega en <strong className="text-white font-semibold">Caracas 1101, CABA</strong>.</>
+                        ) : (
+                          paso.descripcion
+                        )}
+                      </p>
+                    </div>
+
+                    <div className="pt-3 border-t border-[#222530] flex items-center justify-between text-[10px] font-mono">
+                      <span className={idx === 0 || idx === 5 ? "text-[#FFD21A] font-bold" : "text-[#9CA3AF]"}>
+                        {idx === 0 ? "PASO INICIAL" : idx === 5 ? "DESTINO FINAL" : `ETAPA 0${idx+1}`}
+                      </span>
+                      {idx < 5 ? (
+                        <ArrowRight className="w-3 h-3 text-[#FFD21A]/60 group-hover:text-[#FFD21A] transition-colors" />
+                      ) : (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#FFD21A]" />
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="text-[10px] font-mono text-[#FFD21A] font-bold">INICIO ●────</div>
-              </div>
 
-              <div className="bg-[#111318] border border-[#222530] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors overflow-hidden group">
-                <div className="space-y-2">
-                  <div className="w-9 h-9 rounded-full bg-[#111318] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0 border border-[#374151]">
-                    2
-                  </div>
-                  <div>
-                    <h4 className="font-heading font-bold text-[#FFD21A] text-sm mb-1">Despachás a CABA</h4>
-                    <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                      Tu proveedor entrega en <strong className="text-white font-semibold">Caracas 1101, CABA</strong>.
-                    </p>
-                  </div>
                 </div>
-                <div className="text-[10px] font-mono text-[#FFD21A] font-bold">───────</div>
-              </div>
-
-              <div className="bg-[#111318] border border-[#222530] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors">
-                <div className="w-9 h-9 rounded-full bg-[#111318] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0 border border-[#374151]">
-                  3
-                </div>
-                <div>
-                  <h4 className="font-heading font-bold text-[#FFD21A] text-sm mb-1">Verificación</h4>
-                  <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                    Recibimos, etiquetamos e identificamos tus bultos.
-                  </p>
-                </div>
-                <div className="text-[10px] font-mono text-[#FFD21A] font-bold">───────</div>
-              </div>
-
-              <div className="bg-[#111318] border border-[#222530] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors">
-                <div className="w-9 h-9 rounded-full bg-[#111318] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0 border border-[#374151]">
-                  4
-                </div>
-                <div>
-                  <h4 className="font-heading font-bold text-[#FFD21A] text-sm mb-1">Consolidación</h4>
-                  <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                    Agrupamos tus compras de distintos locales sin costo extra.
-                  </p>
-                </div>
-                <div className="text-[10px] font-mono text-[#FFD21A] font-bold">───────</div>
-              </div>
-
-              <div className="bg-[#111318] border border-[#222530] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors">
-                <div className="w-9 h-9 rounded-full bg-[#111318] text-white font-heading font-bold text-sm flex items-center justify-center shrink-0 border border-[#374151]">
-                  5
-                </div>
-                <div>
-                  <h4 className="font-heading font-bold text-[#FFD21A] text-sm mb-1">Recorrido activo</h4>
-                  <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                    Cargamos en nuestra flota propia según la ruta programada.
-                  </p>
-                </div>
-                <div className="text-[10px] font-mono text-[#FFD21A] font-bold">───────</div>
-              </div>
-
-              <div className="bg-[#111318] border border-[#222530] p-5 rounded-2xl flex flex-col justify-between space-y-4 hover:border-[#173E3B] transition-colors">
-                <div className="w-9 h-9 rounded-full bg-[#FFD21A] text-[#111318] font-heading font-bold text-sm flex items-center justify-center shrink-0">
-                  6
-                </div>
-                <div>
-                  <h4 className="font-heading font-bold text-[#FFD21A] text-sm mb-1">Entrega en domicilio</h4>
-                  <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                    Te lo bajamos en la puerta de tu casa en el interior.
-                  </p>
-                </div>
-                <div className="text-[10px] font-mono text-[#FFD21A] font-bold">───► DESTINO</div>
-              </div>
-
+              ))}
             </div>
+          </div>
+
+          {/* VISTA MOBILE Y TABLET: TIMELINE VERTICAL CONTINUO (lg:hidden block) */}
+          <div className="block lg:hidden relative pl-4 sm:pl-6">
+            
+            {/* LÍNEA DE CONEXIÓN VERTICAL CONTINUA */}
+            <div className="absolute left-[23px] sm:left-[31px] top-6 bottom-6 w-[3px] bg-gradient-to-b from-[#FFD21A] via-[#FFD21A]/60 to-[#FFD21A] rounded-full z-0 opacity-80" />
+
+            <div className="space-y-6 relative z-10">
+              {[
+                {
+                  numero: "01",
+                  titulo: "Cotizás tu envío",
+                  descripcion: "Nos enviás el origen y detalles del paquete para coordinar.",
+                  badge: "INICIO"
+                },
+                {
+                  numero: "02",
+                  titulo: "Despachás a CABA",
+                  descripcion: "Tu proveedor entrega en Caracas 1101, CABA.",
+                  badge: "RECEPCIÓN",
+                  destacadoDesc: true
+                },
+                {
+                  numero: "03",
+                  titulo: "Verificación",
+                  descripcion: "Recibimos, etiquetamos e identificamos tus bultos.",
+                  badge: "CONTROL"
+                },
+                {
+                  numero: "04",
+                  titulo: "Consolidación",
+                  descripcion: "Agrupamos tus compras de distintos locales sin costo extra.",
+                  badge: "SIN CARGO"
+                },
+                {
+                  numero: "05",
+                  titulo: "Recorrido activo",
+                  descripcion: "Cargamos en nuestra flota propia según la ruta programada.",
+                  badge: "EN RUTA"
+                },
+                {
+                  numero: "06",
+                  titulo: "Entrega en domicilio",
+                  descripcion: "Te lo bajamos en la puerta de tu casa en el interior.",
+                  badge: "DESTINO"
+                }
+              ].map((paso, idx) => (
+                <div key={idx} className="relative pl-9 sm:pl-11 flex flex-col">
+                  
+                  {/* NODO CIRCULAR CON NÚMERO SOBRE LA LÍNEA VERTICAL */}
+                  <div className={`absolute left-0 top-1 -translate-x-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full font-mono font-extrabold text-xs sm:text-sm flex items-center justify-center z-10 border-2 shadow-md ${
+                    idx === 0 || idx === 5 
+                      ? 'bg-[#FFD21A] text-[#111318] border-[#FFD21A] ring-4 ring-[#161922]' 
+                      : 'bg-[#111318] text-white border-[#FFD21A]/50 ring-4 ring-[#161922]'
+                  }`}>
+                    {paso.numero}
+                  </div>
+
+                  {/* TARJETA DEL PASO EN MOBILE/TABLET */}
+                  <div className={`bg-[#111318] border rounded-2xl p-4 sm:p-5 space-y-3 shadow-lg ${
+                    idx === 0 || idx === 5 
+                      ? 'border-[#FFD21A]/40 bg-gradient-to-r from-[#111318] to-[#161922]' 
+                      : 'border-[#222530]'
+                  }`}>
+                    <div className="flex items-center justify-between gap-2 border-b border-[#222530] pb-2.5">
+                      <h4 className="font-heading font-bold text-white text-sm sm:text-base">
+                        {paso.titulo}
+                      </h4>
+                      <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded border ${
+                        idx === 0 || idx === 5 
+                          ? 'bg-[#FFD21A]/10 text-[#FFD21A] border-[#FFD21A]/40' 
+                          : 'bg-[#161922] text-[#9CA3AF] border-[#222530]'
+                      }`}>
+                        {paso.badge}
+                      </span>
+                    </div>
+
+                    <p className="text-xs sm:text-sm text-[#9CA3AF] font-sans leading-relaxed">
+                      {paso.destacadoDesc ? (
+                        <>Tu proveedor entrega en <strong className="text-white font-semibold">Caracas 1101, CABA</strong>.</>
+                      ) : (
+                        paso.descripcion
+                      )}
+                    </p>
+
+                    <div className="pt-2 border-t border-[#222530]/60 flex items-center justify-between text-[11px] font-mono text-[#9CA3AF]">
+                      <span className={idx === 0 || idx === 5 ? "text-[#FFD21A] font-bold" : ""}>
+                        {idx === 0 ? "Paso 1 de 6 — Inicio CABA" : idx === 5 ? "Paso 6 de 6 — Entrega Final" : `Etapa ${idx+1} de 6`}
+                      </span>
+                      {idx < 5 ? (
+                        <div className="flex items-center gap-1 text-[#FFD21A] text-xs">
+                          <span>Siguiente</span>
+                          <ChevronDown className="w-3.5 h-3.5 text-[#FFD21A]" />
+                        </div>
+                      ) : (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#FFD21A]" />
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+
           </div>
 
         </div>
