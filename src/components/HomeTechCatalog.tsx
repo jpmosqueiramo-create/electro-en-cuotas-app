@@ -442,88 +442,155 @@ export default function HomeTechCatalog() {
       </section>
 
       {/* 2. MODELO DE TRABAJO (COMPRA POR MANDATO Y ENVÍOS CABA) */}
-      <section id="modelo" className="py-20 lg:py-24 bg-[#FFFFFF] text-[#111827] border-b border-[#E5E7EB]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-16">
+      <section id="modelo" className="py-16 sm:py-20 bg-[#FFFFFF] text-[#111827] border-b border-[#E5E7EB]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-10 sm:space-y-12">
           
+          {/* ENCABEZADO CENTRADO CON ESPACIADO OPTIMIZADO */}
           <div className="text-center max-w-3xl mx-auto space-y-3">
-            <span className="inline-block bg-[#111318] text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full border border-[#111318]">
+            <span className="inline-block bg-[#111318] text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full">
               MODELO OPERATIVO CUENTA HOGAR
             </span>
-            <h2 className="text-3xl lg:text-4xl font-extrabold text-[#111318]">
-              Dos formas simples de resolver tu compra desde el interior
+            <h2 className="text-3xl lg:text-4xl font-extrabold text-[#111318] tracking-tight">
+              ¿En qué situación estás?
             </h2>
-            <p className="text-base text-[#4B5563]">
-              Elegí la opción que mejor se adapte a tu situación actual.
+            <p className="text-base sm:text-lg text-[#4B5563] max-w-xl mx-auto">
+              Cuenta Hogar puede ayudarte antes o después de realizar tu compra en Capital.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* DOS TARJETAS EDITORIALES DE DOS CAMINOS */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
             
-            {/* OPCIÓN 1: COMPRA POR MANDATO */}
-            <div className="bg-[#F9FAFB] border border-[#E5E7EB] hover:border-[#111318] rounded-2xl p-8 shadow-sm transition-all flex flex-col justify-between space-y-6">
-              <div className="space-y-4">
-                <div className="w-12 h-12 bg-[#111318] text-[#FFD21A] rounded-xl flex items-center justify-center font-bold text-xl">
-                  1
+            {/* CAMINO 01: NECESITÁS COMPRAR */}
+            <div className="bg-[#F9FAFB] border-2 border-[#E5E7EB] hover:border-[#111318] rounded-3xl p-8 lg:p-10 transition-all flex flex-col justify-between space-y-8">
+              <div className="space-y-6">
+                
+                {/* IDENTIFICADOR VISUAL FERTIL DE CAMINO */}
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-2 bg-[#111318] text-[#FFD21A] px-3.5 py-1.5 rounded-lg text-xs font-mono font-extrabold uppercase tracking-wider">
+                    01 · NECESITÁS COMPRAR
+                  </span>
                 </div>
-                <h3 className="text-2xl font-bold text-[#111318]">
-                  Necesitás comprar algo en Capital
-                </h3>
-                <p className="text-sm text-[#4B5563] leading-relaxed">
-                  Contanos qué producto necesitás. Buscamos alternativas, te presentamos una propuesta y, si decidís avanzar, formalizamos el mandato de compra y gestionamos la operación de principio a fin.
-                </p>
-                <ul className="space-y-2 text-xs font-semibold text-[#1F2937] pt-2">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#111318]" /> Te ayudamos a encontrar una opción adecuada
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#111318]" /> Formalizamos la gestión mediante mandato de compra
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#111318]" /> Recibimos la compra en CABA y coordinamos el traslado hasta tu domicilio
-                  </li>
-                </ul>
+
+                <div className="space-y-3">
+                  <h3 className="text-2xl lg:text-3xl font-extrabold text-[#111318] tracking-tight">
+                    Necesitás comprar algo en Capital
+                  </h3>
+                  <p className="text-sm sm:text-base text-[#4B5563] leading-relaxed">
+                    Contanos qué producto necesitás. Buscamos alternativas, te presentamos una propuesta y, si decidís avanzar, formalizamos el mandato de compra y gestionamos la operación de principio a fin.
+                  </p>
+                </div>
+
+                {/* SECUENCIA VISUAL DE 3 PASOS */}
+                <div className="space-y-3 pt-2">
+                  <p className="text-[11px] font-mono font-bold text-[#6B7280] uppercase tracking-wider">Cómo funciona este camino:</p>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3.5 bg-white border border-[#E5E7EB] p-3.5 rounded-2xl">
+                      <span className="w-7 h-7 bg-[#111318] text-[#FFD21A] rounded-lg flex items-center justify-center font-mono font-bold text-xs shrink-0">
+                        01
+                      </span>
+                      <p className="text-xs sm:text-sm font-bold text-[#111318] pt-1">
+                        Te ayudamos a encontrar una opción adecuada
+                      </p>
+                    </div>
+
+                    <div className="flex items-start gap-3.5 bg-white border border-[#E5E7EB] p-3.5 rounded-2xl">
+                      <span className="w-7 h-7 bg-[#111318] text-[#FFD21A] rounded-lg flex items-center justify-center font-mono font-bold text-xs shrink-0">
+                        02
+                      </span>
+                      <p className="text-xs sm:text-sm font-bold text-[#111318] pt-1">
+                        Formalizamos la gestión mediante mandato de compra
+                      </p>
+                    </div>
+
+                    <div className="flex items-start gap-3.5 bg-white border border-[#E5E7EB] p-3.5 rounded-2xl">
+                      <span className="w-7 h-7 bg-[#111318] text-[#FFD21A] rounded-lg flex items-center justify-center font-mono font-bold text-xs shrink-0">
+                        03
+                      </span>
+                      <p className="text-xs sm:text-sm font-bold text-[#111318] pt-1">
+                        Recibimos la compra en CABA y coordinamos el traslado hasta tu domicilio
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
               </div>
 
               <a 
                 href="#contacto" 
-                className="inline-flex items-center justify-center gap-2 bg-[#111318] hover:bg-[#1F232D] text-white hover:text-[#FFD21A] text-xs font-extrabold uppercase tracking-wider py-3.5 px-6 rounded-xl transition-all"
+                className="w-full inline-flex items-center justify-center gap-2 bg-[#111318] hover:bg-[#1F232D] text-white hover:text-[#FFD21A] text-xs font-extrabold uppercase tracking-wider h-[52px] px-6 rounded-xl transition-all shadow-md transform active:scale-95"
               >
                 <span>SOLICITAR UNA COMPRA</span>
                 <ArrowRight className="w-4 h-4" />
               </a>
             </div>
 
-            {/* OPCIÓN 2: YA COMPRASTE · ENVÍO LOW COST */}
-            <div className="bg-[#111318] border border-[#222530] text-white rounded-2xl p-8 shadow-xl flex flex-col justify-between space-y-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFD21A]/10 rounded-full blur-2xl pointer-events-none" />
-              <div className="space-y-4 relative z-10">
-                <div className="w-12 h-12 bg-[#FFD21A] text-[#111318] rounded-xl flex items-center justify-center font-extrabold text-xl">
-                  2
+            {/* CAMINO 02: YA COMPRASTE · ENVÍO LOW COST */}
+            <div className="bg-[#111318] border-2 border-[#222530] text-white rounded-3xl p-8 lg:p-10 transition-all flex flex-col justify-between space-y-8 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-[#FFD21A]/10 rounded-full blur-3xl pointer-events-none" />
+              
+              <div className="space-y-6 relative z-10">
+                
+                {/* IDENTIFICADOR VISUAL & BANNER PRELANZAMIENTO DISCRETO */}
+                <div className="flex flex-wrap items-center justify-between gap-2.5">
+                  <span className="inline-flex items-center gap-2 bg-[#FFD21A] text-[#111318] px-3.5 py-1.5 rounded-lg text-xs font-mono font-extrabold uppercase tracking-wider">
+                    02 · YA COMPRASTE
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] px-3 py-1 rounded-full text-[10px] font-bold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FFD21A] animate-pulse"></span>
+                    Disponible desde noviembre · Ya estamos recibiendo consultas
+                  </span>
                 </div>
-                <h3 className="text-2xl font-bold text-white">
-                  Si ya compraste en CABA
-                </h3>
-                <p className="text-sm text-[#9CA3AF] leading-relaxed">
-                  Recibimos tu compra en nuestro local o centro logístico de CABA y la trasladamos hasta tu domicilio con tarifas Low Cost y recorridos de camioneta propios.
-                </p>
-                <ul className="space-y-2 text-xs font-semibold text-[#E5E7EB] pt-2">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#FFD21A]" /> Recepción y guardado seguro en CABA
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#FFD21A]" /> Emisión de Remito Oficial Tipo R
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#FFD21A]" /> Entrega directa a puerta de tu hogar
-                  </li>
-                </ul>
+
+                <div className="space-y-3">
+                  <h3 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
+                    Si ya compraste en CABA
+                  </h3>
+                  <p className="text-sm sm:text-base text-[#9CA3AF] leading-relaxed">
+                    Tu proveedor entrega la compra en nuestro centro de recepción en CABA. Nosotros la organizamos y la incorporamos al próximo recorrido hacia tu localidad.
+                  </p>
+                </div>
+
+                {/* SECUENCIA VISUAL DE 3 PASOS */}
+                <div className="space-y-3 pt-2">
+                  <p className="text-[11px] font-mono font-bold text-[#9CA3AF] uppercase tracking-wider">Cómo funciona este camino:</p>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3.5 bg-[#161922] border border-[#222530] p-3.5 rounded-2xl">
+                      <span className="w-7 h-7 bg-[#FFD21A] text-[#111318] rounded-lg flex items-center justify-center font-mono font-extrabold text-xs shrink-0">
+                        01
+                      </span>
+                      <p className="text-xs sm:text-sm font-bold text-white pt-1">
+                        Tu proveedor entrega en CABA
+                      </p>
+                    </div>
+
+                    <div className="flex items-start gap-3.5 bg-[#161922] border border-[#222530] p-3.5 rounded-2xl">
+                      <span className="w-7 h-7 bg-[#FFD21A] text-[#111318] rounded-lg flex items-center justify-center font-mono font-extrabold text-xs shrink-0">
+                        02
+                      </span>
+                      <p className="text-xs sm:text-sm font-bold text-white pt-1">
+                        Recibimos y organizamos
+                      </p>
+                    </div>
+
+                    <div className="flex items-start gap-3.5 bg-[#161922] border border-[#222530] p-3.5 rounded-2xl">
+                      <span className="w-7 h-7 bg-[#FFD21A] text-[#111318] rounded-lg flex items-center justify-center font-mono font-extrabold text-xs shrink-0">
+                        03
+                      </span>
+                      <p className="text-xs sm:text-sm font-bold text-white pt-1">
+                        Entregamos en tu domicilio
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
               </div>
 
               <Link 
                 href="/envios" 
-                className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs font-extrabold uppercase tracking-wider py-3.5 px-6 rounded-xl transition-all shadow-md shadow-[#FFD21A]/20 relative z-10"
+                className="w-full inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs font-extrabold uppercase tracking-wider h-[52px] px-6 rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95 relative z-10"
               >
-                <span>Cotizar Servicio de Envío Low Cost</span>
+                <span>COTIZAR ENVÍO LOW COST</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
