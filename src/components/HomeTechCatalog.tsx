@@ -600,65 +600,76 @@ export default function HomeTechCatalog() {
         </div>
       </section>
 
-      {/* 3. SECCIÓN DE ENVÍOS LOW COST DESDE CABA AL INTERIOR */}
+      {/* 3. SECCIÓN SOLUCIÓN PARA EMPRENDEDORES Y COMERCIOS */}
       <section id="envios-low-cost" className="py-20 lg:py-24 bg-[#0E1015] border-b border-[#222530]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-16">
           
           <div className="bg-[#161922] border border-[#2A2E3D] rounded-2xl p-8 lg:p-12 shadow-2xl space-y-12">
             
-            <div className="text-center max-w-2xl mx-auto space-y-3">
+            {/* ENCABEZADO RECONVERTIDO PARA EMPRENDEDORES */}
+            <div className="text-center max-w-3xl mx-auto space-y-4">
               <div className="inline-flex items-center gap-2 bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] px-4 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider">
-                <Truck className="w-3.5 h-3.5" /> Envíos Low Cost CABA → Interior
+                <Briefcase className="w-3.5 h-3.5" /> EMPRENDEDORES · COMPRAS RECURRENTES
               </div>
-              <h2 className="text-3xl lg:text-4xl font-extrabold text-white">
-                ¿Compraste por tu cuenta en Capital?
+              
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
+                Cuenta Hogar, cerca de los emprendedores
               </h2>
-              <p className="text-sm sm:text-base text-[#9CA3AF]">
-                Te ayudamos a resolver el traslado desde CABA hasta la puerta de tu hogar.
+              
+              <p className="text-sm sm:text-base text-[#9CA3AF] leading-relaxed">
+                Si comprás mercadería con frecuencia para tu comercio o emprendimiento, podés usar nuestro centro de recepción en CABA para recibir, organizar y consolidar tus compras antes del traslado al interior.
               </p>
-              <div className="p-3.5 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-xl text-center text-xs text-[#FFD21A] font-bold mt-2">
-                Disponible desde noviembre de 2026 · Ya estamos recibiendo consultas para los próximos recorridos.
+              
+              <div className="inline-block p-3.5 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-xl text-xs font-mono font-bold text-[#FFD21A] tracking-wider mt-2">
+                CONSOLIDACIÓN SIN CARGO · DISPONIBLE DESDE NOVIEMBRE · YA RECIBIMOS CONSULTAS
               </div>
             </div>
 
+            {/* 3 TARJETAS RECONVERTIDAS */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-[#111318] border border-[#222530] p-6 rounded-xl space-y-3">
+              
+              {/* TARJETA 1 */}
+              <div className="bg-[#111318] border border-[#222530] p-6 rounded-xl space-y-3.5 hover:border-[#FFD21A]/40 transition-all">
                 <div className="w-10 h-10 bg-[#1F2330] text-[#FFD21A] rounded-lg flex items-center justify-center font-bold">
-                  <MapPin className="w-5 h-5" />
+                  <Building2 className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-bold text-white">Recepción en CABA</h3>
+                <h3 className="text-lg font-bold text-white">Un solo punto de recepción</h3>
                 <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                  Recibimos tu paquete o producto en nuestra sucursal de Capital Federal de forma segura.
+                  Tus proveedores entregan sus pedidos en nuestro centro de recepción en CABA.
                 </p>
               </div>
 
-              <div className="bg-[#111318] border border-[#222530] p-6 rounded-xl space-y-3">
+              {/* TARJETA 2 - CONSOLIDACIÓN SIN CARGO */}
+              <div className="bg-[#111318] border-2 border-[#FFD21A]/40 p-6 rounded-xl space-y-3.5 relative overflow-hidden shadow-lg shadow-[#FFD21A]/5">
+                <div className="w-10 h-10 bg-[#FFD21A] text-[#111318] rounded-lg flex items-center justify-center font-bold">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-bold text-white">Consolidación sin cargo</h3>
+                <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                  Reunimos compras de distintos proveedores para que tu mercadería viaje organizada en un solo envío.
+                </p>
+              </div>
+
+              {/* TARJETA 3 */}
+              <div className="bg-[#111318] border border-[#222530] p-6 rounded-xl space-y-3.5 hover:border-[#FFD21A]/40 transition-all">
                 <div className="w-10 h-10 bg-[#1F2330] text-[#FFD21A] rounded-lg flex items-center justify-center font-bold">
                   <Truck className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-bold text-white">Flota Propia</h3>
+                <h3 className="text-lg font-bold text-white">Entrega para tu negocio</h3>
                 <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                  Sin tercerizaciones ni sorpresas. Recorridos de camioneta programados semana a semana.
+                  Aprovechamos nuestros recorridos para llevar la mercadería hasta tu localidad y ayudarte a simplificar la logística.
                 </p>
               </div>
 
-              <div className="bg-[#111318] border border-[#222530] p-6 rounded-xl space-y-3">
-                <div className="w-10 h-10 bg-[#1F2330] text-[#FFD21A] rounded-lg flex items-center justify-center font-bold">
-                  <CheckCircle2 className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-bold text-white">Remito Oficial</h3>
-                <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                  Documentación clara y transparente. Remito Tipo R para garantizar el traslado.
-                </p>
-              </div>
             </div>
 
-            <div className="text-center pt-4">
+            {/* CTA RECONVERTIDO */}
+            <div className="text-center pt-2">
               <Link 
                 href="/envios" 
-                className="inline-flex items-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold text-xs uppercase tracking-wider px-8 py-4 rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20"
+                className="inline-flex items-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold text-xs uppercase tracking-wider px-8 py-4 rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95"
               >
-                <span>Ver Tarifas y Ciudades del Recorrido</span>
+                <span>QUIERO CONOCER EL SERVICIO PARA EMPRENDEDORES</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
