@@ -99,6 +99,49 @@ export default function AdminProductosPage() {
   const [descripcion, setDescripcion] = useState("");
   const [existingImagenUrls, setExistingImagenUrls] = useState<string[]>([]);
   const [imagenes, setImagenes] = useState<File[]>([]);
+  const [urlExterna, setUrlExterna] = useState("");
+
+  const compressImage = (file: File, maxWidth = 1200, quality = 0.8): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (blob) => {
+              resolve(blob || file);
+            },
+            "image/jpeg",
+            quality
+          );
+        };
+        img.onerror = () => resolve(file);
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => resolve(file);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const fileToDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve((e.target?.result as string) || "");
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(file);
+    });
+  };
   const [loading, setLoading] = useState(false);
 
   // Stock management states
@@ -366,6 +409,7 @@ export default function AdminProductosPage() {
     setDescripcion("");
     setExistingImagenUrls([]);
     setImagenes([]);
+    setUrlExterna("");
     setFactoresPlanes(FACTORES_PREDETERMINADOS);
     setPlanesActivos({
       1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true, 9: true, 10: true, 11: true, 12: true
@@ -388,27 +432,50 @@ export default function AdminProductosPage() {
 
   const handleSubirProducto = async (e: React.FormEvent) => {
     e.preventDefault();
-    const totalImages = existingImagenUrls.length + imagenes.length;
-    if (totalImages === 0) {
-      return alert("Por favor selecciona al menos una imagen para el producto");
+    
+    let updatedExistingUrls = [...existingImagenUrls];
+    if (urlExterna.trim()) {
+      if (!updatedExistingUrls.includes(urlExterna.trim())) {
+        updatedExistingUrls.push(urlExterna.trim());
+      }
     }
+
     setLoading(true);
 
     try {
       const nuevasUrls: string[] = [];
+
       for (const imgFile of imagenes) {
-        const pathStr = "productos/" + Date.now() + "_" + imgFile.name;
-        const imageRef = ref(storage, pathStr);
-        await uploadBytes(imageRef, imgFile);
-        const url = await getDownloadURL(imageRef);
-        nuevasUrls.push(url);
+        try {
+          const compressedBlob = await compressImage(imgFile);
+          const pathStr = "productos/" + Date.now() + "_" + Math.random().toString(36).substring(2, 8) + ".jpg";
+          const imageRef = ref(storage, pathStr);
+
+          const uploadPromise = uploadBytes(imageRef, compressedBlob).then(() => getDownloadURL(imageRef));
+          const timeoutPromise = new Promise<string>((_, reject) =>
+            setTimeout(() => reject(new Error("Timeout en subida a Firebase Storage")), 8000)
+          );
+
+          const url = await Promise.race([uploadPromise, timeoutPromise]);
+          nuevasUrls.push(url);
+        } catch (storageErr) {
+          console.warn("Aviso: Subida directa a Storage falló o demoró, usando fallback data URL:", storageErr);
+          const dataUrl = await fileToDataUrl(imgFile);
+          if (dataUrl) {
+            nuevasUrls.push(dataUrl);
+          }
+        }
       }
 
-      const totalUrls = [...existingImagenUrls, ...nuevasUrls];
+      let totalUrls = [...updatedExistingUrls, ...nuevasUrls];
+
+      if (totalUrls.length === 0) {
+        totalUrls = ["/logo-cuenta-hogar-oficial.png"];
+      }
 
       const payload: any = {
         codigoProducto: codigoProducto.trim() || null,
-        nombre,
+        nombre: nombre.trim(),
         precioAnterior: precioAnterior ? Number(precioAnterior) : null,
         cuota12: Number(cuota12) || 0,
         cuota8: Number(cuota8) || 0,
@@ -416,9 +483,9 @@ export default function AdminProductosPage() {
         precioContado: precioContado ? Number(precioContado) : null,
         tasaInteresTna: tasaInteresTna ? Number(tasaInteresTna) : null,
         tasaMora: tasaMora ? Number(tasaMora) : null,
-        proveedor,
-        descripcion,
-        imagenUrl: totalUrls[0] || "",
+        proveedor: proveedor.trim(),
+        descripcion: descripcion.trim(),
+        imagenUrl: totalUrls[0] || "/logo-cuenta-hogar-oficial.png",
         imagenUrls: totalUrls,
         factoresPlanes: factoresPlanes,
         planesActivos: planesActivos,
@@ -433,11 +500,12 @@ export default function AdminProductosPage() {
         alert("¡Producto creado con éxito!");
       }
 
+      setUrlExterna("");
       handleCancelarEdicion();
       await fetchProductos();
-    } catch (error) {
-      console.error(error);
-      alert("Error al guardar producto");
+    } catch (error: any) {
+      console.error("Error al guardar producto:", error);
+      alert("Error al guardar producto: " + (error?.message || String(error)));
     } finally {
       setLoading(false);
     }
@@ -720,13 +788,38 @@ export default function AdminProductosPage() {
                   </div>
 
                   {existingImagenUrls.length + imagenes.length < 4 && (
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="w-full bg-[#F7F3EC]/80 border border-[#DED8CF] rounded p-2 text-[#1F2928] file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:bg-yellow-500 file:text-black hover:file:bg-yellow-400 transition-colors cursor-pointer text-xs"
-                    />
+                    <div className="space-y-2">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="w-full bg-[#F7F3EC]/80 border border-[#DED8CF] rounded p-2 text-[#1F2928] file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:bg-yellow-500 file:text-black hover:file:bg-yellow-400 transition-colors cursor-pointer text-xs"
+                      />
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="url"
+                          placeholder="O pegá URL de imagen web (ej: https://...)"
+                          value={urlExterna}
+                          onChange={(e) => setUrlExterna(e.target.value)}
+                          className="flex-1 bg-[#F7F3EC]/80 border border-[#DED8CF] rounded p-2 text-[#1F2928] text-xs font-mono focus:border-[#173E3B] focus:outline-none"
+                        />
+                        {urlExterna.trim() && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (urlExterna.trim() && !existingImagenUrls.includes(urlExterna.trim())) {
+                                setExistingImagenUrls(prev => [...prev, urlExterna.trim()]);
+                                setUrlExterna("");
+                              }
+                            }}
+                            className="bg-[#173E3B] text-white text-xs font-bold px-3 py-2 rounded hover:bg-[#123230]"
+                          >
+                            + Agregar URL
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
                 
