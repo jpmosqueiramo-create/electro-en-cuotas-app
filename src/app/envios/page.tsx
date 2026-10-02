@@ -47,13 +47,13 @@ function WhatsAppIcon({ className = "w-5 h-5" }: { className?: string }) {
 }
 
 export default function EnviosPage() {
-  const whatsappTextDefault = `Hola, quiero recibir información sobre el servicio de Envíos Low Cost que estará disponible desde noviembre de 2026.
+  const whatsappTextDefault = `Hola, quiero conocer el servicio de Envíos Low Cost de Cuenta Hogar que estará disponible desde noviembre.
 
-Localidad de destino: 
-¿Qué producto o mercadería compraste?: 
-Cantidad de bultos: 
+Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en mi localidad.
 
-Quiero saber cómo funcionará el servicio y los recorridos programados en mi localidad.`;
+📍 Mi localidad es: 
+
+¿Me cuentan cómo funciona el servicio?`;
 
   const whatsappUrlDefault = `https://wa.me/5491125659686?text=${encodeURIComponent(whatsappTextDefault)}`;
 
@@ -107,7 +107,7 @@ Quiero saber cómo funcionará el servicio y los recorridos programados en mi lo
                   className="inline-flex items-center justify-center gap-2.5 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-heading font-extrabold px-8 py-4 rounded-xl text-xs uppercase tracking-wider transition-all shadow-xl shadow-[#FFD21A]/20 transform active:scale-95"
                 >
                   <Calculator className="w-4.5 h-4.5" />
-                  Cotizar mi Envío Ahora
+                  VER TARIFAS ESTIMADAS
                 </a>
 
                 <a
