@@ -85,7 +85,7 @@ export default function Footer() {
           </p>
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-[#6B7280]">
             <p>© {new Date().getFullYear()} LOOP GESTIÓN INTEGRAL S.R.L. — Todos los derechos reservados.</p>
-            <p className="text-[11px] font-mono">Identidad Oficial — Negro Tecnológico & Amarillo (#FFD21A)</p>
+            
           </div>
         </div>
 
