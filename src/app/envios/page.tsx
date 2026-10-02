@@ -45,14 +45,13 @@ function WhatsAppIcon({ className = "w-5 h-5" }: { className?: string }) {
 }
 
 export default function EnviosPage() {
-  const whatsappTextDefault = `Hola, quiero cotizar un Envío Low Cost de Cuenta Hogar.
+  const whatsappTextDefault = `Hola, quiero recibir información sobre el servicio de Envíos Low Cost que estará disponible desde noviembre de 2026.
 
 Localidad de destino: 
 ¿Qué producto o mercadería compraste?: 
 Cantidad de bultos: 
-Valor aproximado: 
 
-La compra será entregada por el proveedor en la sede de CABA (Caracas 1101).`;
+Quiero saber cómo funcionará el servicio y los recorridos programados en mi localidad.`;
 
   const whatsappUrlDefault = `https://wa.me/5491125659686?text=${encodeURIComponent(whatsappTextDefault)}`;
 
@@ -70,6 +69,12 @@ La compra será entregada por el proveedor en la sede de CABA (Caracas 1101).`;
             {/* IZQUIERDA: MENSAJE HERO */}
             <div className="lg:col-span-7 space-y-6 text-left">
               
+              {/* BADGE PRELANZAMIENTO NOVIEMBRE 2026 */}
+              <div className="inline-flex items-center gap-2 text-xs font-mono font-extrabold uppercase tracking-widest bg-[#FFD21A] text-[#111318] px-3.5 py-1.5 rounded-lg shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-[#111318] animate-pulse"></span>
+                <span>LANZAMIENTO · NOVIEMBRE 2026</span>
+              </div>
+
               {/* TAG LOGÍSTICO */}
               <div className="inline-flex items-center gap-3 bg-[#FFD21A]/20 border border-[#FFD21A]/40 text-[#FFD21A] px-4 py-2 rounded-full text-xs font-heading font-extrabold uppercase tracking-widest shadow-xs">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#FFD21A] animate-pulse"></span>
@@ -88,6 +93,10 @@ La compra será entregada por el proveedor en la sede de CABA (Caracas 1101).`;
               <p className="text-base sm:text-xl text-[#D1D5DB] font-sans font-medium leading-relaxed max-w-2xl drop-shadow-xs">
                 Recibimos tus compras en nuestro punto logístico de CABA (Caracas 1101), consolidamos tus bultos y los transportamos con flota propia hasta tu localidad en el interior.
               </p>
+              <div className="p-4 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-xl text-xs sm:text-sm text-[#FFD21A] font-bold space-y-1 max-w-2xl">
+                <p className="font-extrabold">Servicio disponible desde noviembre de 2026.</p>
+                <p className="text-[#D1D5DB] font-normal text-xs">Ya estamos recibiendo consultas para los próximos recorridos. Consultanos cómo funcionará en tu localidad.</p>
+              </div>
 
               {/* CTA CONTRASTADO */}
               <div className="pt-4 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
@@ -180,6 +189,9 @@ La compra será entregada por el proveedor en la sede de CABA (Caracas 1101).`;
             <p className="text-[#9CA3AF] text-sm font-sans">
               Seleccioná tu destino y el tipo de carga para obtener una estimación rápida e iniciar la cotización por WhatsApp.
             </p>
+            <div className="inline-block p-3 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-xl text-xs font-bold text-[#FFD21A] mt-1">
+              Servicio disponible desde noviembre de 2026 · Ya estamos recibiendo consultas
+            </div>
           </div>
 
           <EnviosCalculator />

@@ -84,7 +84,7 @@ export function EnviosCalculator() {
 ${priceText}
 
 ${observaciones ? `📝 *Detalles Adicionales:* ${observaciones}
-` : ""}La compra será entregada por el proveedor en su local de CABA (Caracas 1101). ¿Me pueden confirmar la cotización exacta y cómo coordinar la recepción?`;
+` : ""}La compra será entregada por el proveedor en su local de CABA (Caracas 1101). Servicio disponible desde noviembre de 2026: ¿me pueden brindar información sobre el funcionamiento del servicio y los recorridos en mi localidad?`;
 
     return `https://wa.me/5491125659686?text=${encodeURIComponent(text)}`;
   };
@@ -100,6 +100,19 @@ ${observaciones ? `📝 *Detalles Adicionales:* ${observaciones}
 
   return (
     <div className="bg-[#111318] border-2 border-[#173E3B] rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8">
+      
+      {/* BANNER AVISO PRELANZAMIENTO */}
+      <div className="bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5 text-[#FFD21A]">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#FFD21A] animate-pulse shrink-0"></span>
+          <span className="font-heading font-extrabold uppercase tracking-wide">
+            Servicio disponible desde noviembre de 2026
+          </span>
+        </div>
+        <span className="text-[#D1D5DB] font-sans font-medium">
+          Ya estamos recibiendo consultas para los próximos recorridos.
+        </span>
+      </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         

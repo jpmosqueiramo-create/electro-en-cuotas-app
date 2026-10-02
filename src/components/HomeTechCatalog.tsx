@@ -337,10 +337,10 @@ export default function HomeTechCatalog() {
             {/* COLUMNA IZQUIERDA: ORDEN MOBILE STRICT: 1.TÍTULO -> 2.SUBTÍTULO -> 3.CTAs -> 4.FOTO TRANSIT (Mobile) -> 5.DIFERENCIALES */}
             <div className="lg:col-span-6 space-y-4 sm:space-y-6 text-left">
               
-              {/* TAGLINE DE MARCA */}
-              <div className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-widest text-[#FFD21A] bg-[#FFD21A]/10 border border-[#FFD21A]/25 px-3 py-1 rounded-full">
-                <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
-                CUENTA HOGAR · CABA → INTERIOR
+              {/* BADGE PRELANZAMIENTO NOVIEMBRE 2026 */}
+              <div className="inline-flex items-center gap-2 text-xs font-mono font-extrabold uppercase tracking-widest bg-[#FFD21A] text-[#111318] px-3.5 py-1.5 rounded-lg shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-[#111318] animate-pulse"></span>
+                <span>LANZAMIENTO · NOVIEMBRE 2026</span>
               </div>
 
               {/* 1. TÍTULO PRINCIPAL (BLANCO + AMARILLO ELÉCTRICO) */}
@@ -351,26 +351,38 @@ export default function HomeTechCatalog() {
                 </span>
               </h1>
 
-              {/* 2. SUBTÍTULO CORTO Y DIRECTO */}
-              <p className="text-sm sm:text-base text-[#D1D5DB] font-normal leading-relaxed max-w-xl">
-                Gestionamos tu compra por mandato o trasladamos lo que ya compraste hasta tu domicilio.
-              </p>
+              {/* 2. SUBTÍTULO CORTO Y DIRECTO CON AVISO PRELANZAMIENTO */}
+              <div className="space-y-3">
+                <p className="text-sm sm:text-base text-[#D1D5DB] font-normal leading-relaxed max-w-xl">
+                  Gestionamos tu compra por mandato o trasladamos lo que ya compraste hasta tu domicilio.
+                </p>
+                <div className="p-3.5 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-xl max-w-xl text-xs sm:text-sm text-[#FFD21A] font-bold leading-snug space-y-1">
+                  <p className="font-extrabold text-[#FFD21A]">
+                    Todos los servicios de Cuenta Hogar estarán disponibles desde noviembre.
+                  </p>
+                  <p className="text-[#D1D5DB] font-normal text-xs">
+                    Ya estamos recibiendo consultas. Escribinos y te contamos cómo funcionará el servicio en tu localidad.
+                  </p>
+                </div>
+              </div>
 
-              {/* 3. DOS CTAs COMERCIALES (ALTURA ~50px, VISIBLES DE INMEDIATO EN EL PRIMER FOLD MOBILE) */}
+              {/* 3. DOS CTAs COMERCIALES CON ORIENTACIÓN A CONSULTA EN PRELANZAMIENTO */}
               <div className="pt-1 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                 <a 
-                  href="#contacto" 
+                  href="https://wa.me/5491125659686?text=Hola%20Cuenta%20Hogar%2C%20estoy%20consultando%20por%20el%20prelanzamiento%20y%20quiero%20saber%20c%C3%B3mo%20funcionar%C3%A1%20el%20servicio%20en%20mi%20localidad." 
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs sm:text-sm font-extrabold uppercase tracking-wider px-7 h-[50px] rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95 shrink-0"
                 >
-                  <span>Solicitar una compra</span>
-                  <ArrowRight className="w-4.5 h-4.5" />
+                  <WhatsAppIcon className="w-4.5 h-4.5 text-[#111318]" />
+                  <span>Consultar Ahora</span>
                 </a>
 
                 <a 
                   href="#envios-low-cost" 
                   className="inline-flex items-center justify-center gap-2 bg-[#1A1D26] hover:bg-[#252A37] text-white hover:text-[#FFD21A] border border-[#2D323E] hover:border-[#FFD21A]/50 text-xs sm:text-sm font-bold uppercase tracking-wider px-7 h-[50px] rounded-xl transition-all shrink-0"
                 >
-                  <span>Ya compré · Cotizar envío</span>
+                  <span>Disponible desde noviembre · Más Info</span>
                   <ArrowRight className="w-4.5 h-4.5" />
                 </a>
               </div>
@@ -537,6 +549,9 @@ export default function HomeTechCatalog() {
               <p className="text-sm sm:text-base text-[#9CA3AF]">
                 Te ayudamos a resolver el traslado desde CABA hasta la puerta de tu hogar.
               </p>
+              <div className="p-3.5 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-xl text-center text-xs text-[#FFD21A] font-bold mt-2">
+                Disponible desde noviembre de 2026 · Ya estamos recibiendo consultas para los próximos recorridos.
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
