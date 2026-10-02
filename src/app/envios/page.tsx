@@ -438,7 +438,7 @@ Quiero saber cómo funcionará el servicio y los recorridos programados en mi lo
               {/* FOTOGRAFÍA DEL LOCAL CABA */}
               <div className="relative rounded-2xl overflow-hidden border border-[#222530] shadow-md h-full min-h-[300px] group">
                 <img 
-                  src="/paso1-local-afuera.jpg" 
+                  src="/deposito-cuenta-hogar.jpg" 
                   alt="Centro logístico real Cuenta Hogar CABA Caracas 1101" 
                   className="w-full h-full object-cover min-h-[300px] group-hover:scale-105 transition-transform duration-700" 
                 />
