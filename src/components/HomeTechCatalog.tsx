@@ -466,20 +466,20 @@ export default function HomeTechCatalog() {
                   1
                 </div>
                 <h3 className="text-2xl font-bold text-[#111318]">
-                  Si todavía no compraste
+                  Necesitás comprar algo en Capital
                 </h3>
                 <p className="text-sm text-[#4B5563] leading-relaxed">
-                  Buscás el producto en cualquier comercio o tienda de CABA. Nos enviás el enlace o presupuesto y nos encargamos del mandato de compra, retiro y envío consolidado a tu puerta.
+                  Contanos qué producto necesitás. Buscamos alternativas, te presentamos una propuesta y, si decidís avanzar, formalizamos el mandato de compra y gestionamos la operación de principio a fin.
                 </p>
                 <ul className="space-y-2 text-xs font-semibold text-[#1F2937] pt-2">
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#111318]" /> Asesoramiento en elección de modelos
+                    <CheckCircle2 className="w-4 h-4 text-[#111318]" /> Te ayudamos a encontrar una opción adecuada
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#111318]" /> Verificación física del producto en comercio
+                    <CheckCircle2 className="w-4 h-4 text-[#111318]" /> Formalizamos la gestión mediante mandato de compra
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#111318]" /> Emisión de presupuesto transparente en cuotas
+                    <CheckCircle2 className="w-4 h-4 text-[#111318]" /> Recibimos la compra en CABA y coordinamos el traslado hasta tu domicilio
                   </li>
                 </ul>
               </div>
@@ -488,7 +488,7 @@ export default function HomeTechCatalog() {
                 href="#contacto" 
                 className="inline-flex items-center justify-center gap-2 bg-[#111318] hover:bg-[#1F232D] text-white hover:text-[#FFD21A] text-xs font-extrabold uppercase tracking-wider py-3.5 px-6 rounded-xl transition-all"
               >
-                <span>Solicitar Compra por Mandato</span>
+                <span>SOLICITAR UNA COMPRA</span>
                 <ArrowRight className="w-4 h-4" />
               </a>
             </div>
