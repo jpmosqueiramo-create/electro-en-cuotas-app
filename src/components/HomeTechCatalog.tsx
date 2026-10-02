@@ -1,5 +1,7 @@
 "use client";
 
+import Header from "@/components/Header";
+
 import PublicLocationMarquee from "@/components/PublicLocationMarquee";
 
 import { registrarProductoBorradorSiNoExiste } from "@/lib/catalogManager";
@@ -268,60 +270,7 @@ export default function HomeTechCatalog() {
     <div className="min-h-screen bg-[#111318] text-white font-sans selection:bg-[#FFD21A] selection:text-black">
       <PublicLocationMarquee />
       
-      {/* 0. HEADER / NAVBAR PROFESIONAL CON ALTO IMPACTO */}
-            {/* 0. HEADER / NAVBAR OPTIMIZADO */}
-      <header className="sticky top-0 z-50 bg-[#111318]/95 backdrop-blur-md border-b border-[#222530]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-4">
-          
-          {/* BRANDING LOGO ELEGANTE Y LEGIBLE */}
-          <Link href="/" className="flex items-center gap-3 shrink-0">
-            <div className="p-1.5 bg-[#090A0D] border border-[#FFD21A]/40 rounded-xl shadow-md">
-              <img 
-                src="/logo-cuenta-hogar-oficial.png" 
-                alt="Cuenta Hogar" 
-                className="h-8 sm:h-10 w-auto object-contain" 
-              />
-            </div>
-            <div className="hidden sm:block text-left">
-              <span className="block text-[10px] font-mono font-bold tracking-widest text-[#FFD21A] uppercase">
-                GESTIÓN DE COMPRAS · LOGÍSTICA
-              </span>
-              <span className="block text-xs font-bold text-white tracking-tight">
-                CUENTA HOGAR
-              </span>
-            </div>
-          </Link>
-
-          {/* MENÚ DE NAVEGACIÓN DESKTOP */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-[#9CA3AF]">
-            <a href="#modelo" className="hover:text-[#FFD21A] transition-colors">Cómo Funciona</a>
-            <a href="#catalogo" className="hover:text-[#FFD21A] transition-colors">Opciones de compra</a>
-            <a href="#envios-low-cost" className="hover:text-[#FFD21A] transition-colors">Envíos CABA</a>
-            <Link href="/nosotros" className="hover:text-white transition-colors">Nosotros</Link>
-            <Link href="/envios" className="hover:text-white transition-colors">Low Cost</Link>
-          </nav>
-
-          {/* ACCIONES DEL HEADER */}
-          <div className="flex items-center gap-2.5">
-            <Link 
-              href="/login-afiliado" 
-              className="hidden lg:inline-flex items-center gap-1.5 text-xs font-bold text-[#E5E7EB] hover:text-[#FFD21A] border border-[#2D323E] hover:border-[#FFD21A]/50 px-3.5 py-2 rounded-xl transition-all"
-            >
-              <UserCheck className="w-4 h-4 text-[#FFD21A]" />
-              <span>Afiliados</span>
-            </Link>
-
-            <a 
-              href="#contacto" 
-              className="inline-flex items-center gap-1.5 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs font-extrabold uppercase tracking-wider px-3.5 sm:px-5 py-2.5 rounded-xl transition-all shadow-md shadow-[#FFD21A]/20 transform active:scale-95"
-            >
-              <span>Solicitar Compra</span>
-              <ArrowRight className="w-4 h-4" />
-            </a>
-          </div>
-
-        </div>
-      </header>
+      <Header />
 
       {/* 1. HERO PUBLICITARIO OPTIMIZADO (MOBILE-FIRST CON PRIORIDAD DE CONVERSIÓN) */}
       <section className="relative overflow-hidden pt-6 sm:pt-12 pb-10 sm:pb-20 lg:pt-16 lg:pb-24 border-b border-[#222530] bg-[#111318]">

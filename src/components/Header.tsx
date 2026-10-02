@@ -77,11 +77,11 @@ export default function Header() {
 
           {/* MOBILE HAMBURGER BUTTON */}
           <button 
-            className="lg:hidden text-[#9CA3AF] hover:text-white p-2 hover:bg-[#1A1D26] rounded-xl transition-colors" 
+            className="lg:hidden text-[#FFD21A] bg-[#161922] hover:bg-[#1A1D26] border border-[#FFD21A]/40 p-2 rounded-xl transition-all shrink-0 shadow-sm" 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Abrir menú"
+            aria-label="Abrir menú de navegación"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="w-6 h-6 text-white" /> : <Menu className="w-6 h-6 text-[#FFD21A]" />}
           </button>
         </div>
 
