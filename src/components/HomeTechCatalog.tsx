@@ -663,15 +663,18 @@ export default function HomeTechCatalog() {
 
             </div>
 
-            {/* CTA RECONVERTIDO */}
+            {/* CTA RECONVERTIDO PARA WHATSAPP EMPRENDEDORES */}
             <div className="text-center pt-2">
-              <Link 
-                href="/envios" 
+              <a 
+                href="https://wa.me/5491125659686?text=Hola%2C%20quiero%20conocer%20el%20servicio%20de%20Cuenta%20Hogar%20para%20emprendedores%20y%20comercios.%0A%0ATengo%20un%20negocio/emprendimiento%20y%20realizo%20compras%20recurrentes%20en%20CABA.%0AMe%20interesa%20saber%20c%C3%B3mo%20funciona%20la%20recepci%C3%B3n%20de%20mercader%C3%ADa%2C%20la%20consolidaci%C3%B3n%20sin%20cargo%20y%20el%20traslado%20al%20interior.%0A%0AMi%20localidad%3A%0ATipo%20de%20mercader%C3%ADa%20que%20compro%3A%0AFrecuencia%20aproximada%20de%20compras%3A%0ACantidad%20estimada%20de%20bultos%20por%20env%C3%ADo%3A%0A%0A%C2%BFMe%20pueden%20contar%20c%C3%B3mo%20funciona%20el%20servicio%20y%20qu%C3%A9%20opciones%20tengo%20para%20mi%20negocio%3F" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold text-xs uppercase tracking-wider px-8 py-4 rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95"
               >
+                <WhatsAppIcon className="w-4.5 h-4.5 text-[#111318]" />
                 <span>QUIERO CONOCER EL SERVICIO PARA EMPRENDEDORES</span>
                 <ArrowRight className="w-4 h-4" />
-              </Link>
+              </a>
             </div>
 
           </div>
