@@ -270,14 +270,14 @@ export default function PublicCatalog() {
       <section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24 border-b border-[#222530] bg-[#111318]">
         <div className="max-w-7xl mx-auto px-6">
           
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center lg:items-start">
             
             {/* COLUMNA IZQUIERDA: MENSAJE PRINCIPAL DEL SERVICIO DE COMPRA */}
             <div className="lg:col-span-7 space-y-6 text-left">
               
               {/* EYEBROW */}
               <div className="flex flex-wrap items-center gap-3">
-                <div className="inline-flex items-center gap-2 text-xs font-heading font-bold uppercase tracking-widest text-[#FFD21A] bg-[#161922] border border-[#FFD21A]/30 px-3.5 py-1.5 rounded-full">
+                <div className="inline-flex items-center gap-2 text-xs font-heading font-bold uppercase tracking-widest text-[#FFD21A] bg-[#161922] border border-[#FFD21A]/50 px-3.5 py-1.5 rounded-full">
                   <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
                   CUENTA HOGAR · SERVICIO DE COMPRA
                 </div>
@@ -297,13 +297,13 @@ export default function PublicCatalog() {
               </h1>
 
               {/* BAJADA CLARA & OPERATIVA */}
-              <p className="text-base sm:text-lg text-[#9CA3AF] font-sans font-normal leading-relaxed max-w-2xl">
+              <p className="text-base sm:text-lg text-[#D1D5DB] font-sans font-normal leading-relaxed max-w-2xl">
                 Contanos qué producto necesitás. Buscamos alternativas, gestionamos la adquisición mediante mandato en Buenos Aires, coordinamos la recepción y el traslado, y te ofrecemos un plan de cuotas para resolver la operación completa.
               </p>
 
                             {/* AMPLIACIÓN LOGÍSTICA DE MAYOR VOLUMEN DESDE EL 25 DE NOVIEMBRE */}
-              <div className="p-3.5 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-xl text-xs sm:text-sm text-[#FFD21A] font-bold space-y-1 max-w-2xl">
-                <p className="font-extrabold text-[#FFD21A]">
+              <div className="p-4 bg-[#161922] border border-[#FFD21A]/40 rounded-xl text-xs sm:text-sm text-white font-bold space-y-1.5 max-w-2xl shadow-md">
+                <p className="font-extrabold text-[#FFD21A] text-sm">
                   🚚 Ampliación de capacidad logística desde el 25 de noviembre
                 </p>
                 <p className="text-[#D1D5DB] font-normal text-xs leading-relaxed">
@@ -312,7 +312,7 @@ export default function PublicCatalog() {
               </div>
 
               {/* FRASE DE DIFERENCIAL CENTRAL */}
-              <div className="bg-[#161922] border-l-4 border-l-[#FFD21A] border border-[#222530] p-4 rounded-xl shadow-xs">
+              <div className="bg-[#161922] border-l-4 border-l-[#FFD21A] border border-[#2A2E3D] p-4 rounded-xl shadow-md">
                 <p className="text-sm sm:text-base font-sans font-semibold text-white leading-relaxed">
                   Una sola gestión: compra, logística y plan de cuotas hasta tu domicilio.
                 </p>
@@ -322,21 +322,23 @@ export default function PublicCatalog() {
               <div className="pt-2 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
                 <a 
                   href="#contacto" 
-                  className="btn-primary px-8 py-4 text-xs font-heading font-bold uppercase tracking-wider justify-center shadow-md shadow-[#FFD21A]/10"
+                  className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs sm:text-sm font-heading font-extrabold uppercase tracking-wider px-8 h-[50px] rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95 shrink-0"
                 >
-                  SOLICITAR UNA COMPRA <ArrowRight className="w-4 h-4 ml-1" />
+                  <span>SOLICITAR UNA COMPRA</span>
+                  <ArrowRight className="w-4.5 h-4.5 text-[#111318]" />
                 </a>
 
                 <a 
                   href="#como-funciona" 
-                  className="btn-secondary border-[#FFD21A]/40 text-[#FFD21A] hover:bg-[#FFD21A]/10 px-8 py-4 text-xs font-heading font-bold uppercase tracking-wider justify-center shadow-xs"
+                  className="inline-flex items-center justify-center gap-2 bg-[#1A1D26] hover:bg-[#252A37] text-[#FFFDFC] hover:text-[#FFD21A] border border-[#4B5563] hover:border-[#FFD21A]/60 text-xs sm:text-sm font-heading font-bold uppercase tracking-wider px-8 h-[50px] rounded-xl transition-all shrink-0 shadow-sm"
                 >
-                  VER CÓMO FUNCIONA <ArrowRight className="w-4 h-4 ml-1" />
+                  <span>VER CÓMO FUNCIONA</span>
+                  <ArrowRight className="w-4.5 h-4.5 text-[#FFD21A]" />
                 </a>
               </div>
 
               {/* REFUERZO DE CONFIANZA SOBRIO */}
-              <div className="pt-6 border-t border-[#222530] flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-heading font-semibold text-[#9CA3AF]">
+              <div className="pt-6 border-t border-[#222530] flex flex-wrap items-center gap-x-6 gap-y-2.5 text-xs font-heading font-semibold text-[#D1D5DB]">
                 <div className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#FFD21A]"></span>
                   <span>Gestión mediante mandato</span>
@@ -354,7 +356,7 @@ export default function PublicCatalog() {
             </div>
 
             {/* COLUMNA DERECHA: FOTOGRAFÍA DE GESTIÓN Y RECEPCIÓN EN CABA */}
-            <div className="lg:col-span-5 relative">
+            <div className="lg:col-span-5 relative lg:pt-1">
               <div className="relative rounded-2xl overflow-hidden border border-[#222530] bg-[#161922] shadow-lg group">
                 <img 
                   src="/paso2-local-adentro.jpg" 
@@ -363,16 +365,16 @@ export default function PublicCatalog() {
                 />
                 
                 <div className="absolute inset-0 bg-gradient-to-t from-[#111318]/90 via-transparent to-transparent flex items-end p-6">
-                  <div className="bg-[#161922]/95 backdrop-blur-md border border-[#222530] text-white p-4 rounded-xl w-full shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-lg flex items-center justify-center text-[#FFD21A] shrink-0">
+                  <div className="bg-[#161922]/95 backdrop-blur-md border border-[#374151] text-white p-4.5 rounded-xl w-full shadow-md">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 bg-[#FFD21A]/10 border border-[#FFD21A]/40 rounded-lg flex items-center justify-center text-[#FFD21A] shrink-0">
                         <ShoppingBag className="w-5 h-5" />
                       </div>
-                      <div>
-                        <p className="text-xs font-heading font-bold uppercase text-[#FFD21A] tracking-wider">
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-heading font-extrabold uppercase text-[#FFD21A] tracking-wider">
                           GESTIÓN + LOGÍSTICA + PLAN DE CUOTAS
                         </p>
-                        <p className="text-xs text-[#9CA3AF] font-sans">
+                        <p className="text-xs text-[#D1D5DB] font-sans">
                           Una solución integral pensada para conectar Capital con el interior.
                         </p>
                       </div>

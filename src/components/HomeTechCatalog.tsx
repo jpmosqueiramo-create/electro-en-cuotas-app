@@ -281,7 +281,7 @@ export default function HomeTechCatalog() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
           
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-center lg:items-start">
             
             {/* COLUMNA IZQUIERDA: ORDEN MOBILE STRICT: 1.TÍTULO -> 2.SUBTÍTULO -> 3.CTAs -> 4.FOTO TRANSIT (Mobile) -> 5.DIFERENCIALES */}
             <div className="lg:col-span-6 space-y-4 sm:space-y-6 text-left">
@@ -302,14 +302,14 @@ export default function HomeTechCatalog() {
 
               {/* 2. SUBTÍTULO CORTO Y DIRECTO CON AVISO PRELANZAMIENTO */}
               <div className="space-y-3">
-                <p className="text-sm sm:text-base text-[#D1D5DB] font-normal leading-relaxed max-w-xl">
+                <p className="text-sm sm:text-base text-[#E5E7EB] font-normal leading-relaxed max-w-xl">
                   Gestionamos tu compra por mandato o trasladamos lo que ya compraste hasta tu domicilio.
                 </p>
-                <div className="p-3.5 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-xl max-w-xl text-xs sm:text-sm text-[#FFD21A] font-bold leading-snug space-y-1">
-                  <p className="font-extrabold text-[#FFD21A]">
+                <div className="p-4 bg-[#161922] border border-[#FFD21A]/40 rounded-xl max-w-xl text-xs sm:text-sm text-white font-bold leading-snug space-y-1.5 shadow-md">
+                  <p className="font-extrabold text-[#FFD21A] text-sm">
                     Servicio de Compra activo y disponible.
                   </p>
-                  <p className="text-[#D1D5DB] font-normal text-xs">
+                  <p className="text-[#D1D5DB] font-normal text-xs leading-relaxed">
                     Desde el 25 de noviembre sumamos Envíos Low Cost y ampliamos nuestra capacidad logística con la unidad Ford Transit techo elevado.
                   </p>
                 </div>
@@ -321,7 +321,7 @@ export default function HomeTechCatalog() {
                   href="https://wa.me/5491125659686?text=Hola%2C%20quiero%20consultar%20por%20el%20Servicio%20de%20Compra%20de%20Cuenta%20Hogar.%0A%0ANecesito%20comprar%20un%20producto%20y%20quisiera%20conocer%20c%C3%B3mo%20funciona%20la%20gesti%C3%B3n%20mediante%20mandato%2C%20el%20plan%20de%20cuotas%20y%20la%20entrega%20en%20mi%20localidad.%0A%0A%F0%9F%93%8D%20Localidad%3A%0A%F0%9F%9B%92%20Producto%20que%20necesito%3A%0A%F0%9F%94%97%20Si%20ya%20vi%20alguno%2C%20puedo%20enviarles%20el%20modelo%2C%20link%20o%20presupuesto.%0A%0A%C2%BFMe%20cuentan%20c%C3%B3mo%20ser%C3%ADa%20la%20propuesta%20y%20el%20plan%20de%20cuotas%3F" 
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs sm:text-sm font-extrabold uppercase tracking-wider px-7 h-[50px] rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95 shrink-0"
+                  className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs sm:text-sm font-extrabold uppercase tracking-wider px-8 h-[50px] rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95 shrink-0"
                 >
                   <WhatsAppIcon className="w-4.5 h-4.5 text-[#111318]" />
                   <span>CONSULTAR POR UNA COMPRA</span>
@@ -329,7 +329,7 @@ export default function HomeTechCatalog() {
 
                 <a 
                   href="#envios-low-cost" 
-                  className="inline-flex items-center justify-center gap-2 bg-[#1A1D26] hover:bg-[#252A37] text-white hover:text-[#FFD21A] border border-[#2D323E] hover:border-[#FFD21A]/50 text-xs sm:text-sm font-bold uppercase tracking-wider px-7 h-[50px] rounded-xl transition-all shrink-0"
+                  className="inline-flex items-center justify-center gap-2 bg-[#1A1D26] hover:bg-[#252A37] text-[#FFFDFC] hover:text-[#FFD21A] border border-[#4B5563] hover:border-[#FFD21A]/60 text-xs sm:text-sm font-bold uppercase tracking-wider px-8 h-[50px] rounded-xl transition-all shrink-0 shadow-sm"
                 >
                   <span>Disponible desde noviembre · Más Info</span>
                   <ArrowRight className="w-4.5 h-4.5" />
@@ -351,7 +351,7 @@ export default function HomeTechCatalog() {
               </div>
 
               {/* 5. DIFERENCIALES BREVES */}
-              <div className="pt-3 border-t border-[#222530] flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold text-[#9CA3AF]">
+              <div className="pt-4 border-t border-[#222530] flex flex-wrap items-center gap-x-6 gap-y-2.5 text-xs font-bold text-[#D1D5DB]">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
                   <span>Centro logístico en CABA</span>
@@ -369,7 +369,7 @@ export default function HomeTechCatalog() {
             </div>
 
             {/* COLUMNA DERECHA (DESKTOP): FOTOGRAFÍA PROTAGONISTA DE LA FORD TRANSIT TECHO ELEVADO SIN RECUADROS SUPERPUESTOS */}
-            <div className="hidden lg:block lg:col-span-6 relative">
+            <div className="hidden lg:block lg:col-span-6 relative lg:pt-1">
               <div className="relative rounded-3xl overflow-hidden border border-[#2D323E] bg-[#090A0D] shadow-2xl group">
                 <img 
                   src="/flota-cuenta-hogar.jpg" 
@@ -380,7 +380,7 @@ export default function HomeTechCatalog() {
                 {/* DEGRADADO SUTIL INFERIOR QUE INTEGRA LA FOTO CON EL FONDO */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-transparent to-transparent opacity-70 pointer-events-none" />
               </div>
-              <p className="text-xs font-mono text-[#9CA3AF] text-right mt-2.5">
+              <p className="text-xs font-mono font-medium text-[#D1D5DB] text-right mt-3">
                 Ford Transit techo elevado · Operativa desde noviembre 2026 · CABA → Interior
               </p>
             </div>
