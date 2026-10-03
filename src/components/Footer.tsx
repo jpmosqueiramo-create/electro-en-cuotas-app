@@ -1,14 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, RotateCcw } from "lucide-react";
+import { MapPin, RotateCcw, MessageCircle } from "lucide-react";
+
+function InstagramIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  );
+}
 
 export default function Footer() {
   return (
     <footer className="bg-[#090A0D] border-t border-[#1C1E26] text-white py-12 lg:py-16 font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
         
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           
           {/* MARCA E INFRAESTRUCTURA */}
           <div className="space-y-4 md:col-span-2">
@@ -44,6 +54,39 @@ export default function Footer() {
               <li><Link href="/nosotros" className="hover:text-white transition-colors">Sobre Nosotros</Link></li>
               <li><Link href="/red-afiliados" className="hover:text-white transition-colors">Red de Afiliados</Link></li>
               <li><Link href="/login-afiliado" className="hover:text-[#FFD21A] text-[#9CA3AF] transition-colors">Acceso Vendedores Afiliados</Link></li>
+            </ul>
+          </div>
+
+          {/* SEGUINOS / CONTACTO */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider">
+              Contacto & Redes
+            </h4>
+            <ul className="space-y-2 text-xs text-[#9CA3AF]">
+              <li>
+                <a 
+                  href="https://wa.me/5491125659686"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Consultar por WhatsApp a Cuenta Hogar"
+                  className="inline-flex items-center gap-2 hover:text-[#25D366] transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                  <span>WhatsApp · +54 9 11 2565-9686</span>
+                </a>
+              </li>
+              <li>
+                <a 
+                  href="https://www.instagram.com/cuenta_hogar/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Visitar Instagram de Cuenta Hogar"
+                  className="inline-flex items-center gap-2 hover:text-[#FFD21A] transition-colors"
+                >
+                  <InstagramIcon className="w-4 h-4 text-[#FFD21A]" />
+                  <span>Instagram · @CUENTA_HOGAR</span>
+                </a>
+              </li>
             </ul>
           </div>
 

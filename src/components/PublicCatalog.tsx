@@ -8,6 +8,7 @@ import { collection, getDocs, query, addDoc, serverTimestamp } from "firebase/fi
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import InstagramSection from "@/components/InstagramSection";
 import { 
   Search,
   Filter,
@@ -936,6 +937,7 @@ export default function PublicCatalog() {
         </div>
       )}
 
+      <InstagramSection />
       <Footer />
 
     </div>

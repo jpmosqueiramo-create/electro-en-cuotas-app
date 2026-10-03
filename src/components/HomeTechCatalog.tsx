@@ -1,6 +1,8 @@
 "use client";
 
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import InstagramSection from "@/components/InstagramSection";
 
 
 import { registrarProductoBorradorSiNoExiste } from "@/lib/catalogManager";
@@ -1032,63 +1034,9 @@ export default function HomeTechCatalog() {
         </div>
       )}
 
-      {/* 7. FOOTER TECH EXCLUSIVO DE LA HOME EXPERIMENTAL */}
-      <footer className="bg-[#090A0D] border-t border-[#1C1E26] text-white py-12 lg:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            
-            <div className="space-y-4 md:col-span-2">
-              <div className="flex items-center gap-3">
-                <div className="p-1 bg-[#111318] border border-[#FFD21A]/40 rounded-lg">
-                  <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-8 w-auto" />
-                </div>
-                <span className="font-bold text-white text-base">CUENTA HOGAR</span>
-              </div>
-              <p className="text-xs text-[#9CA3AF] max-w-md leading-relaxed">
-                Operatoria de mandato comercial, traslado y logística desde Buenos Aires hasta domicilios en el interior.
-              </p>
-              <div className="flex items-center gap-2 text-xs font-mono text-[#FFD21A]">
-                <MapPin className="w-4 h-4 text-[#FFD21A]" />
-                <span>Centro de Logística & Atención: CABA, Argentina</span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider">
-                Navegación
-              </h4>
-              <ul className="space-y-2 text-xs text-[#9CA3AF]">
-                <li><a href="#modelo" className="hover:text-white transition-colors">Cómo Funciona</a></li>
-                <li><a href="#catalogo" className="hover:text-white transition-colors">Opciones de compra</a></li>
-                <li><a href="#envios-low-cost" className="hover:text-white transition-colors">Envíos Low Cost</a></li>
-                <li><Link href="/nosotros" className="hover:text-white transition-colors">Sobre Nosotros</Link></li>
-                <li><Link href="/envios" className="hover:text-white transition-colors">Tarifario Fletes</Link></li>
-              </ul>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider">
-                Legal & Accesos
-              </h4>
-              <ul className="space-y-2 text-xs text-[#9CA3AF]">
-                <li><Link href="/terms" className="hover:text-white transition-colors">Términos y Condiciones</Link></li>
-                <li><Link href="/privacy" className="hover:text-white transition-colors">Política de Privacidad</Link></li>
-                <li><Link href="/arrepentimiento" className="hover:text-white transition-colors">Boton de Arrepentimiento</Link></li>
-                <li><Link href="/login" className="hover:text-white transition-colors">Acceso Operadores</Link></li>
-                <li><Link href="/login-afiliado" className="hover:text-white transition-colors">Red de Afiliados</Link></li>
-              </ul>
-            </div>
-
-          </div>
-
-          <div className="pt-8 border-t border-[#1C1E26] flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-[#6B7280]">
-            <p>© {new Date().getFullYear()} Cuenta Hogar. Todos los derechos reservados.</p>
-            
-          </div>
-
-        </div>
-      </footer>
+      {/* SECCIÓN INSTAGRAM & FOOTER GLOBAL */}
+      <InstagramSection />
+      <Footer />
 
     </div>
   );

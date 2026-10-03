@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
+import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -131,6 +132,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           {children}
+          <FloatingWhatsApp />
         </AuthProvider>
       </body>
     </html>
