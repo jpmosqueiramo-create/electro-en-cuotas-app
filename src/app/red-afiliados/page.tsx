@@ -289,7 +289,7 @@ export default function RedAfiliadosPage() {
                       {/* BADGE INFERIOR DE PROCESO */}
                       <div className="pt-3 w-full border-t border-[#222530]/60 text-[10px] font-mono font-bold tracking-wider text-[#9CA3AF]">
                         {item.destacado ? (
-                          <span className="text-[#FFD21A] uppercase">ETAPA DE GANANCIA ★</span>
+                          <span className="text-[#FFD21A] uppercase">COMISIÓN SOBRE CUOTAS COBRADAS</span>
                         ) : (
                           <span>PASO {item.paso} DE 05</span>
                         )}
@@ -517,31 +517,68 @@ export default function RedAfiliadosPage() {
         </div>
       </section>
 
-            {/* MODELO DE INCORPORACIÓN POR CONFANZA Y RECOMENDACIÓN */}
+            {/* MODELO DE INCORPORACIÓN Y ACCESO A LA RED */}
       <section className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530]">
-        <div className="max-w-4xl mx-auto px-6 text-center space-y-6">
-          <span className="inline-block bg-[#161922] border border-[#FFD21A]/30 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full">
-            MODELO DE INCORPORACIÓN
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#FFD21A]">
-            Confianza local y vínculo cercano
-          </h2>
-          <p className="text-sm sm:text-base text-[#9CA3AF] font-sans leading-relaxed max-w-2xl mx-auto">
-            Nuestra Red de Vendedores Afiliados se conforma principalmente a través de recomendaciones, vínculos de confianza previa y conocimiento directo en cada localidad.
-          </p>
-          <div className="bg-[#161922] border border-[#222530] p-6 rounded-2xl max-w-xl mx-auto space-y-2">
-            <p className="text-xs text-[#D1D5DB] font-medium">
-              Si fuiste recomendado por un integrante de Cuenta Hogar o ya mantenés un vínculo comercial con nosotros, podés acceder directamente a tu panel.
+        <div className="max-w-5xl mx-auto px-6 space-y-10">
+          
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <span className="inline-block bg-[#161922] border border-[#FFD21A]/30 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full">
+              RED DE VENDEDORES AFILIADOS
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#FFD21A]">
+              Vínculo Local y Confianza Previa
+            </h2>
+            <p className="text-sm sm:text-base text-[#9CA3AF] font-sans leading-relaxed">
+              Nuestra red comercial se conforma mediante recomendaciones directas y relaciones de confianza en cada localidad.
             </p>
-            <div className="pt-2">
-              <Link 
-                href="/login-afiliado" 
-                className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-xl transition-all"
-              >
-                <span>Acceso Vendedores Afiliados</span>
-              </Link>
-            </div>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* AFILIADO ACTUAL */}
+            <div className="bg-[#161922] border border-[#222530] p-8 rounded-2xl space-y-4 text-center flex flex-col justify-between shadow-xl">
+              <div className="space-y-3">
+                <span className="text-xs font-mono font-bold text-[#FFD21A] uppercase block">INTEGRANTE REGISTRADO</span>
+                <h3 className="text-xl font-bold text-white">¿Ya sos vendedor afiliado?</h3>
+                <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                  Accedé a tu panel para gestionar tus solicitudes, realizar el seguimiento de tu cartera y consultar comisiones de cuotas abonadas.
+                </p>
+              </div>
+              <div className="pt-2">
+                <Link 
+                  href="/login-afiliado" 
+                  className="w-full inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-md"
+                >
+                  <UserCheck className="w-4 h-4 text-[#111318]" />
+                  <span>INGRESAR A MI PANEL</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* POSIBLE NUEVO AFILIADO RECOMENDADO */}
+            <div className="bg-[#161922] border border-[#222530] p-8 rounded-2xl space-y-4 text-center flex flex-col justify-between shadow-xl">
+              <div className="space-y-3">
+                <span className="text-xs font-mono font-bold text-[#FFD21A] uppercase block">NUEVAS INCORPORACIONES</span>
+                <h3 className="text-xl font-bold text-white">¿Fuiste recomendado para incorporarte?</h3>
+                <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                  Si llegaste a Cuenta Hogar por recomendación de alguien vinculado a nuestra red, podés contactarnos para conversar sobre una posible incorporación en tu localidad.
+                </p>
+              </div>
+              <div className="pt-2">
+                <a 
+                  href="https://wa.me/5491125659686?text=Hola%2C%20fui%20recomendado%20por%20un%20integrante%20de%20Cuenta%20Hogar%20y%20me%20gustar%C3%ADa%20conversar%20sobre%20la%20Red%20de%20Vendedores%20Afiliados." 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-[#111318] hover:bg-[#1A1D26] text-white hover:text-[#FFD21A] border border-[#FFD21A]/40 font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-sm"
+                >
+                  <MessageSquareText className="w-4 h-4 text-[#FFD21A]" />
+                  <span>CONTACTAR A CUENTA HOGAR</span>
+                </a>
+              </div>
+            </div>
+
+          </div>
+
         </div>
       </section>
 

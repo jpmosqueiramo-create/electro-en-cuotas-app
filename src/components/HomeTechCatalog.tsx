@@ -82,11 +82,11 @@ export default function HomeTechCatalog() {
       src: "/entrega1.jpg",
       alt: "Entrega en domicilio realizada por Cuenta Hogar",
       titulo: "Entrega en domicilio y atención cercana",
-      descripcion: "Tu producto financiado o trasladado directo a la puerta de tu hogar."
+      descripcion: "Tu producto gestionado o trasladado directo a la puerta de tu hogar."
     },
     {
       src: "/entrega2.jpg",
-      alt: "Familia disfrutando de su televisor financiado",
+      alt: "Familia disfrutando de su televisor con plan de cuotas",
       titulo: "La tranquilidad de equipar tu hogar",
       descripcion: "Buscamos opciones, compramos en CABA, trasladamos y pagás en cuotas."
     },
@@ -339,12 +339,12 @@ export default function HomeTechCatalog() {
                 <div className="relative rounded-2xl overflow-hidden border border-[#2D323E] bg-[#090A0D] shadow-lg">
                   <img 
                     src="/flota-cuenta-hogar.jpg" 
-                    alt="Renault Master oficial Cuenta Hogar realizando logística CABA - Interior" 
+                    alt="Ford Transit techo elevado oficial Cuenta Hogar realizando logística CABA - Interior" 
                     className="w-full h-[190px] sm:h-[240px] object-cover object-center"
                   />
                 </div>
                 <p className="text-[11px] font-mono text-[#9CA3AF] text-center mt-2">
-                  Flota oficial Cuenta Hogar · Recorridos semanales CABA → Tu domicilio
+                  Nuestra Ford Transit · Operación logística · Recorridos semanales CABA → Tu domicilio
                 </p>
               </div>
 
@@ -366,12 +366,12 @@ export default function HomeTechCatalog() {
 
             </div>
 
-            {/* COLUMNA DERECHA (DESKTOP): FOTOGRAFÍA PROTAGONISTA DE LA RENAULT MASTER SIN RECUADROS SUPERPUESTOS */}
+            {/* COLUMNA DERECHA (DESKTOP): FOTOGRAFÍA PROTAGONISTA DE LA FORD TRANSIT TECHO ELEVADO SIN RECUADROS SUPERPUESTOS */}
             <div className="hidden lg:block lg:col-span-6 relative">
               <div className="relative rounded-3xl overflow-hidden border border-[#2D323E] bg-[#090A0D] shadow-2xl group">
                 <img 
                   src="/flota-cuenta-hogar.jpg" 
-                  alt="Renault Master oficial Cuenta Hogar realizando logística real" 
+                  alt="Ford Transit techo elevado oficial Cuenta Hogar realizando logística real" 
                   className="w-full h-[440px] object-cover object-center group-hover:scale-103 transition-transform duration-700" 
                 />
                 
@@ -379,7 +379,7 @@ export default function HomeTechCatalog() {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-transparent to-transparent opacity-70 pointer-events-none" />
               </div>
               <p className="text-xs font-mono text-[#9CA3AF] text-right mt-2.5">
-                Flota habilitada para transporte de mercaderia · Recorridos programados CABA → Interior
+                Transporte propio · Recorridos programados · Recorridos programados CABA → Interior
               </p>
             </div>
 
@@ -636,7 +636,7 @@ export default function HomeTechCatalog() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-[#E5E7EB] pb-6">
             <div className="space-y-2">
               <span className="text-xs font-mono font-bold text-[#111318] uppercase tracking-widest bg-[#FFD21A] px-3 py-1 rounded-md">
-                CATÁLOGO DESTACADO
+                OPCIONES DE COMPRA
               </span>
               <h2 className="text-3xl font-extrabold text-[#111318]">
                 Explorá opciones de compra

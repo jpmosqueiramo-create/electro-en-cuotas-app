@@ -325,7 +325,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
                 },
                 {
                   numero: "05",
-                  titulo: "Recorrido activo",
+                  titulo: "Recorrido previsto",
                   descripcion: "Cargamos en nuestro transporte según la ruta programada.",
                   badge: "EN RUTA"
                 },
@@ -437,7 +437,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
                 },
                 {
                   numero: "05",
-                  titulo: "Recorrido activo",
+                  titulo: "Recorrido previsto",
                   descripcion: "Cargamos en nuestro transporte según la ruta programada.",
                   badge: "EN RUTA"
                 },
@@ -810,10 +810,10 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
               <MapPin className="w-4 h-4 text-[#FFD21A]" /> Cobertura Logística
             </div>
             <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#FFD21A]">
-              Rutas y Localidades Activas
+              Rutas y Localidades Previstas
             </h2>
             <p className="text-[#9CA3AF] text-sm font-sans">
-              Contamos con cronogramas y recorridos activos en las siguientes localidades del interior:
+              Contamos con cronogramas y recorridos previstos desde el 25 de noviembre en las siguientes localidades del interior:
             </p>
           </div>
 
@@ -822,7 +822,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
               <div key={loc} className="bg-[#111318] border border-[#222530] p-5 rounded-2xl text-center space-y-1 shadow-xs hover:border-[#173E3B] transition-colors">
                 <MapPin className="w-5 h-5 text-[#FFD21A] mx-auto mb-1" />
                 <p className="font-heading font-bold text-[#FFD21A] text-base">{loc}</p>
-                <p className="text-[10px] text-[#9CA3AF] font-mono font-bold">Recorrido Activo</p>
+                <p className="text-[10px] text-[#9CA3AF] font-mono font-bold">Recorrido Previsto</p>
               </div>
             ))}
           </div>
@@ -856,15 +856,15 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
           
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 bg-[#FFD21A]/20 border border-[#FFD21A]/40 text-[#FFD21A] px-4 py-2 rounded-full text-xs font-heading font-extrabold uppercase tracking-widest shadow-xs">
-              <Truck className="w-4 h-4 text-[#FFD21A]" /> Cotización Inmediata
+              <Truck className="w-4 h-4 text-[#FFD21A]" /> ESTIMÁ TU ENVÍO
             </div>
             
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-extrabold tracking-tight leading-tight !text-white drop-shadow-sm">
-              ¿Querés saber el costo exacto de tu envío?
+              ¿Querés conocer el valor estimado?
             </h2>
             
             <p className="text-base sm:text-lg text-[#D1D5DB] font-sans font-medium max-w-xl mx-auto leading-relaxed">
-              Contanos qué compraste y a qué localidad tenemos que llevarlo. Te enviamos la cotización ajustada por WhatsApp en minutos.
+              Contanos tu localidad y qué tenés pensado comprar. Te orientamos por WhatsApp sobre cómo funcionará el servicio a partir del 25 de noviembre y el valor estimado del traslado por bulto.
             </p>
           </div>
 
@@ -876,7 +876,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
               className="inline-flex items-center justify-center gap-2.5 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-heading font-extrabold px-10 py-5 rounded-2xl text-sm uppercase tracking-wider transition-all shadow-xl shadow-black/30 hover:scale-[1.02] active:scale-95"
             >
               <WhatsAppIcon className="w-5 h-5" />
-              Cotizar Envío por WhatsApp
+              CONSULTAR VALOR ESTIMADO POR WHATSAPP
             </a>
 
             <p className="text-xs text-[#9CA3AF] font-sans">

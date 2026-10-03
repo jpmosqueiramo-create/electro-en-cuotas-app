@@ -78,13 +78,13 @@ export default function NosotrosPage() {
 
               <div className="bg-[#161922] border border-[#2A2E3D] p-6 lg:p-8 rounded-2xl space-y-4 shadow-xl text-sm leading-relaxed text-[#9CA3AF]">
                 <p>
-                  Contamos con <strong className="text-white">centro de recepción y logística en CABA (Caracas 1101)</strong>, <strong className="text-white">depósito propio</strong> y <strong className="text-white">transporte propio</strong>. Esto nos permite acompañar todo el proceso: desde entender qué necesitás y realizar la gestión de compra, hasta recibir el producto, organizar el traslado y realizar la entrega en puerta.
+                  Ofrecemos dos líneas de servicio principales: el <strong className="text-white">Servicio de Compra por Mandato</strong> (servicio activo con plan de cuotas y gestión integral) y <strong className="text-white">Envíos Low Cost</strong> (logística económica de paquetería desde CABA al interior, con salida prevista para el <strong className="text-[#FFD21A]">25 de noviembre de 2026</strong>).
+                </p>
+                <p>
+                  Contamos con <strong className="text-white">centro de recepción y logística en CABA (Caracas 1101)</strong>, depósito y <strong className="text-white">unidad de transporte propia (Ford Transit techo elevado)</strong>. Esto nos permite acompañar todo el proceso: desde entender qué necesitás y gestionar la compra, hasta recibir el producto, organizar el traslado y realizar la entrega en puerta.
                 </p>
                 <p>
                   Trabajamos de la mano con <strong className="text-[#FFD21A]">vendedores afiliados</strong> en cada localidad de cobertura, asegurando un trato transparente, cercano y personalizado.
-                </p>
-                <p>
-                  Además, a través de <strong className="text-[#FFD21A]">Envíos Low Cost</strong>, recibimos compras que realizaste por tu cuenta en Capital Federal y las trasladamos al interior en nuestros recorridos programados.
                 </p>
               </div>
             </div>
@@ -94,7 +94,7 @@ export default function NosotrosPage() {
               <div className="relative rounded-2xl overflow-hidden border border-[#2D323E] bg-[#090A0D] shadow-2xl">
                 <img 
                   src="/flota-cuenta-hogar.jpg" 
-                  alt="Unidad de transporte propio Renault Master Cuenta Hogar" 
+                  alt="Unidad de transporte propia Ford Transit techo elevado Cuenta Hogar" 
                   className="w-full h-[380px] sm:h-[440px] object-cover" 
                 />
                 
@@ -106,7 +106,7 @@ export default function NosotrosPage() {
                       </div>
                       <div>
                         <p className="text-xs font-mono font-bold uppercase text-[#FFD21A]">Infraestructura Propia</p>
-                        <p className="text-[11px] text-[#9CA3AF]">Centro en CABA · Transporte Propio · Entrega en Domicilio</p>
+                        <p className="text-[11px] text-[#9CA3AF]">Centro en CABA · Ford Transit Techo Elevado · Entrega en Domicilio</p>
                       </div>
                     </div>
                   </div>
@@ -152,7 +152,7 @@ export default function NosotrosPage() {
               </div>
               <h3 className="text-xl font-bold text-white">Transporte Propio</h3>
               <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                Operación logística organizada. Unidades equipadas para traslados seguros en nuestros recorridos semanales programados.
+                Operación logística organizada. Unidad de transporte propia (Ford Transit techo elevado) para traslados seguros en nuestros recorridos programados.
               </p>
             </div>
 

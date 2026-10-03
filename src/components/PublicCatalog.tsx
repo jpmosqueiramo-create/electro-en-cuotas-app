@@ -283,7 +283,7 @@ export default function PublicCatalog() {
 
                 <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#FFD21A] bg-[#FFD21A]/10 border border-[#FFD21A]/20 px-3 py-1 rounded-full">
                   <Clock className="w-3.5 h-3.5 text-[#FFD21A]" />
-                  <span>Disponible desde el 25 de noviembre · Ya estamos recibiendo consultas</span>
+                  <span>Servicio Disponible · Conexión CABA al Interior</span>
                 </div>
               </div>
 
@@ -299,6 +299,16 @@ export default function PublicCatalog() {
               <p className="text-base sm:text-lg text-[#9CA3AF] font-sans font-normal leading-relaxed max-w-2xl">
                 Contanos qué producto necesitás. Buscamos alternativas, gestionamos la adquisición mediante mandato en Buenos Aires, coordinamos la recepción y el traslado, y te ofrecemos un plan de cuotas para resolver la operación completa.
               </p>
+
+                            {/* AMPLIACIÓN LOGÍSTICA DE MAYOR VOLUMEN DESDE EL 25 DE NOVIEMBRE */}
+              <div className="p-3.5 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-xl text-xs sm:text-sm text-[#FFD21A] font-bold space-y-1 max-w-2xl">
+                <p className="font-extrabold text-[#FFD21A]">
+                  🚚 Ampliación de capacidad logística desde el 25 de noviembre
+                </p>
+                <p className="text-[#D1D5DB] font-normal text-xs leading-relaxed">
+                  Sumamos nuestra Ford Transit techo elevado para gestionar y trasladar productos de mayor volumen como heladeras, sommiers, muebles y electrodomésticos grandes.
+                </p>
+              </div>
 
               {/* FRASE DE DIFERENCIAL CENTRAL */}
               <div className="bg-[#161922] border-l-4 border-l-[#FFD21A] border border-[#222530] p-4 rounded-xl shadow-xs">
@@ -402,7 +412,7 @@ export default function PublicCatalog() {
               {
                 num: "02",
                 titulo: "Buscamos alternativas y propuesta",
-                desc: "Analizamos precios en comercios y distribuidores de CABA para presentarte las mejores opciones disponibles."
+                desc: "Buscamos alternativas disponibles y te presentamos una propuesta para que puedas evaluar cómo avanzar."
               },
               {
                 num: "03",
@@ -417,7 +427,7 @@ export default function PublicCatalog() {
               {
                 num: "05",
                 titulo: "Recepción y Control Logístico",
-                desc: "Recibimos el producto en nuestro centro de CABA (Caracas 1101), verificamos su estado y lo preparamos."
+                desc: "Recibimos e identificamos el producto en CABA (Caracas 1101) y lo preparamos para su traslado."
               },
               {
                 num: "06",
@@ -653,7 +663,7 @@ export default function PublicCatalog() {
               onClick={() => setModalLocalidadOpen(true)}
               className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#FFD21A] hover:underline bg-[#161922] border border-[#FFD21A]/30 px-4 py-2 rounded-xl"
             >
-              <span>¿Tu localidad no figura? Solicitar incorporación →</span>
+              <span>¿Tu localidad todavía no está en nuestra cobertura? Consultar por mi localidad →</span>
             </button>
           </div>
 
