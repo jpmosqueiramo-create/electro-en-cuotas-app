@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL("https://cuenta-hogar.web.app"),
   title: {
-    default: "Cuenta Hogar | Envíos Low Cost CABA al Interior y Cuotas sin Tarjeta",
+    default: "Cuenta Hogar | Envíos Low Cost y Servicio de Compra",
     template: "%s | Cuenta Hogar"
   },
   description: "Servicio de Envíos Low Cost desde Buenos Aires hacia el interior, recepción de compras en CABA (Caracas 1101), mandatos de compra y financiación propia en cuotas sin tarjeta.",

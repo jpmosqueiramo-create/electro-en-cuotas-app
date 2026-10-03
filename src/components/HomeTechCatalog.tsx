@@ -235,7 +235,7 @@ export default function HomeTechCatalog() {
       console.error("Error al guardar solicitud:", err);
     } finally {
       const refText = qfReferente ? ` Me recomendó el vendedor afiliado / cliente: ${qfReferente}.` : "";
-      const mensaje = `Hola, quiero consultar opciones de producto y financiación. Soy ${qfNombre} (DNI: ${qfDni}) de ${qfLocalidad}. Necesito: ${qfNecesidad}. Mi WhatsApp es ${qfWhatsapp}.${refText}`;
+      const mensaje = `Hola, quiero consultar opciones de producto y financiación. Soy ${qfNombre}  de ${qfLocalidad}. Necesito: ${qfNecesidad}. Mi WhatsApp es ${qfWhatsapp}.${refText}`;
       const wame = `https://wa.me/5491125659686?text=${encodeURIComponent(mensaje)}`;
       window.location.href = wame;
     }
@@ -776,7 +776,7 @@ export default function HomeTechCatalog() {
                 Contanos qué necesitás y te ayudamos a conseguirlo
               </h2>
               <p className="text-sm text-[#9CA3AF] max-w-xl mx-auto">
-                Contanos qué producto buscás y te enviaremos por WhatsApp una propuesta para gestionar tu compra, con las condiciones del plan de pagos.
+                Contanos qué producto necesitás comprar en CABA y te enviaremos por WhatsApp la propuesta con el plan de cuotas para gestionar la operación de punta a punta.
               </p>
             </div>
 
@@ -797,19 +797,7 @@ export default function HomeTechCatalog() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1.5">
-                    Número de DNI *
-                  </label>
-                  <input 
-                    type="text" 
-                    required 
-                    value={qfDni} 
-                    onChange={e => setQfDni(e.target.value)} 
-                    placeholder="Ej. 30123456" 
-                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all"
-                  />
-                </div>
+
 
                 <div>
                   <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1.5">
@@ -843,7 +831,7 @@ export default function HomeTechCatalog() {
 
               <div>
                 <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1.5">
-                  ¿Qué producto estás buscando o necesitás trasladar? *
+                  Producto que necesitás comprar (o link / modelo) *
                 </label>
                 <textarea 
                   required 

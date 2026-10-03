@@ -43,6 +43,7 @@ export default function Footer() {
               <li><Link href="/envios" className="hover:text-white transition-colors">Envíos Low Cost CABA</Link></li>
               <li><Link href="/nosotros" className="hover:text-white transition-colors">Sobre Nosotros</Link></li>
               <li><Link href="/red-afiliados" className="hover:text-white transition-colors">Red de Afiliados</Link></li>
+              <li><Link href="/login-afiliado" className="hover:text-[#FFD21A] text-[#9CA3AF] transition-colors">Acceso Vendedores Afiliados</Link></li>
             </ul>
           </div>
 

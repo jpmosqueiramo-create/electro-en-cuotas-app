@@ -58,13 +58,13 @@ function WhatsAppIcon({ className = "w-5 h-5" }: { className?: string }) {
 export default function PublicCatalog() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [busqueda, setBusqueda] = useState("");
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("TODAS");
 
+  // Filtros de búsqueda
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCuotas, setSelectedCuotas] = useState<number | "all">("all");
 
-  // Quick Form State
+  // Quick Form State (#contacto)
   const [qfNombre, setQfNombre] = useState("");
-  const [qfDni, setQfDni] = useState("");
   const [qfWhatsapp, setQfWhatsapp] = useState("");
   const [qfLocalidad, setQfLocalidad] = useState("");
   const [qfNecesidad, setQfNecesidad] = useState("");
@@ -73,11 +73,10 @@ export default function PublicCatalog() {
 
   // Modal Solicitud de Nueva Localidad
   const [modalLocalidadOpen, setModalLocalidadOpen] = useState(false);
-  const [h1Variant, setH1Variant] = useState<"A" | "B">("A");
   const [locNombre, setLocNombre] = useState("");
   const [locCiudad, setLocCiudad] = useState("");
   const [locTel, setLocTel] = useState("");
-  const [locInteres, setLocInteres] = useState("Ambos (Financiación y Envíos)");
+  const [locInteres, setLocInteres] = useState("Servicio de Compra");
   const [locSubmitting, setLocSubmitting] = useState(false);
 
   // Carrusel de entregas (Casos de éxito)
@@ -86,19 +85,19 @@ export default function PublicCatalog() {
       src: "/entrega1.jpg",
       alt: "Entrega en domicilio realizada por Cuenta Hogar",
       titulo: "Entrega en domicilio y atención cercana",
-      descripcion: "Tu producto financiado o trasladado directo a la puerta de tu hogar."
+      descripcion: "Tu producto gestionado y trasladado directo a la puerta de tu hogar."
     },
     {
       src: "/entrega2.jpg",
-      alt: "Familia disfrutando de su televisor financiado",
+      alt: "Familia disfrutando de su compra con plan de cuotas",
       titulo: "La tranquilidad de equipar tu hogar",
-      descripcion: "Buscamos opciones, compramos en CABA, trasladamos y pagás en cuotas."
+      descripcion: "Buscamos alternativas, compramos en CABA, trasladamos y abonás en cuotas."
     },
     {
       src: "/entrega3.jpg",
-      alt: "Transporte propio Cuenta Hogar realizando entrega",
-      titulo: "Transporte propio Cuenta Hogar",
-      descripcion: "Recorridos programados y trato directo de vecino a vecino."
+      alt: "Transporte habilitado Cuenta Hogar realizando entrega",
+      titulo: "Logística programada a tu localidad",
+      descripcion: "Recorridos planificados y trato directo de vecino a vecino."
     }
   ];
 
@@ -155,12 +154,10 @@ export default function PublicCatalog() {
         await registrarProductoBorradorSiNoExiste(qfNecesidad).catch(() => {}); 
       }
 
-      const payloadBuscás = {
-        tipo: "contacto_rapido",
+      const payload = {
+        tipo: "solicitud_compra",
         nombreCompleto: qfNombre,
         nombre: qfNombre,
-        numeroDni: qfDni,
-        dni: qfDni,
         whatsapp: qfWhatsapp,
         telefono: qfWhatsapp,
         direccion: qfLocalidad,
@@ -177,39 +174,16 @@ export default function PublicCatalog() {
       };
 
       try {
-        await addDoc(collection(db, "solicitudes_cuenta"), payloadBuscás);
+        await addDoc(collection(db, "solicitudes_cuenta"), payload);
       } catch (errDb) {
         console.warn("Aviso Firestore solicitudes_cuenta:", errDb);
       }
 
       try {
-        await addDoc(collection(db, "solicitudes"), {
-          clienteEmail: qfWhatsapp || "contacto_rapido",
-          datosPersonales: {
-            nombreCompleto: qfNombre,
-            numeroDni: qfDni,
-            telefono: qfWhatsapp,
-            direccion: qfLocalidad,
-            localidad: qfLocalidad
-          },
-          productoDeseado: qfNecesidad,
-          necesidad: qfNecesidad,
-          estado: "PENDIENTE",
-          estadoEntrega: "PENDIENTE_ENTREGA",
-          tipo: "contacto_rapido",
-          referidoPor: qfReferente || null,
-          fechaCreacion: serverTimestamp(),
-          fechaIso: new Date().toISOString()
-        });
-      } catch (errSol) {
-        console.warn("Aviso Firestore solicitudes:", errSol);
-      }
-
-      try {
         await addDoc(collection(db, "alertas_admin"), {
-          tipo: "NUEVO_PRESUPUESTO",
+          tipo: "NUEVA_SOLICITUD_COMPRA",
           clienteEmail: qfWhatsapp || qfNombre,
-          mensaje: `📥 Solicitud de Opciones: ${qfNombre} (DNI: ${qfDni}, Tel: ${qfWhatsapp}, Loc: ${qfLocalidad}) - Busca: ${qfNecesidad}`,
+          mensaje: `📥 Solicitud de Servicio de Compra: ${qfNombre} (Tel: ${qfWhatsapp}, Loc: ${qfLocalidad}) - Busca: ${qfNecesidad}`,
           fechaCreacion: serverTimestamp(),
           leida: false
         });
@@ -223,12 +197,11 @@ export default function PublicCatalog() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             nombre: qfNombre,
-            dni: qfDni,
             whatsapp: qfWhatsapp,
             localidad: qfLocalidad,
             necesidad: qfNecesidad,
             referente: qfReferente,
-            tipo: "contacto_rapido"
+            tipo: "solicitud_compra"
           })
         });
       } catch (e) {
@@ -239,7 +212,7 @@ export default function PublicCatalog() {
       console.error("Error al guardar solicitud:", err);
     } finally {
       const refText = qfReferente ? ` Me recomendó el vendedor afiliado / cliente: ${qfReferente}.` : "";
-      const mensaje = `Hola, quiero consultar opciones de producto y financiación. Soy ${qfNombre} (DNI: ${qfDni}) de ${qfLocalidad}. Necesito: ${qfNecesidad}. Mi WhatsApp es ${qfWhatsapp}.${refText}`;
+      const mensaje = `Hola, quiero consultar por el Servicio de Compra de Cuenta Hogar. Soy ${qfNombre} de ${qfLocalidad}. Necesito el producto: ${qfNecesidad}. Mi WhatsApp es ${qfWhatsapp}.${refText} ¿Me cuentan la propuesta y condiciones del plan de cuotas?`;
       const wame = `https://wa.me/5491125659686?text=${encodeURIComponent(mensaje)}`;
       window.location.href = wame;
     }
@@ -261,7 +234,7 @@ export default function PublicCatalog() {
     } catch (err) {
       console.error("Error al guardar solicitud de localidad:", err);
     } finally {
-      const mensaje = `Hola, quiero solicitar que sumen mi localidad a las rutas de Cuenta Hogar. Soy ${locNombre} de ${locCiudad}. Mi interés es: ${locInteres}. Mi contacto es ${locTel}.`;
+      const mensaje = `Hola, quiero solicitar que sumen mi localidad a la cobertura del Servicio de Compra de Cuenta Hogar. Soy ${locNombre} de ${locCiudad}. Mi contacto es ${locTel}.`;
       const wame = `https://wa.me/5491125659686?text=${encodeURIComponent(mensaje)}`;
       setModalLocalidadOpen(false);
       window.open(wame, "_blank");
@@ -269,8 +242,26 @@ export default function PublicCatalog() {
     }
   };
 
+  // Filtrado de catálogo
+  const productosFiltrados = productos.filter(p => {
+    const queryLower = searchQuery.toLowerCase().trim();
+    const matchNombre = !queryLower || p.nombre.toLowerCase().includes(queryLower) || (p.descripcion && p.descripcion.toLowerCase().includes(queryLower));
+    
+    if (!matchNombre) return false;
+    if (selectedCuotas === "all") return true;
+    
+    if (p.planesActivos) {
+      return p.planesActivos[selectedCuotas] !== false;
+    }
+    
+    if (selectedCuotas === 12) return Boolean(p.cuota12 && p.cuota12 > 0);
+    if (selectedCuotas === 8) return Boolean(p.cuota8 && p.cuota8 > 0);
+    
+    return true;
+  });
+
   return (
-    <div className="min-h-screen bg-[#111318] text-white font-sans selection:bg-[#111318] selection:text-white">
+    <div className="min-h-screen bg-[#111318] text-white font-sans selection:bg-[#FFD21A] selection:text-black">
       
       <Header />
 
@@ -283,7 +274,7 @@ export default function PublicCatalog() {
             {/* COLUMNA IZQUIERDA: MENSAJE PRINCIPAL DEL SERVICIO DE COMPRA */}
             <div className="lg:col-span-7 space-y-6 text-left">
               
-              {/* EYEBROW Y BADGE DE PRELANZAMIENTO */}
+              {/* EYEBROW */}
               <div className="flex flex-wrap items-center gap-3">
                 <div className="inline-flex items-center gap-2 text-xs font-heading font-bold uppercase tracking-widest text-[#FFD21A] bg-[#161922] border border-[#FFD21A]/30 px-3.5 py-1.5 rounded-full">
                   <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
@@ -292,25 +283,25 @@ export default function PublicCatalog() {
 
                 <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#FFD21A] bg-[#FFD21A]/10 border border-[#FFD21A]/20 px-3 py-1 rounded-full">
                   <Clock className="w-3.5 h-3.5 text-[#FFD21A]" />
-                  <span>Disponible desde noviembre · Ya estamos recibiendo consultas</span>
+                  <span>Disponible desde el 25 de noviembre · Ya estamos recibiendo consultas</span>
                 </div>
               </div>
 
               {/* H1 CON PROTAGONISMO EDITORIAL */}
               <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-heading font-extrabold tracking-tight text-[#FFD21A] leading-[1.08]">
                 Comprar en Capital,<br />
-                <span className="text-[#FFD21A]">
+                <span className="text-white">
                   más simple desde el interior.
                 </span>
               </h1>
 
               {/* BAJADA CLARA & OPERATIVA */}
               <p className="text-base sm:text-lg text-[#9CA3AF] font-sans font-normal leading-relaxed max-w-2xl">
-                Contanos qué necesitás. Buscamos alternativas, gestionamos la compra mediante mandato, coordinamos la recepción y el traslado, y te ofrecemos un plan de cuotas para resolver la operación de punta a punta.
+                Contanos qué producto necesitás. Buscamos alternativas, gestionamos la adquisición mediante mandato en Buenos Aires, coordinamos la recepción y el traslado, y te ofrecemos un plan de cuotas para resolver la operación completa.
               </p>
 
               {/* FRASE DE DIFERENCIAL CENTRAL */}
-              <div className="bg-[#161922] border-l-4 border-l-[#FFD21A] border border-[#222530] p-4.5 rounded-xl shadow-xs">
+              <div className="bg-[#161922] border-l-4 border-l-[#FFD21A] border border-[#222530] p-4 rounded-xl shadow-xs">
                 <p className="text-sm sm:text-base font-sans font-semibold text-white leading-relaxed">
                   Una sola gestión: compra, logística y plan de cuotas hasta tu domicilio.
                 </p>
@@ -327,7 +318,7 @@ export default function PublicCatalog() {
 
                 <a 
                   href="#como-funciona" 
-                  className="btn-lowcost px-8 py-4 text-xs font-heading font-bold uppercase tracking-wider justify-center shadow-xs"
+                  className="btn-secondary border-[#FFD21A]/40 text-[#FFD21A] hover:bg-[#FFD21A]/10 px-8 py-4 text-xs font-heading font-bold uppercase tracking-wider justify-center shadow-xs"
                 >
                   VER CÓMO FUNCIONA <ArrowRight className="w-4 h-4 ml-1" />
                 </a>
@@ -385,1012 +376,558 @@ export default function PublicCatalog() {
         </div>
       </section>
 
-      {/* 2. ENVÍOS LOW COST DESDE CABA AL INTERIOR */}
-      <section id="envios-low-cost" className="py-24 lg:py-28 bg-[#111318] border-b border-[#222530]">
-        <div className="max-w-7xl mx-auto px-6 space-y-16">
-          
-          <div className="bg-[#161922] border border-[#222530] rounded-xl p-8 lg:p-12 shadow-xs space-y-12">
-            
-            {/* ENCABEZADO */}
-            <div className="text-center max-w-2xl mx-auto space-y-3">
-              <div className="inline-flex items-center gap-2 bg-[#111318] border border-[#222530] text-[#FFD21A] px-3.5 py-1.5 rounded-full text-xs font-heading font-semibold uppercase tracking-wider">
-                <Truck className="w-3.5 h-3.5" /> Envíos Low Cost desde CABA al interior
-              </div>
-              <h2 className="text-3xl lg:text-[40px] font-heading font-bold text-[#FFD21A] leading-tight">
-                ¿Compraste en Capital y traerlo te sale demasiado caro?
-              </h2>
-              <p className="text-[#9CA3AF] text-base lg:text-[17px] font-sans leading-[1.6]">
-                Mandá tu compra a nuestro centro de recepción en CABA (<strong className="text-white font-semibold">Caracas 1101</strong>). La recibimos, la organizamos y te la llevamos hasta tu domicilio aprovechando nuestros recorridos programados.
-              </p>
-            </div>
-
-            {/* FOTO DESTACADA TRANSPORTE PROPIO */}
-            <div className="relative rounded-xl overflow-hidden border border-[#222530] bg-[#111318]">
-              <img 
-                src="/flota-cuenta-hogar.jpg" 
-                alt="Transporte propio Cuenta Hogar" 
-                className="w-full h-[320px] lg:h-[400px] object-cover" 
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B]/90 via-[#173E3B]/30 to-transparent flex items-end p-6">
-                <div className="bg-[#161922] border border-[#222530] text-white p-4 rounded-xl w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-[#FFD21A] rounded-lg flex items-center justify-center text-white shrink-0">
-                      <Truck className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-heading font-bold uppercase text-[#FFD21A] tracking-wider">Transporte propio Cuenta Hogar</p>
-                      <p className="text-[12px] text-[#9CA3AF] font-sans">Control directo de carga, recorridos programados y entregas en domicilio</p>
-                    </div>
-                  </div>
-                  <a
-                    href="https://wa.me/5491125659686?text=Hola!%20Quiero%20cotizar%20un%20*Env%C3%ADo%20Low%20Cost*%20desde%20CABA%20hacia%20el%20interior."
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-[#FFD21A] hover:bg-[#984021] text-white font-heading font-semibold px-4 py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors whitespace-nowrap"
-                  >
-                    <WhatsAppIcon className="w-4 h-4" /> Cotizar mi envío
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            {/* 3 PASOS SIMPLES */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-[#111318] border border-[#222530] p-6 rounded-xl space-y-3 flex flex-col justify-between overflow-hidden group hover:border-[#173E3B] transition-all">
-                <div className="space-y-2.5">
-                  <div className="w-10 h-10 bg-[#161922] rounded-lg flex items-center justify-center text-[#FFD21A] font-heading font-bold border border-[#222530] text-base shadow-xs">
-                    1
-                  </div>
-                  <h3 className="text-lg font-heading font-bold text-[#FFD21A]">Despachás a CABA</h3>
-                  <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                    Tus compras se entregan en nuestro centro logístico en <strong className="text-white font-semibold">Caracas 1101, CABA</strong>.
-                  </p>
-                </div>
-                <div className="relative h-44 w-full rounded-xl overflow-hidden border border-[#222530] mt-2">
-                  <img 
-                    src="/paso1-local-afuera.jpg" 
-                    alt="Local Cuenta Hogar desde afuera CABA Caracas 1101" 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B]/80 via-transparent to-transparent flex items-end p-2.5">
-                    <span className="text-[10px] font-heading font-bold text-[#FFFDFC] uppercase tracking-wider">
-                      Centro CABA · Caracas 1101
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-[#111318] border border-[#222530] p-6 rounded-xl space-y-3 flex flex-col justify-between overflow-hidden group hover:border-[#173E3B] transition-all">
-                <div className="space-y-2.5">
-                  <div className="w-10 h-10 bg-[#161922] rounded-lg flex items-center justify-center text-[#FFD21A] font-heading font-bold border border-[#222530] text-base shadow-xs">
-                    2
-                  </div>
-                  <h3 className="text-lg font-heading font-bold text-[#FFD21A]">Organizamos la carga</h3>
-                  <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                    Recibimos, acopiamos y consolidamos tus paquetes para la partida programada.
-                  </p>
-                </div>
-                <div className="relative h-44 w-full rounded-xl overflow-hidden border border-[#222530] mt-2">
-                  <img 
-                    src="/paso2-local-adentro.jpg" 
-                    alt="Centro de acopio y recepción interior Cuenta Hogar" 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B]/80 via-transparent to-transparent flex items-end p-2.5">
-                    <span className="text-[10px] font-heading font-bold text-[#FFFDFC] uppercase tracking-wider">
-                      Centro de Acopio Interior
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-[#111318] border border-[#222530] p-6 rounded-xl space-y-3 flex flex-col justify-between overflow-hidden group hover:border-[#173E3B] transition-all">
-                <div className="space-y-2.5">
-                  <div className="w-10 h-10 bg-[#161922] rounded-lg flex items-center justify-center text-[#FFD21A] font-heading font-bold border border-[#222530] text-base shadow-xs">
-                    3
-                  </div>
-                  <h3 className="text-lg font-heading font-bold text-[#FFD21A]">Entrega en tu domicilio</h3>
-                  <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                    Nuestro transporte propio lleva tus productos directo a la puerta de tu casa o comercio.
-                  </p>
-                </div>
-                <div className="relative h-44 w-full rounded-xl overflow-hidden border border-[#222530] mt-2">
-                  <img 
-                    src="/paso3-camioneta.jpg" 
-                    alt="Transporte propio Cuenta Hogar entrega en domicilio" 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B]/80 via-transparent to-transparent flex items-end p-2.5">
-                    <span className="text-[10px] font-heading font-bold text-[#FFFDFC] uppercase tracking-wider">
-                      Transporte Propio · Entrega
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* BLOQUE EMPRENDEDORES (DESTACADO ARENA #E7B86A SIN DEGRADADO) */}
-            <div className="bg-[#111318] border border-[#222530] p-8 rounded-xl space-y-6">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-[#222530] pb-6">
-                <div>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#161922] border border-[#222530] text-[#FFD21A] font-heading font-semibold text-xs uppercase tracking-wider mb-2">
-                    <Briefcase className="w-3.5 h-3.5" /> Especial Emprendedores y Comercios
-                  </span>
-                  <h3 className="text-2xl lg:text-3xl font-heading font-bold text-[#FFD21A]">
-                    ¿Comprás mercadería seguido en Capital?
-                  </h3>
-                  <p className="text-[#9CA3AF] text-sm font-sans mt-2 max-w-xl">
-                    Tus proveedores pueden entregar directamente en nuestro local de CABA. Recibimos tus compras, las organizamos y las llevamos juntas hasta tu domicilio.
-                  </p>
-                </div>
-
-                {/* DESTACADO ARENA #E7B86A (REGLA SOLICITADA EN INSTRUCCIÓN) */}
-                <div className="bg-[#E7B86A] text-white p-5 rounded-xl font-heading font-bold text-center shrink-0 w-full md:w-auto shadow-xs border border-[#222530]">
-                  <span className="text-[11px] uppercase tracking-wider block opacity-90 text-[#FFD21A]">Beneficio Exclusivo</span>
-                  <span className="text-2xl font-bold block tracking-tight text-white">CONSOLIDACIÓN SIN CARGO</span>
-                  <span className="text-[11px] font-sans font-medium block mt-1 text-[#FFD21A]">Solo pagás por los bultos trasladados</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs text-white font-sans">
-                <div className="bg-[#161922] p-3.5 rounded-lg border border-[#222530] flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#2F7D5C] shrink-0" />
-                  <span>Una sola dirección de recepción en CABA (Caracas 1101).</span>
-                </div>
-                <div className="bg-[#161922] p-3.5 rounded-lg border border-[#222530] flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#2F7D5C] shrink-0" />
-                  <span>Compras de distintos proveedores en un solo lugar.</span>
-                </div>
-                <div className="bg-[#161922] p-3.5 rounded-lg border border-[#222530] flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#2F7D5C] shrink-0" />
-                  <span>Consolidación sin cargo adicional.</span>
-                </div>
-                <div className="bg-[#161922] p-3.5 rounded-lg border border-[#222530] flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#2F7D5C] shrink-0" />
-                  <span>Viajes programados con total previsibilidad.</span>
-                </div>
-                <div className="bg-[#161922] p-3.5 rounded-lg border border-[#222530] flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#2F7D5C] shrink-0" />
-                  <span>Entrega directa en la puerta de tu negocio o casa.</span>
-                </div>
-                <div className="bg-[#161922] p-3.5 rounded-lg border border-[#222530] flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#2F7D5C] shrink-0" />
-                  <span>Organización de tus compras en un solo lugar.</span>
-                </div>
-              </div>
-
-              <div className="pt-2 text-center md:text-left">
-                <a
-                  href="https://wa.me/5491125659686?text=Hola%2C%20quiero%20conocer%20c%C3%B3mo%20funcionar%C3%A1%20%2AEnv%C3%ADos%20Low%20Cost%20de%20Cuenta%20Hogar%2A%20para%20mi%20negocio/emprendimiento%20a%20partir%20de%20noviembre.%0A%0ARealizo%20compras%20en%20CABA%20y%20me%20interesa%20poder%20recibirlas%20en%20un%20mismo%20punto%2C%20consolidarlas%20sin%20cargo%20y%20trasladarlas%20juntas%20hasta%20mi%20localidad.%0A%0A%F0%9F%93%8D%20Mi%20localidad%20es%3A%0A%0A%C2%BFMe%20cuentan%20c%C3%B3mo%20funcionar%C3%A1%20el%20servicio%20para%20mi%20negocio%3F"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-lowcost text-xs uppercase tracking-wider"
-                >
-                  <WhatsAppIcon className="w-4 h-4" />
-                  QUIERO CONOCER EL SERVICIO PARA MI NEGOCIO
-                </a>
-              </div>
-            </div>
-
-            {/* UBICACIÓN CABA */}
-            <div className="bg-[#111318] border border-[#222530] rounded-xl p-6 space-y-4">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-[#222530] pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-[#161922] rounded-lg flex items-center justify-center text-[#FFD21A] border border-[#222530]">
-                    <MapPin className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-heading font-bold text-[#9CA3AF] uppercase tracking-wider block">Centro Logístico y Domicilio Legal</span>
-                    <strong className="text-base text-[#FFD21A] font-heading font-bold">Caracas 1101, Ciudad Autónoma de Buenos Aires</strong>
-                  </div>
-                </div>
-                <Link
-                  href="/envios"
-                  className="text-xs font-heading font-semibold text-[#FFD21A] hover:underline flex items-center gap-1"
-                >
-                  Ver guía detallada de Envíos Low Cost →
-                </Link>
-              </div>
-
-              <div className="w-full rounded-xl overflow-hidden border border-[#222530]">
-                <iframe
-                  title="Ubicación Centro Logístico CABA - Caracas 1101"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3283.473539827663!2d-58.46820522346083!3d-34.61747805822394!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bcc9f3a61c572b%3A0x6b2e35a1408018e6!2sCaracas%201101%2C%20C1416AOS%20CABA!5e0!3m2!1ses!2sar!4v1700000000000!5m2!1ses!2sar"
-                  width="100%"
-                  height="240"
-                  style={{ border: 0 }}
-                  allowFullScreen={true}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="w-full h-[240px] rounded-xl"
-                />
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
-      {/* 3. TRANSPORTE PROPIO CUENTA HOGAR */}
-      <section className="py-24 lg:py-28 bg-[#111318] border-b border-[#222530]">
+      {/* 2. CÓMO FUNCIONA EL SERVICIO DE COMPRA EN 6 PASOS (#COMO-FUNCIONA) */}
+      <section id="como-funciona" className="py-20 lg:py-24 bg-[#161922] border-b border-[#222530] scroll-mt-20">
         <div className="max-w-7xl mx-auto px-6 space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-3">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#161922] border border-[#222530] text-[#FFD21A] text-xs font-heading font-semibold uppercase tracking-wider">
-              <Truck className="w-3.5 h-3.5 text-[#FFD21A]" /> Logística Directa
+          
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <span className="inline-block bg-[#111318] border border-[#FFD21A]/30 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full">
+              PROCESO TRANSPARENTE
             </span>
-            <h2 className="text-3xl lg:text-[40px] font-heading font-bold text-[#FFD21A] leading-tight">
-              Transporte propio Cuenta Hogar
+            <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#FFD21A]">
+              Cómo funciona el Servicio de Compra
             </h2>
-            <p className="text-[#9CA3AF] text-base lg:text-[17px] font-sans leading-[1.6]">
-              Controlamos directamente la carga, los recorridos y las entregas. Esto nos permite organizar mejor los tiempos, reducir la dependencia de terceros y brindar mayor previsibilidad a nuestros clientes.
+            <p className="text-[#9CA3AF] text-sm sm:text-base font-sans">
+              Un recorrido ordenado de 6 pasos para resolver tu adquisición desde el interior.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-[#161922] p-6 rounded-xl border border-[#222530] space-y-2">
-              <Clock className="w-5 h-5 text-[#FFD21A]" />
-              <h3 className="font-heading font-bold text-[#FFD21A] text-base">Recorridos programados</h3>
-              <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                Salidas organizadas periódicamente desde CABA con cronograma hacia cada localidad.
-              </p>
-            </div>
-
-            <div className="bg-[#161922] p-6 rounded-xl border border-[#222530] space-y-2">
-              <Layers className="w-5 h-5 text-[#FFD21A]" />
-              <h3 className="font-heading font-bold text-[#FFD21A] text-base">Mayor control de tiempos</h3>
-              <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                Previsibilidad total en la recepción, consolidación y llegada a destino.
-              </p>
-            </div>
-
-            <div className="bg-[#161922] p-6 rounded-xl border border-[#222530] space-y-2">
-              <UserCheck className="w-5 h-5 text-[#FFD21A]" />
-              <h3 className="font-heading font-bold text-[#FFD21A] text-base">Organización y Previsibilidad</h3>
-              <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                Un canal directo y estructurado con días y recorridos claramente programados.
-              </p>
-            </div>
-
-            <div className="bg-[#161922] p-6 rounded-xl border border-[#222530] space-y-2">
-              <Sparkles className="w-5 h-5 text-[#FFD21A]" />
-              <h3 className="font-heading font-bold text-[#FFD21A] text-base">Escalabilidad de frecuencia</h3>
-              <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
-                Posibilidad de ampliar la frecuencia de viajes cuando aumente la demanda en tu zona.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                num: "01",
+                titulo: "Nos contás qué producto buscás",
+                desc: "Nos indicás el equipo, modelo o marca que necesitás o la necesidad de tu hogar u oficina."
+              },
+              {
+                num: "02",
+                titulo: "Buscamos alternativas y propuesta",
+                desc: "Analizamos precios en comercios y distribuidores de CABA para presentarte las mejores opciones disponibles."
+              },
+              {
+                num: "03",
+                titulo: "Definimos el Plan de Cuotas",
+                desc: "Te enviamos una propuesta clara con el valor del plan en cuotas fijas ajustado a la operación."
+              },
+              {
+                num: "04",
+                titulo: "Formalización del Mandato",
+                desc: "Aceptada la propuesta, nos otorgás el mandato para realizar la compra en tu nombre en Buenos Aires."
+              },
+              {
+                num: "05",
+                titulo: "Recepción y Control Logístico",
+                desc: "Recibimos el producto en nuestro centro de CABA (Caracas 1101), verificamos su estado y lo preparamos."
+              },
+              {
+                num: "06",
+                titulo: "Traslado y Entrega en Domicilio",
+                desc: "Transportamos el producto programadamente y te lo entregamos en la puerta de tu casa."
+              }
+            ].map((paso, idx) => (
+              <div key={idx} className="bg-[#111318] border border-[#222530] p-6 rounded-2xl space-y-3 hover:border-[#FFD21A]/40 transition-all">
+                <div className="flex items-center justify-between">
+                  <span className="w-9 h-9 rounded-xl bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] font-mono font-black text-sm flex items-center justify-center">
+                    {paso.num}
+                  </span>
+                  <span className="text-[10px] font-mono text-[#9CA3AF] uppercase font-bold">Etapa 0{idx+1}</span>
+                </div>
+                <h3 className="text-base font-bold text-white leading-snug">{paso.titulo}</h3>
+                <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">{paso.desc}</p>
+              </div>
+            ))}
           </div>
+
         </div>
       </section>
 
-      {/* 4. COBERTURA GEOGRÁFICA REDISEÑADA (CABA ➔ INTERIOR) */}
-      <section className="py-20 lg:py-24 bg-[#161922] text-white border-b border-[#222530]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      {/* 3. BENEFICIOS Y DIFERENCIALES DEL SERVICIO DE COMPRA */}
+      <section className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530]">
+        <div className="max-w-6xl mx-auto px-6 space-y-12">
           
-          {/* COLUMNA IZQUIERDA: MENSAJE E INFORMACIÓN DE COBERTURA */}
-          <div className="space-y-6">
-            
-            {/* EYEBROW & CHIP DE LOCALIDADES ACTIVAS */}
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#111318] text-[#FFD21A] border border-[#FFD21A]/30 text-xs font-mono font-bold uppercase tracking-wider">
-                <MapPin className="w-3.5 h-3.5 text-[#FFD21A]" /> COBERTURA GEOGRÁFICA
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFD21A] text-[#111318] text-xs font-mono font-extrabold uppercase tracking-wider">
-                5 localidades activas
-              </span>
+          <div className="text-center max-w-2xl mx-auto space-y-3">
+            <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#FFD21A]">
+              Diferenciales de Cuenta Hogar
+            </h2>
+            <p className="text-[#9CA3AF] text-sm sm:text-base font-sans">
+              Por qué elegir la gestión integral de compra desde el interior.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-[#161922] border border-[#222530] p-8 rounded-2xl space-y-4">
+              <div className="w-12 h-12 bg-[#111318] border border-[#FFD21A]/30 rounded-xl flex items-center justify-center text-[#FFD21A]">
+                <ShoppingBag className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Gestión Directa en CABA</h3>
+              <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                Accedé a los precios y stock de la Capital Federal sin tener que viajar ni coordinar con múltiples vendedores.
+              </p>
             </div>
-            
-            {/* TÍTULO PRINCIPAL Y BAJADA */}
-            <div className="space-y-3">
-              <h2 className="text-3xl lg:text-4xl font-extrabold text-[#FFD21A] tracking-tight leading-tight">
-                Estamos cerca tuyo
-              </h2>
+
+            <div className="bg-[#161922] border border-[#222530] p-8 rounded-2xl space-y-4">
+              <div className="w-12 h-12 bg-[#111318] border border-[#FFD21A]/30 rounded-xl flex items-center justify-center text-[#FFD21A]">
+                <CreditCard className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Plan de Cuotas Previsible</h3>
+              <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                Aboná la operación completa (producto + traslado) en un esquema de cuotas claras acordadas previamente.
+              </p>
+            </div>
+
+            <div className="bg-[#161922] border border-[#222530] p-8 rounded-2xl space-y-4">
+              <div className="w-12 h-12 bg-[#111318] border border-[#FFD21A]/30 rounded-xl flex items-center justify-center text-[#FFD21A]">
+                <Truck className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Entrega en Domicilio</h3>
+              <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                Nos encargamos del traslado programado para que recibas el equipo en la puerta de tu hogar o comercio.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* 4. OPCIONES DE COMPRA / CATALOG GRID */}
+      <section className="py-20 lg:py-24 bg-[#161922] border-b border-[#222530]">
+        <div className="max-w-7xl mx-auto px-6 space-y-8">
+          
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <span className="inline-block bg-[#111318] border border-[#FFD21A]/30 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full">
+              EJEMPLOS Y OPCIONES DISPONIBLES
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#FFD21A]">
+              Opciones de Compra Orientativas
+            </h2>
+            <p className="text-[#9CA3AF] text-sm font-sans">
+              Explorá algunos modelos frecuentes con planes de cuotas sugeridos. También podés solicitar cualquier otro equipo que no figure en la lista.
+            </p>
+          </div>
+
+          {/* BUSCADOR Y FILTROS */}
+          <div className="bg-[#111318] border border-[#222530] p-4 sm:p-6 rounded-2xl space-y-4 max-w-4xl mx-auto shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
               
-              <p className="text-white text-base sm:text-lg font-bold leading-relaxed">
-                Hoy trabajamos en Lincoln, Zavalía, Los Toldos, Chivilcoy y O’Brien.
-              </p>
-
-              <p className="text-[#9CA3AF] text-sm sm:text-base leading-relaxed">
-                Seguimos ampliando nuestros recorridos para llegar a más localidades del interior.
-              </p>
-            </div>
-
-            {/* CHIPS DE LOCALIDADES EN RECORRIDO */}
-            <div className="space-y-2 pt-1">
-              <p className="text-[11px] font-mono font-bold text-[#9CA3AF] uppercase tracking-wider">Localidades en recorrido actual:</p>
-              <div className="flex flex-wrap gap-2.5">
-                {["Lincoln", "Zavalía", "Los Toldos", "Chivilcoy", "O’Brien"].map((ciudad, idx) => (
-                  <div key={idx} className="bg-[#111318] border border-[#FFD21A]/30 hover:border-[#FFD21A] rounded-xl px-4 py-2.5 flex items-center gap-2.5 transition-all">
-                    <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
-                    <span className="font-bold text-white text-xs sm:text-sm">{ciudad}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* MENSAJE DE EXPANSIÓN Y CTA EN AMARILLO OFICIAL (#FFD21A) */}
-            <div className="pt-6 border-t border-[#222530] space-y-4">
-              <div className="space-y-1">
-                <p className="text-sm font-bold text-[#FFD21A]">
-                  ¿Tu localidad todavía no está en nuestra cobertura?
-                </p>
-                <p className="text-xs text-[#9CA3AF]">
-                  Contanos dónde estás. Estamos evaluando nuevas rutas.
-                </p>
+              <div className="sm:col-span-8 relative">
+                <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input 
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar por producto, marca o categoría..."
+                  className="w-full bg-[#161922] border border-[#222530] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-xs rounded-xl pl-10 pr-4 py-3 outline-none transition-all font-medium"
+                />
               </div>
 
-              <a
-                href="https://wa.me/5491125659686?text=Hola%2C%20quer%C3%ADa%20consultar%20si%20Cuenta%20Hogar%20tiene%20previsto%20llegar%20a%20mi%20localidad.%0A%0ALocalidad%3A%20%0AProvincia%3A%20%0A%0AMe%20interesa%20conocer%20los%20servicios%20disponibles%20y%20si%20tienen%20previsto%20incorporar%20esta%20zona."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-heading font-extrabold text-xs uppercase tracking-wider px-7 py-3.5 rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95"
-              >
-                <WhatsAppIcon className="w-4.5 h-4.5 text-[#111318]" />
-                <span>CONSULTAR POR MI LOCALIDAD</span>
+              <div className="sm:col-span-4 flex items-center gap-2">
+                <Filter className="w-4 h-4 text-[#FFD21A] shrink-0" />
+                <select
+                  value={selectedCuotas}
+                  onChange={(e) => setSelectedCuotas(e.target.value === "all" ? "all" : Number(e.target.value))}
+                  className="w-full bg-[#161922] border border-[#222530] focus:border-[#FFD21A] text-white text-xs rounded-xl p-3 outline-none transition-all font-medium cursor-pointer"
+                >
+                  <option value="all">Todos los planes</option>
+                  <option value={12}>Ver plan 12 cuotas</option>
+                  <option value={8}>Ver plan 8 cuotas</option>
+                </select>
+              </div>
+
+            </div>
+          </div>
+
+          {/* LISTADO DE PRODUCTOS */}
+          {loading ? (
+            <div className="py-16 text-center text-[#9CA3AF] text-sm font-mono">
+              Cargando opciones disponibles...
+            </div>
+          ) : productosFiltrados.length === 0 ? (
+            <div className="py-16 bg-[#111318] border border-[#222530] rounded-2xl text-center space-y-4 max-w-md mx-auto p-8">
+              <ShoppingBag className="w-8 h-8 text-[#FFD21A] mx-auto" />
+              <p className="text-sm text-white font-bold">¿No encontrás lo que buscás?</p>
+              <p className="text-xs text-[#9CA3AF]">
+                Podemos gestionar la compra de cualquier producto que necesites en Capital Federal.
+              </p>
+              <a href="#contacto" className="btn-primary text-xs uppercase inline-flex items-center gap-2 px-6 py-3 rounded-xl">
+                Solicitar una compra personalizada
               </a>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {productosFiltrados.map((prod) => {
+                const plan12 = prod.cuota12 ? { cuotaMensual: prod.cuota12 } : null;
+
+                return (
+                  <div key={prod.id} className="bg-[#111318] border border-[#222530] rounded-2xl overflow-hidden shadow-lg hover:border-[#FFD21A]/50 transition-all flex flex-col justify-between group">
+                    
+                    <div>
+                      <div className="relative aspect-4/3 bg-[#161922] overflow-hidden flex items-center justify-center p-4">
+                        <img 
+                          src={prod.imagenUrl || "/logo-cuenta-hogar-oficial.png"} 
+                          alt={prod.nombre} 
+                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/logo-cuenta-hogar-oficial.png"; }}
+                        />
+                      </div>
+
+                      <div className="p-6 space-y-4">
+                        <h3 className="text-base font-bold text-white line-clamp-2 leading-snug">
+                          {prod.nombre}
+                        </h3>
+                        
+                        {prod.descripcion && (
+                          <p className="text-xs text-[#9CA3AF] line-clamp-2 leading-relaxed">
+                            {prod.descripcion}
+                          </p>
+                        )}
+
+                        <div className="bg-[#161922] border border-[#222530] p-4 rounded-xl space-y-1.5">
+                          <span className="text-[10px] font-mono font-bold text-[#FFD21A] uppercase block">
+                            PLAN DE CUOTAS ORIENTATIVO
+                          </span>
+                          {plan12 ? (
+                            <div className="flex items-baseline justify-between">
+                              <span className="text-xs font-bold text-[#D1D5DB]">12 cuotas estimadas de</span>
+                              <span className="text-base font-extrabold text-[#FFD21A]">
+                                {formatPrice(plan12.cuotaMensual)}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="text-xs font-bold text-white">
+                              Consultar condiciones de plan
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-6 pt-0">
+                      <a 
+                        href={`https://wa.me/5491125659686?text=${encodeURIComponent(`Hola, quiero consultar por el Servicio de Compra para el producto: ${prod.nombre}. ¿Me cuentan la propuesta y el plan de cuotas?`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold text-xs uppercase tracking-wider py-3 rounded-xl transition-all shadow-md"
+                      >
+                        <WhatsAppIcon className="w-4 h-4 text-[#111318]" />
+                        <span>Consultar por este producto</span>
+                      </a>
+                    </div>
+
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+        </div>
+      </section>
+
+      {/* 5. COBERTURA DE ENTREGAS */}
+      <section className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530]">
+        <div className="max-w-5xl mx-auto px-6 text-center space-y-8">
           
-          {/* COLUMNA DERECHA: GRÁFICO ESQUEMÁTICO DE RED CABA ➔ INTERIOR */}
-          <div className="flex items-center justify-center lg:justify-end">
-            <div className="bg-[#111318] border-2 border-[#222530] rounded-3xl p-6 sm:p-8 space-y-6 w-full max-w-lg shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFD21A]/10 rounded-full blur-3xl pointer-events-none" />
-              
-              <div className="flex items-center justify-between border-b border-[#222530] pb-4">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#FFD21A] animate-pulse"></span>
-                  <span className="font-mono text-xs font-bold text-[#FFD21A] uppercase tracking-wider">
-                    Red de Recorridos CABA ➔ Interior
-                  </span>
+          <div className="space-y-3 max-w-2xl mx-auto">
+            <span className="inline-block bg-[#161922] border border-[#FFD21A]/30 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full">
+              ENTREGAS PROGRAMADAS
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#FFD21A]">
+              Cobertura en el Interior
+            </h2>
+            <p className="text-[#9CA3AF] text-sm font-sans">
+              Realizamos entregas directa en las siguientes localidades y zonas de influencia:
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            {["Lincoln", "Zavalía", "Los Toldos", "Chivilcoy", "O'Brien"].map((loc) => (
+              <div key={loc} className="bg-[#161922] border border-[#222530] p-4 rounded-xl text-center space-y-1">
+                <MapPin className="w-4 h-4 text-[#FFD21A] mx-auto" />
+                <p className="font-bold text-white text-sm">{loc}</p>
+                <p className="text-[10px] text-[#9CA3AF] font-mono">Entrega en domicilio</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-2">
+            <button 
+              onClick={() => setModalLocalidadOpen(true)}
+              className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#FFD21A] hover:underline bg-[#161922] border border-[#FFD21A]/30 px-4 py-2 rounded-xl"
+            >
+              <span>¿Tu localidad no figura? Solicitar incorporación →</span>
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+      {/* 6. CONFIANZA / CASOS REALES Y ENTREGAS */}
+      <section className="py-20 lg:py-24 bg-[#161922] border-b border-[#222530]">
+        <div className="max-w-6xl mx-auto px-6 space-y-12">
+          
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#FFD21A]">
+              Entregas Reales y Presencia Local
+            </h2>
+            <p className="text-[#9CA3AF] text-sm font-sans">
+              Fotografías reales de entregas realizadas por el equipo de Cuenta Hogar.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            <div className="lg:col-span-7 relative rounded-2xl overflow-hidden border border-[#222530] bg-[#111318] shadow-xl group h-[380px]">
+              <img 
+                src={entregas[activeEntregaIdx].src} 
+                alt={entregas[activeEntregaIdx].alt}
+                className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-transparent to-transparent flex items-end p-6">
+                <div className="bg-[#161922]/90 backdrop-blur-md border border-[#222530] p-4 rounded-xl text-white w-full space-y-1">
+                  <p className="font-bold text-sm text-[#FFD21A]">{entregas[activeEntregaIdx].titulo}</p>
+                  <p className="text-xs text-[#9CA3AF]">{entregas[activeEntregaIdx].descripcion}</p>
                 </div>
-                <span className="text-[10px] font-mono text-[#9CA3AF] bg-[#161922] border border-[#222530] px-2.5 py-1 rounded-md">
-                  Ruta Activa
+              </div>
+            </div>
+
+            <div className="lg:col-span-5 space-y-4 text-left">
+              <span className="text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider block">
+                COMPROMISO Y CERCANÍA
+              </span>
+              <h3 className="text-2xl font-bold text-white">
+                Atención directa de vecino a vecino
+              </h3>
+              <p className="text-xs sm:text-sm text-[#9CA3AF] font-sans leading-relaxed">
+                Acompañamos cada solicitud con la presencia de nuestros vendedores afiliados en tu localidad, brindando respaldo antes, durante y después de la entrega.
+              </p>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button 
+                  onClick={handlePrevEntrega}
+                  aria-label="Anterior entrega"
+                  className="w-10 h-10 rounded-xl bg-[#111318] border border-[#222530] text-white hover:text-[#FFD21A] flex items-center justify-center transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={handleNextEntrega}
+                  aria-label="Siguiente entrega"
+                  className="w-10 h-10 rounded-xl bg-[#111318] border border-[#222530] text-white hover:text-[#FFD21A] flex items-center justify-center transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+                <span className="text-xs font-mono text-[#9CA3AF]">
+                  {activeEntregaIdx + 1} / {entregas.length}
                 </span>
               </div>
-
-              {/* ORIGEN CABA */}
-              <div className="flex items-center gap-4 bg-[#161922] border border-[#FFD21A]/40 p-4 rounded-2xl">
-                <div className="w-10 h-10 bg-[#FFD21A] text-[#111318] rounded-xl flex items-center justify-center font-extrabold text-sm shrink-0">
-                  CABA
-                </div>
-                <div>
-                  <p className="text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider">Punto de Origen Logístico</p>
-                  <p className="text-sm font-bold text-white">Caracas 1101, Capital Federal</p>
-                </div>
-              </div>
-
-              {/* LÍNEA DE CONEXIÓN Y NODOS DE RECORRIDO */}
-              <div className="relative pl-6 space-y-3.5 border-l-2 border-dashed border-[#FFD21A]/40 my-2 ml-5">
-                {[
-                  { name: "Chivilcoy", tag: "Recorrido Activo" },
-                  { name: "O’Brien", tag: "Recorrido Activo" },
-                  { name: "Los Toldos", tag: "Recorrido Activo" },
-                  { name: "Lincoln", tag: "Recorrido Activo" },
-                  { name: "Zavalía", tag: "Recorrido Activo" }
-                ].map((nodo, idx) => (
-                  <div key={idx} className="relative flex items-center justify-between bg-[#161922]/80 border border-[#222530] hover:border-[#FFD21A]/50 p-3 rounded-xl transition-all">
-                    <div className="absolute -left-[31px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#111318] border-2 border-[#FFD21A] flex items-center justify-center">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#FFD21A]"></div>
-                    </div>
-                    <span className="font-bold text-xs sm:text-sm text-white">{nodo.name}</span>
-                    <span className="text-[10px] font-mono font-bold text-[#FFD21A] bg-[#111318] px-2 py-0.5 rounded border border-[#FFD21A]/20">
-                      {nodo.tag}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-2 text-center">
-                <p className="text-[11px] font-mono text-[#9CA3AF] flex items-center justify-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFD21A]"></span>
-                  Expansión progresiva en evaluación continua
-                </p>
-              </div>
             </div>
+
           </div>
 
         </div>
       </section>
 
-      {/* 5. SERVICIO DE COMPRA: EL PROCESO EN 6 PASOS CLAROS */}
-      <section id="como-funciona" className="py-24 lg:py-28 max-w-7xl mx-auto px-6 border-b border-[#222530]">
-        <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#161922] border border-[#222530] text-[#FFD21A] text-xs font-heading font-semibold uppercase tracking-wider">
-            <CreditCard className="w-3.5 h-3.5 text-[#FFD21A]" /> Servicio de Compra · Paso a Paso
-          </span>
-          <h2 className="text-3xl lg:text-[40px] font-heading font-bold text-[#FFD21A] leading-tight">
-            ¿Cómo funciona el Servicio de Compra?
-          </h2>
-          <p className="text-[#9CA3AF] text-base lg:text-[17px] font-sans leading-[1.6]">
-            Un proceso simple y transparente de punta a punta para resolver tu compra desde el interior con un plan de cuotas.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* 7. FORMULARIO PRINCIPAL DE SOLICITUD DE COMPRA (#CONTACTO) */}
+      <section id="contacto" className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530] scroll-mt-20">
+        <div className="max-w-4xl mx-auto px-6">
           
-          <div className="bg-[#161922] p-6 rounded-xl border border-[#222530] space-y-3 hover:border-[#FFD21A]/40 transition-all">
-            <div className="w-10 h-10 bg-[#111318] rounded-lg flex items-center justify-center text-[#FFD21A] font-heading font-bold text-base border border-[#FFD21A]/30">
-              1
-            </div>
-            <h3 className="text-lg font-heading font-bold text-[#FFD21A]">1. Contanos qué necesitás</h3>
-            <p className="text-[#9CA3AF] text-xs font-sans leading-relaxed">
-              Transmitinos qué producto buscás a través de nuestra web, WhatsApp o con el <strong className="text-white font-medium">vendedor afiliado</strong> de tu localidad.
-            </p>
-          </div>
-
-          <div className="bg-[#161922] p-6 rounded-xl border border-[#222530] space-y-3 hover:border-[#FFD21A]/40 transition-all">
-            <div className="w-10 h-10 bg-[#111318] rounded-lg flex items-center justify-center text-[#FFD21A] font-heading font-bold text-base border border-[#FFD21A]/30">
-              2
-            </div>
-            <h3 className="text-lg font-heading font-bold text-[#FFD21A]">2. Búsqueda y propuesta de cuotas</h3>
-            <p className="text-[#9CA3AF] text-xs font-sans leading-relaxed">
-              Buscamos opciones adecuadas en CABA y te presentamos una propuesta clara con las condiciones del plan de cuotas.
-            </p>
-          </div>
-
-          <div className="bg-[#161922] p-6 rounded-xl border border-[#222530] space-y-3 hover:border-[#FFD21A]/40 transition-all">
-            <div className="w-10 h-10 bg-[#111318] rounded-lg flex items-center justify-center text-[#FFD21A] font-heading font-bold text-base border border-[#FFD21A]/30">
-              3
-            </div>
-            <h3 className="text-lg font-heading font-bold text-[#FFD21A]">3. Formalización del mandato</h3>
-            <p className="text-[#9CA3AF] text-xs font-sans leading-relaxed">
-              Una vez aceptada la propuesta y acordadas las condiciones, formalizamos el mandato de compra para iniciar la gestión.
-            </p>
-          </div>
-
-          <div className="bg-[#161922] p-6 rounded-xl border border-[#222530] space-y-3 hover:border-[#FFD21A]/40 transition-all">
-            <div className="w-10 h-10 bg-[#111318] rounded-lg flex items-center justify-center text-[#FFD21A] font-heading font-bold text-base border border-[#FFD21A]/30">
-              4
-            </div>
-            <h3 className="text-lg font-heading font-bold text-[#FFD21A]">4. Recepción y acopio en CABA</h3>
-            <p className="text-[#9CA3AF] text-xs font-sans leading-relaxed">
-              Cuenta Hogar gestiona la compra en Capital Federal y recibe la mercadería en nuestro centro logístico de <strong className="text-white font-medium">Caracas 1101</strong>.
-            </p>
-          </div>
-
-          <div className="bg-[#161922] p-6 rounded-xl border border-[#222530] space-y-3 hover:border-[#FFD21A]/40 transition-all">
-            <div className="w-10 h-10 bg-[#111318] rounded-lg flex items-center justify-center text-[#FFD21A] font-heading font-bold text-base border border-[#FFD21A]/30">
-              5
-            </div>
-            <h3 className="text-lg font-heading font-bold text-[#FFD21A]">5. Traslado y entrega en domicilio</h3>
-            <p className="text-[#9CA3AF] text-xs font-sans leading-relaxed">
-              Organizamos el traslado hacia el interior y entregamos el paquete directo en la puerta de tu domicilio.
-            </p>
-          </div>
-
-          <div className="bg-[#161922] p-6 rounded-xl border border-[#222530] space-y-3 hover:border-[#FFD21A]/40 transition-all">
-            <div className="w-10 h-10 bg-[#111318] rounded-lg flex items-center justify-center text-[#FFD21A] font-heading font-bold text-base border border-[#FFD21A]/30">
-              6
-            </div>
-            <h3 className="text-lg font-heading font-bold text-[#FFD21A]">6. Plan de cuotas acordado</h3>
-            <p className="text-[#9CA3AF] text-xs font-sans leading-relaxed">
-              Resolvés la operación abonando el plan de cuotas según las condiciones previamente establecidas.
-            </p>
-          </div>
-
-        </div>
-
-        {/* ACLARACIÓN COMERCIAL / CONTRACTUAL */}
-        <div className="mt-8 bg-[#111318] border border-[#222530] p-4 rounded-xl text-center">
-          <p className="text-xs sm:text-sm text-[#9CA3AF] font-sans leading-relaxed">
-            * Los importes y condiciones son orientativos y están sujetos a cotización y a las condiciones contractuales de cada operación.
-          </p>
-        </div>
-      </section>
-
-      {/* 6. BLOQUE DE DIFERENCIALES DE CUENTA HOGAR */}
-      <section className="py-24 lg:py-28 bg-[#111318] border-b border-[#222530]">
-        <div className="max-w-7xl mx-auto px-6 space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-3">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#161922] border border-[#222530] text-[#FFD21A] text-xs font-heading font-semibold uppercase tracking-wider">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#FFD21A]" /> Valor Agregado
-            </span>
-            <h2 className="text-3xl lg:text-[40px] font-heading font-bold text-[#FFD21A] leading-tight">
-              Los diferenciales de Cuenta Hogar
-            </h2>
-            <p className="text-[#9CA3AF] text-base lg:text-[17px] font-sans leading-[1.6]">
-              Soluciones integrales de gestión de compra, plan de cuotas y transporte pensadas para tu comodidad.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-[#161922] p-6 rounded-xl border border-[#222530] space-y-2">
-              <CreditCard className="w-5 h-5 text-[#FFD21A]" />
-              <h3 className="font-heading font-bold text-[#FFD21A] text-base">Plan de cuotas</h3>
-              <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">Te presentamos una propuesta clara con las condiciones del plan adaptado a tu compra.</p>
-            </div>
-
-            <div className="bg-[#161922] p-6 rounded-xl border border-[#222530] space-y-2">
-              <ShoppingBag className="w-5 h-5 text-[#FFD21A]" />
-              <h3 className="font-heading font-bold text-[#FFD21A] text-base">Gestión mediante mandato</h3>
-              <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">Buscamos opciones y gestionamos la compra por mandato del cliente en CABA.</p>
-            </div>
-
-            <div className="bg-[#161922] p-6 rounded-xl border border-[#222530] space-y-2">
-              <Building2 className="w-5 h-5 text-[#FFD21A]" />
-              <h3 className="font-heading font-bold text-[#FFD21A] text-base">Centro logístico en CABA</h3>
-              <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">Recepción y acopio centralizado en Caracas 1101, Capital Federal.</p>
-            </div>
-
-            <div className="bg-[#161922] p-6 rounded-xl border border-[#222530] space-y-2">
-              <Truck className="w-5 h-5 text-[#FFD21A]" />
-              <h3 className="font-heading font-bold text-[#FFD21A] text-base">Traslado y entrega a domicilio</h3>
-              <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">Recorridos programados y entrega directa en la puerta de tu hogar.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 7. ENTREGAS RECIENTES Y TESTIMONIOS */}
-      <section className="py-24 lg:py-28 bg-[#161922] border-b border-[#222530] overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12 max-w-2xl mx-auto">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#111318] border border-[#222530] text-[#FFD21A] text-xs font-heading font-semibold uppercase tracking-wider mb-4">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#2F7D5C]" /> Entregas Reales
-            </span>
-            <h2 className="text-3xl lg:text-[40px] font-heading font-bold text-[#FFD21A] leading-tight">
-              Clientes Felices Recibiendo sus Equipos
-            </h2>
-            <p className="text-[#9CA3AF] mt-3 text-base lg:text-[17px] font-sans leading-[1.6]">
-              Entregamos puerta a puerta con financiación a sola firma y Envíos Low Cost en nuestras localidades de cobertura.
-            </p>
-          </div>
-
-          <div className="relative max-w-4xl mx-auto group/carousel">
-            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-[#222530] bg-[#111318] shadow-xs">
-              <div className="w-full h-full relative">
-                <img
-                  src={entregas[activeEntregaIdx].src}
-                  alt={entregas[activeEntregaIdx].alt}
-                  className="w-full h-full object-cover"
-                />
-                
-                <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B]/95 via-[#173E3B]/40 to-transparent flex flex-col justify-end p-6 lg:p-8">
-                  <h3 className="text-xl lg:text-2xl font-heading font-bold text-white mb-1.5 leading-snug">
-                    {entregas[activeEntregaIdx].titulo}
-                  </h3>
-                  <p className="text-xs lg:text-sm text-[#FFD21A] font-heading font-semibold">
-                    {entregas[activeEntregaIdx].descripcion}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handlePrevEntrega}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-[#111318]/80 hover:bg-[#111318] border border-white/20 text-white rounded-full p-2.5 transition-colors z-20 flex items-center justify-center"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-
-              <button
-                type="button"
-                onClick={handleNextEntrega}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-[#111318]/80 hover:bg-[#111318] border border-white/20 text-white rounded-full p-2.5 transition-colors z-20 flex items-center justify-center"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="flex justify-center gap-2 mt-6">
-              {entregas.map((_, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setActiveEntregaIdx(idx)}
-                  className={`h-2 rounded-full transition-all duration-200 ${
-                    idx === activeEntregaIdx ? 'bg-[#111318] w-6' : 'bg-[#DED8CF] w-2 hover:bg-[#68706E]'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 8. CATALOG GRID: PLANES SUGERIDOS */}
-      <section id="catalogo" className="max-w-7xl mx-auto px-6 py-24 lg:py-28">
-        <div className="flex items-end justify-between mb-12">
-          <div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#161922] border border-[#222530] text-[#FFD21A] text-xs font-heading font-semibold uppercase tracking-wider mb-3">
-              <ShoppingBag className="w-3.5 h-3.5 text-[#FFD21A]" /> Vidriera de Equipos
-            </span>
-            <h2 className="text-3xl lg:text-[40px] font-heading font-bold text-[#FFD21A] leading-tight">Planes Sugeridos</h2>
-            <p className="text-[#9CA3AF] mt-2 text-base font-sans">Elegí el producto que querés comprar y financiar.</p>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="animate-pulse bg-[#161922] rounded-xl h-96 border border-[#222530]" />
-            ))}
-          </div>
-        ) : productos.length === 0 ? (
-          <div className="text-center py-20 bg-[#161922] rounded-xl border border-dashed border-[#222530]">
-            <p className="text-[#9CA3AF] text-base font-sans">Próximamente estaremos subiendo nuevos planes sugeridos. ¡Volvé pronto!</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {productos.map(p => (
-              <ProductCard key={p.id} p={p} formatPrice={formatPrice} />
-            ))}
-          </div>
-        )}
-
-        <div className="mt-12 bg-[#161922] border border-[#222530] p-6 rounded-xl text-center">
-          <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed font-normal">
-            "Imágenes ilustrativas. Los equipos exhibidos corresponden a Planes de Gestión sugeridos. Actuamos bajo mandato de compra y brindamos servicios de administración de crédito propio. Otorgamiento sujeto a análisis de riesgo (scoring crediticio) sin obligación de expresar causa."
-          </p>
-        </div>
-      </section>
-
-      {/* 9. FORMULARIO PRINCIPAL (#FFFDFC + #F7F3EC + #173E3B) */}
-      <section id="contacto" className="py-24 lg:py-28 bg-[#161922] border-t border-[#222530]">
-        <div className="max-w-3xl mx-auto px-6">
-          <div className="bg-[#161922] border border-[#222530] rounded-xl p-8 lg:p-10 shadow-xs">
-            <div className="text-center mb-8 space-y-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111318] text-[#FFD21A] border border-[#222530] text-xs font-heading font-semibold uppercase tracking-wider">
-                <Send className="w-3.5 h-3.5 text-[#FFD21A]" /> Solicitud de Opciones
+          <div className="bg-[#161922] border border-[#2A2E3D] rounded-2xl p-8 sm:p-12 shadow-2xl space-y-8 relative overflow-hidden">
+            
+            <div className="text-center space-y-3 relative z-10">
+              <span className="inline-block bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full">
+                SOLICITUD DE SERVICIO DE COMPRA
               </span>
-              <h2 className="text-3xl lg:text-[36px] font-heading font-bold text-[#FFD21A] leading-tight">
-                Contanos qué necesitás y te ayudamos a conseguirlo
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
+                Contanos qué producto necesitás
               </h2>
-              <p className="text-[#9CA3AF] text-base font-sans leading-[1.6]">
-                Completá el formulario y te enviaremos por WhatsApp distintas alternativas de producto y financiación.
+              <p className="text-sm text-[#9CA3AF] max-w-xl mx-auto">
+                Ingresá tus datos y te enviaremos por WhatsApp una propuesta para gestionar tu compra en CABA, con las condiciones del plan de pagos.
               </p>
             </div>
 
-            <form onSubmit={handleQuickFormSubmit} className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <form onSubmit={handleQuickFormSubmit} className="space-y-5 relative z-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                
                 <div>
-                  <label className="block text-xs font-heading font-bold text-white mb-1.5">Nombre y Apellido</label>
+                  <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1.5">
+                    Tu Nombre Completo *
+                  </label>
                   <input 
+                    type="text" 
                     required 
                     value={qfNombre} 
-                    onChange={e=>setQfNombre(e.target.value)} 
-                    type="text" 
-                    placeholder="Tu nombre completo" 
-                    className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white placeholder-[#9CA3AF]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors" 
+                    onChange={e => setQfNombre(e.target.value)} 
+                    placeholder="Ej. Juan Pérez" 
+                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-heading font-bold text-white mb-1.5">DNI</label>
+                  <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1.5">
+                    Número de WhatsApp *
+                  </label>
                   <input 
-                    required 
-                    value={qfDni} 
-                    onChange={e=>setQfDni(e.target.value)} 
-                    type="number" 
-                    placeholder="Sin puntos" 
-                    className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white placeholder-[#9CA3AF]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-heading font-bold text-white mb-1.5">WhatsApp de contacto</label>
-                  <input 
+                    type="tel" 
                     required 
                     value={qfWhatsapp} 
-                    onChange={e=>setQfWhatsapp(e.target.value)} 
-                    type="tel" 
-                    placeholder="Código de área + número" 
-                    className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white placeholder-[#9CA3AF]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors" 
+                    onChange={e => setQfWhatsapp(e.target.value)} 
+                    placeholder="Ej. 11 2345 6789" 
+                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-heading font-bold text-white mb-1.5">Localidad</label>
+                  <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1.5">
+                    Localidad de Entrega *
+                  </label>
                   <input 
+                    type="text" 
                     required 
                     value={qfLocalidad} 
-                    onChange={e=>setQfLocalidad(e.target.value)} 
-                    type="text" 
-                    placeholder="Ej: Lincoln, Chivilcoy, etc." 
-                    className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white placeholder-[#9CA3AF]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors" 
+                    onChange={e => setQfLocalidad(e.target.value)} 
+                    placeholder="Ej. Lincoln, Chivilcoy, Los Toldos..." 
+                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all"
                   />
                 </div>
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-heading font-bold text-white mb-1.5">¿Qué vendedor afiliado o cliente te recomendó? <span className="text-[#9CA3AF] font-normal">(Opcional)</span></label>
+
+                <div>
+                  <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1.5">
+                    Vendedor Afiliado / Referente (Opcional)
+                  </label>
                   <input 
-                    value={qfReferente} 
-                    onChange={e=>setQfReferente(e.target.value)} 
                     type="text" 
-                    placeholder="Nombre del vendedor afiliado de tu localidad" 
-                    className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white placeholder-[#9CA3AF]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors" 
+                    value={qfReferente} 
+                    onChange={e => setQfReferente(e.target.value)} 
+                    placeholder="Ej. María Gómez" 
+                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all"
                   />
                 </div>
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-heading font-bold text-white mb-1.5">¿Qué producto o equipo estás necesitando?</label>
-                  <textarea 
-                    required 
-                    value={qfNecesidad} 
-                    onChange={e=>setQfNecesidad(e.target.value)} 
-                    placeholder="Ej: Smart TV 50 pulgadas, Heladera No Frost, Celular, lavarropas..." 
-                    rows={4} 
-                    className="w-full bg-[#111318] border border-[#222530] p-4 rounded-xl text-white placeholder-[#9CA3AF]/70 outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-sans text-base transition-colors resize-none" 
-                  />
-                </div>
+
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1.5">
+                  Producto que necesitás comprar (o link / modelo) *
+                </label>
+                <textarea 
+                  required 
+                  rows={3}
+                  value={qfNecesidad} 
+                  onChange={e => setQfNecesidad(e.target.value)} 
+                  placeholder="Ej. Heladera No Frost Samsung 300L, Smart TV 50 pulgadas, Lavarropas Drean..." 
+                  className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all resize-none"
+                />
               </div>
 
               <button 
                 type="submit" 
                 disabled={qfSubmitting}
-                className="w-full btn-primary uppercase tracking-wider text-sm mt-2 disabled:opacity-75"
+                className="w-full bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] py-4 rounded-xl font-heading font-extrabold text-sm uppercase tracking-wider transition-all disabled:opacity-50 shadow-lg shadow-[#FFD21A]/10 active:scale-95 flex items-center justify-center gap-2"
               >
-                <Send className="w-4 h-4" /> {qfSubmitting ? "Enviando solicitud..." : "Recibir opciones por WhatsApp"}
+                <Send className="w-4 h-4 text-[#111318]" />
+                <span>{qfSubmitting ? "Enviando..." : "Solicitar propuesta por WhatsApp"}</span>
               </button>
+
             </form>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* 8. PEQUEÑO CROSS-SELL BREVE A ENVÍOS LOW COST */}
+      <section className="py-14 bg-[#161922] border-b border-[#222530]">
+        <div className="max-w-4xl mx-auto px-6 text-center space-y-4">
+          <span className="text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider block">
+            ¿YA COMPRASTE POR TU CUENTA EN CABA?
+          </span>
+          <h3 className="text-2xl font-bold text-white">
+            Conocé nuestro servicio de Envíos Low Cost
+          </h3>
+          <p className="text-sm text-[#9CA3AF] max-w-xl mx-auto leading-relaxed">
+            Si ya compraste tu mercadería directamente en locales o distribuidores de Buenos Aires y solo necesitás el punto de recepción y el traslado a tu localidad, descubrí Envíos Low Cost.
+          </p>
+          <div className="pt-2">
+            <Link 
+              href="/envios" 
+              className="inline-flex items-center gap-2 bg-[#111318] hover:bg-[#1A1D26] text-[#FFD21A] border border-[#FFD21A]/40 text-xs font-extrabold uppercase tracking-wider px-6 py-3.5 rounded-xl transition-all shadow-sm"
+            >
+              <span>Conocer Envíos Low Cost</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </section>
 
       {/* MODAL SOLICITAR NUEVA LOCALIDAD */}
       {modalLocalidadOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1F2928]/80 backdrop-blur-xs">
-          <div className="bg-[#161922] border border-[#222530] w-full max-w-md rounded-xl p-6 space-y-5 shadow-xl relative">
-            <button
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#161922] border border-[#222530] rounded-2xl max-w-md w-full p-6 space-y-6 relative shadow-2xl">
+            <button 
               onClick={() => setModalLocalidadOpen(false)}
-              type="button"
-              className="absolute top-4 right-4 text-[#9CA3AF] hover:text-white p-1.5 rounded-lg bg-[#111318] border border-[#222530]"
+              className="absolute top-4 right-4 text-[#9CA3AF] hover:text-white"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
 
-            <div className="space-y-1.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111318] text-[#FFD21A] text-xs font-heading font-semibold uppercase tracking-wider border border-[#222530]">
-                <MapPin className="w-3.5 h-3.5" /> Solicitud de Cobertura
-              </span>
-              <h3 className="text-xl font-heading font-bold text-[#FFD21A]">Solicitar mi localidad</h3>
-              <p className="text-xs text-[#9CA3AF] font-sans">
-                Dejanos tus datos. Apenas ampliemos nuestras rutas a tu ciudad te notificaremos por WhatsApp.
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-white">Solicitar Nueva Localidad</h3>
+              <p className="text-xs text-[#9CA3AF]">
+                Dejanos tus datos y la ciudad donde necesitás cobertura. Te avisaremos apenas incorporemos la ruta.
               </p>
             </div>
 
             <form onSubmit={handleSolicitarLocalidad} className="space-y-4">
               <div>
-                <label className="block text-xs font-heading font-bold text-white mb-1">Nombre y Apellido</label>
-                <input
-                  required
-                  value={locNombre}
-                  onChange={(e) => setLocNombre(e.target.value)}
-                  type="text"
-                  placeholder="Tu nombre completo"
-                  className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white text-sm font-sans outline-none focus:border-[#173E3B]"
+                <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1">Nombre *</label>
+                <input 
+                  type="text" 
+                  required 
+                  value={locNombre} 
+                  onChange={e => setLocNombre(e.target.value)} 
+                  placeholder="Tu nombre" 
+                  className="w-full bg-[#111318] border border-[#222530] text-white text-xs rounded-xl p-3 outline-none focus:border-[#FFD21A]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-heading font-bold text-white mb-1">Localidad solicitada</label>
-                <input
-                  required
-                  value={locCiudad}
-                  onChange={(e) => setLocCiudad(e.target.value)}
-                  type="text"
-                  placeholder="Ej: Junín, Bragado, Mercedes, etc."
-                  className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white text-sm font-sans outline-none focus:border-[#173E3B]"
+                <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1">Localidad y Provincia *</label>
+                <input 
+                  type="text" 
+                  required 
+                  value={locCiudad} 
+                  onChange={e => setLocCiudad(e.target.value)} 
+                  placeholder="Ej. Pehuajó, Buenos Aires" 
+                  className="w-full bg-[#111318] border border-[#222530] text-white text-xs rounded-xl p-3 outline-none focus:border-[#FFD21A]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-heading font-bold text-white mb-1">WhatsApp / Teléfono</label>
-                <input
-                  required
-                  value={locTel}
-                  onChange={(e) => setLocTel(e.target.value)}
-                  type="tel"
-                  placeholder="Código de área + número"
-                  className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white text-sm font-sans outline-none focus:border-[#173E3B]"
+                <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1">Teléfono / WhatsApp *</label>
+                <input 
+                  type="tel" 
+                  required 
+                  value={locTel} 
+                  onChange={e => setLocTel(e.target.value)} 
+                  placeholder="Ej. 2396 456789" 
+                  className="w-full bg-[#111318] border border-[#222530] text-white text-xs rounded-xl p-3 outline-none focus:border-[#FFD21A]"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-heading font-bold text-white mb-1">¿Qué servicio te interesa?</label>
-                <select
-                  value={locInteres}
-                  onChange={(e) => setLocInteres(e.target.value)}
-                  className="w-full h-12 bg-[#111318] border border-[#222530] px-4 rounded-xl text-white text-sm font-sans outline-none focus:border-[#173E3B]"
-                >
-                  <option value="Ambos (Financiación y Envíos)">Ambos (Financiación y Envíos Low Cost)</option>
-                  <option value="Compra y Financiación">Compra y Financiación en cuotas</option>
-                  <option value="Envíos Low Cost">Envíos Low Cost desde CABA</option>
-                </select>
-              </div>
-
-              <button
-                type="submit"
+              <button 
+                type="submit" 
                 disabled={locSubmitting}
-                className="w-full btn-lowcost text-xs uppercase tracking-wider"
+                className="w-full bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all disabled:opacity-50"
               >
-                {locSubmitting ? "Enviando..." : "Enviar solicitud de localidad"}
+                {locSubmitting ? "Enviando..." : "Solicitar incorporación por WhatsApp"}
               </button>
             </form>
+
           </div>
         </div>
       )}
 
-      {/* SECCIÓN SEO FOOTER */}
-      <section className="max-w-7xl mx-auto px-6 py-12 border-t border-[#222530]">
-        <div className="bg-[#161922] border border-[#222530] rounded-xl p-8 space-y-6">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <h2 className="text-xl font-heading font-bold text-[#FFD21A] tracking-tight">
-              Soluciones Integrales: <span className="text-[#FFD21A]">Envíos Low Cost desde CABA</span> y Financiación Propia
-            </h2>
-            <p className="text-[#9CA3AF] text-xs font-sans leading-relaxed">
-              Cuenta Hogar es tu puente directo entre Buenos Aires y las localidades de cobertura (Lincoln, Zavalía, Los Toldos, Chivilcoy y O'Brien).
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-white font-sans">
-            <div className="bg-[#111318] p-4 rounded-lg border border-[#222530] space-y-1.5">
-              <h3 className="font-heading font-bold text-[#FFD21A] text-xs">Envíos Low Cost</h3>
-              <p className="leading-relaxed text-[#9CA3AF]">
-                Recepción en CABA (Caracas 1101), acopio seguro, consolidación de bultos y entrega en domicilio en localidades atendidas.
-              </p>
-            </div>
-
-            <div className="bg-[#111318] p-4 rounded-lg border border-[#222530] space-y-1.5">
-              <h3 className="font-heading font-bold text-[#FFD21A] text-xs">Emprendedores y Comercios</h3>
-              <p className="leading-relaxed text-[#9CA3AF]">
-                Consolidación sin cargo para compras de distintos proveedores en Capital Federal. Pagá únicamente por los bultos trasladados.
-              </p>
-            </div>
-
-            <div className="bg-[#111318] p-4 rounded-lg border border-[#222530] space-y-1.5">
-              <h3 className="font-heading font-bold text-[#FFD21A] text-xs">Transporte Propio</h3>
-              <p className="leading-relaxed text-[#9CA3AF]">
-                Recorridos programados con transporte propio. Control directo sobre la carga y previsibilidad en los tiempos de entrega.
-              </p>
-            </div>
-
-            <div className="bg-[#111318] p-4 rounded-lg border border-[#222530] space-y-1.5">
-              <h3 className="font-heading font-bold text-[#FFD21A] text-xs">Financiación a Sola Firma</h3>
-              <p className="leading-relaxed text-[#9CA3AF]">
-                Planes de cuotas directos sin bancos a través del vendedor afiliado de tu localidad. Acompañamiento para gestionar el service oficial.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <Footer />
-    </div>
-  );
-}
 
-function ProductCard({ p, formatPrice }: { p: Producto; formatPrice: (price: number) => string }) {
-  const [activeIdx, setActiveIdx] = useState(0);
-  const images = p.imagenUrls && p.imagenUrls.length > 0 ? p.imagenUrls : (p.imagenUrl ? [p.imagenUrl] : []);
-
-  const planes = (() => {
-    const cProd = Number(p.costoProducto || p.precioContado) || 0;
-    const factores = p.factoresPlanes;
-    let activos = p.planesActivos;
-
-    if (!activos || Object.keys(activos).length === 0) {
-      activos = {
-        12: Boolean(p.cuota12 && p.cuota12 > 0),
-        8: Boolean(p.cuota8 && p.cuota8 > 0)
-      };
-    }
-
-    return calcularTablaTodosLosPlanes(cProd, factores, activos).map(plan => {
-      let cuota = plan.cuotaMensual;
-      if (plan.cuotas === 12 && p.cuota12 && p.cuota12 > 0 && (!factores || !factores[12])) {
-        cuota = p.cuota12;
-      } else if (plan.cuotas === 8 && p.cuota8 && p.cuota8 > 0 && (!factores || !factores[8])) {
-        cuota = p.cuota8;
-      }
-      return { ...plan, cuotaMensual: cuota };
-    }).filter(plan => plan.activo && plan.cuotaMensual > 0);
-  })();
-
-  const [cuotaElegida, setCuotaElegida] = useState<number>(() => {
-    return planes.some(pl => pl.cuotas === 12) ? 12 : (planes[planes.length - 1]?.cuotas || 12);
-  });
-
-  const planActual = planes.find(pl => pl.cuotas === cuotaElegida) || planes[planes.length - 1];
-  const cuotaMensual = planActual ? planActual.cuotaMensual : (p.cuota12 || 0);
-
-  const handleNext = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setActiveIdx((prev) => (prev + 1) % images.length);
-  };
-
-  const handlePrev = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setActiveIdx((prev) => (prev - 1 + images.length) % images.length);
-  };
-
-  return (
-    <div className="bg-[#161922] hover:bg-[#161922] border border-[#222530] hover:border-[#173E3B]/60 rounded-xl overflow-hidden transition-all duration-180 flex flex-col shadow-xs relative">
-      
-      <div className="relative aspect-square bg-[#161922] p-5 flex flex-col items-center justify-center overflow-hidden border-b border-[#222530] group/img">
-        {images.length > 0 ? (
-          <img 
-            src={images[activeIdx]} 
-            alt={p.nombre} 
-            className="w-full h-full object-contain" 
-            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/logo-cuenta-hogar-oficial.png"; }} 
-          />
-        ) : (
-          <span className="text-[#9CA3AF] text-xs italic font-sans">Imagen de equipo sugerido</span>
-        )}
-        
-        {images.length > 1 && (
-          <>
-            <button
-              onClick={handlePrev}
-              type="button"
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-[#111318]/80 hover:bg-[#111318] text-white rounded-full p-1.5 transition-opacity opacity-0 group-hover/img:opacity-100"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            
-            <button
-              onClick={handleNext}
-              type="button"
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#111318]/80 hover:bg-[#111318] text-white rounded-full p-1.5 transition-opacity opacity-0 group-hover/img:opacity-100"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </>
-        )}
-      </div>
-      
-      <div className="p-5 flex flex-col flex-1">
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-[#111318] text-[#FFD21A] border border-[#222530] text-[10px] font-heading font-bold uppercase tracking-wider mb-2 w-fit">
-          PLAN DE GESTIÓN
-        </span>
-        
-        <h3 className="text-sm font-heading font-bold text-white line-clamp-2 leading-snug mb-3">
-          {p.nombre}
-        </h3>
-
-        {planes.length > 0 && (
-          <div className="mb-4">
-            <label className="block text-[10px] font-heading font-bold text-[#9CA3AF] uppercase mb-1">
-              Planes de Cuotas:
-            </label>
-            <div className="flex flex-wrap gap-1">
-              {planes.map((pl) => (
-                <button
-                  key={pl.cuotas}
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setCuotaElegida(pl.cuotas);
-                  }}
-                  className={`px-2 py-0.5 rounded-md text-[10px] font-heading font-bold transition-all ${
-                    cuotaElegida === pl.cuotas
-                      ? "bg-[#111318] text-white"
-                      : "bg-[#111318] text-[#9CA3AF] border border-[#222530] hover:text-white"
-                  }`}
-                >
-                  {pl.cuotas} {pl.cuotas === 1 ? "Cuota" : "Cuotas"}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        <div className="mt-auto flex flex-col justify-end pt-2 border-t border-[#222530]">
-          <p className="text-xs text-[#9CA3AF] font-sans">
-            Llevalo en {cuotaElegida} {cuotaElegida === 1 ? "cuota" : "cuotas"} desde
-          </p>
-          <p className="text-xl font-heading font-bold text-[#FFD21A] mb-3">
-            {formatPrice(cuotaMensual)} <span className="text-xs text-[#9CA3AF] font-normal">/ mes</span>
-          </p>
-
-          <Link 
-            href={`/solicitar?id=${p.id}&cuotas=${cuotaElegida}`} 
-            className="w-full bg-[#111318] hover:bg-[#112F2D] text-white font-heading font-semibold text-[11px] tracking-wider h-10 rounded-lg flex items-center justify-center gap-1.5 transition-all uppercase"
-          >
-            <span>SOLICITAR ESTE PLAN</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-      </div>
     </div>
   );
 }

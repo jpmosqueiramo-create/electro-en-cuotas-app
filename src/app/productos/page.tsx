@@ -1,14 +1,5 @@
-import { Metadata } from "next";
-import PublicCatalog from "@/components/PublicCatalog";
-
-export const metadata: Metadata = {
-  title: "Servicio de Compra | Cuenta Hogar",
-  description: "Comprar en Capital, más simple desde el interior. Buscamos alternativas, gestionamos la compra mediante mandato, coordinamos la recepción y el traslado, y te ofrecemos un plan de cuotas.",
-  alternates: {
-    canonical: "https://cuenta-hogar.web.app/servicio-de-compra"
-  }
-};
+import { redirect } from "next/navigation";
 
 export default function ProductosPage() {
-  return <PublicCatalog />;
+  redirect("/servicio-de-compra");
 }

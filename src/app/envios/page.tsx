@@ -74,7 +74,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
               {/* BADGE PRELANZAMIENTO NOVIEMBRE 2026 */}
               <div className="inline-flex items-center gap-2 text-xs font-mono font-extrabold uppercase tracking-widest bg-[#FFD21A] text-[#111318] px-3.5 py-1.5 rounded-lg shadow-sm">
                 <span className="w-2 h-2 rounded-full bg-[#111318] animate-pulse"></span>
-                <span>LANZAMIENTO · NOVIEMBRE 2026</span>
+                <span>DISPONIBLE DESDE EL 25 DE NOVIEMBRE DE 2026</span>
               </div>
 
               {/* TAG LOGÍSTICO */}
@@ -93,10 +93,10 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
 
               {/* BAJADA */}
               <p className="text-base sm:text-xl text-[#D1D5DB] font-sans font-medium leading-relaxed max-w-2xl drop-shadow-xs">
-                Recibimos tus compras en nuestro punto logístico de CABA (Caracas 1101), consolidamos tus bultos y los transportamos con flota propia hasta tu localidad en el interior.
+                Recibimos tus compras en nuestro punto logístico de CABA (Caracas 1101), consolidamos tus bultos y los transportamos con transporte programado hasta tu localidad en el interior.
               </p>
               <div className="p-4 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-xl text-xs sm:text-sm text-[#FFD21A] font-bold space-y-1 max-w-2xl">
-                <p className="font-extrabold">Servicio disponible desde noviembre de 2026.</p>
+                <p className="font-extrabold">Servicio disponible desde el 25 de noviembre de 2026.</p>
                 <p className="text-[#D1D5DB] font-normal text-xs">Ya estamos recibiendo consultas para los próximos recorridos. Consultanos cómo funcionará en tu localidad.</p>
               </div>
 
@@ -133,7 +133,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
-                  <span>Transporte propio</span>
+                  <span>Transporte habilitado</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
@@ -148,7 +148,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
               <div className="relative rounded-2xl overflow-hidden border-2 border-[#FFFDFC]/20 shadow-2xl group">
                 <img 
                   src="/flota-cuenta-hogar.jpg" 
-                  alt="Operación de transporte propio Cuenta Hogar" 
+                  alt="Operación logística programada Cuenta Hogar" 
                   className="w-full h-[360px] sm:h-[440px] lg:h-[480px] object-cover group-hover:scale-102 transition-transform duration-700" 
                 />
                 
@@ -192,7 +192,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
               Seleccioná tu destino y el tipo de carga para obtener una estimación rápida e iniciar la cotización por WhatsApp.
             </p>
             <div className="inline-block p-3 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-xl text-xs font-bold text-[#FFD21A] mt-1">
-              Servicio disponible desde noviembre de 2026 · Ya estamos recibiendo consultas
+              Servicio disponible desde el 25 de noviembre de 2026 · Ya estamos recibiendo consultas
             </div>
           </div>
 
@@ -261,7 +261,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
           {/* TEXTO DE CIERRE CENTRALIZADO */}
           <div className="bg-[#161922] border border-[#222530] p-8 rounded-2xl text-center space-y-3 max-w-3xl mx-auto shadow-sm">
             <p className="text-base sm:text-lg font-heading font-bold text-[#FFD21A] leading-relaxed">
-              Centralizamos la recepción de tus proveedores en Buenos Aires y nos encargamos del traslado completo con nuestra flota.
+              Centralizamos la recepción de tus proveedores en Buenos Aires y nos encargamos del traslado completo hacia tu localidad.
             </p>
             <p className="text-xs text-[#9CA3AF] font-sans">
               Recepción centralizada en CABA (Caracas 1101) previa coordinación administrativa.
@@ -326,7 +326,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
                 {
                   numero: "05",
                   titulo: "Recorrido activo",
-                  descripcion: "Cargamos en nuestra flota propia según la ruta programada.",
+                  descripcion: "Cargamos en nuestro transporte según la ruta programada.",
                   badge: "EN RUTA"
                 },
                 {
@@ -438,7 +438,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
                 {
                   numero: "05",
                   titulo: "Recorrido activo",
-                  descripcion: "Cargamos en nuestra flota propia según la ruta programada.",
+                  descripcion: "Cargamos en nuestro transporte según la ruta programada.",
                   badge: "EN RUTA"
                 },
                 {
@@ -621,7 +621,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
               {/* AVISO DISCRETO DE PRELANZAMIENTO */}
               <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#FFD21A] bg-[#FFD21A]/10 border border-[#FFD21A]/20 px-3.5 py-2 rounded-xl">
                 <CalendarClock className="w-4 h-4 text-[#FFD21A]" />
-                <span>Disponible desde noviembre · Ya estamos recibiendo consultas</span>
+                <span>Disponible desde el 25 de noviembre de 2026 · Ya estamos recibiendo consultas</span>
               </div>
 
               {/* LOS CUATRO BENEFICIOS ORGANIZACIONALES */}
@@ -712,26 +712,44 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
               Cuenta Hogar, cerca de los negocios del interior
             </h2>
             <p className="text-base sm:text-lg text-[#FFD21A] font-bold leading-relaxed">
-              Comprá a distintos proveedores en Capital. Nosotros recibimos, organizamos y consolidamos tus compras para que lleguen juntas en un solo envío.
+              Comprá a distintos proveedores en Capital. Nosotros recibimos, organizamos y consolidamos tus compras en CABA para trasladarlas juntas a tu localidad.
             </p>
           </div>
 
-          {/* DESTACADO PRINCIPAL: CONSOLIDACIÓN SIN CARGO */}
-          <div className="bg-[#161922] border-2 border-[#FFD21A] rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xl relative overflow-hidden">
-            <div className="space-y-2 max-w-2xl relative z-10">
-              <span className="inline-block bg-[#FFD21A] text-[#111318] text-xs font-mono font-extrabold uppercase px-3 py-1 rounded-md tracking-wider">
-                BENEFICIO LOGÍSTICO EXCLUSIVO
-              </span>
-              <h3 className="text-2xl font-extrabold text-white">
-                CONSOLIDACIÓN SIN CARGO DE MÚLTIPLES PROVEEDORES
-              </h3>
-              <p className="text-sm text-[#D1D5DB] leading-relaxed">
-                Comprá en distintos locales de CABA. Agrupamos todos tus paquetes en nuestro depósito y pagás un único envío ajustado al volumen total.
-              </p>
+          {/* BLOQUE OFICIAL DE CUPOS LIMITADOS Y GRATUIDAD DE RECEPCIÓN / CONSOLIDACIÓN */}
+          <div className="bg-[#161922] border-2 border-[#FFD21A] rounded-2xl p-6 sm:p-8 space-y-4 shadow-2xl relative overflow-hidden">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-[#222530] pb-6">
+              <div className="space-y-2 max-w-2xl">
+                <span className="inline-block bg-[#FFD21A] text-[#111318] text-xs font-mono font-extrabold uppercase px-3 py-1 rounded-md tracking-wider">
+                  BENEFICIO LOGÍSTICO ESPECIAL
+                </span>
+                <h3 className="text-2xl font-extrabold text-white">
+                  Recepción y consolidación sin cargo, con cupos limitados
+                </h3>
+                <p className="text-sm text-[#D1D5DB] leading-relaxed">
+                  Si comprás mercadería de forma recurrente en CABA, podés utilizar nuestro centro de recepción para reunir compras de distintos proveedores sin costo adicional por recepción ni consolidación. Trabajaremos con una cantidad limitada de clientes recurrentes para mantener el espacio, la organización y la calidad del servicio.
+                </p>
+              </div>
+
+              <div className="bg-[#111318] border border-[#2A2E3D] px-6 py-4 rounded-xl text-center shrink-0 w-full md:w-auto">
+                <span className="block text-[11px] font-mono text-[#9CA3AF] uppercase font-bold">Punto Logístico CABA</span>
+                <span className="block text-sm font-bold text-[#FFD21A] mt-0.5">Caracas 1101, Capital Federal</span>
+              </div>
             </div>
-            <div className="bg-[#111318] border border-[#2A2E3D] px-6 py-4 rounded-xl text-center shrink-0 w-full md:w-auto relative z-10">
-              <span className="block text-[11px] font-mono text-[#9CA3AF] uppercase font-bold">Base Logística en CABA</span>
-              <span className="block text-sm font-bold text-[#FFD21A] mt-0.5">Caracas 1101, Capital Federal</span>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2">
+              <div className="text-xs text-[#FFD21A] font-bold font-mono">
+                * Nota: La recepción y consolidación en CABA son sin cargo. El traslado al interior tiene costo según la mercadería y el recorrido.
+              </div>
+              <a
+                href="https://wa.me/5491125659686?text=Hola%2C%20quiero%20conocer%20c%C3%B3mo%20funcionar%C3%A1%20%2AEnv%C3%ADos%20Low%20Cost%20de%20Cuenta%20Hogar%2A%20para%20mi%20negocio/emprendimiento%20a%20partir%20de%20noviembre.%0A%0ARealizo%20compras%20en%20CABA%20y%20me%20interesa%20poder%20recibirlas%20en%20un%20mismo%20punto%2C%20consolidarlas%20sin%20cargo%20y%20trasladarlas%20juntas%20hasta%20mi%20localidad.%0A%0A%F0%9F%93%8D%20Mi%20localidad%20es%3A%0A%0A%C2%BFMe%20cuentan%20c%C3%B3mo%20funcionar%C3%A1%20el%20servicio%20para%20mi%20negocio%3F"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-lowcost text-xs uppercase tracking-wider shrink-0"
+              >
+                <WhatsAppIcon className="w-4 h-4" />
+                QUIERO CONOCER EL SERVICIO PARA MI NEGOCIO
+              </a>
             </div>
           </div>
 
@@ -744,7 +762,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
               </div>
               <h4 className="text-base font-bold text-white">Un solo punto de recepción</h4>
               <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                Tus proveedores envían sus entregas directamente a Caracas 1101 en CABA.
+                Recepción sin cargo en Caracas 1101, CABA para las entregas de todos tus proveedores.
               </p>
             </div>
 
@@ -754,7 +772,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
               </div>
               <h4 className="text-base font-bold text-white">Compras organizadas</h4>
               <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                Identificamos y mantenemos agrupada la mercadería correspondiente a tu comercio.
+                Identificamos y agrupamos la mercadería correspondiente a tu comercio.
               </p>
             </div>
 
@@ -764,7 +782,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
               </div>
               <h4 className="text-base font-bold text-white">Consolidación sin cargo</h4>
               <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                Reunimos compras realizadas a distintos proveedores antes del traslado.
+                Reunimos compras de distintos proveedores sin costo extra antes de enviarlas.
               </p>
             </div>
 
@@ -774,7 +792,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
               </div>
               <h4 className="text-base font-bold text-white">Entrega en tu comercio</h4>
               <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                Aprovechamos los recorridos programados para llevar la carga directo a tu local.
+                Traslado con tarifa única por volumen total entregado en la puerta de tu local.
               </p>
             </div>
 

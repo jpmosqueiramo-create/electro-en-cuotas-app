@@ -56,7 +56,7 @@ export default function RedAfiliadosPage() {
               </h1>
 
               <p className="text-base sm:text-lg text-[#F7F3EC]/90 font-sans font-normal leading-relaxed max-w-2xl">
-                Nuestros vendedor afiliadoes afiliados conocen a las personas de su localidad, acompañan cada solicitud y mantienen una relación cercana durante todo el proceso.
+                Nuestros vendedores afiliados conocen a las personas de su localidad, acompañan cada solicitud y mantienen una relación cercana durante todo el proceso.
               </p>
 
               <div className="pt-4">
@@ -414,13 +414,13 @@ export default function RedAfiliadosPage() {
           </span>
 
           <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-heading font-extrabold tracking-tight leading-tight text-[#FFFDFC]">
-            No buscamos vendedor afiliadoes masivamente.<br />
+            No buscamos vendedores afiliados masivamente.<br />
             <span className="text-[#FFD21A]">Buscamos personas de confianza.</span>
           </h2>
 
           <div className="space-y-4 text-base sm:text-lg text-[#F7F3EC]/90 font-sans font-normal leading-relaxed max-w-3xl mx-auto pt-2">
             <p>
-              La red de Cuenta Hogar crece de manera selectiva. Los nuevos vendedor afiliadoes afiliados suelen incorporarse a través de referencias de personas que ya trabajan con nosotros, clientes o vínculos que conocemos previamente.
+              La red de Cuenta Hogar crece de manera selectiva. Los nuevos vendedores afiliados suelen incorporarse a través de referencias de personas que ya trabajan con nosotros, clientes o vínculos que conocemos previamente.
             </p>
             <p className="text-sm text-[#F7F3EC]/80">
               Antes de incorporar una nueva localidad o un nuevo vendedor afiliado, evaluamos las referencias, la relación y la posibilidad real de desarrollar esa zona de manera responsable.
@@ -514,6 +514,34 @@ export default function RedAfiliadosPage() {
             </Link>
           </div>
 
+        </div>
+      </section>
+
+            {/* MODELO DE INCORPORACIÓN POR CONFANZA Y RECOMENDACIÓN */}
+      <section className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530]">
+        <div className="max-w-4xl mx-auto px-6 text-center space-y-6">
+          <span className="inline-block bg-[#161922] border border-[#FFD21A]/30 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full">
+            MODELO DE INCORPORACIÓN
+          </span>
+          <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#FFD21A]">
+            Confianza local y vínculo cercano
+          </h2>
+          <p className="text-sm sm:text-base text-[#9CA3AF] font-sans leading-relaxed max-w-2xl mx-auto">
+            Nuestra Red de Vendedores Afiliados se conforma principalmente a través de recomendaciones, vínculos de confianza previa y conocimiento directo en cada localidad.
+          </p>
+          <div className="bg-[#161922] border border-[#222530] p-6 rounded-2xl max-w-xl mx-auto space-y-2">
+            <p className="text-xs text-[#D1D5DB] font-medium">
+              Si fuiste recomendado por un integrante de Cuenta Hogar o ya mantenés un vínculo comercial con nosotros, podés acceder directamente a tu panel.
+            </p>
+            <div className="pt-2">
+              <Link 
+                href="/login-afiliado" 
+                className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-xl transition-all"
+              >
+                <span>Acceso Vendedores Afiliados</span>
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 

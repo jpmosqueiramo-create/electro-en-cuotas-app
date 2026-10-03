@@ -152,7 +152,7 @@ export default function NosotrosPage() {
               </div>
               <h3 className="text-xl font-bold text-white">Transporte Propio</h3>
               <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                Sin intermediarios ni desvíos. Unidades equipadas para traslados seguros en nuestros recorridos semanales programados.
+                Operación logística organizada. Unidades equipadas para traslados seguros en nuestros recorridos semanales programados.
               </p>
             </div>
 
