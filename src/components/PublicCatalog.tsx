@@ -555,19 +555,19 @@ export default function PublicCatalog() {
                 </div>
                 <div className="bg-[#161922] p-3.5 rounded-lg border border-[#222530] flex items-center gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-[#2F7D5C] shrink-0" />
-                  <span>Organización profesional con total previsibilidad.</span>
+                  <span>Organización de tus compras en un solo lugar.</span>
                 </div>
               </div>
 
               <div className="pt-2 text-center md:text-left">
                 <a
-                  href="https://wa.me/5491125659686?text=Hola!%20Quiero%20usar%20*Env%C3%ADos%20Low%20Cost*%20para%20mi%20negocio%20/%20emprendimiento."
+                  href="https://wa.me/5491125659686?text=Hola%2C%20quiero%20conocer%20c%C3%B3mo%20funcionar%C3%A1%20%2AEnv%C3%ADos%20Low%20Cost%20de%20Cuenta%20Hogar%2A%20para%20mi%20negocio/emprendimiento%20a%20partir%20de%20noviembre.%0A%0ARealizo%20compras%20en%20CABA%20y%20me%20interesa%20poder%20recibirlas%20en%20un%20mismo%20punto%2C%20consolidarlas%20sin%20cargo%20y%20trasladarlas%20juntas%20hasta%20mi%20localidad.%0A%0A%F0%9F%93%8D%20Mi%20localidad%20es%3A%0A%0A%C2%BFMe%20cuentan%20c%C3%B3mo%20funcionar%C3%A1%20el%20servicio%20para%20mi%20negocio%3F"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-lowcost text-xs uppercase tracking-wider"
                 >
                   <WhatsAppIcon className="w-4 h-4" />
-                  Quiero usar Envíos Low Cost para mi negocio
+                  QUIERO CONOCER EL SERVICIO PARA MI NEGOCIO
                 </a>
               </div>
             </div>
