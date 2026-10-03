@@ -286,10 +286,10 @@ export default function HomeTechCatalog() {
             {/* COLUMNA IZQUIERDA: ORDEN MOBILE STRICT: 1.TÍTULO -> 2.SUBTÍTULO -> 3.CTAs -> 4.FOTO TRANSIT (Mobile) -> 5.DIFERENCIALES */}
             <div className="lg:col-span-6 space-y-4 sm:space-y-6 text-left">
               
-              {/* BADGE PRELANZAMIENTO NOVIEMBRE 2026 */}
+              {/* BADGE SERVICIO DE COMPRA YA DISPONIBLE */}
               <div className="inline-flex items-center gap-2 text-xs font-mono font-extrabold uppercase tracking-widest bg-[#FFD21A] text-[#111318] px-3.5 py-1.5 rounded-lg shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-[#111318] animate-pulse"></span>
-                <span>LANZAMIENTO · NOVIEMBRE 2026</span>
+                <span className="w-2 h-2 rounded-full bg-[#111318]"></span>
+                <span>SERVICIO DE COMPRA · YA DISPONIBLE</span>
               </div>
 
               {/* 1. TÍTULO PRINCIPAL (BLANCO + AMARILLO ELÉCTRICO) */}
@@ -307,10 +307,10 @@ export default function HomeTechCatalog() {
                 </p>
                 <div className="p-3.5 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-xl max-w-xl text-xs sm:text-sm text-[#FFD21A] font-bold leading-snug space-y-1">
                   <p className="font-extrabold text-[#FFD21A]">
-                    Todos los servicios de Cuenta Hogar estarán disponibles desde noviembre.
+                    Servicio de Compra activo y disponible.
                   </p>
                   <p className="text-[#D1D5DB] font-normal text-xs">
-                    Ya estamos recibiendo consultas. Escribinos y te contamos cómo funcionará el servicio en tu localidad.
+                    Desde el 25 de noviembre sumamos Envíos Low Cost y ampliamos nuestra capacidad logística con la unidad Ford Transit techo elevado.
                   </p>
                 </div>
               </div>
@@ -346,7 +346,7 @@ export default function HomeTechCatalog() {
                   />
                 </div>
                 <p className="text-[11px] font-mono text-[#9CA3AF] text-center mt-2">
-                  Nuestra Ford Transit · Operación logística · Recorridos semanales CABA → Tu domicilio
+                  Ford Transit techo elevado · Operativa desde noviembre 2026 · CABA → Interior
                 </p>
               </div>
 
@@ -381,7 +381,7 @@ export default function HomeTechCatalog() {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-transparent to-transparent opacity-70 pointer-events-none" />
               </div>
               <p className="text-xs font-mono text-[#9CA3AF] text-right mt-2.5">
-                Transporte propio · Recorridos programados · Recorridos programados CABA → Interior
+                Ford Transit techo elevado · Operativa desde noviembre 2026 · CABA → Interior
               </p>
             </div>
 
@@ -615,7 +615,7 @@ export default function HomeTechCatalog() {
             {/* CTA RECONVERTIDO PARA WHATSAPP EMPRENDEDORES */}
             <div className="text-center pt-2">
               <a 
-                href="https://wa.me/5491125659686?text=Hola%2C%20quiero%20conocer%20el%20servicio%20de%20Cuenta%20Hogar%20para%20emprendedores%20y%20comercios.%0A%0ATengo%20un%20negocio/emprendimiento%20y%20realizo%20compras%20recurrentes%20en%20CABA.%0AMe%20interesa%20saber%20c%C3%B3mo%20funciona%20la%20recepci%C3%B3n%20de%20mercader%C3%ADa%2C%20la%20consolidaci%C3%B3n%20sin%20cargo%20y%20el%20traslado%20al%20interior.%0A%0AMi%20localidad%3A%0ATipo%20de%20mercader%C3%ADa%20que%20compro%3A%0AFrecuencia%20aproximada%20de%20compras%3A%0ACantidad%20estimada%20de%20bultos%20por%20env%C3%ADo%3A%0A%0A%C2%BFMe%20pueden%20contar%20c%C3%B3mo%20funciona%20el%20servicio%20y%20qu%C3%A9%20opciones%20tengo%20para%20mi%20negocio%3F" 
+                href="https://wa.me/5491125659686?text=Hola%2C%20quiero%20conocer%20c%C3%B3mo%20funcionar%C3%A1%20Env%C3%ADos%20Low%20Cost%20de%20Cuenta%20Hogar%20para%20mi%20negocio/emprendimiento%20a%20partir%20del%2025%20de%20noviembre.%0A%0ARealizo%20compras%20en%20CABA%20y%20me%20interesa%20poder%20recibirlas%20en%20un%20mismo%20punto%2C%20consolidarlas%20sin%20cargo%20y%20trasladarlas%20juntas%20hasta%20mi%20localidad.%0A%0A%F0%9F%93%8D%20Mi%20localidad%20es%3A%0A%0A%C2%BFMe%20cuentan%20c%C3%B3mo%20funcionar%C3%A1%20el%20servicio%20para%20mi%20negocio%3F" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold text-xs uppercase tracking-wider px-8 py-4 rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95"
@@ -644,7 +644,7 @@ export default function HomeTechCatalog() {
                 Explorá opciones de compra
               </h2>
               <p className="text-sm text-[#4B5563]">
-                Conocé algunos de los productos cuya compra podemos gestionar y una estimación del plan de pagos.
+                Conocé algunos de los productos cuya compra podemos gestionar y una estimación del plan de cuotas.
               </p>
             </div>
 
@@ -718,7 +718,7 @@ export default function HomeTechCatalog() {
                         {/* PLAN DE CUOTAS */}
                         <div className="bg-white border border-[#E5E7EB] p-4 rounded-xl space-y-2">
                           <span className="text-[10px] font-mono font-bold text-[#6B7280] uppercase block">
-                            PLAN DE PAGOS ESTIMADO
+                            PLAN DE CUOTAS ESTIMADO
                           </span>
                           {plan12 ? (
                             <div className="flex items-baseline justify-between">

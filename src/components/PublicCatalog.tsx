@@ -412,12 +412,12 @@ export default function PublicCatalog() {
               },
               {
                 num: "02",
-                titulo: "Buscamos alternativas y propuesta",
-                desc: "Buscamos alternativas disponibles y te presentamos una propuesta para que puedas evaluar cómo avanzar."
+                titulo: "Gestionamos la compra y la recepción",
+                desc: "Con el mandato formalizado, gestionamos la adquisición solicitada. Luego recibimos e identificamos el producto en CABA y lo preparamos para su traslado."
               },
               {
                 num: "03",
-                titulo: "Definimos el Plan de Cuotas",
+                titulo: "Definimos el Plan de Cuotas Fijas",
                 desc: "Te enviamos una propuesta clara con el valor del plan en cuotas fijas ajustado a la operación."
               },
               {
@@ -664,7 +664,7 @@ export default function PublicCatalog() {
               onClick={() => setModalLocalidadOpen(true)}
               className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#FFD21A] hover:underline bg-[#161922] border border-[#FFD21A]/30 px-4 py-2 rounded-xl"
             >
-              <span>¿Tu localidad todavía no está en nuestra cobertura? Consultar por mi localidad →</span>
+              <span>¿Tu localidad todavía no está en nuestra cobertura? Consultanos →</span>
             </button>
           </div>
 
@@ -751,7 +751,7 @@ export default function PublicCatalog() {
                 Contanos qué producto necesitás
               </h2>
               <p className="text-sm text-[#9CA3AF] max-w-xl mx-auto">
-                Ingresá tus datos y te enviaremos por WhatsApp una propuesta para gestionar tu compra en CABA, con las condiciones del plan de pagos.
+                Ingresá tus datos y te enviaremos por WhatsApp una propuesta para gestionar tu compra en CABA, con las condiciones del plan de cuotas.
               </p>
             </div>
 
@@ -881,7 +881,7 @@ export default function PublicCatalog() {
             </button>
 
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-white">Solicitar Nueva Localidad</h3>
+              <h3 className="text-xl font-bold text-white">Consultar por Mi Localidad</h3>
               <p className="text-xs text-[#9CA3AF]">
                 Dejanos tus datos y la ciudad donde necesitás cobertura. Te avisaremos apenas incorporemos la ruta.
               </p>

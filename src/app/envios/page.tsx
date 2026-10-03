@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Envíos Low Cost CABA al Interior | Cuenta Hogar",
+  title: { absolute: "Envíos Low Cost | Cuenta Hogar" },
   description: "Recibimos tu compra en nuestro centro logístico de CABA (Caracas 1101) y la llevamos a tu domicilio en el interior con transporte propio y recorridos programados.",
   keywords: [
     "Envíos Low Cost CABA",
@@ -313,7 +313,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
                 },
                 {
                   numero: "03",
-                  titulo: "Verificación",
+                  titulo: "Recepción e Identificación",
                   descripcion: "Recibimos, etiquetamos e identificamos tus bultos.",
                   badge: "CONTROL"
                 },
@@ -425,7 +425,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
                 },
                 {
                   numero: "03",
-                  titulo: "Verificación",
+                  titulo: "Recepción e Identificación",
                   descripcion: "Recibimos, etiquetamos e identificamos tus bultos.",
                   badge: "CONTROL"
                 },
@@ -739,7 +739,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2">
               <div className="text-xs text-[#FFD21A] font-bold font-mono">
-                * Nota: La recepción y consolidación en CABA son sin cargo. El traslado al interior tiene costo según la mercadería y el recorrido.
+                * Nota: La recepción, consolidación y custodia temporal de la mercadería no tienen costo adicional para clientes recurrentes. El traslado al interior se cotiza por bulto según sus características y el recorrido.
               </div>
               <a
                 href="https://wa.me/5491125659686?text=Hola%2C%20quiero%20conocer%20c%C3%B3mo%20funcionar%C3%A1%20%2AEnv%C3%ADos%20Low%20Cost%20de%20Cuenta%20Hogar%2A%20para%20mi%20negocio/emprendimiento%20a%20partir%20de%20noviembre.%0A%0ARealizo%20compras%20en%20CABA%20y%20me%20interesa%20poder%20recibirlas%20en%20un%20mismo%20punto%2C%20consolidarlas%20sin%20cargo%20y%20trasladarlas%20juntas%20hasta%20mi%20localidad.%0A%0A%F0%9F%93%8D%20Mi%20localidad%20es%3A%0A%0A%C2%BFMe%20cuentan%20c%C3%B3mo%20funcionar%C3%A1%20el%20servicio%20para%20mi%20negocio%3F"
@@ -792,7 +792,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
               </div>
               <h4 className="text-base font-bold text-white">Entrega en tu comercio</h4>
               <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                Traslado con tarifa única por volumen total entregado en la puerta de tu local.
+                Traslado cotizado por bulto según sus características y el recorrido.
               </p>
             </div>
 

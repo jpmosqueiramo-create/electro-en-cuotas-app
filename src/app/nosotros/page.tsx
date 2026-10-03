@@ -35,7 +35,7 @@ export default function NosotrosPage() {
     },
     {
       q: "¿Cómo funciona la gestión de compra por mandato?",
-      a: "Nos contás qué producto necesitás. Buscamos las mejores alternativas en CABA, te enviamos la propuesta por WhatsApp con las condiciones del plan de pagos estimado y, una vez aceptada, actuamos como tu mandatario para realizar la compra, la trasladamos con nuestro transporte propio y abonás el plan acordado."
+      a: "Nos contás qué producto necesitás. Buscamos las mejores alternativas en CABA, te enviamos la propuesta por WhatsApp con las condiciones del plan de cuotas estimado y, una vez aceptada, actuamos como tu mandatario para realizar la compra, la trasladamos con nuestro transporte propio y abonás el plan acordado."
     },
     {
       q: "¿Cómo se comunican con los clientes en cada localidad?",
@@ -77,9 +77,16 @@ export default function NosotrosPage() {
               </p>
 
               <div className="bg-[#161922] border border-[#2A2E3D] p-6 lg:p-8 rounded-2xl space-y-4 shadow-xl text-sm leading-relaxed text-[#9CA3AF]">
-                <p>
-                  Ofrecemos dos líneas de servicio principales: el <strong className="text-white">Servicio de Compra por Mandato</strong> (servicio activo con plan de cuotas y gestión integral) y <strong className="text-white">Envíos Low Cost</strong> (logística económica de paquetería desde CABA al interior, con salida prevista para el <strong className="text-[#FFD21A]">25 de noviembre de 2026</strong>).
-                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-2 border-b border-[#2A2E3D]">
+                  <div className="space-y-1">
+                    <span className="text-xs font-mono font-bold text-[#FFD21A] uppercase block">SERVICIO DE COMPRA</span>
+                    <p className="text-xs text-white font-medium">Para quienes todavía necesitan resolver una compra en Capital.</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-mono font-bold text-[#FFD21A] uppercase block">ENVÍOS LOW COST</span>
+                    <p className="text-xs text-white font-medium">Para quienes realizan sus propias compras en CABA y necesitan recibirlas en el interior (disponible desde 25/11/2026).</p>
+                  </div>
+                </div>
                 <p>
                   Contamos con <strong className="text-white">centro de recepción y logística en CABA (Caracas 1101)</strong>, depósito y <strong className="text-white">unidad de transporte propia (Ford Transit techo elevado)</strong>. Esto nos permite acompañar todo el proceso: desde entender qué necesitás y gestionar la compra, hasta recibir el producto, organizar el traslado y realizar la entrega en puerta.
                 </p>
@@ -142,7 +149,7 @@ export default function NosotrosPage() {
               </div>
               <h3 className="text-xl font-bold text-white">Centro de Recepción en CABA</h3>
               <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                Ubicado estratégicamente en Caracas 1101. Recibimos, controlamos y custodiamos la mercadería previa a su salida hacia el interior.
+                Ubicado estratégicamente en Caracas 1101. Recibimos, identificamos y custodiamos la mercadería previa a su salida hacia el interior.
               </p>
             </div>
 

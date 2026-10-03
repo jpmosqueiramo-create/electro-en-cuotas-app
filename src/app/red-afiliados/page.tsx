@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Red de Vendedores Afiliados | Cuenta Hogar",
+  title: { absolute: "Red de Afiliados | Cuenta Hogar" },
   description: "Conocé la Red de Vendedores Afiliados de Cuenta Hogar. Presencia territorial, acompañamiento cercano y confianza local en cada localidad.",
   keywords: [
     "Vendedor Afiliado Cuenta Hogar",

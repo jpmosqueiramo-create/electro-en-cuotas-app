@@ -26,8 +26,8 @@ const FAQS: FaqItem[] = [
     answer: "El costo se determina según la localidad de destino, el volumen/peso de los bultos y si requiere embalaje o manipulación especial. Utilizá nuestro simulador de cotización o escribinos por WhatsApp para un cálculo exacto."
   },
   {
-    question: "¿Cómo sé cuándo llega el camión a mi domicilio?",
-    answer: "Mantenemos una comunicación continua vía WhatsApp. Te informamos el día exacto de salida del camión desde CABA y coordinamos la franja horaria de entrega en la puerta de tu casa."
+    question: "¿Cómo sé cuándo llegará mi entrega?",
+    answer: "Mantenemos una comunicación continua vía WhatsApp. Te informamos el día exacto de salida del entrega desde CABA y coordinamos la franja horaria de entrega en la puerta de tu casa."
   },
   {
     question: "¿Cómo se abona el servicio de envío?",
