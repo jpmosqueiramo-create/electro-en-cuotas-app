@@ -155,7 +155,7 @@ export default function RedAfiliadosPage() {
                 MANTIENE LA RELACIÓN
               </h3>
               <p className="text-sm text-[#9CA3AF] font-sans leading-relaxed">
-                Realiza el seguimiento de los clientes de su cartera y participa de la cobranza de las cuotas abonadas.
+                Realiza el seguimiento de los clientes de su cartera y mantiene el contacto durante el cumplimiento del plan de cuotas.
               </p>
             </div>
 
