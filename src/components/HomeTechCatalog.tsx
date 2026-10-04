@@ -355,17 +355,17 @@ export default function HomeTechCatalog() {
                 </p>
               </div>
 
-              {/* 4. FOTOGRAFÍA DE LA TRANSIT EN MOBILE (APARECE DESPUÉS DE LOS CTAs) */}
+              {/* 4. FOTOGRAFÍA DEL CENTRO DE RECEPCIÓN Y GESTIÓN EN MOBILE (APARECE DESPUÉS DE LOS CTAs) */}
               <div className="lg:hidden relative pt-2">
                 <div className="relative rounded-2xl overflow-hidden border border-[#2D323E] bg-[#090A0D] shadow-lg">
                   <img 
-                    src="/flota-cuenta-hogar.jpg" 
-                    alt="Ford Transit techo elevado oficial Cuenta Hogar realizando logística CABA - Interior" 
+                    src="/oficina-cuenta-hogar.jpg" 
+                    alt="Centro de recepción y gestión de compras de Cuenta Hogar" 
                     className="w-full h-[190px] sm:h-[240px] object-cover object-center"
                   />
                 </div>
                 <p className="text-[11px] font-mono text-[#9CA3AF] text-center mt-2">
-                  Ford Transit techo elevado · Operativa desde noviembre 2026 · CABA → Interior
+                  Centro de recepción y gestión Cuenta Hogar · Comprás en cuotas y lo recibís donde estés
                 </p>
               </div>
 
@@ -387,12 +387,12 @@ export default function HomeTechCatalog() {
 
             </div>
 
-            {/* COLUMNA DERECHA (DESKTOP): FOTOGRAFÍA PROTAGONISTA DE LA FORD TRANSIT TECHO ELEVADO SIN RECUADROS SUPERPUESTOS */}
+            {/* COLUMNA DERECHA (DESKTOP): FOTOGRAFÍA PROTAGONISTA DEL CENTRO DE RECEPCIÓN Y GESTIÓN */}
             <div className="hidden lg:block lg:col-span-6 relative lg:pt-1">
               <div className="relative rounded-3xl overflow-hidden border border-[#2D323E] bg-[#090A0D] shadow-2xl group">
                 <img 
-                  src="/flota-cuenta-hogar.jpg" 
-                  alt="Ford Transit techo elevado oficial Cuenta Hogar realizando logística real" 
+                  src="/oficina-cuenta-hogar.jpg" 
+                  alt="Centro de recepción y gestión de compras de Cuenta Hogar" 
                   className="w-full h-[440px] object-cover object-center group-hover:scale-103 transition-transform duration-700" 
                 />
                 
@@ -400,7 +400,7 @@ export default function HomeTechCatalog() {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-transparent to-transparent opacity-70 pointer-events-none" />
               </div>
               <p className="text-xs font-mono font-medium text-[#D1D5DB] text-right mt-3">
-                Ford Transit techo elevado · Operativa desde noviembre 2026 · CABA → Interior
+                Centro de recepción y gestión Cuenta Hogar · Comprás en cuotas y lo recibís donde estés
               </p>
             </div>
 
