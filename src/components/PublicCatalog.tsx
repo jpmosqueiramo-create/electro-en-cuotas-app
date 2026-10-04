@@ -743,26 +743,72 @@ export default function PublicCatalog() {
       <section id="contacto" className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530] scroll-mt-20">
         <div className="max-w-4xl mx-auto px-6">
           
-          <div className="bg-[#161922] border border-[#2A2E3D] rounded-2xl p-8 sm:p-12 shadow-2xl space-y-8 relative overflow-hidden">
-            
-            <div className="text-center space-y-3 relative z-10">
-              <span className="inline-block bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full">
-                SOLICITUD DE SERVICIO DE COMPRA
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
-                Contanos qué producto necesitás
+          <div className="bg-[#161922] border border-[#2A2E3D] rounded-2xl p-6 sm:p-10 lg:p-12 shadow-2xl space-y-6 relative overflow-hidden">
+            {/* ENCABEZADO Y BAJADA DE CONFIANZA */}
+            <div className="text-center space-y-4 relative z-10 max-w-2xl mx-auto">
+              <div className="inline-flex items-center gap-2 bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full">
+                <Sparkles className="w-3.5 h-3.5 text-[#FFD21A]" />
+                <span>CONSULTA SIN COMPROMISO</span>
+              </div>
+              
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+                Contanos qué estás buscando.<br />
+                <span className="text-[#FFD21A] block mt-1">Te orientamos sin compromiso.</span>
               </h2>
-              <p className="text-sm text-[#9CA3AF] max-w-xl mx-auto">
-                Ingresá tus datos y te enviaremos por WhatsApp una propuesta para gestionar tu compra en CABA, con las condiciones del plan de cuotas.
+              
+              <p className="text-sm sm:text-base text-[#D1D5DB] leading-relaxed">
+                Completá estos datos básicos y te escribimos por WhatsApp con alternativas, una propuesta y el plan de cuotas. Solicitarla no te obliga a avanzar.
               </p>
+
+              {/* MICROSEÑALES DE CONFIANZA */}
+              <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+                <div className="inline-flex items-center gap-1.5 bg-[#111318] border border-[#2A2E3D] px-3 py-1.5 rounded-lg text-xs font-semibold text-[#E5E7EB]">
+                  <ShieldCheck className="w-4 h-4 text-[#FFD21A]" />
+                  <span>Sin compromiso</span>
+                </div>
+                <div className="inline-flex items-center gap-1.5 bg-[#111318] border border-[#2A2E3D] px-3 py-1.5 rounded-lg text-xs font-semibold text-[#E5E7EB]">
+                  <WhatsAppIcon className="w-4 h-4 text-[#25D366]" />
+                  <span>Respuesta por WhatsApp</span>
+                </div>
+                <div className="inline-flex items-center gap-1.5 bg-[#111318] border border-[#2A2E3D] px-3 py-1.5 rounded-lg text-xs font-semibold text-[#E5E7EB]">
+                  <CreditCard className="w-4 h-4 text-[#FFD21A]" />
+                  <span>Plan de cuotas</span>
+                </div>
+              </div>
             </div>
 
-            <form onSubmit={handleQuickFormSubmit} className="space-y-5 relative z-10">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {/* PASOS SIMPLES DE QUÉ PASA DESPUÉS */}
+            <div className="bg-[#111318] border border-[#2A2E3D] p-4 sm:p-5 rounded-xl relative z-10 space-y-2 max-w-3xl mx-auto my-4">
+              <p className="text-[11px] font-mono font-bold text-[#FFD21A] uppercase tracking-wider text-center">
+                ¿CÓMO ES EL PROCESO DE CONSULTA?
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-center text-xs">
+                <div className="bg-[#161922] p-2.5 rounded-lg border border-[#222530]">
+                  <span className="text-[#FFD21A] font-bold block font-mono text-[10px]">1. CONSULTÁ</span>
+                  <span className="text-[#E5E7EB] font-medium leading-tight block">Nos contás qué necesitás</span>
+                </div>
+                <div className="bg-[#161922] p-2.5 rounded-lg border border-[#222530]">
+                  <span className="text-[#FFD21A] font-bold block font-mono text-[10px]">2. RESPUESTA</span>
+                  <span className="text-[#E5E7EB] font-medium leading-tight block">Te contactamos por WhatsApp</span>
+                </div>
+                <div className="bg-[#161922] p-2.5 rounded-lg border border-[#222530]">
+                  <span className="text-[#FFD21A] font-bold block font-mono text-[10px]">3. PROPUESTA</span>
+                  <span className="text-[#E5E7EB] font-medium leading-tight block">Alternativas y cuotas</span>
+                </div>
+                <div className="bg-[#161922] p-2.5 rounded-lg border border-[#222530]">
+                  <span className="text-[#FFD21A] font-bold block font-mono text-[10px]">4. DECISIÓN</span>
+                  <span className="text-[#E5E7EB] font-medium leading-tight block">Vos decidís si avanzar</span>
+                </div>
+              </div>
+            </div>
+
+            {/* FORMULARIO PÚBLICO */}
+            <form onSubmit={handleQuickFormSubmit} className="space-y-5 relative z-10 max-w-3xl mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                 
                 <div>
-                  <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1.5">
-                    Tu Nombre Completo *
+                  <label className="block text-xs font-bold text-[#E5E7EB] mb-1.5">
+                    Nombre y apellido <span className="text-[#FFD21A]">*</span>
                   </label>
                   <input 
                     type="text" 
@@ -770,13 +816,13 @@ export default function PublicCatalog() {
                     value={qfNombre} 
                     onChange={e => setQfNombre(e.target.value)} 
                     placeholder="Ej. Juan Pérez" 
-                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all"
+                    className="w-full bg-[#111318] border border-[#2D323E] hover:border-[#4B5563] focus:border-[#FFD21A] focus:ring-1 focus:ring-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1.5">
-                    Número de WhatsApp *
+                  <label className="block text-xs font-bold text-[#E5E7EB] mb-1.5">
+                    WhatsApp <span className="text-[#FFD21A]">*</span>
                   </label>
                   <input 
                     type="tel" 
@@ -784,13 +830,13 @@ export default function PublicCatalog() {
                     value={qfWhatsapp} 
                     onChange={e => setQfWhatsapp(e.target.value)} 
                     placeholder="Ej. 11 2345 6789" 
-                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all"
+                    className="w-full bg-[#111318] border border-[#2D323E] hover:border-[#4B5563] focus:border-[#FFD21A] focus:ring-1 focus:ring-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1.5">
-                    Localidad de Entrega *
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-[#E5E7EB] mb-1.5">
+                    Localidad de entrega <span className="text-[#FFD21A]">*</span>
                   </label>
                   <input 
                     type="text" 
@@ -798,48 +844,64 @@ export default function PublicCatalog() {
                     value={qfLocalidad} 
                     onChange={e => setQfLocalidad(e.target.value)} 
                     placeholder="Ej. Lincoln, Chivilcoy, Los Toldos..." 
-                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1.5">
-                    Vendedor Afiliado / Referente (Opcional)
-                  </label>
-                  <input 
-                    type="text" 
-                    value={qfReferente} 
-                    onChange={e => setQfReferente(e.target.value)} 
-                    placeholder="Ej. María Gómez" 
-                    className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all"
+                    className="w-full bg-[#111318] border border-[#2D323E] hover:border-[#4B5563] focus:border-[#FFD21A] focus:ring-1 focus:ring-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
                   />
                 </div>
 
               </div>
 
               <div>
-                <label className="block text-xs font-mono font-bold uppercase text-[#9CA3AF] mb-1.5">
-                  Producto que necesitás comprar (o link / modelo) *
+                <label className="block text-xs font-bold text-[#E5E7EB] mb-1.5">
+                  ¿Qué producto estás buscando? <span className="text-[#FFD21A]">*</span>
                 </label>
                 <textarea 
                   required 
                   rows={3}
                   value={qfNecesidad} 
                   onChange={e => setQfNecesidad(e.target.value)} 
-                  placeholder="Ej. Heladera No Frost Samsung 300L, Smart TV 50 pulgadas, Lavarropas Drean..." 
-                  className="w-full bg-[#111318] border border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#9CA3AF] text-sm rounded-xl p-3.5 outline-none transition-all resize-none"
+                  placeholder='Ej. Heladera Gafa 380 L, Smart TV 50", lavarropas automático o pegá un link si ya viste alguno.' 
+                  className="w-full bg-[#111318] border border-[#2D323E] hover:border-[#4B5563] focus:border-[#FFD21A] focus:ring-1 focus:ring-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all resize-none"
                 />
               </div>
 
-              <button 
-                type="submit" 
-                disabled={qfSubmitting}
-                className="w-full bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] py-4 rounded-xl font-heading font-extrabold text-sm uppercase tracking-wider transition-all disabled:opacity-50 shadow-lg shadow-[#FFD21A]/10 active:scale-95 flex items-center justify-center gap-2"
-              >
-                <Send className="w-4 h-4 text-[#111318]" />
-                <span>{qfSubmitting ? "Enviando..." : "Solicitar propuesta por WhatsApp"}</span>
-              </button>
+              <div className="pt-1">
+                <label className="block text-xs font-medium text-[#9CA3AF] mb-1">
+                  ¿Te recomendó alguien? <span className="text-[#6B7280]">(opcional)</span>
+                </label>
+                <input 
+                  type="text" 
+                  value={qfReferente} 
+                  onChange={e => setQfReferente(e.target.value)} 
+                  placeholder="Nombre del vendedor afiliado o cliente" 
+                  className="w-full bg-[#111318]/70 border border-[#222530] hover:border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#6B7280] text-xs rounded-xl p-3 outline-none transition-all"
+                />
+              </div>
 
+              <div className="pt-2 space-y-3">
+                <button 
+                  type="submit" 
+                  disabled={qfSubmitting}
+                  className="w-full bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold text-xs sm:text-sm uppercase tracking-wider py-4 rounded-xl transition-all shadow-xl shadow-[#FFD21A]/20 flex items-center justify-center gap-2 transform active:scale-98 disabled:opacity-50 cursor-pointer"
+                >
+                  {qfSubmitting ? (
+                    <span>Procesando solicitud...</span>
+                  ) : (
+                    <>
+                      <WhatsAppIcon className="w-5 h-5 text-[#111318]" />
+                      <span>QUIERO RECIBIR UNA PROPUESTA POR WHATSAPP</span>
+                    </>
+                  )}
+                </button>
+
+                <div className="text-center space-y-1">
+                  <p className="text-xs font-bold text-[#FFD21A]">
+                    Recibir una propuesta no te obliga a avanzar.
+                  </p>
+                  <p className="text-[11px] text-[#9CA3AF]">
+                    Primero vemos qué necesitás y qué alternativas podemos ofrecerte.
+                  </p>
+                </div>
+              </div>
             </form>
 
           </div>
