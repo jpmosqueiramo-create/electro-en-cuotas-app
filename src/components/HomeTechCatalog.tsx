@@ -292,48 +292,67 @@ export default function HomeTechCatalog() {
                 <span>SERVICIO DE COMPRA · YA DISPONIBLE</span>
               </div>
 
-              {/* 1. TÍTULO PRINCIPAL (BLANCO + AMARILLO ELÉCTRICO) */}
+              {/* 1. TÍTULO PRINCIPAL (ENFOCADO EN NECESIDAD + PLAN DE CUOTAS + GESTIÓN) */}
               <h1 className="text-3xl sm:text-5xl lg:text-[54px] font-extrabold tracking-tight text-white leading-[1.08]">
-                Capital tiene lo que buscás.<br />
+                Lo que necesitás,<br />
                 <span className="text-[#FFD21A] block mt-1">
-                  Nosotros hacemos que llegue.
+                  con un plan de cuotas y todo resuelto.
                 </span>
               </h1>
 
-              {/* 2. SUBTÍTULO CORTO Y DIRECTO CON AVISO PRELANZAMIENTO */}
+              {/* 2. SUBTÍTULO Y BLOQUE DE BENEFICIO PRINCIPAL */}
               <div className="space-y-3">
                 <p className="text-sm sm:text-base text-[#E5E7EB] font-normal leading-relaxed max-w-xl">
-                  Gestionamos tu compra por mandato o trasladamos lo que ya compraste hasta tu domicilio.
+                  Contanos qué estás buscando. Te ayudamos a encontrar alternativas, gestionamos la compra mediante mandato y coordinamos la recepción, el traslado y la entrega en tu domicilio.
                 </p>
-                <div className="p-4 bg-[#161922] border border-[#FFD21A]/40 rounded-xl max-w-xl text-xs sm:text-sm text-white font-bold leading-snug space-y-1.5 shadow-md">
+                <div className="p-4 bg-[#161922] border border-[#FFD21A]/40 rounded-xl max-w-xl text-xs sm:text-sm text-white font-bold leading-snug space-y-2 shadow-md">
                   <p className="font-extrabold text-[#FFD21A] text-sm">
-                    Servicio de Compra activo y disponible.
+                    Una sola gestión para resolver tu compra de punta a punta.
                   </p>
-                  <p className="text-[#D1D5DB] font-normal text-xs leading-relaxed">
-                    Desde el 25 de noviembre sumamos Envíos Low Cost y ampliamos nuestra capacidad logística con la unidad Ford Transit techo elevado.
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs font-semibold text-[#D1D5DB] pt-1.5 border-t border-[#2A2E3D]">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[#FFD21A] font-bold">✓</span>
+                      <span>Plan de cuotas fijas</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[#FFD21A] font-bold">✓</span>
+                      <span>Buscamos alternativas</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[#FFD21A] font-bold">✓</span>
+                      <span>Entrega en tu domicilio</span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-[#9CA3AF] font-normal pt-0.5">
+                    * Desde el 25 de noviembre ampliamos nuestra capacidad para productos grandes y sumamos Envíos Low Cost.
                   </p>
                 </div>
               </div>
 
-              {/* 3. DOS CTAs COMERCIALES CON ORIENTACIÓN A CONSULTA EN PRELANZAMIENTO */}
-              <div className="pt-1 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                <a 
-                  href="https://wa.me/5491125659686?text=Hola%2C%20quiero%20consultar%20por%20el%20Servicio%20de%20Compra%20de%20Cuenta%20Hogar.%0A%0ANecesito%20comprar%20un%20producto%20y%20quisiera%20conocer%20c%C3%B3mo%20funciona%20la%20gesti%C3%B3n%20mediante%20mandato%2C%20el%20plan%20de%20cuotas%20y%20la%20entrega%20en%20mi%20localidad.%0A%0A%F0%9F%93%8D%20Localidad%3A%0A%F0%9F%9B%92%20Producto%20que%20necesito%3A%0A%F0%9F%94%97%20Si%20ya%20vi%20alguno%2C%20puedo%20enviarles%20el%20modelo%2C%20link%20o%20presupuesto.%0A%0A%C2%BFMe%20cuentan%20c%C3%B3mo%20ser%C3%ADa%20la%20propuesta%20y%20el%20plan%20de%20cuotas%3F" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs sm:text-sm font-extrabold uppercase tracking-wider px-8 h-[50px] rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95 shrink-0"
-                >
-                  <WhatsAppIcon className="w-4.5 h-4.5 text-[#111318]" />
-                  <span>CONSULTAR POR UNA COMPRA</span>
-                </a>
+              {/* 3. DOS CTAs COMERCIALES CON ORIENTACIÓN A CONSULTA */}
+              <div className="pt-1 space-y-2">
+                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                  <a 
+                    href="https://wa.me/5491125659686?text=Hola%2C%20estuve%20viendo%20la%20web%20de%20Cuenta%20Hogar%20y%20quiero%20recibir%20una%20propuesta.%0A%0ANecesito%20comprar%20un%20producto%20y%20quisiera%20conocer%20las%20alternativas%2C%20el%20plan%20de%20cuotas%20y%20la%20entrega%20en%20mi%20localidad.%0A%0A%F0%9F%93%8D%20Mi%20localidad%20es%3A%0A%F0%9F%9B%92%20Producto%20que%20busco%3A%0A%0A%C2%BFMe%20pueden%20orientar%3F" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs sm:text-sm font-extrabold uppercase tracking-wider px-8 h-[50px] rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95 shrink-0"
+                  >
+                    <WhatsAppIcon className="w-4.5 h-4.5 text-[#111318]" />
+                    <span>QUIERO RECIBIR UNA PROPUESTA</span>
+                  </a>
 
-                <a 
-                  href="#envios-low-cost" 
-                  className="inline-flex items-center justify-center gap-2 bg-[#1A1D26] hover:bg-[#252A37] text-[#FFFDFC] hover:text-[#FFD21A] border border-[#4B5563] hover:border-[#FFD21A]/60 text-xs sm:text-sm font-bold uppercase tracking-wider px-8 h-[50px] rounded-xl transition-all shrink-0 shadow-sm"
-                >
-                  <span>Disponible desde noviembre · Más Info</span>
-                  <ArrowRight className="w-4.5 h-4.5" />
-                </a>
+                  <a 
+                    href="#modelo" 
+                    className="inline-flex items-center justify-center gap-2 bg-[#1A1D26] hover:bg-[#252A37] text-[#FFFDFC] hover:text-[#FFD21A] border border-[#4B5563] hover:border-[#FFD21A]/60 text-xs sm:text-sm font-bold uppercase tracking-wider px-8 h-[50px] rounded-xl transition-all shrink-0 shadow-sm"
+                  >
+                    <span>VER CÓMO FUNCIONA</span>
+                    <ArrowRight className="w-4.5 h-4.5" />
+                  </a>
+                </div>
+                <p className="text-[11px] font-medium text-[#9CA3AF]">
+                  Sin compromiso · Te respondemos por WhatsApp
+                </p>
               </div>
 
               {/* 4. FOTOGRAFÍA DE LA TRANSIT EN MOBILE (APARECE DESPUÉS DE LOS CTAs) */}
@@ -350,19 +369,19 @@ export default function HomeTechCatalog() {
                 </p>
               </div>
 
-              {/* 5. DIFERENCIALES BREVES */}
+              {/* 5. DIFERENCIALES BREVES ENFOCADOS EN VALOR */}
               <div className="pt-4 border-t border-[#222530] flex flex-wrap items-center gap-x-6 gap-y-2.5 text-xs font-bold text-[#D1D5DB]">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
-                  <span>Centro logístico en CABA</span>
+                  <span>Plan de cuotas fijas</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
-                  <span>Transporte propio</span>
+                  <span>Gestión de punta a punta</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
-                  <span>Entrega en domicilio</span>
+                  <span>Entrega en tu domicilio</span>
                 </div>
               </div>
 
