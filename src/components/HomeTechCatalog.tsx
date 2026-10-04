@@ -560,88 +560,6 @@ export default function HomeTechCatalog() {
         </div>
       </section>
 
-      {/* 3. SECCIÓN SOLUCIÓN PARA EMPRENDEDORES Y COMERCIOS */}
-      <section id="envios-low-cost" className="py-20 lg:py-24 bg-[#0E1015] border-b border-[#222530]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-16">
-          
-          <div className="bg-[#161922] border border-[#2A2E3D] rounded-2xl p-8 lg:p-12 shadow-2xl space-y-12">
-            
-            {/* ENCABEZADO RECONVERTIDO PARA EMPRENDEDORES */}
-            <div className="text-center max-w-3xl mx-auto space-y-4">
-              <div className="inline-flex items-center gap-2 bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] px-4 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider">
-                <Briefcase className="w-3.5 h-3.5" /> EMPRENDEDORES · COMPRAS RECURRENTES
-              </div>
-              
-              <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
-                Cuenta Hogar, cerca de los emprendedores
-              </h2>
-              
-              <p className="text-sm sm:text-base text-[#9CA3AF] leading-relaxed">
-                Si comprás mercadería con frecuencia para tu comercio o emprendimiento, podés usar nuestro centro de recepción en CABA para recibir, organizar y consolidar tus compras antes del traslado al interior.
-              </p>
-              
-              <div className="inline-block p-3.5 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-xl text-xs font-mono font-bold text-[#FFD21A] tracking-wider mt-2">
-                CONSOLIDACIÓN SIN CARGO · DISPONIBLE DESDE NOVIEMBRE · YA RECIBIMOS CONSULTAS
-              </div>
-            </div>
-
-            {/* 3 TARJETAS RECONVERTIDAS */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
-              {/* TARJETA 1 */}
-              <div className="bg-[#111318] border border-[#222530] p-6 rounded-xl space-y-3.5 hover:border-[#FFD21A]/40 transition-all">
-                <div className="w-10 h-10 bg-[#1F2330] text-[#FFD21A] rounded-lg flex items-center justify-center font-bold">
-                  <Building2 className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-bold text-white">Un solo punto de recepción</h3>
-                <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                  Tus proveedores entregan sus pedidos en nuestro centro de recepción en CABA.
-                </p>
-              </div>
-
-              {/* TARJETA 2 - CONSOLIDACIÓN SIN CARGO */}
-              <div className="bg-[#111318] border-2 border-[#FFD21A]/40 p-6 rounded-xl space-y-3.5 relative overflow-hidden shadow-lg shadow-[#FFD21A]/5">
-                <div className="w-10 h-10 bg-[#FFD21A] text-[#111318] rounded-lg flex items-center justify-center font-bold">
-                  <Layers className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-bold text-white">Consolidación sin cargo</h3>
-                <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                  Reunimos compras de distintos proveedores para que tu mercadería viaje organizada en un solo envío.
-                </p>
-              </div>
-
-              {/* TARJETA 3 */}
-              <div className="bg-[#111318] border border-[#222530] p-6 rounded-xl space-y-3.5 hover:border-[#FFD21A]/40 transition-all">
-                <div className="w-10 h-10 bg-[#1F2330] text-[#FFD21A] rounded-lg flex items-center justify-center font-bold">
-                  <Truck className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-bold text-white">Entrega para tu negocio</h3>
-                <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                  Aprovechamos nuestros recorridos para llevar la mercadería hasta tu localidad y ayudarte a simplificar la logística.
-                </p>
-              </div>
-
-            </div>
-
-            {/* CTA RECONVERTIDO PARA WHATSAPP EMPRENDEDORES */}
-            <div className="text-center pt-2">
-              <a 
-                href="https://wa.me/5491125659686?text=Hola%2C%20quiero%20conocer%20c%C3%B3mo%20funcionar%C3%A1%20Env%C3%ADos%20Low%20Cost%20de%20Cuenta%20Hogar%20para%20mi%20negocio/emprendimiento%20a%20partir%20del%2025%20de%20noviembre.%0A%0ARealizo%20compras%20en%20CABA%20y%20me%20interesa%20poder%20recibirlas%20en%20un%20mismo%20punto%2C%20consolidarlas%20sin%20cargo%20y%20trasladarlas%20juntas%20hasta%20mi%20localidad.%0A%0A%F0%9F%93%8D%20Mi%20localidad%20es%3A%0A%0A%C2%BFMe%20cuentan%20c%C3%B3mo%20funcionar%C3%A1%20el%20servicio%20para%20mi%20negocio%3F" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold text-xs uppercase tracking-wider px-8 py-4 rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95"
-              >
-                <WhatsAppIcon className="w-4.5 h-4.5 text-[#111318]" />
-                <span>QUIERO CONOCER EL SERVICIO PARA EMPRENDEDORES</span>
-                <ArrowRight className="w-4 h-4" />
-              </a>
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
       {/* 4. CATÁLOGO DE PRODUCTOS DESTACADOS */}
       <section id="catalogo" className="py-20 lg:py-24 bg-[#FFFFFF] text-[#111827] border-b border-[#E5E7EB]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
@@ -1017,7 +935,89 @@ export default function HomeTechCatalog() {
         </div>
       </section>
 
-      {/* MODAL SOLICITUD NUEVA LOCALIDAD */}
+{/* 3. SECCIÓN SOLUCIÓN PARA EMPRENDEDORES Y COMERCIOS */}
+      <section id="envios-low-cost" className="py-20 lg:py-24 bg-[#0E1015] border-b border-[#222530]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-16">
+          
+          <div className="bg-[#161922] border border-[#2A2E3D] rounded-2xl p-8 lg:p-12 shadow-2xl space-y-12">
+            
+            {/* ENCABEZADO RECONVERTIDO PARA EMPRENDEDORES */}
+            <div className="text-center max-w-3xl mx-auto space-y-4">
+              <div className="inline-flex items-center gap-2 bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] px-4 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider">
+                <Briefcase className="w-3.5 h-3.5" /> EMPRENDEDORES · COMPRAS RECURRENTES
+              </div>
+              
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
+                Cuenta Hogar, cerca de los emprendedores
+              </h2>
+              
+              <p className="text-sm sm:text-base text-[#9CA3AF] leading-relaxed">
+                Si comprás mercadería con frecuencia para tu comercio o emprendimiento, podés usar nuestro centro de recepción en CABA para recibir, organizar y consolidar tus compras antes del traslado al interior.
+              </p>
+              
+              <div className="inline-block p-3.5 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-xl text-xs font-mono font-bold text-[#FFD21A] tracking-wider mt-2">
+                CONSOLIDACIÓN SIN CARGO · DISPONIBLE DESDE NOVIEMBRE · YA RECIBIMOS CONSULTAS
+              </div>
+            </div>
+
+            {/* 3 TARJETAS RECONVERTIDAS */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              
+              {/* TARJETA 1 */}
+              <div className="bg-[#111318] border border-[#222530] p-6 rounded-xl space-y-3.5 hover:border-[#FFD21A]/40 transition-all">
+                <div className="w-10 h-10 bg-[#1F2330] text-[#FFD21A] rounded-lg flex items-center justify-center font-bold">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-bold text-white">Un solo punto de recepción</h3>
+                <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                  Tus proveedores entregan sus pedidos en nuestro centro de recepción en CABA.
+                </p>
+              </div>
+
+              {/* TARJETA 2 - CONSOLIDACIÓN SIN CARGO */}
+              <div className="bg-[#111318] border-2 border-[#FFD21A]/40 p-6 rounded-xl space-y-3.5 relative overflow-hidden shadow-lg shadow-[#FFD21A]/5">
+                <div className="w-10 h-10 bg-[#FFD21A] text-[#111318] rounded-lg flex items-center justify-center font-bold">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-bold text-white">Consolidación sin cargo</h3>
+                <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                  Reunimos compras de distintos proveedores para que tu mercadería viaje organizada en un solo envío.
+                </p>
+              </div>
+
+              {/* TARJETA 3 */}
+              <div className="bg-[#111318] border border-[#222530] p-6 rounded-xl space-y-3.5 hover:border-[#FFD21A]/40 transition-all">
+                <div className="w-10 h-10 bg-[#1F2330] text-[#FFD21A] rounded-lg flex items-center justify-center font-bold">
+                  <Truck className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-bold text-white">Entrega para tu negocio</h3>
+                <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                  Aprovechamos nuestros recorridos para llevar la mercadería hasta tu localidad y ayudarte a simplificar la logística.
+                </p>
+              </div>
+
+            </div>
+
+            {/* CTA RECONVERTIDO PARA WHATSAPP EMPRENDEDORES */}
+            <div className="text-center pt-2">
+              <a 
+                href="https://wa.me/5491125659686?text=Hola%2C%20quiero%20conocer%20c%C3%B3mo%20funcionar%C3%A1%20Env%C3%ADos%20Low%20Cost%20de%20Cuenta%20Hogar%20para%20mi%20negocio/emprendimiento%20a%20partir%20del%2025%20de%20noviembre.%0A%0ARealizo%20compras%20en%20CABA%20y%20me%20interesa%20poder%20recibirlas%20en%20un%20mismo%20punto%2C%20consolidarlas%20sin%20cargo%20y%20trasladarlas%20juntas%20hasta%20mi%20localidad.%0A%0A%F0%9F%93%8D%20Mi%20localidad%20es%3A%0A%0A%C2%BFMe%20cuentan%20c%C3%B3mo%20funcionar%C3%A1%20el%20servicio%20para%20mi%20negocio%3F" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold text-xs uppercase tracking-wider px-8 py-4 rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95"
+              >
+                <WhatsAppIcon className="w-4.5 h-4.5 text-[#111318]" />
+                <span>QUIERO CONOCER EL SERVICIO PARA EMPRENDEDORES</span>
+                <ArrowRight className="w-4 h-4" />
+              </a>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+            {/* MODAL SOLICITUD NUEVA LOCALIDAD */}
       {modalLocalidadOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-[#161922] border border-[#2A2E3D] text-white rounded-2xl p-6 sm:p-8 max-w-lg w-full space-y-6 relative">
