@@ -270,10 +270,10 @@ export default function PublicCatalog() {
       <Header />
 
       {/* 1. HERO PRINCIPAL - SERVICIO DE COMPRA */}
-      <section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24 border-b border-[#222530] bg-[#111318]">
+      <section className="relative overflow-hidden pt-10 pb-16 lg:pt-16 lg:pb-24 border-b border-[#222530] bg-[#111318]">
         <div className="max-w-7xl mx-auto px-6">
           
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center lg:items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center lg:items-start">
             
             {/* COLUMNA IZQUIERDA: MENSAJE PRINCIPAL DEL SERVICIO DE COMPRA */}
             <div className="lg:col-span-7 space-y-6 text-left">
@@ -284,101 +284,159 @@ export default function PublicCatalog() {
                   <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
                   CUENTA HOGAR · SERVICIO DE COMPRA
                 </div>
-
-                <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#FFD21A] bg-[#FFD21A]/10 border border-[#FFD21A]/20 px-3 py-1 rounded-full">
-                  <Clock className="w-3.5 h-3.5 text-[#FFD21A]" />
-                  <span>Servicio Disponible · Conexión CABA al Interior</span>
-                </div>
               </div>
 
               {/* H1 CON PROTAGONISMO EDITORIAL */}
-              <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-heading font-extrabold tracking-tight text-[#FFD21A] leading-[1.08]">
-                Comprar en Capital,<br />
-                <span className="text-white">
-                  más simple desde el interior.
+              <h1 className="text-3xl sm:text-4xl lg:text-[46px] font-heading font-extrabold tracking-tight text-white leading-[1.15]">
+                ¿Necesitás algo que no conseguís fácilmente en tu localidad?<br />
+                <span className="text-[#FFD21A] block mt-1.5">
+                  Te ayudamos a encontrarlo y resolver toda la compra.
                 </span>
               </h1>
 
               {/* BAJADA CLARA & OPERATIVA */}
               <p className="text-base sm:text-lg text-[#D1D5DB] font-sans font-normal leading-relaxed max-w-2xl">
-                Contanos qué producto necesitás. Buscamos alternativas, gestionamos la adquisición mediante mandato en Buenos Aires, coordinamos la recepción y el traslado, y te ofrecemos un plan de cuotas para resolver la operación completa.
+                Contanos qué estás buscando. Te presentamos alternativas, una propuesta con un plan de cuotas fijas y, si decidís avanzar, gestionamos la compra mediante mandato, la recepción y la entrega en tu domicilio.
               </p>
 
-                            {/* AMPLIACIÓN LOGÍSTICA DE MAYOR VOLUMEN DESDE EL 25 DE NOVIEMBRE */}
-              <div className="p-4 bg-[#161922] border border-[#FFD21A]/40 rounded-xl text-xs sm:text-sm text-white font-bold space-y-1.5 max-w-2xl shadow-md">
-                <p className="font-extrabold text-[#FFD21A] text-sm">
-                  🚚 Ampliación de capacidad logística desde el 25 de noviembre
-                </p>
-                <p className="text-[#D1D5DB] font-normal text-xs leading-relaxed">
-                  Sumamos nuestra Ford Transit techo elevado para gestionar y trasladar productos de mayor volumen como heladeras, sommiers, muebles y electrodomésticos grandes.
+              {/* BLOQUE DE DOLOR RESUELTO */}
+              <div className="bg-[#161922] border-l-4 border-l-[#FFD21A] border border-[#2A2E3D] px-4 py-3 rounded-xl shadow-md max-w-2xl">
+                <p className="text-xs sm:text-sm font-sans font-semibold text-[#E5E7EB] leading-relaxed">
+                  Sin viajar para buscar, coordinar proveedores ni resolver por separado la logística.
                 </p>
               </div>
 
-              {/* FRASE DE DIFERENCIAL CENTRAL */}
-              <div className="bg-[#161922] border-l-4 border-l-[#FFD21A] border border-[#2A2E3D] p-4 rounded-xl shadow-md">
-                <p className="text-sm sm:text-base font-sans font-semibold text-white leading-relaxed">
-                  Una sola gestión: compra, logística y plan de cuotas hasta tu domicilio.
+              {/* IMAGEN MOBILE (Se inserta entre el bloque de dolor y los beneficios en mobile) */}
+              <div className="block lg:hidden my-6">
+                <div className="relative rounded-2xl overflow-hidden border border-[#222530] bg-[#161922] shadow-xl group">
+                  <img 
+                    src="/centro-operaciones-cuenta-hogar.jpg" 
+                    alt="Atención y gestión en el centro de operaciones Cuenta Hogar" 
+                    className="w-full h-[280px] sm:h-[360px] object-cover group-hover:scale-102 transition-transform duration-700" 
+                  />
+                  
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#111318]/90 via-transparent to-transparent flex items-end p-4">
+                    <div className="bg-[#161922]/95 backdrop-blur-md border border-[#374151] text-white p-3.5 rounded-xl w-full shadow-md">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-[#FFD21A]/10 border border-[#FFD21A]/40 rounded-lg flex items-center justify-center text-[#FFD21A] shrink-0">
+                          <UserCheck className="w-4.5 h-4.5" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-[11px] font-heading font-extrabold uppercase text-[#FFD21A] tracking-wider">
+                            DE LA NECESIDAD A LA ENTREGA
+                          </p>
+                          <p className="text-xs text-[#D1D5DB] font-sans">
+                            Una sola gestión para resolver toda la operación.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* TRES BENEFICIOS PRINCIPALES */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+                <div className="bg-[#161922] border border-[#262936] p-3.5 rounded-xl space-y-1">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-[#FFD21A]/10 border border-[#FFD21A]/30 flex items-center justify-center text-[#FFD21A] shrink-0">
+                      <Search className="w-3.5 h-3.5" />
+                    </div>
+                    <h3 className="text-xs sm:text-sm font-heading font-bold text-white leading-tight">
+                      Más opciones sin viajar
+                    </h3>
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-[#9CA3AF] font-sans leading-relaxed">
+                    Buscamos alternativas en CABA según lo que necesitás.
+                  </p>
+                </div>
+
+                <div className="bg-[#161922] border border-[#262936] p-3.5 rounded-xl space-y-1">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-[#FFD21A]/10 border border-[#FFD21A]/30 flex items-center justify-center text-[#FFD21A] shrink-0">
+                      <CreditCard className="w-3.5 h-3.5" />
+                    </div>
+                    <h3 className="text-xs sm:text-sm font-heading font-bold text-white leading-tight">
+                      Plan de cuotas fijas
+                    </h3>
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-[#9CA3AF] font-sans leading-relaxed">
+                    Conocés la propuesta antes de decidir.
+                  </p>
+                </div>
+
+                <div className="bg-[#161922] border border-[#262936] p-3.5 rounded-xl space-y-1">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-[#FFD21A]/10 border border-[#FFD21A]/30 flex items-center justify-center text-[#FFD21A] shrink-0">
+                      <Truck className="w-3.5 h-3.5" />
+                    </div>
+                    <h3 className="text-xs sm:text-sm font-heading font-bold text-white leading-tight">
+                      Todo coordinado hasta tu domicilio
+                    </h3>
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-[#9CA3AF] font-sans leading-relaxed">
+                    Gestionamos compra, recepción y entrega.
+                  </p>
+                </div>
+              </div>
+
+              {/* CTAS DE ACCIÓN & MICROCOPY */}
+              <div className="pt-2 space-y-2.5">
+                <div className="flex flex-col sm:flex-row gap-3.5 items-stretch sm:items-center">
+                  <a 
+                    href="#contacto" 
+                    className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs sm:text-sm font-heading font-extrabold uppercase tracking-wider px-7 h-[50px] rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95 shrink-0"
+                  >
+                    <span>QUIERO RECIBIR UNA PROPUESTA</span>
+                    <ArrowRight className="w-4.5 h-4.5 text-[#111318]" />
+                  </a>
+
+                  <a 
+                    href="#como-funciona" 
+                    className="inline-flex items-center justify-center gap-2 bg-[#1A1D26] hover:bg-[#252A37] text-[#FFFDFC] hover:text-[#FFD21A] border border-[#4B5563] hover:border-[#FFD21A]/60 text-xs sm:text-sm font-heading font-bold uppercase tracking-wider px-7 h-[50px] rounded-xl transition-all shrink-0 shadow-sm"
+                  >
+                    <span>VER CÓMO FUNCIONA</span>
+                    <ArrowRight className="w-4.5 h-4.5 text-[#FFD21A]" />
+                  </a>
+                </div>
+
+                <p className="text-xs text-[#9CA3AF] font-sans flex items-center gap-1.5 pt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFD21A]"></span>
+                  Sin compromiso · Te respondemos por WhatsApp
                 </p>
               </div>
 
-              {/* CTAS DE ACCIÓN */}
-              <div className="pt-2 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
-                <a 
-                  href="#contacto" 
-                  className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs sm:text-sm font-heading font-extrabold uppercase tracking-wider px-8 h-[50px] rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95 shrink-0"
-                >
-                  <span>SOLICITAR UNA COMPRA</span>
-                  <ArrowRight className="w-4.5 h-4.5 text-[#111318]" />
-                </a>
-
-                <a 
-                  href="#como-funciona" 
-                  className="inline-flex items-center justify-center gap-2 bg-[#1A1D26] hover:bg-[#252A37] text-[#FFFDFC] hover:text-[#FFD21A] border border-[#4B5563] hover:border-[#FFD21A]/60 text-xs sm:text-sm font-heading font-bold uppercase tracking-wider px-8 h-[50px] rounded-xl transition-all shrink-0 shadow-sm"
-                >
-                  <span>VER CÓMO FUNCIONA</span>
-                  <ArrowRight className="w-4.5 h-4.5 text-[#FFD21A]" />
-                </a>
-              </div>
-
-              {/* REFUERZO DE CONFIANZA SOBRIO */}
-              <div className="pt-6 border-t border-[#222530] flex flex-wrap items-center gap-x-6 gap-y-2.5 text-xs font-heading font-semibold text-[#D1D5DB]">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFD21A]"></span>
-                  <span>Gestión mediante mandato</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFD21A]"></span>
-                  <span>Plan de cuotas</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFD21A]"></span>
-                  <span>Entrega en tu domicilio</span>
-                </div>
+              {/* AMPLIACIÓN LOGÍSTICA DE MAYOR VOLUMEN DESDE EL 25 DE NOVIEMBRE */}
+              <div className="p-3.5 bg-[#161922] border border-[#2A2E3D] rounded-xl text-xs text-[#9CA3AF] font-sans max-w-2xl flex items-start gap-3 shadow-sm">
+                <span className="text-base shrink-0">🚚</span>
+                <p className="leading-relaxed">
+                  <strong className="text-white font-semibold">Capacidad para grandes volúmenes:</strong> Desde el 25 de noviembre ampliamos nuestra capacidad para trasladar productos como heladeras, sommiers, muebles y electrodomésticos grandes.
+                </p>
               </div>
 
             </div>
 
-            {/* COLUMNA DERECHA: FOTOGRAFÍA DE GESTIÓN Y RECEPCIÓN EN CABA */}
-            <div className="lg:col-span-5 relative lg:pt-1">
-              <div className="relative rounded-2xl overflow-hidden border border-[#222530] bg-[#161922] shadow-lg group">
+            {/* COLUMNA DERECHA: FOTOGRAFÍA DEL CENTRO DE OPERACIONES EN DESKTOP */}
+            <div className="hidden lg:block lg:col-span-5 relative lg:pt-1">
+              <div className="relative rounded-2xl overflow-hidden border border-[#222530] bg-[#161922] shadow-xl group">
                 <img 
-                  src="/paso2-local-adentro.jpg" 
-                  alt="Gestión y recepción del Servicio de Compra Cuenta Hogar" 
-                  className="w-full h-[360px] sm:h-[440px] lg:h-[480px] object-cover group-hover:scale-102 transition-transform duration-700" 
+                  src="/centro-operaciones-cuenta-hogar.jpg" 
+                  alt="Atención y gestión en el centro de operaciones Cuenta Hogar" 
+                  className="w-full h-[480px] lg:h-[520px] object-cover group-hover:scale-102 transition-transform duration-700" 
                 />
                 
                 <div className="absolute inset-0 bg-gradient-to-t from-[#111318]/90 via-transparent to-transparent flex items-end p-6">
-                  <div className="bg-[#161922]/95 backdrop-blur-md border border-[#374151] text-white p-4.5 rounded-xl w-full shadow-md">
+                  <div className="bg-[#161922]/95 backdrop-blur-md border border-[#374151] text-white p-4 rounded-xl w-full shadow-md">
                     <div className="flex items-center gap-3.5">
                       <div className="w-10 h-10 bg-[#FFD21A]/10 border border-[#FFD21A]/40 rounded-lg flex items-center justify-center text-[#FFD21A] shrink-0">
-                        <ShoppingBag className="w-5 h-5" />
+                        <UserCheck className="w-5 h-5" />
                       </div>
                       <div className="space-y-0.5">
                         <p className="text-xs font-heading font-extrabold uppercase text-[#FFD21A] tracking-wider">
-                          GESTIÓN + LOGÍSTICA + PLAN DE CUOTAS
+                          DE LA NECESIDAD A LA ENTREGA
                         </p>
                         <p className="text-xs text-[#D1D5DB] font-sans">
-                          Una solución integral pensada para conectar Capital con el interior.
+                          Una sola gestión para resolver toda la operación.
                         </p>
                       </div>
                     </div>
