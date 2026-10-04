@@ -26,24 +26,28 @@ export default function NosotrosPage() {
 
   const faqs = [
     {
-      q: "¿Cuenta Hogar es una financiera o una tienda online?",
-      a: "Cuenta Hogar no es una tienda ni una financiera tradicional. Somos una empresa que presta servicios de gestión de compras por mandato y logística asociada desde CABA hacia el interior, integrando centro de recepción propio en CABA, transporte propio y atención cercana a través de vendedores afiliados."
+      q: "¿Cuenta Hogar vende productos?",
+      a: "No. Cuenta Hogar brinda un servicio de gestión de compra mediante mandato. Nos contás qué necesitás, buscamos alternativas y te presentamos una propuesta con un plan de cuotas fijas. Si decidís avanzar, gestionamos la adquisición y coordinamos la logística hasta tu domicilio."
     },
     {
-      q: "¿En qué consiste el servicio de Envíos Low Cost?",
-      a: "Si ya realizaste tus compras de mercadería o equipos en Capital Federal por tu cuenta, podés coordinar el envío a nuestro centro logístico en CABA (Caracas 1101). Las recibimos, organizamos y trasladamos en nuestros recorridos programados directo a tu domicilio o negocio en el interior."
+      q: "¿Tengo que saber exactamente qué producto quiero?",
+      a: "No. Podés contarnos simplemente qué necesitás y te ayudamos a buscar alternativas. Si ya viste una marca, modelo, publicación o presupuesto, también podés enviárnoslo como referencia."
     },
     {
-      q: "¿Cómo funciona la gestión de compra por mandato?",
-      a: "Nos contás qué producto necesitás. Buscamos las mejores alternativas en CABA, te enviamos la propuesta por WhatsApp con las condiciones del plan de cuotas estimado y, una vez aceptada, actuamos como tu mandatario para realizar la compra, la trasladamos con nuestro transporte propio y abonás el plan acordado."
+      q: "¿Puedo pedir un producto que no aparece en la web?",
+      a: "Sí. Las opciones que mostramos son ejemplos orientativos. Podés consultarnos por otro producto aunque no aparezca publicado y evaluamos alternativas disponibles para tu solicitud."
     },
     {
-      q: "¿Cómo se comunican con los clientes en cada localidad?",
-      a: "Trabajamos junto a vendedores afiliados de cada localidad, construyendo relaciones cercanas basadas en la confianza y la recomendación directa."
+      q: "¿Pedir una propuesta me obliga a avanzar?",
+      a: "No. Primero conocés la propuesta y las condiciones del plan de cuotas. Si decidís avanzar, recién entonces formalizamos la gestión mediante mandato."
     },
     {
-      q: "¿Qué sucede si el producto necesita servicio técnico?",
-      a: "Ofrecemos acompañamiento logístico para ayudar a gestionar el traslado del equipo hacia el service oficial en Capital Federal. El acompañamiento técnico consiste en ayudar a gestionar el traslado y no reemplaza la garantía original del fabricante."
+      q: "¿Evalúan cada solicitud antes de aprobarla?",
+      a: "Sí. Antes de avanzar realizamos una evaluación de la solicitud y de las referencias disponibles. Cada operación se analiza individualmente."
+    },
+    {
+      q: "¿Qué diferencia hay entre Servicio de Compra y Envíos Low Cost?",
+      a: "Servicio de Compra es para quien todavía necesita resolver una compra y quiere que Cuenta Hogar gestione la operación completa, incluyendo el plan de cuotas y la entrega.\n\nEnvíos Low Cost es para quien compra por su cuenta en CABA y necesita recibir esa mercadería en el interior.\n\nEnvíos Low Cost estará disponible desde el 25 de noviembre de 2026."
     }
   ];
 
@@ -209,6 +213,30 @@ export default function NosotrosPage() {
                 )}
               </div>
             ))}
+          </div>
+
+          {/* ENLACES A FAQ ESPECÍFICAS DE SERVICIOS */}
+          <div className="pt-8 border-t border-[#222530] text-center space-y-4">
+            <p className="text-sm font-bold text-white">
+              ¿Tenés dudas específicas sobre un servicio?
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link 
+                href="/servicio-de-compra#preguntas-frecuentes" 
+                className="inline-flex items-center gap-2 bg-[#161922] hover:bg-[#222530] text-[#FFD21A] border border-[#FFD21A]/40 text-xs font-bold uppercase tracking-wider px-6 py-3.5 rounded-xl transition-all shadow-sm"
+              >
+                <span>VER PREGUNTAS DEL SERVICIO DE COMPRA</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              <Link 
+                href="/envios#preguntas-frecuentes" 
+                className="inline-flex items-center gap-2 bg-[#161922] hover:bg-[#222530] text-[#FFD21A] border border-[#FFD21A]/40 text-xs font-bold uppercase tracking-wider px-6 py-3.5 rounded-xl transition-all shadow-sm"
+              >
+                <span>VER PREGUNTAS DE ENVÍOS LOW COST</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
           </div>
 
           {/* CTA FINAL */}

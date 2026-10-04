@@ -202,7 +202,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
       </section>
 
       {/* 3. EL PROBLEMA Y LA SOLUCIÓN (COHERENCIA DE MARCA) */}
-      <section className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530]">
+      <section id="preguntas-frecuentes" className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530] scroll-mt-20">
         <div className="max-w-5xl mx-auto px-6 space-y-12">
           
           <div className="text-center space-y-4">
@@ -511,7 +511,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
       </section>
 
       {/* 5. PUNTO LOGÍSTICO CENTRAL CABA */}
-      <section className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530]">
+      <section id="preguntas-frecuentes" className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530] scroll-mt-20">
         <div className="max-w-5xl mx-auto px-6">
           <div className="bg-[#161922] border-2 border-[#173E3B] rounded-3xl p-8 sm:p-12 shadow-md space-y-8">
             
@@ -835,7 +835,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
       </section>
 
       {/* 9. SECCIÓN PREGUNTAS FRECUENTES (FAQ) */}
-      <section className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530]">
+      <section id="preguntas-frecuentes" className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530] scroll-mt-20">
         <div className="max-w-4xl mx-auto px-6 space-y-10">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
             <div className="inline-flex items-center gap-2 text-xs font-heading font-bold uppercase tracking-widest text-[#FFD21A]">

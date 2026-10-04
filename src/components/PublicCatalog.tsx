@@ -14,7 +14,9 @@ import {
   Filter,
   ShieldCheck, 
   ChevronRight, 
-  ChevronLeft, 
+  ChevronLeft,
+  ChevronDown,
+  ChevronUp, 
   ArrowRight, 
   Truck, 
   Send, 
@@ -71,6 +73,7 @@ export default function PublicCatalog() {
   const [qfNecesidad, setQfNecesidad] = useState("");
   const [qfReferente, setQfReferente] = useState("");
   const [qfSubmitting, setQfSubmitting] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   // Modal Solicitud de Nueva Localidad
   const [modalLocalidadOpen, setModalLocalidadOpen] = useState(false);
@@ -909,7 +912,104 @@ export default function PublicCatalog() {
         </div>
       </section>
 
-      {/* 8. PEQUEÑO CROSS-SELL BREVE A ENVÍOS LOW COST */}
+            {/* 7. SECCIÓN PREGUNTAS FRECUENTES (SERVICIO DE COMPRA) */}
+      <section id="preguntas-frecuentes" className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530] scroll-mt-20">
+        <div className="max-w-4xl mx-auto px-6 space-y-10">
+          
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <span className="inline-block bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full">
+              PREGUNTAS FRECUENTES · SERVICIO DE COMPRA
+            </span>
+            <h2 className="text-3xl font-heading font-extrabold text-[#FFD21A]">
+              Respuestas claras antes de solicitar tu propuesta
+            </h2>
+            <p className="text-[#9CA3AF] text-sm font-sans">
+              Conocé en detalle cómo funciona la gestión por mandato y las condiciones del servicio.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {[
+              {
+                q: "¿Pedir una propuesta me obliga a avanzar?",
+                a: "No. Primero conocés la propuesta y las condiciones del plan de cuotas. Si decidís avanzar, recién entonces formalizamos la gestión mediante mandato.",
+                destacada: true
+              },
+              {
+                q: "¿Cuándo empiezo a pagar las cuotas?",
+                a: "La primera cuota se abona cuando recibís el producto. En operaciones de mayor valor podemos solicitar previamente una seña, que se toma a cuenta del valor total del servicio.",
+                destacada: true
+              },
+              {
+                q: "¿Las cuotas son fijas?",
+                a: "Sí. Antes de avanzar te presentamos las condiciones de la operación y el plan de cuotas fijas para que puedas evaluarlo.",
+                destacada: true
+              },
+              {
+                q: "¿Cómo puedo pagar las cuotas?",
+                a: "Podés abonarlas mediante transferencia o efectivo.",
+                destacada: true
+              },
+              {
+                q: "¿Qué pasa si el producto que elegí se queda sin stock?",
+                a: "Buscamos una alternativa y te presentamos una nueva propuesta antes de avanzar. Si habías abonado una seña y finalmente no se concreta la operación, se reintegra el 100% de ese importe."
+              },
+              {
+                q: "¿Cuánto demora una compra?",
+                a: "Estimamos aproximadamente 7 días corridos desde que se confirma la operación hasta la entrega. El plazo es estimativo y puede variar según la disponibilidad del producto, el proveedor y la coordinación logística."
+              },
+              {
+                q: "¿Quién se hace cargo de la garantía?",
+                a: "En productos nuevos, la garantía corresponde al vendedor del producto. Cuenta Hogar puede facilitar el traslado hasta el servicio técnico oficial correspondiente. En productos usados no existe garantía salvo que haya sido expresamente documentada en la operación."
+              },
+              {
+                q: "¿Qué incluye el acompañamiento técnico de Cuenta Hogar?",
+                a: "Cuando corresponde, retiramos el equipo en el domicilio del comprador/tomador del servicio, lo trasladamos al servicio técnico indicado y posteriormente realizamos el traslado de regreso. Cuenta Hogar no es responsable por los tiempos de reparación o demora del servicio técnico oficial o asignado."
+              },
+              {
+                q: "¿Pueden revisar el producto antes de traerlo al interior?",
+                a: "Sí. Si lo solicitás y coordinás previamente, podemos realizar una verificación visual para detectar posibles daños evidentes antes del traslado. Esta revisión no reemplaza una inspección técnica ni la garantía del producto."
+              }
+            ].map((faq, idx) => {
+              const isOpen = openFaq === idx;
+              return (
+                <div 
+                  key={idx} 
+                  className={`border rounded-2xl transition-all duration-200 overflow-hidden ${
+                    isOpen 
+                      ? "bg-[#161922] border-[#FFD21A]/40 shadow-md" 
+                      : "bg-[#161922]/60 border-[#222530] hover:border-[#374151]"
+                  }`}
+                >
+                  <button
+                    onClick={() => setOpenFaq(isOpen ? null : idx)}
+                    className="w-full p-5 text-left font-bold text-white flex justify-between items-center gap-4 hover:bg-[#1A1D26] transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      {faq.destacada && (
+                        <span className="w-2 h-2 rounded-full bg-[#FFD21A] shrink-0" title="Pregunta frecuente destacada" />
+                      )}
+                      <span className="text-sm sm:text-base leading-snug">{faq.q}</span>
+                    </div>
+                    <span className="text-[#FFD21A] shrink-0">
+                      {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                    </span>
+                  </button>
+
+                  {isOpen && (
+                    <div className="px-6 pb-5 pt-1 text-xs sm:text-sm text-[#D1D5DB] leading-relaxed border-t border-[#222530] pl-6 font-sans">
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+        </div>
+      </section>
+
+{/* 8. PEQUEÑO CROSS-SELL BREVE A ENVÍOS LOW COST */}
       <section className="py-14 bg-[#161922] border-b border-[#222530]">
         <div className="max-w-4xl mx-auto px-6 text-center space-y-4">
           <span className="text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider block">
