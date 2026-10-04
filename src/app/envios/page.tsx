@@ -62,111 +62,150 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
       
       <Header />
 
-      {/* 1. HERO ALTO CONTRASTE CON IDENTIDAD INSTITUCIONAL */}
-      <section className="relative bg-[#111318] text-[#FFFDFC] pt-14 pb-20 lg:pt-20 lg:pb-28 overflow-hidden border-b border-[#173E3B]">
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
+      {/* 1. HERO ALTO CONTRASTE REENFOCADO EN LA NECESIDAD DEL CLIENTE PARTICULAR */}
+      <section className="relative bg-[#111318] text-[#FFFDFC] pt-12 pb-16 lg:pt-16 lg:pb-24 overflow-hidden border-b border-[#222530]">
+        
+        {/* RESPLANDOR SUTIL DE FONDO */}
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-[#FFD21A]/5 via-transparent to-transparent pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
           
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
             
-            {/* IZQUIERDA: MENSAJE HERO */}
+            {/* COLUMNA IZQUIERDA (CONTENIDO EN DESKTOP / NARRATIVA PRINCIPAL) */}
             <div className="lg:col-span-7 space-y-6 text-left">
               
-              {/* BADGE PRELANZAMIENTO NOVIEMBRE 2026 */}
-              <div className="inline-flex items-center gap-2 text-xs font-mono font-extrabold uppercase tracking-widest bg-[#FFD21A] text-[#111318] px-3.5 py-1.5 rounded-lg shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-[#111318] animate-pulse"></span>
-                <span>DISPONIBLE DESDE EL 25 DE NOVIEMBRE DE 2026</span>
+              {/* 1. EYEBROW (ENVÍOS LOW COST · CABA → INTERIOR) */}
+              <div className="inline-flex items-center gap-2.5 bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] px-3.5 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider">
+                <Truck className="w-3.5 h-3.5 text-[#FFD21A]" />
+                <span>ENVÍOS LOW COST · CABA → INTERIOR</span>
               </div>
 
-              {/* TAG LOGÍSTICO */}
-              <div className="inline-flex items-center gap-3 bg-[#FFD21A]/20 border border-[#FFD21A]/40 text-[#FFD21A] px-4 py-2 rounded-full text-xs font-heading font-extrabold uppercase tracking-widest shadow-xs">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#FFD21A] animate-pulse"></span>
-                ENVÍOS LOW COST · CABA <span className="text-[#FFFDFC] font-mono">●────────→ ●</span> INTERIOR
-              </div>
-
-              {/* H1 PROTAGONISTA */}
-              <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-heading font-extrabold tracking-tight leading-[1.1] !text-white drop-shadow-md">
-                Comprás en Buenos Aires.
-                <span className="block mt-2 text-[#FFD21A] font-heading font-extrabold drop-shadow-sm">
-                  Lo llevamos a la puerta de tu casa.
+              {/* 2. NUEVO TÍTULO CONECTADO CON EL DOLOR DEL USUARIO */}
+              <h1 className="text-3xl sm:text-5xl lg:text-[52px] font-extrabold tracking-tight leading-[1.1] text-white">
+                Compraste en Buenos Aires.<br />
+                <span className="text-[#FFD21A] block mt-1.5">
+                  Ahora falta hacerlo llegar.
                 </span>
               </h1>
 
-              {/* BAJADA */}
-              <p className="text-base sm:text-xl text-[#D1D5DB] font-sans font-medium leading-relaxed max-w-2xl drop-shadow-xs">
-                Recibimos tus compras en nuestro punto logístico de CABA (Caracas 1101), consolidamos tus bultos y los transportamos con transporte programado hasta tu localidad en el interior.
+              {/* 3. NUEVA BAJADA ORIENTADA AL CLIENTE PARTICULAR */}
+              <p className="text-sm sm:text-base lg:text-lg text-[#E5E7EB] font-normal leading-relaxed max-w-2xl">
+                Tu proveedor entrega la compra en nuestro punto de recepción en CABA. Nosotros la recibimos, la organizamos para el próximo recorrido y la llevamos hasta la puerta de tu domicilio en el interior.
               </p>
-              <div className="p-4 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-xl text-xs sm:text-sm text-[#FFD21A] font-bold space-y-1 max-w-2xl">
-                <p className="font-extrabold">Servicio disponible desde el 25 de noviembre de 2026.</p>
-                <p className="text-[#D1D5DB] font-normal text-xs">Ya estamos recibiendo consultas para los próximos recorridos. Consultanos cómo funcionará en tu localidad.</p>
+
+              {/* 4. BLOQUE DE PUENTE DOLOR / SOLUCIÓN */}
+              <div className="p-4 bg-[#161922] border border-[#2D323E] rounded-xl text-xs sm:text-sm text-[#FFD21A] font-bold leading-snug max-w-2xl shadow-sm">
+                Sin tener que resolver por separado quién recibe, cómo trasladarlo o dónde retirarlo.
               </div>
 
-              {/* CTA CONTRASTADO */}
-              <div className="pt-4 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+              {/* 5. FOTOGRAFÍA DE ENTREGA A DOMICILIO EN MOBILE (EN MOBILE APARECE AQUÍ) */}
+              <div className="lg:hidden relative pt-2">
+                <div className="relative rounded-2xl overflow-hidden border border-[#2D323E] bg-[#090A0D] shadow-xl">
+                  <img 
+                    src="/entrega-ford-transit.jpg" 
+                    alt="Ford Transit Cuenta Hogar realizando entrega a domicilio en el interior" 
+                    className="w-full h-[240px] sm:h-[300px] object-cover object-center"
+                  />
+                  
+                  {/* OVERLAY SOBRIO ORIENTADO AL CLIENTE */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#111318]/90 via-transparent to-transparent flex items-end p-4">
+                    <div className="bg-[#161922]/90 backdrop-blur-md border border-[#2D323E] p-3 rounded-xl w-full text-left">
+                      <p className="text-xs font-mono font-bold uppercase text-[#FFD21A] tracking-wider">
+                        DE CABA A TU DOMICILIO
+                      </p>
+                      <p className="text-[11px] text-[#D1D5DB] font-medium mt-0.5">
+                        Recibimos tu compra y coordinamos la entrega en el interior.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 6. DISPONIBILIDAD (ÚNICO BLOQUE DE PRELANZAMIENTO) */}
+              <div className="p-3.5 bg-[#FFFDF5] border border-[#FFD21A]/60 rounded-xl text-xs text-[#111318] font-semibold space-y-0.5 max-w-2xl shadow-xs">
+                <div className="flex items-center gap-2 font-bold text-[#111318]">
+                  <span className="w-2 h-2 rounded-full bg-[#FFD21A] animate-pulse"></span>
+                  <span>Disponible desde el 25 de noviembre de 2026</span>
+                </div>
+                <p className="text-[11px] text-[#56616E] pl-4">
+                  Ya estamos recibiendo consultas para los próximos recorridos.
+                </p>
+              </div>
+
+              {/* 7. BOTONES DE ACCIÓN (CTAs) */}
+              <div className="pt-2 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                 <a
                   href="#cotizador"
-                  className="inline-flex items-center justify-center gap-2.5 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-heading font-extrabold px-8 py-4 rounded-xl text-xs uppercase tracking-wider transition-all shadow-xl shadow-[#FFD21A]/20 transform active:scale-95"
+                  className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold px-8 h-[52px] rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95 shrink-0"
                 >
-                  <Calculator className="w-4.5 h-4.5" />
-                  VER TARIFAS ESTIMADAS
+                  <Calculator className="w-4.5 h-4.5 text-[#111318]" />
+                  <span>VER TARIFAS ESTIMADAS</span>
                 </a>
 
                 <a
                   href={whatsappUrlDefault}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2.5 bg-[#161922] hover:bg-[#222530] text-white border border-[#374151] font-heading font-bold px-7 py-4 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md"
+                  className="inline-flex items-center justify-center gap-2 bg-[#161922] hover:bg-[#222530] text-white border border-[#374151] font-bold px-7 h-[52px] rounded-xl text-xs uppercase tracking-wider transition-all shrink-0 shadow-sm"
                 >
                   <WhatsAppIcon className="w-4.5 h-4.5 text-[#FFD21A]" />
-                  Consultar por WhatsApp
+                  <span>CONSULTAR POR WHATSAPP</span>
                 </a>
               </div>
 
-              {/* REFUERZO SOBRIO */}
-              <div className="pt-6 border-t border-[#FFFDFC]/15 flex flex-wrap items-center gap-x-8 gap-y-3 text-xs sm:text-sm font-heading font-bold text-[#D1D5DB]">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
-                  <span>Recepción en CABA</span>
+              {/* 8. TRES BENEFICIOS EN LUGAR DE CUATRO (DESGLOSADOS CLARAMENTE) */}
+              <div className="pt-4 border-t border-[#222530] grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
+                
+                <div className="space-y-1">
+                  <span className="text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider block">
+                    PUNTO DE RECEPCIÓN CABA
+                  </span>
+                  <p className="text-xs text-[#D1D5DB] leading-relaxed">
+                    Tu proveedor entrega la compra en Caracas 1101, previa coordinación.
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
-                  <span>Consolidación sin cargo</span>
+
+                <div className="space-y-1">
+                  <span className="text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider block">
+                    UN SOLO CONTACTO
+                  </span>
+                  <p className="text-xs text-[#D1D5DB] leading-relaxed">
+                    Coordinás con Cuenta Hogar desde la recepción hasta la entrega.
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
-                  <span>Transporte habilitado</span>
+
+                <div className="space-y-1">
+                  <span className="text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider block">
+                    ENTREGA EN TU DOMICILIO
+                  </span>
+                  <p className="text-xs text-[#D1D5DB] leading-relaxed">
+                    Recibís tu compra en tu domicilio dentro de las localidades del recorrido.
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span>
-                  <span>Entrega en domicilio</span>
-                </div>
+
               </div>
 
             </div>
 
-            {/* DERECHA: FOTOGRAFÍA EDITORIAL DE LA OPERACIÓN */}
-            <div className="lg:col-span-5 relative">
-              <div className="relative rounded-2xl overflow-hidden border-2 border-[#FFFDFC]/20 shadow-2xl group">
+            {/* COLUMNA DERECHA (DESKTOP): FOTOGRAFÍA DE LA FORD TRANSIT ENTREGANDO A DOMICILIO */}
+            <div className="hidden lg:block lg:col-span-5 relative lg:pt-1">
+              <div className="relative rounded-3xl overflow-hidden border border-[#2D323E] bg-[#090A0D] shadow-2xl group">
                 <img 
-                  src="/flota-cuenta-hogar.jpg" 
-                  alt="Operación logística programada Cuenta Hogar" 
-                  className="w-full h-[360px] sm:h-[440px] lg:h-[480px] object-cover group-hover:scale-102 transition-transform duration-700" 
+                  src="/entrega-ford-transit.jpg" 
+                  alt="Ford Transit Cuenta Hogar realizando entrega a domicilio en el interior" 
+                  className="w-full h-[460px] object-cover object-center group-hover:scale-102 transition-transform duration-700" 
                 />
                 
-                <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B] via-transparent to-transparent flex items-end p-6">
-                  <div className="bg-[#111318]/90 backdrop-blur-md border border-[#FFFDFC]/20 text-[#FFFDFC] p-4 rounded-xl w-full">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-[#FFD21A] text-[#111318] rounded-lg flex items-center justify-center shrink-0 font-bold">
-                        <Truck className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-heading font-bold uppercase text-[#FFD21A] tracking-wider">
-                          Operación Logística Directa
-                        </p>
-                        <p className="text-xs text-[#F7F3EC]/80 font-sans">
-                          Salida programada CABA (Caracas 1101) ➔ Interior
-                        </p>
-                      </div>
-                    </div>
+                {/* OVERLAY SOBRIO Y ELEGANTE SOBRE LA FOTO EN DESKTOP */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#111318]/90 via-transparent to-transparent flex items-end p-6">
+                  <div className="bg-[#161922]/90 backdrop-blur-md border border-[#2D323E] p-4 rounded-2xl w-full text-left shadow-lg">
+                    <p className="text-xs font-mono font-bold uppercase text-[#FFD21A] tracking-wider">
+                      DE CABA A TU DOMICILIO
+                    </p>
+                    <p className="text-xs text-[#D1D5DB] font-medium mt-1 leading-snug">
+                      Recibimos tu compra y coordinamos la entrega en el interior.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -177,7 +216,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
         </div>
       </section>
 
-      {/* 2. COTIZADOR INTERACTIVO DE ENVIOS (SECCIÓN EN FONDO BLANCO LUMINOSO) */}
+{/* 2. COTIZADOR INTERACTIVO DE ENVIOS (SECCIÓN EN FONDO BLANCO LUMINOSO) */}
       <section id="cotizador" className="py-16 lg:py-24 bg-[#FFFFFF] text-[#111318] border-b border-[#DCE1E6] scroll-mt-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8">
           
