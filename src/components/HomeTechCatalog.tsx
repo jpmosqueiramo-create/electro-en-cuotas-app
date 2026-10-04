@@ -355,17 +355,17 @@ export default function HomeTechCatalog() {
                 </p>
               </div>
 
-              {/* 4. FOTOGRAFÍA DEL CENTRO DE RECEPCIÓN Y GESTIÓN EN MOBILE (APARECE DESPUÉS DE LOS CTAs) */}
+              {/* 4. FOTOGRAFÍA DE LA OPERACIÓN INTEGRAL EN MOBILE (APARECE DESPUÉS DE LOS CTAs) */}
               <div className="lg:hidden relative pt-2">
-                <div className="relative rounded-2xl overflow-hidden border border-[#2D323E] bg-[#090A0D] shadow-lg">
+                <div className="relative rounded-2xl overflow-hidden border border-[#2D323E] bg-[#161922] shadow-xl">
                   <img 
-                    src="/oficina-cuenta-hogar.jpg" 
-                    alt="Centro de recepción y gestión de compras de Cuenta Hogar" 
-                    className="w-full h-[190px] sm:h-[240px] object-cover object-center"
+                    src="/home-hero-operacion-cuenta-hogar.jpg" 
+                    alt="Operación integral Cuenta Hogar: gestión, logística y entrega" 
+                    className="w-full h-auto aspect-square max-h-[360px] sm:max-h-[440px] object-cover object-center"
                   />
                 </div>
                 <p className="text-[11px] font-mono text-[#9CA3AF] text-center mt-2">
-                  Centro de recepción y gestión Cuenta Hogar · Comprás en cuotas y lo recibís donde estés
+                  Operación integral Cuenta Hogar · Gestión, recepción, logística y entrega a domicilio
                 </p>
               </div>
 
@@ -387,20 +387,17 @@ export default function HomeTechCatalog() {
 
             </div>
 
-            {/* COLUMNA DERECHA (DESKTOP): FOTOGRAFÍA PROTAGONISTA DEL CENTRO DE RECEPCIÓN Y GESTIÓN */}
+            {/* COLUMNA DERECHA (DESKTOP): FOTOGRAFÍA PROTAGONISTA DE LA OPERACIÓN INTEGRAL */}
             <div className="hidden lg:block lg:col-span-6 relative lg:pt-1">
-              <div className="relative rounded-3xl overflow-hidden border border-[#2D323E] bg-[#090A0D] shadow-2xl group">
+              <div className="relative rounded-3xl overflow-hidden border border-[#2D323E] bg-[#161922] shadow-2xl group">
                 <img 
-                  src="/oficina-cuenta-hogar.jpg" 
-                  alt="Centro de recepción y gestión de compras de Cuenta Hogar" 
-                  className="w-full h-[440px] object-cover object-center group-hover:scale-103 transition-transform duration-700" 
+                  src="/home-hero-operacion-cuenta-hogar.jpg" 
+                  alt="Operación integral Cuenta Hogar: gestión, logística y entrega" 
+                  className="w-full h-auto aspect-square max-h-[500px] object-cover object-center group-hover:scale-[1.02] transition-transform duration-700" 
                 />
-                
-                {/* DEGRADADO SUTIL INFERIOR QUE INTEGRA LA FOTO CON EL FONDO */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-transparent to-transparent opacity-70 pointer-events-none" />
               </div>
-              <p className="text-xs font-mono font-medium text-[#D1D5DB] text-right mt-3">
-                Centro de recepción y gestión Cuenta Hogar · Comprás en cuotas y lo recibís donde estés
+              <p className="text-xs font-mono font-medium text-[#D1D5DB] text-center mt-3">
+                Operación integral Cuenta Hogar · Gestión, recepción, logística y entrega a domicilio
               </p>
             </div>
 
