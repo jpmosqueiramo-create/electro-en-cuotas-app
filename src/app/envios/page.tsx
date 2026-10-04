@@ -177,22 +177,29 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
         </div>
       </section>
 
-      {/* 2. COTIZADOR INTERACTIVO DE ENVIOS */}
-      <section id="cotizador" className="py-16 lg:py-24 bg-[#161922] border-b border-[#222530] scroll-mt-20">
-        <div className="max-w-5xl mx-auto px-6 space-y-8">
+      {/* 2. COTIZADOR INTERACTIVO DE ENVIOS (SECCIÓN EN FONDO BLANCO LUMINOSO) */}
+      <section id="cotizador" className="py-16 lg:py-24 bg-[#FFFFFF] text-[#111318] border-b border-[#DCE1E6] scroll-mt-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8">
           
+          {/* ENCABEZADO DEL COTIZADOR */}
           <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <div className="inline-flex items-center gap-2 text-xs font-heading font-bold uppercase tracking-widest text-[#FFD21A]">
-              <Calculator className="w-4 h-4 text-[#FFD21A]" /> Calculadora Interactiva
+            <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-widest text-[#56616E] bg-[#F4F6F8] px-3.5 py-1.5 rounded-full border border-[#DCE1E6]">
+              <Calculator className="w-3.5 h-3.5 text-[#111318]" /> CALCULADORA INTERACTIVA
             </div>
-            <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#FFD21A]">
-              Cotizá tu Envío en Segundos
+            
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#111318] tracking-tight">
+              Cotizá tu envío en segundos
             </h2>
-            <p className="text-[#9CA3AF] text-sm font-sans">
-              Seleccioná tu destino y el tipo de carga para obtener una estimación rápida e iniciar la cotización por WhatsApp.
+            
+            <p className="text-sm sm:text-base text-[#56616E] leading-relaxed max-w-xl mx-auto">
+              Seleccioná tu localidad y el tipo de carga para obtener una estimación. Si necesitás ayuda, después podés continuar la consulta por WhatsApp.
             </p>
-            <div className="inline-block p-3 bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-xl text-xs font-bold text-[#FFD21A] mt-1">
-              Servicio disponible desde el 25 de noviembre de 2026 · Ya estamos recibiendo consultas
+
+            <div className="pt-1">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFFDF5] border border-[#FFD21A]/60 text-[#111318] text-xs font-semibold shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-[#FFD21A] animate-pulse"></span>
+                <span>Disponible desde el 25 de noviembre de 2026 · Ya estamos recibiendo consultas</span>
+              </div>
             </div>
           </div>
 

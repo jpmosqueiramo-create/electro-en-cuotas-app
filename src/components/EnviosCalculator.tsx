@@ -1,7 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Calculator, MapPin, Package, Truck, ArrowRight, CheckCircle2, ShieldCheck, Sparkles, RefreshCw } from "lucide-react";
+import { 
+  Calculator, 
+  MapPin, 
+  Package, 
+  Truck, 
+  ArrowRight, 
+  CheckCircle2, 
+  ShieldCheck, 
+  Sparkles, 
+  RefreshCw,
+  Building2,
+  Tv,
+  Layers,
+  HelpCircle,
+  AlertCircle
+} from "lucide-react";
 import { 
   getShippingPublishedConfig, 
   evaluateRateQuote, 
@@ -10,10 +25,33 @@ import {
   PublicShippingLoadType 
 } from "@/lib/shippingManager";
 
+function WhatsAppIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347m-5.421 7.419c-1.776 0-3.517-.476-5.044-1.377l-.362-.215-3.744.982.999-3.648-.236-.375c-.991-1.574-1.513-3.612-1.513-5.696 0-5.836 4.75-10.587 10.587-10.587 2.828 0 5.486 1.1 7.485 3.101 1.999 2 3.098 4.658 3.097 7.487 0 5.837-4.75 10.588-10.587 10.588m0-20.709c-6.726 0-12.2 5.474-12.2 12.2 0 2.147.56 4.246 1.624 6.091l-1.724 6.295 6.442-1.69c1.782.971 3.792 1.485 5.858 1.485 6.726 0 12.2-5.474 12.2-12.2 0-3.26-1.27-6.324-3.578-8.631-2.308-2.307-5.37-3.576-8.622-3.576" />
+    </svg>
+  );
+}
+
+function getLoadIcon(id: string, name: string) {
+  const lower = (id + " " + name).toLowerCase();
+  if (lower.includes("electro") || lower.includes("heladera") || lower.includes("lavarropas")) {
+    return <Building2 className="w-5 h-5 text-[#111318]" />;
+  }
+  if (lower.includes("tv") || lower.includes("tecnologia") || lower.includes("tele")) {
+    return <Tv className="w-5 h-5 text-[#111318]" />;
+  }
+  if (lower.includes("mueble") || lower.includes("sommier") || lower.includes("colch")) {
+    return <Layers className="w-5 h-5 text-[#111318]" />;
+  }
+  return <Package className="w-5 h-5 text-[#111318]" />;
+}
+
 export function EnviosCalculator() {
   const [config, setConfig] = useState<PublicShippingConfig | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Initial selection is empty until user chooses
   const [selectedDest, setSelectedDest] = useState<string>("");
   const [selectedCat, setSelectedCat] = useState<string>("");
   const [bultos, setBultos] = useState<number>(1);
@@ -24,22 +62,6 @@ export function EnviosCalculator() {
       setLoading(true);
       const data = await getShippingPublishedConfig();
       setConfig(data);
-      if (data && data.destinations) {
-        const activeDests = data.destinations
-          .filter((d) => d.active !== false && d.visible !== false)
-          .sort((a, b) => a.order - b.order);
-        if (activeDests.length > 0) {
-          setSelectedDest(activeDests[0].id);
-        }
-      }
-      if (data && data.loadTypes) {
-        const activeLoads = data.loadTypes
-          .filter((l) => l.active !== false && l.visible !== false)
-          .sort((a, b) => a.order - b.order);
-        if (activeLoads.length > 0) {
-          setSelectedCat(activeLoads[0].id);
-        }
-      }
       setLoading(false);
     }
 
@@ -54,15 +76,15 @@ export function EnviosCalculator() {
     .filter((l) => l.active !== false && l.visible !== false)
     .sort((a, b) => a.order - b.order);
 
-  const currentDest = activeDestinations.find((d) => d.id === selectedDest) || activeDestinations[0];
-  const currentLoad = activeLoadTypes.find((l) => l.id === selectedCat) || activeLoadTypes[0];
+  const currentDest = activeDestinations.find((d) => d.id === selectedDest);
+  const currentLoad = activeLoadTypes.find((l) => l.id === selectedCat);
 
-  const maxAutoBultos = config?.settings?.maxAutoBultos || 4;
   const isCalculatorActive = config?.settings?.calculatorActive !== false;
+  const isSelectionComplete = Boolean(selectedDest && selectedCat);
 
-  const evaluation = config && isCalculatorActive
+  const evaluation = (config && isCalculatorActive && isSelectionComplete)
     ? evaluateRateQuote(config, selectedDest, selectedCat, bultos)
-    : { price: 0, manualQuote: true, reason: !config ? "No hay configuración disponible" : "Calculadora desactivada" };
+    : { price: 0, manualQuote: true, reason: !config ? "No hay configuración disponible" : "Selección incompleta" };
 
   const generateWhatsAppMessage = () => {
     const destName = currentDest ? currentDest.name : "A consultar";
@@ -70,121 +92,182 @@ export function EnviosCalculator() {
     const catDesc = currentLoad ? currentLoad.desc : "";
 
     let priceText = "";
-    if (config && !evaluation.manualQuote && evaluation.price > 0) {
-      priceText = `💰 *Estimado de Referencia:* $${evaluation.price.toLocaleString("es-AR")}`;
+    if (config && isSelectionComplete && !evaluation.manualQuote && evaluation.price > 0) {
+      priceText = `💰 *Estimado de Referencia:* AR$ ${evaluation.price.toLocaleString("es-AR")}`;
     } else {
       priceText = `💰 *Cotización:* Requiere Cotización Personalizada`;
     }
 
-    const text = `Hola Cuenta Hogar, estuve cotizando en el simulador de Envíos Low Cost:
+    const text = `Hola Cuenta Hogar, estuve cotizando en la calculadora de Envíos Low Cost:
 
 📍 *Destino:* ${destName}
-📦 *Categoría:* ${catName}${catDesc ? ` (${catDesc})` : ""}
+📦 *Tipo de Carga:* ${catName}${catDesc ? ` (${catDesc})` : ""}
 🔢 *Cantidad de Bultos:* ${bultos === 5 ? "5+" : bultos}
 ${priceText}
 
-${observaciones ? `📝 *Detalles Adicionales:* ${observaciones}
-` : ""}La compra será entregada por el proveedor en su local de CABA (Caracas 1101). Servicio disponible desde noviembre de 2026: ¿me pueden brindar información sobre el funcionamiento del servicio y los recorridos en mi localidad?`;
+${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
+` : ""}La compra será entregada por el proveedor en su local de CABA (Caracas 1101). Servicio disponible desde el 25 de noviembre de 2026. ¿Me pueden brindar información sobre el envío a mi localidad?`;
 
     return `https://wa.me/5491125659686?text=${encodeURIComponent(text)}`;
   };
 
   if (loading) {
     return (
-      <div className="bg-[#111318] border-2 border-[#173E3B] rounded-3xl p-8 sm:p-12 shadow-2xl text-center space-y-4">
-        <RefreshCw className="w-8 h-8 animate-spin mx-auto text-[#FFD21A]" />
-        <p className="text-sm font-heading font-bold text-[#FFD21A]">Cargando tarifas de Envíos Low Cost...</p>
+      <div className="bg-[#FFFFFF] border border-[#DCE1E6] rounded-3xl p-8 sm:p-12 shadow-sm text-center space-y-4 max-w-4xl mx-auto">
+        <RefreshCw className="w-8 h-8 animate-spin mx-auto text-[#111318]" />
+        <p className="text-sm font-semibold text-[#111318]">Cargando tarifas de Envíos Low Cost...</p>
+      </div>
+    );
+  }
+
+  if (!config) {
+    return (
+      <div className="bg-[#FFFFFF] border border-[#DCE1E6] rounded-3xl p-8 sm:p-10 shadow-sm text-center space-y-4 max-w-2xl mx-auto">
+        <AlertCircle className="w-10 h-10 text-[#56616E] mx-auto" />
+        <h3 className="text-lg font-bold text-[#111318]">No pudimos cargar las tarifas en este momento</h3>
+        <p className="text-xs sm:text-sm text-[#56616E]">
+          Podés consultarnos directamente por WhatsApp y te ayudamos con la cotización de tu envío.
+        </p>
+        <div className="pt-2">
+          <a
+            href={generateWhatsAppMessage()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#E8B900] text-[#111318] font-extrabold px-6 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all shadow-sm"
+          >
+            <WhatsAppIcon className="w-4.5 h-4.5 text-[#111318]" />
+            <span>CONSULTAR POR WHATSAPP</span>
+          </a>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#111318] border-2 border-[#173E3B] rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8">
+    <div className="bg-[#FFFFFF] border border-[#DCE1E6] rounded-3xl p-5 sm:p-8 lg:p-10 shadow-sm space-y-8 text-left">
       
-      {/* BANNER AVISO PRELANZAMIENTO */}
-      <div className="bg-[#FFD21A]/10 border border-[#FFD21A]/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2.5 text-[#FFD21A]">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#FFD21A] animate-pulse shrink-0"></span>
-          <span className="font-heading font-extrabold uppercase tracking-wide">
-            Servicio disponible desde noviembre de 2026
-          </span>
-        </div>
-        <span className="text-[#D1D5DB] font-sans font-medium">
-          Ya estamos recibiendo consultas para los próximos recorridos.
-        </span>
+      {/* INDICADOR VISUAL DE PASOS */}
+      <div className="flex items-center justify-center gap-2 text-xs font-mono font-semibold text-[#56616E] bg-[#F4F6F8] border border-[#DCE1E6] py-2 px-4 rounded-xl max-w-md mx-auto">
+        <span className={selectedDest ? "text-[#111318] font-bold" : ""}>1. Destino</span>
+        <span className="text-[#DCE1E6]">→</span>
+        <span className={selectedCat ? "text-[#111318] font-bold" : ""}>2. Tipo de carga</span>
+        <span className="text-[#DCE1E6]">→</span>
+        <span className={isSelectionComplete ? "text-[#111318] font-bold" : ""}>3. Estimación</span>
       </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
         
-        {/* SELECCIÓN DE PARÁMETROS */}
-        <div className="lg:col-span-7 space-y-6">
+        {/* COLUMNA IZQUIERDA: FORMULARIO Y CONTROLES (60-62%) */}
+        <div className="lg:col-span-7 space-y-8">
           
-          {/* 1. SELECCION DE DESTINO */}
+          {/* PASO 1. SELECCIÓN DE LOCALIDAD */}
           <div className="space-y-3">
-            <label className="block text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-[#FFD21A]" /> 1. Seleccioná tu Localidad de Destino
-            </label>
+            <div className="space-y-0.5">
+              <h3 className="text-base font-extrabold text-[#111318]">
+                1. ¿A qué localidad querés enviarlo?
+              </h3>
+              <p className="text-xs text-[#56616E]">
+                Elegí el destino del recorrido.
+              </p>
+            </div>
+
             {activeDestinations.length === 0 ? (
-              <p className="text-xs text-[#9CA3AF] italic">No hay localidades disponibles en este momento.</p>
+              <p className="text-xs text-[#56616E] italic">No hay localidades disponibles en este momento.</p>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                {activeDestinations.map((d) => (
-                  <button
-                    key={d.id}
-                    type="button"
-                    onClick={() => setSelectedDest(d.id)}
-                    className={`p-3 rounded-xl border text-left text-xs font-heading font-bold transition-all ${
-                      selectedDest === d.id
-                        ? "bg-[#173E3B] text-white border-[#FFD21A] shadow-md"
-                        : "bg-[#161922] text-[#D1D5DB] border-[#222530] hover:border-[#374151] hover:text-white"
-                    }`}
-                  >
-                    <span className="block font-extrabold text-sm">{d.name}</span>
-                    <span className="block text-[10px] text-[#9CA3AF] font-normal mt-0.5">{d.timeframe}</span>
-                  </button>
-                ))}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {activeDestinations.map((d) => {
+                  const isSelected = selectedDest === d.id;
+                  const isOtra = d.name.toLowerCase().includes("otra");
+
+                  return (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => setSelectedDest(d.id)}
+                      className={`p-3.5 rounded-2xl border text-left min-h-[74px] transition-all flex flex-col justify-between relative cursor-pointer ${
+                        isSelected
+                          ? "bg-[#FFFDF5] border-2 border-[#FFD21A] text-[#111318] shadow-sm"
+                          : "bg-[#FFFFFF] border-[#DCE1E6] hover:border-[#FFD21A] text-[#111318]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-extrabold text-xs sm:text-sm leading-snug">
+                          {isOtra ? "Otra localidad" : d.name}
+                        </span>
+                        {isSelected && (
+                          <CheckCircle2 className="w-4 h-4 text-[#111318] shrink-0 ml-1" />
+                        )}
+                      </div>
+                      <span className="text-[11px] text-[#56616E] font-medium mt-1">
+                        {isOtra ? "Consultar cobertura" : (d.timeframe || "Recorrido previsto")}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
 
-          {/* 2. SELECCIÓN DE CATEGORÍA DE CARGA */}
+          {/* PASO 2. SELECCIÓN DE TIPO DE CARGA */}
           <div className="space-y-3">
-            <label className="block text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider flex items-center gap-1.5">
-              <Package className="w-4 h-4 text-[#FFD21A]" /> 2. Tipo de Producto o Carga
-            </label>
+            <div className="space-y-0.5">
+              <h3 className="text-base font-extrabold text-[#111318]">
+                2. ¿Qué necesitás traer?
+              </h3>
+              <p className="text-xs text-[#56616E]">
+                Elegí la opción que más se parezca a tu compra.
+              </p>
+            </div>
+
             {activeLoadTypes.length === 0 ? (
-              <p className="text-xs text-[#9CA3AF] italic">No hay categorías de carga disponibles en este momento.</p>
+              <p className="text-xs text-[#56616E] italic">No hay tipos de carga disponibles en este momento.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {activeLoadTypes.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => setSelectedCat(c.id)}
-                    className={`p-3.5 rounded-xl border text-left transition-all flex items-start gap-3 ${
-                      selectedCat === c.id
-                        ? "bg-[#173E3B] text-white border-[#FFD21A] shadow-md"
-                        : "bg-[#161922] text-[#D1D5DB] border-[#222530] hover:border-[#374151] hover:text-white"
-                    }`}
-                  >
-                    <span className="text-2xl shrink-0">{c.icon}</span>
-                    <div>
-                      <span className="block font-heading font-bold text-xs">{c.name}</span>
-                      <span className="block text-[10px] text-[#9CA3AF] font-sans mt-0.5 leading-tight">{c.desc}</span>
-                    </div>
-                  </button>
-                ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {activeLoadTypes.map((c) => {
+                  const isSelected = selectedCat === c.id;
+                  const icon = getLoadIcon(c.id, c.name);
+
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setSelectedCat(c.id)}
+                      className={`p-4 rounded-2xl border text-left min-h-[76px] transition-all flex items-start gap-3.5 relative cursor-pointer ${
+                        isSelected
+                          ? "bg-[#FFFDF5] border-2 border-[#FFD21A] text-[#111318] shadow-sm"
+                          : "bg-[#FFFFFF] border-[#DCE1E6] hover:border-[#FFD21A] text-[#111318]"
+                      }`}
+                    >
+                      <div className="p-2 bg-[#F4F6F8] rounded-xl shrink-0 mt-0.5">
+                        {icon}
+                      </div>
+                      <div className="flex-1 min-w-0 pr-5">
+                        <span className="block font-bold text-xs sm:text-sm text-[#111318] leading-tight">
+                          {c.name}
+                        </span>
+                        {c.desc && (
+                          <span className="block text-[11px] text-[#56616E] mt-1 leading-snug">
+                            {c.desc}
+                          </span>
+                        )}
+                      </div>
+                      {isSelected && (
+                        <CheckCircle2 className="w-4 h-4 text-[#111318] shrink-0 absolute top-4 right-4" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
 
-          {/* 3. CANTIDAD DE BULTOS */}
-          <div className="space-y-3">
+          {/* PASO 3. CANTIDAD DE BULTOS (OCIONAL SEGÚN SELECCIÓN) */}
+          <div className="space-y-3 pt-2 border-t border-[#DCE1E6]">
             <div className="flex justify-between items-center">
-              <label className="block text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider flex items-center gap-1.5">
-                <Truck className="w-4 h-4 text-[#FFD21A]" /> 3. Cantidad de Bultos o Paquetes
-              </label>
-              <span className="text-xs font-mono font-bold text-[#FFD21A] bg-[#161922] px-3 py-1 rounded-md border border-[#222530]">
+              <h3 className="text-xs font-mono font-bold text-[#111318] uppercase tracking-wider">
+                ¿Cuántos bultos son?
+              </h3>
+              <span className="text-xs font-mono font-bold text-[#111318] bg-[#F4F6F8] px-3 py-1 rounded-md border border-[#DCE1E6]">
                 {bultos === 5 ? "5+" : bultos} {bultos === 1 ? "bulto" : "bultos"}
               </span>
             </div>
@@ -195,10 +278,10 @@ ${observaciones ? `📝 *Detalles Adicionales:* ${observaciones}
                   key={n}
                   type="button"
                   onClick={() => setBultos(n)}
-                  className={`flex-1 py-2.5 rounded-xl text-xs font-mono font-bold transition-all border ${
+                  className={`flex-1 min-h-[44px] py-2.5 rounded-xl text-xs font-mono font-bold transition-all border cursor-pointer ${
                     bultos === n
-                      ? "bg-[#FFD21A] text-[#111318] border-[#FFD21A] font-extrabold shadow-md"
-                      : "bg-[#161922] text-[#9CA3AF] border-[#222530] hover:bg-[#1A1D26] hover:text-white"
+                      ? "bg-[#FFD21A] text-[#111318] border-[#FFD21A] font-extrabold shadow-xs"
+                      : "bg-[#FFFFFF] text-[#56616E] border-[#DCE1E6] hover:border-[#FFD21A] hover:text-[#111318]"
                   }`}
                 >
                   {n === 5 ? "5+" : n}
@@ -207,100 +290,115 @@ ${observaciones ? `📝 *Detalles Adicionales:* ${observaciones}
             </div>
           </div>
 
-          {/* 4. NOTAS O DETALLES OPCIONALES */}
-          <div className="space-y-2">
-            <label className="block text-xs font-mono font-bold text-[#9CA3AF] uppercase">
-              Detalle o Producto Específico (Opcional):
+          {/* DETALLES ADICIONALES OPCIONALES */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-mono font-bold text-[#56616E] uppercase">
+              Detalle o producto específico (opcional):
             </label>
             <input
               type="text"
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
               placeholder="Ej: Smart TV 55 pulgadas comprada en Mercado Libre..."
-              className="w-full bg-[#161922] border border-[#222530] rounded-xl p-3 text-xs text-[#FFFDFC] placeholder-[#6B7280] outline-none focus:border-[#FFD21A] transition"
+              className="w-full bg-[#F4F6F8] border border-[#DCE1E6] rounded-xl p-3 text-xs text-[#111318] placeholder-[#56616E] outline-none focus:border-[#FFD21A] transition font-medium"
             />
           </div>
 
         </div>
 
-        {/* RESUMEN Y BOTÓN DIRECTO A WHATSAPP */}
-        <div className="lg:col-span-5 bg-[#161922] border border-[#222530] rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-xl relative overflow-hidden">
+        {/* COLUMNA DERECHA: RESUMEN Y RESULTADO DE ESTIMACIÓN (38-40%) */}
+        <div className="lg:col-span-5 bg-[#F4F6F8] border border-[#DCE1E6] rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-xs text-left">
           
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-[#222530] pb-3">
-              <span className="text-xs font-mono font-bold uppercase text-[#FFD21A] tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-[#FFD21A]" /> Estimador de Envío
-              </span>
-              <span className="text-[10px] bg-[#173E3B] text-white px-2.5 py-0.5 rounded-full font-heading font-bold uppercase">
-                Low Cost Directo
-              </span>
+          <div className="space-y-5">
+            <div className="border-b border-[#DCE1E6] pb-3 space-y-1">
+              <h3 className="text-base font-extrabold text-[#111318]">
+                Resumen de tu envío
+              </h3>
+              <p className="text-xs text-[#56616E]">
+                Revisá los datos antes de continuar.
+              </p>
             </div>
 
-            <div className="space-y-3 text-xs text-[#D1D5DB]">
-              <div className="flex justify-between py-1.5 border-b border-[#222530]">
-                <span className="text-[#9CA3AF]">Destino:</span>
-                <strong className="text-white font-heading">{currentDest ? currentDest.name : "Por definir"}</strong>
+            {/* SI TODAVÍA NO SELECCIONÓ AMBOS PARÁMETROS */}
+            {!isSelectionComplete ? (
+              <div className="py-8 text-center space-y-3 bg-[#FFFFFF] border border-[#DCE1E6] rounded-xl p-6">
+                <HelpCircle className="w-8 h-8 text-[#56616E] mx-auto opacity-50" />
+                <p className="text-xs sm:text-sm font-semibold text-[#111318] leading-relaxed">
+                  Elegí una localidad y un tipo de carga para ver la estimación.
+                </p>
               </div>
-
-              <div className="flex justify-between py-1.5 border-b border-[#222530]">
-                <span className="text-[#9CA3AF]">Tipo de Carga:</span>
-                <strong className="text-white font-heading">{currentLoad ? currentLoad.name : "Por definir"}</strong>
-              </div>
-
-              <div className="flex justify-between py-1.5 border-b border-[#222530]">
-                <span className="text-[#9CA3AF]">Recepción CABA:</span>
-                <strong className="text-[#FFD21A] font-mono">Caracas 1101</strong>
-              </div>
-
-              <div className="flex justify-between py-1.5 border-b border-[#222530]">
-                <span className="text-[#9CA3AF]">Consolidación:</span>
-                <strong className="text-emerald-400 font-bold">Sin Cargo</strong>
-              </div>
-            </div>
-
-            {/* PRECIO ESTIMADO O COTIZACIÓN PERSONALIZADA */}
-            <div className="bg-[#111318] border border-[#173E3B] p-4 rounded-xl text-center space-y-1">
-              <span className="text-[10px] font-mono uppercase font-bold text-[#9CA3AF]">Costo Estimado Referencial</span>
-              
-              {!config || !isCalculatorActive || evaluation.manualQuote ? (
-                <div className="py-1 space-y-1">
-                  <div className="text-base sm:text-lg font-heading font-bold text-[#FFD21A]">
-                    Cotización personalizada
+            ) : (
+              <div className="space-y-4">
+                
+                {/* DETALLE DE FILAS EN LENGUAJE CLARO */}
+                <div className="space-y-2.5 text-xs text-[#111318]">
+                  <div className="flex justify-between py-2 border-b border-[#DCE1E6]">
+                    <span className="text-[#56616E]">Destino:</span>
+                    <strong className="font-extrabold">{currentDest ? currentDest.name : "-"}</strong>
                   </div>
-                  <p className="text-[10px] text-[#9CA3AF] font-sans leading-tight">
-                    {!config 
-                      ? "No podemos calcular un valor automático en este momento. Consultanos por WhatsApp y te cotizamos el envío."
-                      : "Necesitamos revisar las características de este envío para darte el valor correcto."}
-                  </p>
+
+                  <div className="flex justify-between py-2 border-b border-[#DCE1E6]">
+                    <span className="text-[#56616E]">Tipo de carga:</span>
+                    <strong className="font-extrabold">{currentLoad ? currentLoad.name : "-"}</strong>
+                  </div>
+
+                  <div className="flex justify-between py-2 border-b border-[#DCE1E6]">
+                    <span className="text-[#56616E]">Cantidad:</span>
+                    <strong className="font-mono font-bold">{bultos === 5 ? "5+" : bultos} bulto(s)</strong>
+                  </div>
+
+                  <div className="flex justify-between py-2 border-b border-[#DCE1E6]">
+                    <span className="text-[#56616E]">Punto de recepción en CABA:</span>
+                    <strong className="font-mono font-bold text-[#111318]">Caracas 1101</strong>
+                  </div>
                 </div>
-              ) : (
-                <>
-                  <div className="text-3xl font-heading font-extrabold text-[#FFD21A] font-mono">
-                    ${evaluation.price.toLocaleString("es-AR")}
+
+                {/* RESULTADO DE ESTIMACIÓN O COTIZACIÓN PERSONALIZADA */}
+                {evaluation.manualQuote || evaluation.price <= 0 ? (
+                  <div className="bg-[#FFFFFF] border border-[#FFD21A]/80 p-5 rounded-xl text-center space-y-2 shadow-xs">
+                    <span className="text-[10px] font-mono font-bold text-[#56616E] uppercase tracking-wider block">
+                      COTIZACIÓN ESPECIAL
+                    </span>
+                    <p className="text-sm sm:text-base font-extrabold text-[#111318]">
+                      Necesitamos cotizar este envío personalmente
+                    </p>
+                    <p className="text-xs text-[#56616E] leading-relaxed">
+                      Hay envíos que necesitan una revisión rápida para darte un valor correcto.
+                    </p>
                   </div>
-                  <p className="text-[10px] text-[#9CA3AF] font-sans">
-                    *Sujeto a confirmación según dimensiones exactas y fragilidad.
-                  </p>
-                </>
-              )}
-            </div>
+                ) : (
+                  <div className="bg-[#FFFFFF] border border-[#DCE1E6] p-5 rounded-xl text-center space-y-1.5 shadow-xs">
+                    <span className="text-[10px] font-mono font-bold text-[#56616E] uppercase tracking-wider block">
+                      VALOR ESTIMADO
+                    </span>
+                    <div className="text-3xl sm:text-4xl font-extrabold text-[#111318] font-mono">
+                      AR$ ${evaluation.price.toLocaleString("es-AR")}
+                    </div>
+                    <p className="text-[11px] text-[#56616E] leading-tight">
+                      Valor estimado para los datos seleccionados. La cotización final se confirma al revisar las características del bulto.
+                    </p>
+                  </div>
+                )}
+
+              </div>
+            )}
           </div>
 
+          {/* CTA WHATSAPP & MICROCOPY DE CIERRE */}
           <div className="space-y-3 pt-2">
             <a
               href={generateWhatsAppMessage()}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full inline-flex items-center justify-center gap-2.5 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-heading font-extrabold px-6 py-4 rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-[#FFD21A]/20 active:scale-95"
+              className="w-full inline-flex items-center justify-center gap-2.5 bg-[#FFD21A] hover:bg-[#E8B900] text-[#111318] font-extrabold px-6 h-[52px] sm:h-[56px] rounded-xl text-xs sm:text-sm uppercase tracking-wider transition-all shadow-md active:scale-98 cursor-pointer"
             >
-              <span>Confirmar Cotización por WhatsApp</span>
-              <ArrowRight className="w-4 h-4" />
+              <WhatsAppIcon className="w-5 h-5 text-[#111318]" />
+              <span>CONTINUAR POR WHATSAPP</span>
             </a>
 
-            <div className="flex items-center justify-center gap-1.5 text-[11px] text-[#9CA3AF]">
-              <ShieldCheck className="w-4 h-4 text-[#2F7D5C]" />
-              <span>Respuesta garantizada en horario comercial</span>
-            </div>
+            <p className="text-[11px] text-[#56616E] text-center font-medium">
+              Continuá por WhatsApp para confirmar los detalles del envío.
+            </p>
           </div>
 
         </div>
