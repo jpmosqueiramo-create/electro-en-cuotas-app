@@ -515,49 +515,90 @@ export default function PublicCatalog() {
         </div>
       </section>
 
-      {/* 3. BENEFICIOS Y DIFERENCIALES DEL SERVICIO DE COMPRA */}
-      <section className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530]">
-        <div className="max-w-6xl mx-auto px-6 space-y-12">
+      {/* 3. BENEFICIOS CONCRETOS DEL SERVICIO DE COMPRA */}
+      <section className="py-16 lg:py-20 bg-[#111318] border-b border-[#222530]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
           
-          <div className="text-center max-w-2xl mx-auto space-y-3">
-            <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#FFD21A]">
-              Diferenciales de Cuenta Hogar
+          <div className="text-center max-w-3xl mx-auto space-y-3">
+            <span className="inline-block bg-[#161922] border border-[#FFD21A]/40 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full shadow-xs">
+              TODO RESUELTO EN UNA SOLA GESTIÓN
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              Más opciones. Cuotas claras. Entrega en tu domicilio.
             </h2>
-            <p className="text-[#9CA3AF] text-sm sm:text-base font-sans">
-              Por qué elegir la gestión integral de compra desde el interior.
+            <p className="text-sm sm:text-base text-[#D1D5DB] font-sans leading-relaxed">
+              Desde la búsqueda hasta la entrega, coordinamos cada etapa para que puedas resolver tu compra desde el interior sin viajar a Capital.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-[#161922] border border-[#222530] p-8 rounded-2xl space-y-4">
-              <div className="w-12 h-12 bg-[#111318] border border-[#FFD21A]/30 rounded-xl flex items-center justify-center text-[#FFD21A]">
-                <ShoppingBag className="w-6 h-6" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
+            
+            {/* TARJETA 01 */}
+            <div className="bg-[#161922] border border-[#262936] hover:border-[#FFD21A]/40 p-6 rounded-2xl space-y-4 transition-all duration-200 shadow-xl flex flex-col justify-between">
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#FFD21A] bg-[#111318] border border-[#FFD21A]/30 px-2.5 py-1 rounded-md">
+                    01 · MÁS OPCIONES SIN VIAJAR
+                  </span>
+                  <div className="w-9 h-9 bg-[#111318] border border-[#FFD21A]/30 rounded-xl flex items-center justify-center text-[#FFD21A]">
+                    <Search className="w-4.5 h-4.5" />
+                  </div>
+                </div>
+
+                <h3 className="text-lg sm:text-xl font-bold text-white leading-snug">
+                  Encontrá lo que necesitás en CABA
+                </h3>
+                
+                <p className="text-xs sm:text-sm text-[#D1D5DB] font-sans leading-relaxed pt-1 border-t border-[#262936]">
+                  Buscamos alternativas según lo que necesitás y te presentamos una propuesta para que puedas evaluarla antes de avanzar.
+                </p>
               </div>
-              <h3 className="text-lg font-bold text-white">Gestión Directa en CABA</h3>
-              <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                Accedé a los precios y stock de la Capital Federal sin tener que viajar ni coordinar con múltiples vendedores.
-              </p>
             </div>
 
-            <div className="bg-[#161922] border border-[#222530] p-8 rounded-2xl space-y-4">
-              <div className="w-12 h-12 bg-[#111318] border border-[#FFD21A]/30 rounded-xl flex items-center justify-center text-[#FFD21A]">
-                <CreditCard className="w-6 h-6" />
+            {/* TARJETA 02 (PROTAGONISMO DESTACADO LIGERAMENTE MAYOR) */}
+            <div className="bg-gradient-to-b from-[#161922] to-[#1A1D26] border-2 border-[#FFD21A]/50 p-6 rounded-2xl space-y-4 transition-all duration-200 shadow-2xl shadow-[#FFD21A]/5 flex flex-col justify-between relative overflow-hidden">
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#FFD21A] bg-[#111318] border border-[#FFD21A] px-2.5 py-1 rounded-md shadow-xs">
+                    02 · PLAN DE CUOTAS FIJAS
+                  </span>
+                  <div className="w-9 h-9 bg-[#FFD21A] text-[#111318] rounded-xl flex items-center justify-center font-bold shadow-md">
+                    <CreditCard className="w-4.5 h-4.5" />
+                  </div>
+                </div>
+
+                <h3 className="text-lg sm:text-xl font-extrabold text-white leading-snug">
+                  Sabés cómo queda antes de decidir
+                </h3>
+                
+                <p className="text-xs sm:text-sm text-[#E5E7EB] font-sans leading-relaxed pt-1 border-t border-[#FFD21A]/20">
+                  Te presentamos las condiciones y el plan de cuotas fijas de la operación antes de formalizar la gestión.
+                </p>
               </div>
-              <h3 className="text-lg font-bold text-white">Plan de Cuotas Previsible</h3>
-              <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                Aboná la operación completa (producto + traslado) en un esquema de cuotas claras acordadas previamente.
-              </p>
             </div>
 
-            <div className="bg-[#161922] border border-[#222530] p-8 rounded-2xl space-y-4">
-              <div className="w-12 h-12 bg-[#111318] border border-[#FFD21A]/30 rounded-xl flex items-center justify-center text-[#FFD21A]">
-                <Truck className="w-6 h-6" />
+            {/* TARJETA 03 */}
+            <div className="bg-[#161922] border border-[#262936] hover:border-[#FFD21A]/40 p-6 rounded-2xl space-y-4 transition-all duration-200 shadow-xl flex flex-col justify-between">
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#FFD21A] bg-[#111318] border border-[#FFD21A]/30 px-2.5 py-1 rounded-md">
+                    03 · ENTREGA EN TU DOMICILIO
+                  </span>
+                  <div className="w-9 h-9 bg-[#111318] border border-[#FFD21A]/30 rounded-xl flex items-center justify-center text-[#FFD21A]">
+                    <Truck className="w-4.5 h-4.5" />
+                  </div>
+                </div>
+
+                <h3 className="text-lg sm:text-xl font-bold text-white leading-snug">
+                  Nos ocupamos de que llegue
+                </h3>
+                
+                <p className="text-xs sm:text-sm text-[#D1D5DB] font-sans leading-relaxed pt-1 border-t border-[#262936]">
+                  Coordinamos la recepción, el traslado y la entrega en tu domicilio dentro de las localidades de cobertura.
+                </p>
               </div>
-              <h3 className="text-lg font-bold text-white">Entrega en Domicilio</h3>
-              <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                Nos encargamos del traslado programado para que recibas el equipo en la puerta de tu hogar o comercio.
-              </p>
             </div>
+
           </div>
 
         </div>
@@ -569,7 +610,7 @@ export default function PublicCatalog() {
           
           <div className="text-center space-y-3 max-w-2xl mx-auto">
             <span className="inline-block bg-[#111318] border border-[#FFD21A]/30 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full">
-              EJEMPLOS Y OPCIONES DISPONIBLES
+              ALGUNAS OPCIONES QUE PODEMOS GESTIONAR
             </span>
             <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-[#FFD21A]">
               Opciones de Compra Orientativas
