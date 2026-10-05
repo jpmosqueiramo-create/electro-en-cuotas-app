@@ -16,6 +16,7 @@ export default function Footer() {
         </div>
         
         <div className="flex gap-6 text-xs font-semibold flex-wrap justify-center items-center">
+          <Link href="/cliente" className="text-[#E7B86A] hover:text-white transition-colors font-bold">Portal Clientes</Link>
           <Link href="/terms" className="text-[#FFFDFC] hover:text-[#E7B86A] transition-colors">Términos y Condiciones</Link>
           <Link href="/privacy" className="text-[#FFFDFC] hover:text-[#E7B86A] transition-colors">Privacidad</Link>
           <Link href="/arrepentimiento" className="inline-flex items-center gap-2 bg-[#B44E2A] hover:bg-[#984021] text-white font-heading font-bold text-xs px-4 py-2.5 rounded-xl shadow-md hover:scale-105 transition-all uppercase tracking-wider">Botón de Arrepentimiento</Link>
