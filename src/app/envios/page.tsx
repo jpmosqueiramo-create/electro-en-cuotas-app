@@ -556,193 +556,188 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
         </div>
       </section>
 
-      {/* 5. PUNTO LOGÍSTICO CENTRAL CABA */}
-      <section id="preguntas-frecuentes" className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530] scroll-mt-20">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="bg-[#161922] border-2 border-[#173E3B] rounded-3xl p-8 sm:p-12 shadow-md space-y-8">
-            
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-[#222530] pb-6">
-              <div className="space-y-1">
-                <span className="text-xs font-heading font-bold text-[#FFD21A] uppercase tracking-widest flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4" /> Sede Oficial de Recepción CABA
-                </span>
-                <h2 className="text-3xl font-heading font-extrabold text-[#FFD21A]">
-                  Tu punto logístico central en Capital
-                </h2>
-              </div>
-
-              <div className="bg-[#111318] border border-[#222530] px-5 py-3 rounded-2xl flex items-center gap-3 shrink-0">
-                <CalendarClock className="w-5 h-5 text-[#FFD21A]" />
-                <div>
-                  <p className="text-[10px] uppercase font-bold text-[#9CA3AF] tracking-wider">Horario de recepción</p>
-                  <p className="text-base font-heading font-bold text-[#FFD21A]">A COORDINAR</p>
-                </div>
-              </div>
-            </div>
-
-            <p className="text-base sm:text-lg text-white font-sans leading-relaxed">
-              Tus vendedores o proveedores entregan la mercadería directamente en nuestro local autorizado de CABA.
+      {/* 5. SECCIÓN FUSIONADA: PUNTO DE RECEPCIÓN EN CABA Y PROCESO HASTA TU DOMICILIO */}
+      <section id="recepcion-caba" className="py-16 lg:py-20 bg-[#111318] border-b border-[#222530] scroll-mt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-10 lg:space-y-12">
+          
+          {/* ENCABEZADO DE SECCIÓN */}
+          <div className="text-center max-w-3xl mx-auto space-y-3">
+            <span className="inline-block bg-[#161922] border border-[#FFD21A]/30 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full shadow-xs">
+              TU PUNTO DE RECEPCIÓN EN CABA
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-[44px] font-extrabold text-white tracking-tight leading-[1.12]">
+              Tu compra llega a Capital.<br />
+              <span className="text-[#FFD21A] block mt-1">
+                Nosotros nos ocupamos del resto.
+              </span>
+            </h2>
+            <p className="text-sm sm:text-base text-[#D1D5DB] font-sans leading-relaxed max-w-2xl mx-auto">
+              Tu proveedor entrega la mercadería en nuestro centro de recepción de Caracas 1101, previa coordinación. Desde ahí la identificamos, la organizamos para el recorrido correspondiente y coordinamos la entrega en tu domicilio.
             </p>
 
-            {/* DIRECCIÓN Y MAPA DE GOOGLE MAPS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-              <div className="space-y-4">
-                <div className="bg-[#111318] border border-[#222530] p-6 rounded-2xl flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[#173E3B] text-white rounded-xl flex items-center justify-center shrink-0 font-bold">
-                    <Navigation className="w-5 h-5 text-[#FFD21A]" />
-                  </div>
+            {/* AVISO DE DISPONIBILIDAD ÚNICO */}
+            <div className="pt-1">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#161922] border border-[#FFD21A]/40 text-[#FFD21A] text-xs font-mono font-semibold shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-[#FFD21A] animate-pulse"></span>
+                <span>Disponible desde el 25 de noviembre de 2026 · Ya estamos recibiendo consultas.</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ESTRUCTURA DESKTOP DE 2 COLUMNAS (IZQ ~45%, DER ~55%) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            {/* COLUMNA IZQUIERDA: INFORMACIÓN PRÁCTICA, DIRECCIÓN Y MAPA */}
+            <div className="lg:col-span-5 space-y-5">
+              
+              {/* BLOQUE DE DIRECCIÓN Y HORARIO */}
+              <div className="bg-[#161922] border border-[#252A32] p-5 sm:p-6 rounded-2xl space-y-4 shadow-xl">
+                <div className="flex items-center justify-between border-b border-[#252A32] pb-3.5">
                   <div>
-                    <p className="text-xs uppercase font-bold text-[#9CA3AF] tracking-wider">Dirección para tus proveedores:</p>
-                    <p className="text-lg font-heading font-bold text-[#FFD21A]">Caracas 1101, CABA, Argentina</p>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FFD21A]">
+                      DIRECCIÓN DE RECEPCIÓN
+                    </span>
+                    <h3 className="text-xl font-extrabold text-white mt-0.5">
+                      Caracas 1101 · CABA
+                    </h3>
+                  </div>
+                  <div className="bg-[#111318] border border-[#252A32] px-3 py-2 rounded-xl text-right">
+                    <p className="text-[10px] uppercase font-bold text-[#9CA3AF]">Horario de recepción</p>
+                    <p className="text-xs font-bold text-[#FFD21A]">A COORDINAR</p>
                   </div>
                 </div>
 
-                <div className="w-full rounded-2xl overflow-hidden border border-[#222530]">
-                  <iframe
-                    title="Ubicación Centro de Recepción CABA - Caracas 1101"
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3283.473539827663!2d-58.46820522346083!3d-34.61747805822394!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bcc9f3a61c572b%3A0x6b2e35a1408018e6!2sCaracas%201101%2C%20C1416AOS%20CABA!5e0!3m2!1ses!2sar!4v1700000000000!5m2!1ses!2sar"
-                    width="100%"
-                    height="220"
-                    style={{ border: 0 }}
-                    allowFullScreen={true}
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    className="w-full h-[220px] rounded-2xl"
-                  />
+                <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed">
+                  Punto de recepción para compras previamente coordinadas.
+                </p>
+
+                <div className="pt-1">
+                  <a
+                    href="https://maps.google.com/?q=Caracas+1101+CABA"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 bg-[#111318] hover:bg-[#1A1D26] text-[#FFD21A] border border-[#FFD21A]/40 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all shadow-xs"
+                  >
+                    <Navigation className="w-3.5 h-3.5 text-[#FFD21A]" />
+                    <span>ABRIR EN MAPS</span>
+                  </a>
                 </div>
               </div>
 
-              {/* FOTOGRAFÍA DEL LOCAL CABA */}
-              <div className="relative rounded-2xl overflow-hidden border border-[#222530] shadow-md h-full min-h-[300px] group">
+              {/* ADVERTENCIA IMPORTANTE (FONDOS AMARILLOS SUAVES, SIN ROJO) */}
+              <div className="p-4 bg-[#FFFDF5] border border-[#FFD21A]/60 rounded-xl text-xs text-[#111318] font-semibold flex items-start gap-3 shadow-xs">
+                <AlertCircle className="w-4.5 h-4.5 text-[#111318] shrink-0 mt-0.5" />
+                <p className="leading-relaxed">
+                  No enviar mercadería sin coordinar previamente con Cuenta Hogar.
+                </p>
+              </div>
+
+              {/* MAPA GOOGLE MAPS IFRAME */}
+              <div className="w-full rounded-2xl overflow-hidden border border-[#252A32] shadow-md">
+                <iframe
+                  title="Ubicación Centro de Recepción CABA - Caracas 1101"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3283.473539827663!2d-58.46820522346083!3d-34.61747805822394!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bcc9f3a61c572b%3A0x6b2e35a1408018e6!2sCaracas%201101%2C%20C1416AOS%20CABA!5e0!3m2!1ses!2sar!4v1700000000000!5m2!1ses!2sar"
+                  width="100%"
+                  height="200"
+                  style={{ border: 0 }}
+                  allowFullScreen={true}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="w-full h-[200px] rounded-2xl"
+                />
+              </div>
+
+            </div>
+
+            {/* COLUMNA DERECHA: FOTOGRAFÍA ÚNICA REAL DEL CENTRO DE RECEPCIÓN */}
+            <div className="lg:col-span-7 h-full">
+              <div className="relative rounded-2xl overflow-hidden border border-[#252A32] bg-[#161922] shadow-xl group h-full min-h-[360px]">
                 <img 
                   src="/deposito-cuenta-hogar.jpg" 
-                  alt="Centro logístico real Cuenta Hogar CABA Caracas 1101" 
-                  className="w-full h-full object-cover min-h-[300px] group-hover:scale-105 transition-transform duration-700" 
+                  alt="Centro de recepción Cuenta Hogar CABA Caracas 1101" 
+                  className="w-full h-full max-h-[460px] object-cover group-hover:scale-102 transition-transform duration-700" 
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#173E3B]/90 via-transparent to-transparent flex items-end p-5">
-                  <div>
-                    <p className="text-xs font-heading font-bold uppercase text-[#FFD21A] tracking-wider">
-                      Centro Logístico CABA
-                    </p>
-                    <p className="text-xs text-[#FFFDFC]/90 font-sans">
-                      Caracas 1101, Capital Federal
-                    </p>
-                  </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#111318]/80 via-transparent to-transparent flex items-end p-4 sm:p-5">
+                  <p className="text-xs font-mono font-medium text-[#D1D5DB] bg-[#111318]/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-[#252A32]">
+                    Centro de recepción en CABA · Caracas 1101
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* ALERTA OBLIGATORIA */}
-            <div className="flex items-center gap-3 text-xs sm:text-sm text-[#FFD21A] font-bold bg-[#FFD21A]/10 border border-[#B44E2A]/20 p-4 rounded-xl">
-              <AlertCircle className="w-5 h-5 shrink-0 text-[#B44E2A]" />
-              <span>Importante: no enviar mercadería sin coordinar previamente con Cuenta Hogar para la emisión de la orden de recepción.</span>
-            </div>
-
           </div>
-        </div>
-      </section>
 
-      {/* 6. LOGÍSTICA ORGANIZADA ("De nuestro centro en CABA a tu domicilio.") */}
-      <section className="py-20 lg:py-28 bg-[#161922] border-b border-[#222530]">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            
-            {/* IZQUIERDA: CONTENIDO */}
-            <div className="lg:col-span-6 space-y-6 text-left">
+          {/* SECUENCIA DE 4 PASOS ("¿QUÉ PASA DESPUÉS?") */}
+          <div className="pt-6 border-t border-[#222530] space-y-4">
+            <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#FFD21A] block text-center sm:text-left">
+              ¿QUÉ PASA DESPUÉS?
+            </span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#FFD21A] bg-[#111318] border border-[#FFD21A]/30 px-3.5 py-1.5 rounded-full">
-                  <Layers className="w-3.5 h-3.5 text-[#FFD21A]" /> LOGÍSTICA ORGANIZADA · CABA → INTERIOR
+              {/* PASO 01 */}
+              <div className="bg-[#161922] border border-[#252A32] p-4.5 rounded-xl space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-black text-[#111318] bg-[#FFD21A] px-2 py-0.5 rounded">
+                    01
+                  </span>
+                  <h3 className="text-sm font-bold text-white leading-tight">
+                    Tu proveedor entrega en CABA
+                  </h3>
                 </div>
-
-                <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-heading font-extrabold text-[#FFD21A] leading-tight">
-                  De nuestro centro en CABA a tu domicilio.
-                </h2>
+                <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed pt-1">
+                  Recibimos la compra en Caracas 1101, previa coordinación.
+                </p>
               </div>
 
-              <p className="text-base sm:text-lg text-[#9CA3AF] font-sans leading-relaxed">
-                Recibimos y organizamos cada compra en nuestro centro de CABA, la preparamos para el recorrido correspondiente y coordinamos la entrega en tu domicilio.
-              </p>
-
-              {/* AVISO DISCRETO DE PRELANZAMIENTO */}
-              <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#FFD21A] bg-[#FFD21A]/10 border border-[#FFD21A]/20 px-3.5 py-2 rounded-xl">
-                <CalendarClock className="w-4 h-4 text-[#FFD21A]" />
-                <span>Disponible desde el 25 de noviembre de 2026 · Ya estamos recibiendo consultas</span>
+              {/* PASO 02 */}
+              <div className="bg-[#161922] border border-[#252A32] p-4.5 rounded-xl space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-black text-[#111318] bg-[#FFD21A] px-2 py-0.5 rounded">
+                    02
+                  </span>
+                  <h3 className="text-sm font-bold text-white leading-tight">
+                    Recibimos e identificamos
+                  </h3>
+                </div>
+                <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed pt-1">
+                  Registramos la compra y la preparamos para el recorrido correspondiente.
+                </p>
               </div>
 
-              {/* LOS CUATRO BENEFICIOS ORGANIZACIONALES */}
-              <div className="space-y-3.5 pt-2">
-                <div className="flex items-start gap-3.5 bg-[#111318] border border-[#222530] p-4 rounded-2xl hover:border-[#FFD21A]/30 transition-all">
-                  <div className="w-8 h-8 rounded-xl bg-[#FFD21A]/10 border border-[#FFD21A]/30 flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-4.5 h-4.5 text-[#FFD21A]" />
-                  </div>
-                  <div>
-                    <h4 className="font-heading font-bold text-white text-sm sm:text-base">Recepción coordinada en CABA</h4>
-                    <p className="text-xs sm:text-sm text-[#9CA3AF] font-sans mt-0.5 leading-relaxed">
-                      Identificamos cada compra desde que llega a nuestro centro de recepción.
-                    </p>
-                  </div>
+              {/* PASO 03 */}
+              <div className="bg-[#161922] border border-[#252A32] p-4.5 rounded-xl space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-black text-[#111318] bg-[#FFD21A] px-2 py-0.5 rounded">
+                    03
+                  </span>
+                  <h3 className="text-sm font-bold text-white leading-tight">
+                    Organizamos la próxima salida
+                  </h3>
                 </div>
+                <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed pt-1">
+                  La incorporamos al recorrido programado hacia tu localidad.
+                </p>
+              </div>
 
-                <div className="flex items-start gap-3.5 bg-[#111318] border border-[#222530] p-4 rounded-2xl hover:border-[#FFD21A]/30 transition-all">
-                  <div className="w-8 h-8 rounded-xl bg-[#FFD21A]/10 border border-[#FFD21A]/30 flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-4.5 h-4.5 text-[#FFD21A]" />
-                  </div>
-                  <div>
-                    <h4 className="font-heading font-bold text-white text-sm sm:text-base">Preparación por recorrido</h4>
-                    <p className="text-xs sm:text-sm text-[#9CA3AF] font-sans mt-0.5 leading-relaxed">
-                      Organizamos los bultos según localidad, tipo de carga y próxima salida.
-                    </p>
-                  </div>
+              {/* PASO 04 */}
+              <div className="bg-[#161922] border border-[#252A32] p-4.5 rounded-xl space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-black text-[#111318] bg-[#FFD21A] px-2 py-0.5 rounded">
+                    04
+                  </span>
+                  <h3 className="text-sm font-bold text-white leading-tight">
+                    Entregamos en tu domicilio
+                  </h3>
                 </div>
-
-                <div className="flex items-start gap-3.5 bg-[#111318] border border-[#222530] p-4 rounded-2xl hover:border-[#FFD21A]/30 transition-all">
-                  <div className="w-8 h-8 rounded-xl bg-[#FFD21A]/10 border border-[#FFD21A]/30 flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-4.5 h-4.5 text-[#FFD21A]" />
-                  </div>
-                  <div>
-                    <h4 className="font-heading font-bold text-white text-sm sm:text-base">Traslado programado</h4>
-                    <p className="text-xs sm:text-sm text-[#9CA3AF] font-sans mt-0.5 leading-relaxed">
-                      Planificamos los recorridos para tener mayor control sobre tiempos y entregas.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3.5 bg-[#111318] border border-[#222530] p-4 rounded-2xl hover:border-[#FFD21A]/30 transition-all">
-                  <div className="w-8 h-8 rounded-xl bg-[#FFD21A]/10 border border-[#FFD21A]/30 flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-4.5 h-4.5 text-[#FFD21A]" />
-                  </div>
-                  <div>
-                    <h4 className="font-heading font-bold text-white text-sm sm:text-base">Entrega en tu domicilio</h4>
-                    <p className="text-xs sm:text-sm text-[#9CA3AF] font-sans mt-0.5 leading-relaxed">
-                      Llevamos la compra hasta tu dirección dentro de las localidades de cobertura.
-                    </p>
-                  </div>
-                </div>
+                <p className="text-xs text-[#9CA3AF] font-sans leading-relaxed pt-1">
+                  Coordinamos la llegada dentro de las localidades de cobertura.
+                </p>
               </div>
 
             </div>
-
-            {/* DERECHA: FOTOGRAFÍA REAL DEL CENTRO DE RECEPCIÓN Y PREPARACIÓN */}
-            <div className="lg:col-span-6">
-              <div className="relative rounded-3xl overflow-hidden border-2 border-[#222530] shadow-2xl group">
-                <img 
-                  src="/centro-logistico-caba.jpg" 
-                  alt="Centro de recepción y preparación Cuenta Hogar CABA" 
-                  className="w-full h-[420px] sm:h-[500px] object-cover group-hover:scale-105 transition-transform duration-700" 
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#111318]/90 via-transparent to-transparent flex items-end p-6 sm:p-8">
-                  <div className="flex items-center gap-3 bg-[#111318]/85 backdrop-blur-md border border-[#FFD21A]/30 px-4 py-2.5 rounded-xl text-white shadow-lg">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#FFD21A] shrink-0 animate-pulse"></span>
-                    <p className="text-xs font-mono font-bold text-[#FFD21A] uppercase tracking-wider">
-                      CENTRO DE RECEPCIÓN Y PREPARACIÓN · CABA → INTERIOR
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
           </div>
+
         </div>
       </section>
 
