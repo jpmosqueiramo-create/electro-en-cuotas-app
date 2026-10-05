@@ -78,25 +78,28 @@ export default function HomeTechCatalog() {
   const [locInteres, setLocInteres] = useState("Ambos (Financiación y Envíos)");
   const [locSubmitting, setLocSubmitting] = useState(false);
 
-  // Carrusel de entregas (Casos de éxito)
+  // Carrusel de experiencia de entrega a domicilio (3 Momentos)
   const entregas = [
     {
+      src: "/entrega3.jpg",
+      alt: "Llegamos a tu localidad - Recorridos programados",
+      eyebrow: "RECORRIDO",
+      titulo: "Llegamos a tu localidad",
+      descripcion: "Organizamos recorridos programados para trasladar las compras desde CABA hacia el interior."
+    },
+    {
       src: "/entrega1.jpg",
-      alt: "Entrega en domicilio realizada por Cuenta Hogar",
-      titulo: "Entrega en domicilio y atención cercana",
-      descripcion: "Tu producto gestionado o trasladado directo a la puerta de tu hogar."
+      alt: "Coordinación previa - Sabés cuándo esperar tu compra",
+      eyebrow: "COORDINACIÓN",
+      titulo: "Sabés cuándo esperar tu compra",
+      descripcion: "Coordinamos la recepción antes de la entrega para organizar correctamente la llegada."
     },
     {
       src: "/entrega2.jpg",
-      alt: "Familia disfrutando de su televisor con plan de cuotas",
-      titulo: "La tranquilidad de equipar tu hogar",
-      descripcion: "Buscamos opciones, compramos en CABA, trasladamos y pagás en cuotas."
-    },
-    {
-      src: "/entrega3.jpg",
-      alt: "Transporte propio Cuenta Hogar realizando entrega",
-      titulo: "Transporte propio Cuenta Hogar",
-      descripcion: "Recorridos programados y trato directo de vecino a vecino."
+      alt: "Entrega en tu domicilio - Puerta de tu casa",
+      eyebrow: "ENTREGA",
+      titulo: "Lo recibís en tu domicilio",
+      descripcion: "La entrega estándar se realiza en la puerta de tu casa dentro de nuestras localidades de cobertura."
     }
   ];
 
@@ -858,75 +861,118 @@ export default function HomeTechCatalog() {
         </div>
       </section>
 
-      {/* 6. CARRUSEL DE CASOS DE ÉXITO Y ENTREGAS REALES */}
+      {/* 6. EXPERIENCIA DE ENTREGA A DOMICILIO (#ENTREGA-DOMICILIO) */}
       <section className="py-20 lg:py-24 bg-[#FFFFFF] text-[#111827] border-b border-[#E5E7EB]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
           
+          {/* ENCABEZADO */}
           <div className="text-center max-w-2xl mx-auto space-y-3">
-            <span className="inline-block bg-[#111318] text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full">
-              ENTREGAS REALES Y TESTIMONIOS
+            <span className="inline-block bg-[#111318] text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full shadow-xs">
+              ENTREGA A DOMICILIO
             </span>
-            <h2 className="text-3xl font-extrabold text-[#111318]">
-              Recorridos programados y entregas en puerta
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#111827] tracking-tight">
+              La operación termina en la puerta de tu casa.
             </h2>
-            <p className="text-sm text-[#4B5563]">
-              Fotos reales de nuestra logística y clientes en cada localidad.
+            <p className="text-sm sm:text-base text-[#4B5563] font-sans leading-relaxed">
+              Coordinamos el recorrido y llevamos la compra hasta tu domicilio dentro de las localidades de cobertura.
             </p>
           </div>
 
-          <div className="relative max-w-4xl mx-auto bg-[#F9FAFB] border border-[#E5E7EB] rounded-2xl overflow-hidden shadow-lg">
+          {/* TARJETA EDITORIAL DEL CARRUSEL DE 3 MOMENTOS */}
+          <div className="relative max-w-4xl mx-auto bg-[#F9FAFB] border border-[#DCE1E6] rounded-3xl overflow-hidden shadow-xl">
             <div className="grid grid-cols-1 md:grid-cols-2 items-center">
               
-              <div className="h-72 md:h-96 relative bg-[#111318]">
+              {/* IMAGEN DE SLIDE */}
+              <div className="h-64 sm:h-80 md:h-96 relative bg-[#111318] overflow-hidden">
                 <img 
                   src={entregas[activeEntregaIdx].src} 
                   alt={entregas[activeEntregaIdx].alt} 
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-all duration-500"
                 />
               </div>
 
-              <div className="p-8 space-y-4 text-left">
-                <span className="text-xs font-mono font-bold text-[#111318] uppercase tracking-wider bg-[#FFD21A] px-2.5 py-1 rounded">
-                  CASO REAL DE ENTREGA
-                </span>
-                <h3 className="text-2xl font-bold text-[#111318]">
-                  {entregas[activeEntregaIdx].titulo}
-                </h3>
-                <p className="text-sm text-[#4B5563] leading-relaxed">
-                  {entregas[activeEntregaIdx].descripcion}
-                </p>
+              {/* CONTENIDO DEL SLIDE */}
+              <div className="p-6 sm:p-8 space-y-4 text-left flex flex-col justify-between h-full">
+                <div className="space-y-3">
+                  <span className="inline-block text-[11px] font-mono font-bold text-[#111318] uppercase tracking-widest bg-[#FFD21A] px-3 py-1 rounded-md shadow-xs">
+                    {entregas[activeEntregaIdx].eyebrow}
+                  </span>
+                  
+                  <h3 className="text-2xl font-extrabold text-[#111827] leading-snug">
+                    {entregas[activeEntregaIdx].titulo}
+                  </h3>
+                  
+                  <p className="text-sm text-[#4B5563] font-sans leading-relaxed">
+                    {entregas[activeEntregaIdx].descripcion}
+                  </p>
+                </div>
 
-                <div className="flex items-center gap-3 pt-4 border-t border-[#E5E7EB]">
-                  <button 
-                    onClick={handlePrevEntrega}
-                    className="p-2.5 bg-white border border-[#E5E7EB] hover:bg-[#111318] hover:text-white rounded-xl transition-all"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <button 
-                    onClick={handleNextEntrega}
-                    className="p-2.5 bg-white border border-[#E5E7EB] hover:bg-[#111318] hover:text-white rounded-xl transition-all"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                  <span className="text-xs font-mono font-bold text-[#6B7280] ml-2">
+                {/* CONTROLES Y CONTADOR DISCRETOS */}
+                <div className="flex items-center justify-between pt-4 border-t border-[#E5E7EB] mt-4">
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={handlePrevEntrega}
+                      aria-label="Anterior slide"
+                      className="p-2.5 bg-white border border-[#DCE1E6] hover:bg-[#111318] hover:text-[#FFD21A] text-[#111827] rounded-xl transition-all shadow-xs"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={handleNextEntrega}
+                      aria-label="Siguiente slide"
+                      className="p-2.5 bg-white border border-[#DCE1E6] hover:bg-[#111318] hover:text-[#FFD21A] text-[#111827] rounded-xl transition-all shadow-xs"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <span className="text-xs font-mono font-bold text-[#6B7280]">
                     {activeEntregaIdx + 1} / {entregas.length}
                   </span>
                 </div>
+
               </div>
 
             </div>
           </div>
 
-          {/* BOTÓN SOLICITAR NUEVA LOCALIDAD */}
-          <div className="text-center pt-4">
-            <button 
-              onClick={() => setModalLocalidadOpen(true)}
-              className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#111318] bg-[#F3F4F6] border border-[#E5E7EB] hover:bg-[#111318] hover:text-[#FFD21A] px-5 py-3 rounded-xl transition-all"
-            >
-              <MapPin className="w-4 h-4 text-[#FFD21A]" />
-              <span>¿No ves tu ciudad? Solicitar nueva localidad en las rutas</span>
-            </button>
+          {/* FILA SIMPLE DE MICROBENEFICIOS DE ENTREGA */}
+          <div className="max-w-3xl mx-auto pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-4 px-6 bg-[#F9FAFB] border border-[#E5E7EB] rounded-2xl text-center shadow-xs">
+              <div className="flex items-center justify-center gap-2 text-xs font-bold text-[#111827]">
+                <Truck className="w-4 h-4 text-[#FFD21A] shrink-0" />
+                <span>Recorridos programados</span>
+              </div>
+              <div className="flex items-center justify-center gap-2 text-xs font-bold text-[#111827]">
+                <MapPin className="w-4 h-4 text-[#FFD21A] shrink-0" />
+                <span>Entrega en domicilio</span>
+              </div>
+              <div className="flex items-center justify-center gap-2 text-xs font-bold text-[#111827]">
+                <UserCheck className="w-4 h-4 text-[#FFD21A] shrink-0" />
+                <span>Atención directa</span>
+              </div>
+            </div>
+          </div>
+
+          {/* SECCIÓN DE CONSULTA DE COBERTURA */}
+          <div className="max-w-xl mx-auto text-center space-y-3 pt-2">
+            <h3 className="text-base sm:text-lg font-bold text-[#111827]">
+              ¿Tu localidad todavía no está en nuestra cobertura?
+            </h3>
+            <p className="text-xs sm:text-sm text-[#6B7280] font-sans">
+              Consultanos y te contamos si tenemos previsto llegar a tu zona.
+            </p>
+            <div className="pt-1">
+              <a 
+                href="https://wa.me/5491125659686?text=Hola%2C%20quiero%20consultar%20si%20mi%20localidad%20est%C3%A1%20en%20la%20cobertura%20de%20entrega%20a%20domicilio%20de%20Cuenta%20Hogar.%0A%0AMi%20localidad%20y%20provincia%20son%3A" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold text-xs uppercase tracking-wider px-7 py-3.5 rounded-xl transition-all shadow-md active:scale-95"
+              >
+                <WhatsAppIcon className="w-4 h-4 text-[#111318]" />
+                <span>CONSULTAR COBERTURA EN MI LOCALIDAD</span>
+              </a>
+            </div>
           </div>
 
         </div>
