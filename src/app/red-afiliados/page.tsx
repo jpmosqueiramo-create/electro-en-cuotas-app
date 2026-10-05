@@ -85,8 +85,8 @@ export default function RedAfiliadosPage() {
             <div className="lg:col-span-5 relative">
               <div className="relative rounded-2xl overflow-hidden border border-[#2D323E] bg-[#161922] shadow-2xl group">
                 <img 
-                  src="/entrega1.jpg" 
-                  alt="Vendedor afiliado y atención cercana Cuenta Hogar" 
+                  src="/vendedor-afiliado-atencion.jpg" 
+                  alt="Vendedora afiliada de Cuenta Hogar brindando atención y asesoramiento local" 
                   className="w-full h-[320px] sm:h-[400px] lg:h-[440px] object-cover group-hover:scale-102 transition-transform duration-700" 
                 />
                 
