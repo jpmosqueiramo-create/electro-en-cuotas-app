@@ -183,52 +183,108 @@ export default function NosotrosPage() {
         </div>
       </section>
 
-      {/* TRES PILARES DE INFRAESTRUCTURA */}
+      {/* 2. CAPACIDADES QUE SOSTIENEN EL SERVICIO (SISTEMA CONECTADO CABA -> TRASLADO -> LOCALIDAD) */}
       <section className="py-20 lg:py-24 bg-[#0E1015] border-b border-[#222530]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
           
-          <div className="text-center max-w-2xl mx-auto space-y-3">
+          {/* ENCABEZADO DE SECCIÓN */}
+          <div className="text-center max-w-3xl mx-auto space-y-3">
             <span className="inline-block bg-[#FFD21A]/10 border border-[#FFD21A]/30 text-[#FFD21A] font-mono text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full">
-              CAPACIDADES OPERATIVAS REALES
+              CAPACIDADES QUE SOSTIENEN EL SERVICIO
             </span>
-            <h2 className="text-3xl lg:text-4xl font-extrabold text-white">
-              Infraestructura propia para brindarte previsibilidad
+            <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
+              Una estructura pensada para resolver de punta a punta.
             </h2>
-            <p className="text-sm text-[#9CA3AF]">
-              Operaciones concretas y equipamiento dedicado para resolver tu necesidad de punta a punta.
+            <p className="text-sm sm:text-base text-[#D1D5DB] leading-relaxed">
+              Combinamos presencia en CABA, logística propia y acompañamiento local para coordinar cada operación desde el origen hasta la entrega.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* GRID CONECTADA DE 3 PILARES: CABA -> TRASLADO -> LOCALIDAD */}
+          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
             
-            <div className="bg-[#161922] border border-[#2A2E3D] p-8 rounded-2xl space-y-4 shadow-xl">
-              <div className="w-12 h-12 bg-[#111318] text-[#FFD21A] rounded-xl flex items-center justify-center font-bold border border-[#FFD21A]/30">
-                <Building2 className="w-6 h-6" />
+            {/* LÍNEA CONECTORA SUBTIL EN DESKTOP (MUESTRA EL RECORRIDO CONTINUO) */}
+            <div className="hidden md:block absolute top-1/2 left-4 right-4 -translate-y-1/2 h-[1px] bg-gradient-to-r from-[#FFD21A]/10 via-[#FFD21A]/30 to-[#FFD21A]/10 pointer-events-none z-0" />
+
+            {/* PILAR 01: CABA */}
+            <div className="relative z-10 bg-[#161922] border border-[#252A32] hover:border-[#FFD21A]/50 p-6 sm:p-8 rounded-2xl space-y-5 transition-all duration-200 hover:-translate-y-1 shadow-xl flex flex-col justify-between group">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#FFD21A] bg-[#111318] border border-[#FFD21A]/30 px-3 py-1 rounded-md">
+                    01 · CABA
+                  </span>
+                  <div className="w-10 h-10 bg-[#111318] text-[#FFD21A] rounded-xl flex items-center justify-center font-bold border border-[#252A32] group-hover:border-[#FFD21A]/40 transition-colors">
+                    <Building2 className="w-5 h-5" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <h3 className="text-xl font-extrabold text-white leading-snug">
+                    Centro de recepción en CABA
+                  </h3>
+                  <p className="text-xs sm:text-sm font-bold text-[#FFD21A]">
+                    Un punto concreto donde empieza la operación.
+                  </p>
+                </div>
+
+                <p className="text-xs sm:text-sm text-[#9CA3AF] font-sans leading-relaxed pt-1 border-t border-[#252A32]/60">
+                  En Caracas 1101 recibimos, identificamos y organizamos las compras previamente coordinadas antes de incorporarlas al recorrido correspondiente.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-white">Centro de Recepción en CABA</h3>
-              <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                Ubicado estratégicamente en Caracas 1101. Recibimos, identificamos y custodiamos la mercadería previa a su salida hacia el interior.
-              </p>
             </div>
 
-            <div className="bg-[#161922] border border-[#2A2E3D] p-8 rounded-2xl space-y-4 shadow-xl">
-              <div className="w-12 h-12 bg-[#111318] text-[#FFD21A] rounded-xl flex items-center justify-center font-bold border border-[#FFD21A]/30">
-                <Truck className="w-6 h-6" />
+            {/* PILAR 02: TRASLADO */}
+            <div className="relative z-10 bg-[#161922] border border-[#252A32] hover:border-[#FFD21A]/50 p-6 sm:p-8 rounded-2xl space-y-5 transition-all duration-200 hover:-translate-y-1 shadow-xl flex flex-col justify-between group">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#FFD21A] bg-[#111318] border border-[#FFD21A]/30 px-3 py-1 rounded-md">
+                    02 · TRASLADO
+                  </span>
+                  <div className="w-10 h-10 bg-[#111318] text-[#FFD21A] rounded-xl flex items-center justify-center font-bold border border-[#252A32] group-hover:border-[#FFD21A]/40 transition-colors">
+                    <Truck className="w-5 h-5" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <h3 className="text-xl font-extrabold text-white leading-snug">
+                    Logística propia
+                  </h3>
+                  <p className="text-xs sm:text-sm font-bold text-[#FFD21A]">
+                    Más control sobre el recorrido hasta el interior.
+                  </p>
+                </div>
+
+                <p className="text-xs sm:text-sm text-[#9CA3AF] font-sans leading-relaxed pt-1 border-t border-[#252A32]/60">
+                  Desde el 25 de noviembre incorporamos nuestra Ford Transit techo elevado para ampliar la capacidad de traslado, incluyendo productos de mayor volumen y entregas programadas a domicilio.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-white">Transporte Propio</h3>
-              <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                Operación logística organizada. Unidad de transporte propia (Ford Transit techo elevado) para traslados seguros en nuestros recorridos programados.
-              </p>
             </div>
 
-            <div className="bg-[#161922] border border-[#2A2E3D] p-8 rounded-2xl space-y-4 shadow-xl">
-              <div className="w-12 h-12 bg-[#111318] text-[#FFD21A] rounded-xl flex items-center justify-center font-bold border border-[#FFD21A]/30">
-                <UserCheck className="w-6 h-6" />
+            {/* PILAR 03: LOCALIDAD */}
+            <div className="relative z-10 bg-[#161922] border border-[#252A32] hover:border-[#FFD21A]/50 p-6 sm:p-8 rounded-2xl space-y-5 transition-all duration-200 hover:-translate-y-1 shadow-xl flex flex-col justify-between group">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#FFD21A] bg-[#111318] border border-[#FFD21A]/30 px-3 py-1 rounded-md">
+                    03 · LOCALIDAD
+                  </span>
+                  <div className="w-10 h-10 bg-[#111318] text-[#FFD21A] rounded-xl flex items-center justify-center font-bold border border-[#252A32] group-hover:border-[#FFD21A]/40 transition-colors">
+                    <UserCheck className="w-5 h-5" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <h3 className="text-xl font-extrabold text-white leading-snug">
+                    Presencia local
+                  </h3>
+                  <p className="text-xs sm:text-sm font-bold text-[#FFD21A]">
+                    Un vínculo cercano donde estamos presentes.
+                  </p>
+                </div>
+
+                <p className="text-xs sm:text-sm text-[#9CA3AF] font-sans leading-relaxed pt-1 border-t border-[#252A32]/60">
+                  Los vendedores afiliados ayudan a conocer la necesidad del cliente, acompañan la solicitud y mantienen un contacto cercano durante la relación con Cuenta Hogar.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-white">Red de Vendedores Afiliados</h3>
-              <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                Atención directa en cada localidad por parte de vendedores afiliados que conocen a los vecinos y sus necesidades.
-              </p>
             </div>
 
           </div>
