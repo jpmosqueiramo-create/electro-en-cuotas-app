@@ -8,6 +8,7 @@ import { getAuth, sendEmailVerification } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
+import { generarComprobantePago, generarEstadoCuenta } from "@/lib/pdfGenerator";
 import { 
   Package, CreditCard, Calendar, CheckCircle2, Clock, AlertTriangle, 
   UserCheck, ShieldCheck, LogOut, ShoppingBag, Edit3, Link2, Upload, 
@@ -35,6 +36,16 @@ type Solicitud = {
 };
 
 export default function ClientePage() {
+  const formatFechaVencimiento = (str: string | undefined | null) => {
+    if (!str) return "-";
+    try {
+      const dStr = str.includes("T") ? str : str + "T12:00:00";
+      return new Date(dStr).toLocaleDateString("es-AR");
+    } catch (e) {
+      return str;
+    }
+  };
+
   const { user, loading } = useAuth();
   const router = useRouter();
 
@@ -308,7 +319,8 @@ export default function ClientePage() {
             cuotasPendientes++;
             if (new Date(c.vencimiento) < hoy) {
               cuotasVencidas++;
-            } else if (!proximoVencimiento || new Date(c.vencimiento) < new Date(proximoVencimiento)) {
+            }
+            if (!proximoVencimiento || new Date(c.vencimiento) < new Date(proximoVencimiento)) {
               proximoVencimiento = c.vencimiento;
               proximoMonto = c.montoOriginal || 0;
             }
@@ -588,7 +600,7 @@ export default function ClientePage() {
             </div>
             <div>
               <p className="text-sm font-bold text-white truncate">
-                {metricasCuenta.proximoVencimiento ? new Date(metricasCuenta.proximoVencimiento).toLocaleDateString("es-AR") : "Al Día 🟢"}
+                {metricasCuenta.proximoVencimiento ? formatFechaVencimiento(metricasCuenta.proximoVencimiento) : "Al Día 🟢"}
               </p>
               <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
                 {metricasCuenta.proximoMonto > 0 ? `$${metricasCuenta.proximoMonto.toLocaleString("es-AR")}` : "Próximo Vencimiento"}
@@ -818,13 +830,37 @@ export default function ClientePage() {
                   {/* Planilla de Cuotas */}
                   {sol.planPagos && sol.planPagos.length > 0 && (
                     <div className="bg-[#121316] rounded-2xl border border-zinc-800 p-4 md:p-5 space-y-4">
-                      <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
+                      <div className="flex flex-wrap justify-between items-center border-b border-zinc-800 pb-3 gap-2">
                         <h4 className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                           💳 Planilla de Pagos del Producto
                         </h4>
-                        <span className="text-[10px] text-zinc-400 font-mono font-bold">
-                          {sol.planPagos.filter((c:any) => c.estado === "PAGADO").length} de {sol.planPagos.length} pagadas
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              const totalPlanVal = sol.planPagos?.reduce((sum: number, c: any) => sum + Number(c.montoOriginal || 0), 0) || 0;
+                              const totalAbonadoVal = sol.planPagos?.filter((c: any) => c.estado === "PAGADO").reduce((sum: number, c: any) => sum + Number(c.montoAbonado || c.montoOriginal || 0), 0) || 0;
+                              const totalPendienteVal = Math.max(0, totalPlanVal - totalAbonadoVal);
+
+                              generarEstadoCuenta({
+                                nroLegajo: sol.nroContrato || sol.numeroContrato || `CH-${sol.id.substring(0, 8).toUpperCase()}`,
+                                fechaEmision: new Date().toLocaleDateString("es-AR"),
+                                clienteNombre: datosClienteGlobal.nombre,
+                                clienteDni: datosClienteGlobal.dni,
+                                productoNombre: sol.productoDeseado,
+                                totalPlan: totalPlanVal,
+                                totalAbonado: totalAbonadoVal,
+                                totalPendiente: totalPendienteVal,
+                                planPagos: sol.planPagos || []
+                              });
+                            }}
+                            className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shadow-sm"
+                          >
+                            📊 Estado de Cuenta PDF
+                          </button>
+                          <span className="text-[10px] text-zinc-400 font-mono font-bold">
+                            {sol.planPagos.filter((c:any) => c.estado === "PAGADO").length} de {sol.planPagos.length} pagadas
+                          </span>
+                        </div>
                       </div>
 
                       <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
@@ -840,7 +876,7 @@ export default function ClientePage() {
                                   <span className="text-amber-400 font-mono font-black">${cuota.montoOriginal}</span>
                                 </p>
                                 <p className="text-[11px] text-zinc-400 mt-0.5">
-                                  Vencimiento: {new Date(cuota.vencimiento).toLocaleDateString("es-AR")}
+                                  Vencimiento: {formatFechaVencimiento(cuota.vencimiento)}
                                 </p>
                                 {cuota.notaAcumulacion && (
                                   <p className="text-[10px] text-orange-400 font-bold mt-1 bg-orange-950/40 border border-orange-500/30 px-2 py-0.5 rounded w-fit">
@@ -851,13 +887,42 @@ export default function ClientePage() {
 
                               <div className="flex flex-col md:items-end gap-2">
                                 {cuota.estado === "PAGADO" && (
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex flex-wrap items-center gap-2">
                                     <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-lg text-[10px] font-black uppercase">✓ PAGADA</span>
                                     {cuota.comprobanteUrl && (
-                                      <a href={cuota.comprobanteUrl} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-md">
-                                        📄 Ver Recibo
+                                      <a href={cuota.comprobanteUrl} target="_blank" rel="noreferrer" className="bg-blue-600/30 border border-blue-500/30 hover:bg-blue-600 text-blue-300 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-bold transition">
+                                        📄 Adjunto
                                       </a>
                                     )}
+                                    <button
+                                      onClick={() => {
+                                        const numCuotasTotal = sol.planPagos?.length || 12;
+                                        const cProdVal = Number((sol as any).precioContado || (sol as any).costoProducto || (sol as any).costoBien) || 0;
+                                        const totalFinVal = Number((sol as any).totalFinanciado) || ((cuota.montoAbonado || cuota.montoOriginal) * numCuotasTotal);
+                                        const baseGravVal = Math.max(0, totalFinVal - cProdVal);
+                                        const receiptId = `REC-${sol.id.substring(0, 5).toUpperCase()}-${cuota.numero}`;
+
+                                        generarComprobantePago({
+                                          nroContrato: sol.nroContrato || sol.numeroContrato || `CH-${sol.id.substring(0, 8).toUpperCase()}`,
+                                          nroRecibo: receiptId,
+                                          fecha: cuota.fechaPago ? formatFechaVencimiento(cuota.fechaPago) : new Date().toLocaleDateString("es-AR"),
+                                          clienteNombre: datosClienteGlobal.nombre,
+                                          clienteDni: datosClienteGlobal.dni,
+                                          cuotaNumero: cuota.numero,
+                                          cuotasTotal: numCuotasTotal,
+                                          montoAbonado: cuota.montoAbonado || cuota.montoOriginal,
+                                          montoExento: numCuotasTotal > 0 ? Math.round(cProdVal / numCuotasTotal) : 0,
+                                          montoGravado: numCuotasTotal > 0 ? Math.round(baseGravVal / numCuotasTotal) : 0,
+                                          metodoPago: cuota.cuentaDestino || cuota.metodoPagoManual || cuota.metodoPago || "Acreditado por Central",
+                                          nroComprobante: cuota.nroComprobante,
+                                          cuentaDestino: cuota.cuentaDestino,
+                                          esPagoParcial: cuota.montoAbonado !== undefined && cuota.montoAbonado !== cuota.montoOriginal
+                                        });
+                                      }}
+                                      className="bg-green-600 hover:bg-green-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-md transition flex items-center gap-1"
+                                    >
+                                      📥 Recibo PDF
+                                    </button>
                                   </div>
                                 )}
 
@@ -880,13 +945,13 @@ export default function ClientePage() {
                                           id={`monto_${sol.id}_${idx}`} 
                                           defaultValue={cuota.montoOriginal} 
                                           min="1" 
-                                          className="w-24 bg-[#181920] border border-zinc-700 text-[#1F2928] p-1.5 rounded-lg text-xs font-mono font-bold outline-none focus:border-amber-500" 
+                                          className="w-24 bg-[#121316] border border-zinc-700 text-white p-1.5 rounded-lg text-xs font-mono font-bold outline-none focus:border-amber-500" 
                                         />
                                         <input 
                                           type="file" 
                                           id={`comprobante_${sol.id}_${idx}`} 
                                           accept="image/*,application/pdf" 
-                                          className="text-[9px] text-[#1F2928] file:bg-amber-500 file:text-black file:border-0 file:rounded file:px-2 file:py-1 file:font-bold hover:file:bg-amber-400" 
+                                          className="text-[9px] text-zinc-300 file:bg-amber-500 file:text-black file:border-0 file:rounded file:px-2 file:py-1 file:font-bold hover:file:bg-amber-400" 
                                         />
                                         <button 
                                           id={`btn_${sol.id}_${idx}`}
@@ -904,29 +969,6 @@ export default function ClientePage() {
                                             try {
                                               const url = await handleSubirArchivo(el.files[0], `cuota_${cuota.numero}_${sol.id}`);
                                               const newPlan = [...(sol as any).planPagos];
-                                              const diferencia = cuota.montoOriginal - montoReportado;
-                                              
-                                              if (diferencia > 0) {
-                                                  newPlan[idx].montoOriginal = montoReportado;
-                                                  if (idx + 1 < newPlan.length) {
-                                                      newPlan[idx + 1].montoOriginal += diferencia;
-                                                      newPlan[idx + 1].notaAcumulacion = `+ $${diferencia} adeudado de cuota ${cuota.numero}`;
-                                                  } else {
-                                                      const vencOriginal = new Date(cuota.vencimiento);
-                                                      vencOriginal.setMonth(vencOriginal.getMonth() + 1);
-                                                      newPlan.push({
-                                                          numero: cuota.numero + 1,
-                                                          montoOriginal: diferencia,
-                                                          montoAbonado: 0,
-                                                          estado: "PENDIENTE",
-                                                          vencimiento: vencOriginal.toISOString(),
-                                                          fechaPago: null,
-                                                          metodoPago: null,
-                                                          comprobanteUrl: null,
-                                                          notaAcumulacion: `Saldo pendiente de la cuota ${cuota.numero}`
-                                                      });
-                                                  }
-                                              }
                                               
                                               newPlan[idx] = {
                                                 ...newPlan[idx],
