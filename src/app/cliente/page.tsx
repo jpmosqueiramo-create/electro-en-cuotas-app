@@ -12,7 +12,7 @@ import { generarComprobantePago, generarEstadoCuenta } from "@/lib/pdfGenerator"
 import { 
   Package, CreditCard, Calendar, CheckCircle2, Clock, AlertTriangle, 
   UserCheck, ShieldCheck, LogOut, ShoppingBag, Edit3, Link2, Upload, 
-  ChevronRight, Phone, MapPin, FileText, Sparkles, Filter
+  ChevronRight, Phone, MapPin, FileText, Sparkles, Filter, Truck, FileCheck
 } from "lucide-react";
 
 type Solicitud = {
@@ -69,7 +69,7 @@ export default function ClientePage() {
   const [email, setEmail] = useState("");
   const [antiguedadLaboral, setAntiguedadLaboral] = useState("");
   
-  // Archivos Formulario Nuevo Credito
+  // Archivos Formulario Nueva Solicitud
   const [producto, setProducto] = useState("");
   const [productoId, setProductoId] = useState("");
   const [planElegido, setPlanElegido] = useState("");
@@ -244,7 +244,7 @@ export default function ClientePage() {
         }
       }
 
-      // 4. Auto-unify in Firestore for all matched solicitudes!
+      // 4. Auto-unify in Firestore for all matched solicitudes
       for (const sol of allMatching) {
         const solData = sol as any;
         if (solData.clienteId !== user.uid || solData.clienteEmail !== user.email) {
@@ -300,6 +300,17 @@ export default function ClientePage() {
       loc: d.localidad || s0.localidad || ""
     };
   }, [solicitudes]);
+
+  const primerNombre = useMemo(() => {
+    if (!datosClienteGlobal.nombre || datosClienteGlobal.nombre === "Cliente") return "";
+    return datosClienteGlobal.nombre.trim().split(" ")[0];
+  }, [datosClienteGlobal.nombre]);
+
+  const dniMasked = useMemo(() => {
+    const raw = (datosClienteGlobal.dni || "").replace(/\D/g, "");
+    if (!raw || raw.length < 4) return "";
+    return `DNI terminado en ${raw.slice(-4)}`;
+  }, [datosClienteGlobal.dni]);
 
   const metricasCuenta = useMemo(() => {
     let cuotasPagadas = 0;
@@ -462,7 +473,7 @@ export default function ClientePage() {
       });
 
       localStorage.removeItem("datosPreliminares");
-      alert("¡Tu solicitud de crédito ha sido enviada con éxito! La revisaremos pronto.");
+      alert("¡Tu solicitud de compra ha sido enviada con éxito! Prepararemos tu propuesta a la brevedad.");
       setProducto(""); setNombreCompleto(""); setNumeroDni(""); setTelefono(""); setDireccion(""); setLocalidad("");
       setDniFrente(null); setDniDorso(null); setReciboSueldo(null); setServicio(null);
       setMostrarFormulario(false);
@@ -477,9 +488,9 @@ export default function ClientePage() {
 
   if (loading || cargandoDatos) {
     return (
-      <div className="min-h-screen bg-[#121316] flex flex-col items-center justify-center text-white space-y-4">
-        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm font-bold text-zinc-400 animate-pulse">Cargando tu Portal de Créditos Cuenta Hogar...</p>
+      <div className="min-h-screen bg-[#111318] flex flex-col items-center justify-center text-white space-y-4 font-sans">
+        <div className="w-12 h-12 border-4 border-[#FFD21A] border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-sm font-bold text-zinc-400 animate-pulse">Cargando tu Portal del Cliente...</p>
       </div>
     );
   }
@@ -488,31 +499,31 @@ export default function ClientePage() {
 
   if (!user.emailVerified && user.email !== "jpmosqueiramo@gmail.com") {
     return (
-      <div className="min-h-screen bg-[#121316] text-white p-8 flex flex-col items-center justify-center">
-        <div className="bg-[#181920] border border-zinc-800 p-8 md:p-10 rounded-3xl text-center max-w-lg shadow-2xl space-y-6">
+      <div className="min-h-screen bg-[#111318] text-white p-6 md:p-8 flex flex-col items-center justify-center font-sans">
+        <div className="bg-[#1B2027] border border-[#252A32] p-8 md:p-10 rounded-3xl text-center max-w-lg shadow-2xl space-y-6">
           <div className="text-5xl">📬</div>
           <h1 className="text-2xl font-black text-white">Verificá tu correo electrónico</h1>
           <p className="text-xs text-zinc-400 leading-relaxed">
-            Para continuar revisando tus productos y cuotas, hacé clic en el enlace que enviamos a <strong className="text-white">{user.email}</strong>.
+            Para continuar revisando tus operaciones y cuotas, hacé clic en el enlace que enviamos a <strong className="text-white">{user.email}</strong>.
           </p>
-          <p className="text-amber-400 font-bold text-xs bg-amber-950/30 p-3 rounded-xl border border-amber-500/20">
-            💡 Si no lo encontrás, revisá tu carpeta de SPAM o Promociones.
+          <p className="text-[#FFD21A] font-bold text-xs bg-[#111318] p-3.5 rounded-xl border border-[#FFD21A]/20">
+            Si no lo encontrás, revisá tu carpeta de SPAM o Promociones.
           </p>
 
           <button 
             disabled={correoEnviado}
             onClick={handleReenviarCorreo}
-            className="w-full bg-[#fe5000] hover:bg-[#fe5000]/90 text-white py-3.5 rounded-xl font-black text-xs uppercase tracking-wider shadow-lg transition-all disabled:opacity-50"
+            className="w-full bg-[#FFD21A] hover:bg-[#E8B900] text-[#111318] py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider shadow-lg transition-all disabled:opacity-50"
           >
-            {correoEnviado ? "✅ Correo Reenviado. Revisá tu casilla." : "Reenviar correo de validación"}
+            {correoEnviado ? "Correo Reenviado. Revisá tu casilla." : "Reenviar correo de validación"}
           </button>
 
-          <button onClick={() => window.location.reload()} className="w-full bg-[#121316] border border-zinc-700 text-zinc-300 py-3 rounded-xl font-bold text-xs hover:border-zinc-500 transition-all">
+          <button onClick={() => window.location.reload()} className="w-full bg-[#111318] border border-[#252A32] text-zinc-300 py-3 rounded-xl font-bold text-xs hover:border-zinc-500 transition-all">
             Ya lo validé, recargar página
           </button>
           
           <button onClick={() => getAuth().signOut()} className="text-xs text-zinc-500 hover:text-red-400 font-bold transition-colors">
-            ⬅️ Cerrar Sesión / Cambiar Cuenta
+            Cerrar Sesión / Cambiar Cuenta
           </button>
         </div>
       </div>
@@ -520,98 +531,126 @@ export default function ClientePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#121316] text-zinc-100 p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-[#111318] text-zinc-100 p-4 md:p-8 font-sans">
       <div className="max-w-6xl mx-auto space-y-6">
 
-        {/* Header Principal */}
-        <header className="bg-[#181920] border border-zinc-800 p-5 md:p-6 rounded-3xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        {/* Encabezado Principal del Portal */}
+        <header className="bg-[#1B2027] border border-[#252A32] p-5 md:p-6 rounded-3xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-4">
-            <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-12 w-auto object-contain" />
+            <div className="p-2 bg-[#111318] border border-[#FFD21A]/30 rounded-2xl shadow-inner shrink-0">
+              <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar" className="h-10 sm:h-12 w-auto object-contain" />
+            </div>
             <div>
-              <h1 className="text-xl font-black text-white flex items-center gap-2">
-                Portal de Créditos <Sparkles className="w-4 h-4 text-amber-400" />
+              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                Portal del Cliente
               </h1>
-              <p className="text-zinc-400 text-xs mt-0.5 flex items-center gap-2">
-                <span>{datosClienteGlobal.nombre}</span>
-                {datosClienteGlobal.dni !== "N/A" && (
+              <p className="text-zinc-400 text-xs mt-1 leading-normal flex items-center gap-2 flex-wrap">
+                <span>{primerNombre ? `Hola, ${primerNombre} · ` : ""}Tus compras, cuotas y operaciones con Cuenta Hogar</span>
+                {dniMasked && (
                   <>
-                    <span>•</span>
-                    <span className="font-mono text-amber-400 font-bold">DNI: {datosClienteGlobal.dni}</span>
+                    <span className="text-zinc-600">•</span>
+                    <span className="text-zinc-400 font-mono text-[11px]">{dniMasked}</span>
                   </>
                 )}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-            <Link href="/" className="flex-1 md:flex-initial text-center bg-[#121316] hover:bg-zinc-800 border border-zinc-700 text-zinc-200 px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md">
-              <ShoppingBag className="w-3.5 h-3.5 text-amber-400" /> Ver Catálogo
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto pt-2 md:pt-0 border-t md:border-t-0 border-[#252A32]">
+            <Link href="/" className="flex-1 md:flex-initial text-center bg-[#111318] hover:bg-[#252A32] border border-[#252A32] text-zinc-200 px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md">
+              <ShoppingBag className="w-3.5 h-3.5 text-[#FFD21A]" /> Ver opciones
             </Link>
 
-            <button onClick={abrirFormDatos} className="flex-1 md:flex-initial text-center bg-[#121316] hover:bg-zinc-800 border border-zinc-700 text-zinc-200 px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md">
-              <Edit3 className="w-3.5 h-3.5 text-blue-400" /> Mis Datos
+            <button onClick={abrirFormDatos} className="flex-1 md:flex-initial text-center bg-[#111318] hover:bg-[#252A32] border border-[#252A32] text-zinc-200 px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md">
+              <Edit3 className="w-3.5 h-3.5 text-blue-400" /> Mis datos
             </button>
 
-            <button onClick={() => { import("firebase/auth").then(({getAuth, signOut}) => signOut(getAuth())); router.push("/login"); }} className="bg-red-950/30 border border-red-800/40 text-red-400 hover:bg-red-900/30 px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1">
-              <LogOut className="w-3.5 h-3.5" /> Salir
+            <button onClick={() => { import("firebase/auth").then(({getAuth, signOut}) => signOut(getAuth())); router.push("/login"); }} className="bg-[#181920] border border-red-900/40 text-red-400 hover:bg-red-950/40 hover:border-red-700 px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5">
+              <LogOut className="w-3.5 h-3.5" /> Cerrar sesión
             </button>
           </div>
         </header>
 
-        {/* Resumen Ejecutivo de la Cuenta (Tarjetas Métricas) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-[#181920] border border-zinc-800 p-4 rounded-2xl shadow-lg flex items-center gap-3.5">
-            <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl text-amber-400">
-              <Package className="w-6 h-6" />
+        {/* Bloques de Resumen Ejecutivo (4 Tarjetas) */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          
+          {/* Tarjeta 1: Operaciones activas */}
+          <div className="bg-[#1B2027] border border-[#252A32] p-4.5 rounded-2xl shadow-lg flex flex-col justify-between space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl text-[#FFD21A]">
+                <FileText className="w-5 h-5" />
+              </div>
+              <span className="text-2xl font-black text-white font-mono">{solicitudes.length}</span>
             </div>
             <div>
-              <p className="text-2xl font-black text-white font-mono">{solicitudes.length}</p>
-              <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Productos Unificados</p>
+              <p className="text-xs font-bold text-white tracking-tight">Operaciones activas</p>
+              <p className="text-[11px] text-zinc-400 font-medium mt-0.5 leading-tight">
+                {solicitudes.length === 0 ? "Todavía no tenés operaciones activas" : "Solicitudes y compras en curso"}
+              </p>
             </div>
           </div>
 
-          <div className="bg-[#181920] border border-zinc-800 p-4 rounded-2xl shadow-lg flex items-center gap-3.5">
-            <div className="bg-green-500/10 border border-green-500/20 p-3 rounded-xl text-green-400">
-              <CheckCircle2 className="w-6 h-6" />
+          {/* Tarjeta 2: Cuotas abonadas */}
+          <div className="bg-[#1B2027] border border-[#252A32] p-4.5 rounded-2xl shadow-lg flex flex-col justify-between space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="bg-green-500/10 border border-green-500/20 p-2.5 rounded-xl text-green-400">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <span className="text-2xl font-black text-green-400 font-mono">{metricasCuenta.cuotasPagadas}</span>
             </div>
             <div>
-              <p className="text-2xl font-black text-green-400 font-mono">{metricasCuenta.cuotasPagadas}</p>
-              <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Cuotas Abonadas</p>
+              <p className="text-xs font-bold text-white tracking-tight">Cuotas abonadas</p>
+              <p className="text-[11px] text-zinc-400 font-medium mt-0.5 leading-tight">
+                {metricasCuenta.cuotasPagadas === 0 ? "Sin pagos registrados todavía" : "Cuotas confirmadas"}
+              </p>
             </div>
           </div>
 
-          <div className="bg-[#181920] border border-zinc-800 p-4 rounded-2xl shadow-lg flex items-center gap-3.5">
-            <div className={`p-3 rounded-xl border ${metricasCuenta.cuotasVencidas > 0 ? "bg-red-500/10 border-red-500/20 text-red-400" : "bg-blue-500/10 border-blue-500/20 text-blue-400"}`}>
-              {metricasCuenta.cuotasVencidas > 0 ? <AlertTriangle className="w-6 h-6 animate-pulse" /> : <Clock className="w-6 h-6" />}
-            </div>
-            <div>
-              <p className={`text-2xl font-black font-mono ${metricasCuenta.cuotasVencidas > 0 ? "text-red-400" : "text-white"}`}>
+          {/* Tarjeta 3: Cuotas pendientes */}
+          <div className="bg-[#1B2027] border border-[#252A32] p-4.5 rounded-2xl shadow-lg flex flex-col justify-between space-y-3">
+            <div className="flex items-center justify-between">
+              <div className={`p-2.5 rounded-xl border ${metricasCuenta.cuotasVencidas > 0 ? "bg-red-500/10 border-red-500/20 text-red-400" : "bg-blue-500/10 border-blue-500/20 text-blue-400"}`}>
+                {metricasCuenta.cuotasVencidas > 0 ? <AlertTriangle className="w-5 h-5 animate-pulse" /> : <Clock className="w-5 h-5" />}
+              </div>
+              <span className={`text-2xl font-black font-mono ${metricasCuenta.cuotasVencidas > 0 ? "text-red-400" : "text-white"}`}>
                 {metricasCuenta.cuotasVencidas > 0 ? metricasCuenta.cuotasVencidas : metricasCuenta.cuotasPendientes}
+              </span>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white tracking-tight">
+                {metricasCuenta.cuotasVencidas > 0 ? "Cuotas vencidas" : "Cuotas pendientes"}
               </p>
-              <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
-                {metricasCuenta.cuotasVencidas > 0 ? "Cuotas Vencidas" : "Cuotas Restantes"}
+              <p className="text-[11px] text-zinc-400 font-medium mt-0.5 leading-tight">
+                {metricasCuenta.cuotasPendientes === 0 ? "No tenés cuotas pendientes" : metricasCuenta.cuotasVencidas > 0 ? "Requiere pago urgente" : "Pagos programados"}
               </p>
             </div>
           </div>
 
-          <div className="bg-[#181920] border border-zinc-800 p-4 rounded-2xl shadow-lg flex items-center gap-3.5">
-            <div className="bg-purple-500/10 border border-purple-500/20 p-3 rounded-xl text-purple-400">
-              <CreditCard className="w-6 h-6" />
+          {/* Tarjeta 4: Próximo vencimiento */}
+          <div className="bg-[#1B2027] border border-[#252A32] p-4.5 rounded-2xl shadow-lg flex flex-col justify-between space-y-3 col-span-2 sm:col-span-1">
+            <div className="flex items-center justify-between">
+              <div className="bg-purple-500/10 border border-purple-500/20 p-2.5 rounded-xl text-purple-400">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-bold text-zinc-400 font-mono">
+                {solicitudes.length === 0 ? "--" : metricasCuenta.proximoMonto > 0 ? `$${metricasCuenta.proximoMonto.toLocaleString("es-AR")}` : "--"}
+              </span>
             </div>
             <div>
-              <p className="text-sm font-bold text-white truncate">
-                {metricasCuenta.proximoVencimiento ? formatFechaVencimiento(metricasCuenta.proximoVencimiento) : "Al Día 🟢"}
+              <p className="text-xs font-bold text-white tracking-tight truncate">
+                {solicitudes.length === 0 ? "Sin vencimientos próximos" : metricasCuenta.proximoVencimiento ? formatFechaVencimiento(metricasCuenta.proximoVencimiento) : "Sin vencimientos próximos"}
               </p>
-              <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
-                {metricasCuenta.proximoMonto > 0 ? `$${metricasCuenta.proximoMonto.toLocaleString("es-AR")}` : "Próximo Vencimiento"}
+              <p className="text-[11px] text-zinc-400 font-medium mt-0.5 leading-tight">
+                {solicitudes.length === 0 ? "No tenés cuotas pendientes" : metricasCuenta.proximoMonto > 0 ? "Próximo importe a abonar" : "Sin vencimientos próximos"}
               </p>
             </div>
           </div>
+
         </div>
 
         {/* Modal / Formulario Actualizar Datos */}
         {mostrarFormDatos && (
-          <div className="bg-[#181920] border border-zinc-800 p-6 rounded-3xl shadow-2xl space-y-4 relative animate-fade-in">
+          <div className="bg-[#1B2027] border border-[#252A32] p-6 rounded-3xl shadow-2xl space-y-4 relative animate-fade-in">
             <button onClick={() => setMostrarFormDatos(false)} className="absolute top-5 right-5 text-zinc-500 hover:text-white font-bold text-sm">✕ Cerrar</button>
             <h3 className="text-base font-black text-white flex items-center gap-2">
               <Edit3 className="w-4 h-4 text-blue-400" /> Actualizar Mis Datos Personales
@@ -619,15 +658,15 @@ export default function ClientePage() {
             <form onSubmit={handleActualizarDatos} className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Teléfono / WhatsApp</label>
-                <input required value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" className="w-full bg-[#121316] border border-zinc-700 p-2.5 rounded-xl text-xs text-white outline-none focus:border-blue-500 font-bold" />
+                <input required value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" className="w-full bg-[#111318] border border-[#252A32] p-2.5 rounded-xl text-xs text-white outline-none focus:border-blue-500 font-bold" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Dirección Exacta</label>
-                <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" className="w-full bg-[#121316] border border-zinc-700 p-2.5 rounded-xl text-xs text-white outline-none focus:border-blue-500 font-bold" />
+                <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" className="w-full bg-[#111318] border border-[#252A32] p-2.5 rounded-xl text-xs text-white outline-none focus:border-blue-500 font-bold" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Localidad</label>
-                <input required value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" className="w-full bg-[#121316] border border-zinc-700 p-2.5 rounded-xl text-xs text-white outline-none focus:border-blue-500 font-bold" />
+                <input required value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" className="w-full bg-[#111318] border border-[#252A32] p-2.5 rounded-xl text-xs text-white outline-none focus:border-blue-500 font-bold" />
               </div>
               <div className="md:col-span-3 pt-2">
                 <button disabled={subiendo} type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black text-xs py-3 rounded-xl uppercase tracking-wider shadow-md transition-all">
@@ -638,120 +677,165 @@ export default function ClientePage() {
           </div>
         )}
 
-        {/* Modal / Formulario Solicitar Nuevo Crédito */}
+        {/* Modal / Formulario Solicitar Nueva Compra */}
         {mostrarFormulario && (
-          <div className="bg-[#181920] border border-zinc-800 p-6 md:p-8 rounded-3xl shadow-2xl space-y-6 relative animate-fade-in">
+          <div className="bg-[#1B2027] border border-[#252A32] p-6 md:p-8 rounded-3xl shadow-2xl space-y-6 relative animate-fade-in">
             <button onClick={() => setMostrarFormulario(false)} className="absolute top-6 right-6 text-zinc-500 hover:text-white font-bold text-sm">✕ Cancelar</button>
             
-            <div className="border-b border-zinc-800 pb-4">
+            <div className="border-b border-[#252A32] pb-4">
               <h2 className="text-xl font-black text-white flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-amber-400" /> Solicitud de Nuevo Crédito
+                <Sparkles className="w-5 h-5 text-[#FFD21A]" /> Solicitud de Compra
               </h2>
-              <p className="text-xs text-zinc-400 mt-1">Completá tus datos y adjuntá las fotos para evaluar tu nuevo producto.</p>
+              <p className="text-xs text-zinc-400 mt-1">Completá tus datos y la información del bien para preparar tu propuesta.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Producto Deseado</label>
-                  <input required value={producto} onChange={e=>setProducto(e.target.value)} type="text" placeholder="Ej: Smart TV 50 pulg, Motorola G55..." className="w-full bg-[#121316] border border-zinc-700 p-2.5 rounded-xl text-xs text-white outline-none focus:border-amber-500 font-bold" />
+                  <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Producto o Bien Deseado</label>
+                  <input required value={producto} onChange={e=>setProducto(e.target.value)} type="text" placeholder="Ej: Heladera No Frost 380 L, Smart TV 50 pulg..." className="w-full bg-[#111318] border border-[#252A32] p-2.5 rounded-xl text-xs text-white outline-none focus:border-[#FFD21A] font-bold" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Nombre Completo</label>
-                  <input required value={nombreCompleto} onChange={e=>setNombreCompleto(e.target.value)} type="text" className="w-full bg-[#121316] border border-zinc-700 p-2.5 rounded-xl text-xs text-white outline-none focus:border-amber-500 font-bold" />
+                  <input required value={nombreCompleto} onChange={e=>setNombreCompleto(e.target.value)} type="text" className="w-full bg-[#111318] border border-[#252A32] p-2.5 rounded-xl text-xs text-white outline-none focus:border-[#FFD21A] font-bold" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Número de DNI</label>
-                  <input required value={numeroDni} onChange={e=>setNumeroDni(e.target.value.replace(/\D/g, ""))} type="text" className="w-full bg-[#121316] border border-zinc-700 p-2.5 rounded-xl text-xs text-white outline-none focus:border-amber-500 font-bold font-mono" />
+                  <input required value={numeroDni} onChange={e=>setNumeroDni(e.target.value.replace(/\D/g, ""))} type="text" className="w-full bg-[#111318] border border-[#252A32] p-2.5 rounded-xl text-xs text-white outline-none focus:border-[#FFD21A] font-bold font-mono" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Teléfono / WhatsApp</label>
-                  <input required value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" className="w-full bg-[#121316] border border-zinc-700 p-2.5 rounded-xl text-xs text-white outline-none focus:border-amber-500 font-bold" />
+                  <input required value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" className="w-full bg-[#111318] border border-[#252A32] p-2.5 rounded-xl text-xs text-white outline-none focus:border-[#FFD21A] font-bold" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Dirección</label>
-                  <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" className="w-full bg-[#121316] border border-zinc-700 p-2.5 rounded-xl text-xs text-white outline-none focus:border-amber-500 font-bold" />
+                  <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" className="w-full bg-[#111318] border border-[#252A32] p-2.5 rounded-xl text-xs text-white outline-none focus:border-[#FFD21A] font-bold" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Localidad</label>
-                  <input required value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" className="w-full bg-[#121316] border border-zinc-700 p-2.5 rounded-xl text-xs text-white outline-none focus:border-amber-500 font-bold" />
+                  <input required value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" className="w-full bg-[#111318] border border-[#252A32] p-2.5 rounded-xl text-xs text-white outline-none focus:border-[#FFD21A] font-bold" />
                 </div>
               </div>
 
               {/* Adjuntos */}
-              <div className="bg-[#121316] p-4 rounded-2xl border border-zinc-800 space-y-3">
-                <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider">📎 Documentación Obligatoria</h4>
+              <div className="bg-[#111318] p-4 rounded-2xl border border-[#252A32] space-y-3">
+                <h4 className="text-xs font-bold text-[#FFD21A] uppercase tracking-wider">📎 Documentación de Verificación</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="bg-[#181920] p-3 rounded-xl border border-zinc-800 text-center">
+                  <div className="bg-[#1B2027] p-3 rounded-xl border border-[#252A32] text-center">
                     <label className="block text-[10px] font-bold text-zinc-300 mb-1 cursor-pointer">DNI Frente</label>
                     <input type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setDniFrente(e.target.files[0])}} className="text-[9px] w-full text-zinc-400" />
                   </div>
-                  <div className="bg-[#181920] p-3 rounded-xl border border-zinc-800 text-center">
+                  <div className="bg-[#1B2027] p-3 rounded-xl border border-[#252A32] text-center">
                     <label className="block text-[10px] font-bold text-zinc-300 mb-1 cursor-pointer">DNI Dorso</label>
                     <input type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setDniDorso(e.target.files[0])}} className="text-[9px] w-full text-zinc-400" />
                   </div>
-                  <div className="bg-[#181920] p-3 rounded-xl border border-zinc-800 text-center">
+                  <div className="bg-[#1B2027] p-3 rounded-xl border border-[#252A32] text-center">
                     <label className="block text-[10px] font-bold text-zinc-300 mb-1 cursor-pointer">Recibo Sueldo</label>
                     <input type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setReciboSueldo(e.target.files[0])}} className="text-[9px] w-full text-zinc-400" />
                   </div>
-                  <div className="bg-[#181920] p-3 rounded-xl border border-zinc-800 text-center">
+                  <div className="bg-[#1B2027] p-3 rounded-xl border border-[#252A32] text-center">
                     <label className="block text-[10px] font-bold text-zinc-300 mb-1 cursor-pointer">Servicio / Factura</label>
                     <input type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setServicio(e.target.files[0])}} className="text-[9px] w-full text-zinc-400" />
                   </div>
                 </div>
               </div>
 
-              <button disabled={subiendo} type="submit" className="w-full bg-[#fe5000] hover:bg-[#fe5000]/90 text-white font-black text-xs py-3.5 rounded-xl uppercase tracking-wider shadow-lg transition-all">
-                {subiendo ? "Enviando Solicitud..." : "Enviar Solicitud a Evaluación"}
+              <button disabled={subiendo} type="submit" className="w-full bg-[#FFD21A] hover:bg-[#E8B900] text-[#111318] font-black text-xs py-3.5 rounded-xl uppercase tracking-wider shadow-lg transition-all">
+                {subiendo ? "Enviando Solicitud..." : "Enviar Solicitud de Compra"}
               </button>
             </form>
           </div>
         )}
 
-        {/* Barra de Filtros de Productos y Botón Nuevo Crédito */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#181920] p-4 rounded-2xl border border-zinc-800 shadow-md">
-          <div className="flex items-center gap-2">
+        {/* Barra de Filtros y CTA Principal */}
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 bg-[#1B2027] p-4 rounded-2xl border border-[#252A32] shadow-md">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 custom-scrollbar">
             <button 
               onClick={() => setFiltroVista("TODOS")} 
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filtroVista === "TODOS" ? "bg-[#fe5000] text-white shadow-md" : "bg-[#121316] text-zinc-400 hover:text-white"}`}
+              className={`min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${filtroVista === "TODOS" ? "bg-[#FFD21A] text-[#111318] shadow-md" : "bg-[#111318] text-zinc-400 hover:text-white"}`}
             >
-              Todos los Productos ({solicitudes.length})
+              Todas las operaciones ({solicitudes.length})
             </button>
             <button 
               onClick={() => setFiltroVista("ENTREGADOS")} 
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filtroVista === "ENTREGADOS" ? "bg-green-600 text-white shadow-md" : "bg-[#121316] text-zinc-400 hover:text-white"}`}
+              className={`min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${filtroVista === "ENTREGADOS" ? "bg-green-600 text-white shadow-md" : "bg-[#111318] text-zinc-400 hover:text-white"}`}
             >
-              🟢 En Curso / Entregados
+              Activas / entregadas
             </button>
             <button 
               onClick={() => setFiltroVista("EN_TRAMITE")} 
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filtroVista === "EN_TRAMITE" ? "bg-amber-500 text-black shadow-md" : "bg-[#121316] text-zinc-400 hover:text-white"}`}
+              className={`min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${filtroVista === "EN_TRAMITE" ? "bg-amber-500 text-black shadow-md" : "bg-[#111318] text-zinc-400 hover:text-white"}`}
             >
-              ⌛ En Trámite
+              En evaluación
             </button>
           </div>
 
           {!mostrarFormulario && (
             <button 
               onClick={() => setMostrarFormulario(true)} 
-              className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-black font-black text-xs px-5 py-2.5 rounded-xl shadow-md transition-all uppercase tracking-wider"
+              className="w-full sm:w-auto bg-[#FFD21A] hover:bg-[#E8B900] text-[#111318] font-extrabold text-xs px-5 py-3 rounded-xl shadow-md transition-all uppercase tracking-wider min-h-[44px] shrink-0"
             >
-              + Solicitar Nuevo Crédito
+              + SOLICITAR UNA COMPRA
             </button>
           )}
         </div>
 
-        {/* Lista de Solicitudes y Productos */}
+        {/* Lista de Operaciones / Empty State */}
         {solicitudesVisibles.length === 0 ? (
-          <div className="bg-[#181920] border border-zinc-800 p-12 rounded-3xl text-center space-y-4 shadow-xl max-w-lg mx-auto">
-            <div className="bg-[#121316] w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl border border-zinc-800">
-              📦
+          <div className="bg-[#1B2027] border border-[#252A32] p-6 sm:p-10 md:p-12 rounded-3xl text-center space-y-6 shadow-xl w-full mx-auto animate-fade-in">
+            <div className="bg-[#111318] w-16 h-16 rounded-2xl flex items-center justify-center mx-auto text-amber-400 border border-[#252A32] shadow-inner">
+              <ShoppingBag className="w-8 h-8 text-[#FFD21A]" />
             </div>
-            <h3 className="text-lg font-bold text-white">No tenés productos en esta vista</h3>
-            <p className="text-xs text-zinc-400">Si tenés compras o créditos en marcha, podés unificarlos con tu número de DNI.</p>
-            <button onClick={() => setMostrarFormulario(true)} className="bg-[#fe5000] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md">
-              Solicitar Crédito Ahora
-            </button>
+            
+            <div className="space-y-2 max-w-xl mx-auto">
+              <h3 className="text-xl font-black text-white">Todavía no tenés operaciones activas</h3>
+              <p className="text-xs text-zinc-300 leading-relaxed">
+                Desde acá vas a poder seguir tus solicitudes, compras gestionadas, cuotas y entregas con Cuenta Hogar.
+              </p>
+              <p className="text-xs text-zinc-400 leading-relaxed pt-1">
+                Si necesitás resolver una nueva compra, contanos qué estás buscando y te ayudamos a preparar una propuesta.
+              </p>
+            </div>
+
+            {/* Microbeneficios en fila discreta */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto py-2 text-left sm:text-center">
+              <div className="bg-[#111318] border border-[#252A32] p-3 rounded-xl flex sm:flex-col items-center sm:justify-center gap-2.5 text-xs text-zinc-300">
+                <FileText className="w-4 h-4 text-[#FFD21A] shrink-0" />
+                <span className="font-bold text-[11px]">Seguir tus solicitudes</span>
+              </div>
+              <div className="bg-[#111318] border border-[#252A32] p-3 rounded-xl flex sm:flex-col items-center sm:justify-center gap-2.5 text-xs text-zinc-300">
+                <CreditCard className="w-4 h-4 text-green-400 shrink-0" />
+                <span className="font-bold text-[11px]">Consultar tus cuotas</span>
+              </div>
+              <div className="bg-[#111318] border border-[#252A32] p-3 rounded-xl flex sm:flex-col items-center sm:justify-center gap-2.5 text-xs text-zinc-300">
+                <Truck className="w-4 h-4 text-blue-400 shrink-0" />
+                <span className="font-bold text-[11px]">Ver el estado de tus entregas</span>
+              </div>
+            </div>
+
+            {/* CTAs del Empty State */}
+            <div className="pt-2 space-y-3 max-w-md mx-auto">
+              <button 
+                onClick={() => setMostrarFormulario(true)} 
+                className="w-full bg-[#FFD21A] hover:bg-[#E8B900] text-[#111318] px-6 py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider shadow-lg transition-all min-h-[44px]"
+              >
+                QUIERO RECIBIR UNA PROPUESTA
+              </button>
+              
+              <p className="text-[11px] text-zinc-400 font-medium">
+                Podés consultar sin compromiso.
+              </p>
+
+              <div className="pt-1">
+                <Link 
+                  href="/" 
+                  className="inline-flex items-center gap-1.5 text-xs text-zinc-300 hover:text-white font-bold underline decoration-[#FFD21A]/50 transition-colors"
+                >
+                  <span>Ver opciones de compra</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-[#FFD21A]" />
+                </Link>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="space-y-6">
@@ -761,13 +845,13 @@ export default function ClientePage() {
               const fechaCreacionStr = sol.fechaCreacion?.toDate ? sol.fechaCreacion.toDate().toLocaleDateString("es-AR") : "Reciente";
 
               return (
-                <div key={sol.id} className="bg-[#181920] border border-zinc-800 rounded-3xl p-5 md:p-7 shadow-xl space-y-5 transition-all hover:border-zinc-700">
+                <div key={sol.id} className="bg-[#1B2027] border border-[#252A32] rounded-3xl p-5 md:p-7 shadow-xl space-y-5 transition-all hover:border-zinc-700">
                   
-                  {/* Header de Producto */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-zinc-800/80 pb-4">
+                  {/* Encabezado de la Operación */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-[#252A32] pb-4">
                     <div className="flex items-center gap-3.5">
-                      <div className="bg-[#121316] border border-zinc-800 w-12 h-12 rounded-2xl flex items-center justify-center text-xl text-amber-400 font-bold shadow-inner">
-                        📦
+                      <div className="bg-[#111318] border border-[#252A32] w-12 h-12 rounded-2xl flex items-center justify-center text-xl text-[#FFD21A] font-bold shadow-inner shrink-0">
+                        <Package className="w-6 h-6 text-[#FFD21A]" />
                       </div>
                       <div>
                         <h3 className="text-lg font-black text-white flex items-center gap-2">
@@ -778,15 +862,15 @@ export default function ClientePage() {
                           {(sol.nroContrato || sol.numeroContrato) && (
                             <>
                               <span>•</span>
-                              <span className="bg-[#121316] border border-amber-500/40 text-amber-400 font-mono font-bold px-2 py-0.5 rounded text-[10px]">
-                                📜 Contrato N° {sol.nroContrato || sol.numeroContrato}
+                              <span className="bg-[#111318] border border-[#FFD21A]/40 text-[#FFD21A] font-mono font-bold px-2 py-0.5 rounded text-[10px]">
+                                Legajo N° {sol.nroContrato || sol.numeroContrato}
                               </span>
                             </>
                           )}
                           {sol.planElegido && (
                             <>
                               <span>•</span>
-                              <span className="text-amber-400 font-bold">{sol.planElegido} Cuotas x ${sol.montoCuota || 0}</span>
+                              <span className="text-[#FFD21A] font-bold">Plan de {sol.planElegido} cuotas x ${sol.montoCuota || 0}</span>
                             </>
                           )}
                         </p>
@@ -795,20 +879,20 @@ export default function ClientePage() {
 
                     <div className="flex items-center gap-2">
                       {estEntrega === "ENTREGADO" ? (
-                        <span className="bg-green-500/20 text-green-400 border border-green-500/30 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider">
-                          🟢 ENTREGADO / EN CURSO
+                        <span className="bg-green-500/20 text-green-400 border border-green-500/30 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-green-400"></span> ENTREGADA / EN CURSO
                         </span>
                       ) : est === "APROBADO" ? (
-                        <span className="bg-blue-500/20 text-blue-400 border border-blue-500/30 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider">
-                          💙 CRÉDITO APROBADO
+                        <span className="bg-blue-500/20 text-blue-400 border border-blue-500/30 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-blue-400"></span> COMPRA CONFIRMADA
                         </span>
                       ) : est === "RECHAZADO" ? (
                         <span className="bg-red-500/20 text-red-400 border border-red-500/30 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider">
-                          🔴 NO APROBADO
+                          NO PROCEDE
                         </span>
                       ) : (
-                        <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider animate-pulse">
-                          ⌛ EN EVALUACIÓN
+                        <span className="bg-amber-500/20 text-[#FFD21A] border border-amber-500/30 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider animate-pulse flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#FFD21A]"></span> EN EVALUACIÓN
                         </span>
                       )}
                     </div>
@@ -816,9 +900,9 @@ export default function ClientePage() {
 
                   {/* Detalle de Entrega si aplica */}
                   {estEntrega === "ENTREGADO" && (
-                    <div className="bg-[#121316] p-4 rounded-2xl border border-zinc-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
+                    <div className="bg-[#111318] p-4 rounded-2xl border border-[#252A32] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
                       <div>
-                        <p className="text-[10px] text-zinc-500 font-bold uppercase">🏷️ Retiro / Entrega Confirmada</p>
+                        <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Entrega Confirmada</p>
                         <p className="text-white font-bold mt-0.5">Anticipo abonado: <strong className="text-green-400 font-mono">${sol.montoAbonado || 0}</strong> ({sol.metodoPago || "Efectivo"})</p>
                       </div>
                       <span className="bg-green-500/10 text-green-400 border border-green-500/20 px-3 py-1 rounded-lg font-bold">
@@ -829,10 +913,10 @@ export default function ClientePage() {
 
                   {/* Planilla de Cuotas */}
                   {sol.planPagos && sol.planPagos.length > 0 && (
-                    <div className="bg-[#121316] rounded-2xl border border-zinc-800 p-4 md:p-5 space-y-4">
-                      <div className="flex flex-wrap justify-between items-center border-b border-zinc-800 pb-3 gap-2">
-                        <h4 className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                          💳 Planilla de Pagos del Producto
+                    <div className="bg-[#111318] rounded-2xl border border-[#252A32] p-4 md:p-5 space-y-4">
+                      <div className="flex flex-wrap justify-between items-center border-b border-[#252A32] pb-3 gap-2">
+                        <h4 className="text-xs font-black text-[#FFD21A] uppercase tracking-wider flex items-center gap-1.5">
+                          💳 Plan de cuotas de la operación
                         </h4>
                         <div className="flex items-center gap-2">
                           <button
@@ -853,7 +937,7 @@ export default function ClientePage() {
                                 planPagos: sol.planPagos || []
                               });
                             }}
-                            className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shadow-sm"
+                            className="bg-amber-500/10 hover:bg-amber-500/20 text-[#FFD21A] border border-amber-500/30 px-3 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shadow-sm"
                           >
                             📊 Estado de Cuenta PDF
                           </button>
@@ -869,11 +953,11 @@ export default function ClientePage() {
                           const isVencida = cuota.estado !== "PAGADO" && new Date(cuota.vencimiento) < new Date();
 
                           return (
-                            <div key={idx} className={`p-3.5 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs ${cuota.estado === "PAGADO" ? "bg-green-950/20 border-green-500/20" : cuota.estado === "EN_REVISION" ? "bg-blue-950/30 border-blue-500/30" : isVencida ? "bg-red-950/30 border-red-500/30" : "bg-[#181920] border-zinc-800"}`}>
+                            <div key={idx} className={`p-3.5 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs ${cuota.estado === "PAGADO" ? "bg-green-950/20 border-green-500/20" : cuota.estado === "EN_REVISION" ? "bg-blue-950/30 border-blue-500/30" : isVencida ? "bg-red-950/30 border-red-500/30" : "bg-[#1B2027] border-[#252A32]"}`}>
                               <div>
                                 <p className="font-bold text-white flex items-center gap-2">
                                   <span>Cuota {cuota.numero} de {sol.planPagos!.length}</span>
-                                  <span className="text-amber-400 font-mono font-black">${cuota.montoOriginal}</span>
+                                  <span className="text-[#FFD21A] font-mono font-black">${cuota.montoOriginal}</span>
                                 </p>
                                 <p className="text-[11px] text-zinc-400 mt-0.5">
                                   Vencimiento: {formatFechaVencimiento(cuota.vencimiento)}
@@ -933,8 +1017,8 @@ export default function ClientePage() {
                                 )}
 
                                 {cuota.estado === "PENDIENTE" && (
-                                  <div className="flex flex-col md:items-end gap-2 bg-[#121316] p-3 rounded-xl border border-zinc-800 w-full md:w-auto">
-                                    <span className={`px-2.5 py-0.5 rounded text-[9px] font-black uppercase ${isVencida ? "bg-red-500/20 text-red-400" : "bg-orange-500/20 text-orange-400"}`}>
+                                  <div className="flex flex-col md:items-end gap-2 bg-[#111318] p-3 rounded-xl border border-[#252A32] w-full md:w-auto">
+                                    <span className={`px-2.5 py-0.5 rounded text-[9px] font-black uppercase ${isVencida ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-[#FFD21A]"}`}>
                                       {isVencida ? "🔴 VENCIDA" : "PENDIENTE DE PAGO"}
                                     </span>
 
@@ -945,13 +1029,13 @@ export default function ClientePage() {
                                           id={`monto_${sol.id}_${idx}`} 
                                           defaultValue={cuota.montoOriginal} 
                                           min="1" 
-                                          className="w-24 bg-[#121316] border border-zinc-700 text-white p-1.5 rounded-lg text-xs font-mono font-bold outline-none focus:border-amber-500" 
+                                          className="w-24 bg-[#111318] border border-zinc-700 text-white p-1.5 rounded-lg text-xs font-mono font-bold outline-none focus:border-[#FFD21A]" 
                                         />
                                         <input 
                                           type="file" 
                                           id={`comprobante_${sol.id}_${idx}`} 
                                           accept="image/*,application/pdf" 
-                                          className="text-[9px] text-zinc-300 file:bg-amber-500 file:text-black file:border-0 file:rounded file:px-2 file:py-1 file:font-bold hover:file:bg-amber-400" 
+                                          className="text-[9px] text-zinc-300 file:bg-[#FFD21A] file:text-[#111318] file:border-0 file:rounded file:px-2 file:py-1 file:font-bold hover:file:bg-[#E8B900]" 
                                         />
                                         <button 
                                           id={`btn_${sol.id}_${idx}`}
@@ -1024,10 +1108,10 @@ export default function ClientePage() {
       </div>
 
       <style dangerouslySetInnerHTML={{__html: `
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #52525b; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #FFD21A; }
         .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
       `}} />
