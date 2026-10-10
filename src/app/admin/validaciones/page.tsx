@@ -4847,7 +4847,7 @@ https://cuenta-hogar--negocio-facil-page.us-central1.hosted.app/firmar-contrato/
                       <button 
                         onClick={() => handleConfirmarYEnviarWhatsApp(contratoAEditar)}
                      >
-                       💬 Confirmar Legajo, Enviar WhatsApp y pasar a "Pendiente de firma"
+                       💬 Confirmar Legajo, Enviar WhatsApp y pasar a &quot;Pendiente de firma&quot;
                      </button>
                      <div className="flex flex-col md:flex-row gap-3">
                        <button onClick={() => generarContratoModelo(contratoAEditar)} className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black py-3.5 rounded-xl font-black text-xs uppercase tracking-wider transition-colors shadow-xs">

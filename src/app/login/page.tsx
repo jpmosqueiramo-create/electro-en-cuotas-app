@@ -45,6 +45,10 @@ export default function LoginPage() {
       if (isLogin) {
         // Modo Ingresar
         await signInWithEmailAndPassword(auth, email, password);
+        if (email.trim().toLowerCase() === "jpmosqueiramo@gmail.com") {
+          router.push("/admin");
+          return;
+        }
         try {
           localStorage.setItem("userRole", "cliente");
         } catch (e) {
@@ -52,7 +56,7 @@ export default function LoginPage() {
         }
         // Force immediate routing to avoid useEffect race conditions
         router.push("/cliente");
-           return;
+        return;
       } else {
         // Modo Registro
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);

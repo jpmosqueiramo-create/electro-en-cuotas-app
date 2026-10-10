@@ -1287,3 +1287,28 @@ export default function AdminComisionesPage({ initialTab = "comisiones" }: Props
     </AdminProtectedRoute>
   );
 }
+
+
+export { formatMoney } from "@/lib/sellerAccountHelpers";
+
+export function translateBackendError(err: string): string {
+  if (err.includes("EXCESO_MONTO_LIQUIDABLE")) {
+    return "El saldo disponible cambió antes de confirmar la liquidación.";
+  }
+  if (err.includes("LIQUIDACION_CON_INCIDENCIAS")) {
+    return "La liquidación tiene incidencias pendientes y no puede pagarse.";
+  }
+  if (err.includes("EXCESO_COMPENSACION_EFECTIVO")) {
+    return "El efectivo pendiente de rendición es menor al monto solicitado en compensación.";
+  }
+  if (err.includes("EXCESO_RENDICION_EFECTIVO")) {
+    return "El monto de la rendición supera la custodia física de efectivo.";
+  }
+  if (err.includes("IDEMPOTENCY_KEY_REQUERIDO")) {
+    return "Error de idempotencia: clave requerida para la operación.";
+  }
+  if (err.includes("SALDO_INSUFICIENTE")) {
+    return "Saldo insuficiente en cuenta corriente.";
+  }
+  return err;
+}

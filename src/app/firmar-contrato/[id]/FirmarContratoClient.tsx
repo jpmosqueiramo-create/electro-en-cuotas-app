@@ -388,7 +388,7 @@ export default function FirmarContratoClient() {
               {/* CONTENIDO LEGAL COMPLETO DEL MANDATO */}
               <div className="bg-[#F7F3EC] border border-[#DED8CF] p-5 rounded-xl max-h-[320px] overflow-y-auto space-y-4 text-xs font-sans text-[#1F2928] leading-relaxed custom-scrollbar">
                 <p className="font-bold text-[#173E3B]">
-                  ENTRE LOOP GESTIÓN INTEGRAL S.R.L. (en adelante "Cuenta Hogar" o el "Mandatario"), CUIT 30-71829384-9, con domicilio en Caracas 1101, CABA, por una parte; y por la otra {nombreCliente.toUpperCase()}, DNI N° {dniCliente} (el "Mandante"), se acuerda celebrar el presente Contrato de Mandato Comercial conforme a las siguientes cláusulas:
+                  ENTRE LOOP GESTIÓN INTEGRAL S.R.L. (en adelante &quot;Cuenta Hogar&quot; o el &quot;Mandatario&quot;), CUIT 30-71829384-9, con domicilio en Caracas 1101, CABA, por una parte; y por la otra {nombreCliente.toUpperCase()}, DNI N° {dniCliente} (el &quot;Mandante&quot;), se acuerda celebrar el presente Contrato de Mandato Comercial conforme a las siguientes cláusulas:
                 </p>
 
                 <div>

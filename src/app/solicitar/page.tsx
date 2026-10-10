@@ -38,11 +38,7 @@ function SolicitarForm() {
   const [dniFrente, setDniFrente] = useState<File | null>(null);
   const [dniDorso, setDniDorso] = useState<File | null>(null);
   const cuotasParam = searchParams.get("cuotas") || "12";
-  const [planElegido, setPlanElegido] = useState("12");
-
-  useEffect(() => {
-    if (cuotasParam) setPlanElegido(cuotasParam);
-  }, [cuotasParam]);
+  const [planElegido, setPlanElegido] = useState(cuotasParam);
 
   const handleCuilChange = (val: string) => {
     const clean = val.replace(/\D/g, "").slice(0, 11);

@@ -7,47 +7,169 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.email == 'jpmosqueiramo@gmail.com';
     }
 
+    function isStringWithMaxLength(val, maxLen) {
+      return val is string && val.size() <= maxLen;
+    }
+
+    function isOptString(data, key, maxLen) {
+      return !(key in data) || (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    function isOptNumber(data, key) {
+      return !(key in data) || ((data[key] is number || data[key] is int || data[key] is float) && data[key] >= 0);
+    }
+
+    function isOptTimestamp(data, key) {
+      return !(key in data) || data[key] is timestamp;
+    }
+
     // ==========================================
     // REGLAS DE SEGURIDAD - ENVÍOS LOW COST
     // ==========================================
 
-    // Borrador administrativo: Lectura y Escritura únicamente para Administrador Real
     match /shipping_settings/draft_config {
       allow read, write: if isAdmin();
     }
 
-    // Configuración Publicada: Lectura Pública, Escritura exclusivamente para Administrador Real
     match /shipping_settings/published_config {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Catálogo de productos: Lectura pública, Escritura autenticada
+    // Catálogo de productos: Lectura pública, Escritura de admin
     match /productos/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin();
     }
 
-    // Formularios públicos: Creación pública, Lectura/Actualización/Eliminación autenticada
-    match /solicitudes_cuenta/{document=**} {
-      allow create: if true;
-      allow read, update, delete: if request.auth != null;
+    // Vendedores: Lectura y escritura exclusiva de Admin
+    match /vendedores/{document=**} {
+      allow read, write: if isAdmin();
     }
 
-    match /alertas_admin/{document=**} {
-      allow create: if true;
-      allow read, update, delete: if request.auth != null;
+    // Solicitudes: Lectura para titular o admin; escritura solo de Admin
+    match /solicitudes/{solId} {
+      allow read: if isAdmin() || (request.auth != null && (
+        (resource != null && resource.data != null && resource.data.clienteEmail == request.auth.token.email) ||
+        (resource != null && resource.data != null && resource.data.clienteAuthUid == request.auth.uid) ||
+        (resource != null && resource.data != null && resource.data.datosPersonales != null && resource.data.datosPersonales.email == request.auth.token.email)
+      ));
+      allow write: if isAdmin();
     }
 
-    match /arrepentimientos/{document=**} {
-      allow create: if true;
-      allow read, update, delete: if request.auth != null;
+    // Formularios Públicos Hardened con Validaciones de Tipo de Primer Nivel ({docId})
+    match /solicitudes_cuenta/{docId} {
+      allow create: if request.resource.data.keys().hasAll(["tipo", "nombreCompleto", "estado"]) &&
+                       request.resource.data.keys().hasOnly(["tipo", "productoId", "productoNombre", "planElegido", "montoCuota", "nombreCompleto", "numeroDni", "cuil", "fechaNacimiento", "whatsapp", "direccion", "localidad", "codigoPostal", "ocupacion", "nombreAfiliado", "referidoPor", "email", "antiguedadLaboral", "precioContado", "tasaInteresTna", "tasaMora", "fecha", "fechaIso", "fechaCreacion", "estado", "comprobanteURL", "dniFrenteURL", "dniDorsoURL"]) &&
+                       isStringWithMaxLength(request.resource.data.tipo, 50) &&
+                       isStringWithMaxLength(request.resource.data.nombreCompleto, 150) &&
+                       isStringWithMaxLength(request.resource.data.estado, 50) &&
+                       isOptString(request.resource.data, "productoId", 100) &&
+                       isOptString(request.resource.data, "productoNombre", 200) &&
+                       isOptString(request.resource.data, "planElegido", 50) &&
+                       isOptNumber(request.resource.data, "montoCuota") &&
+                       isOptString(request.resource.data, "numeroDni", 30) &&
+                       isOptString(request.resource.data, "cuil", 30) &&
+                       isOptString(request.resource.data, "fechaNacimiento", 50) &&
+                       isOptString(request.resource.data, "whatsapp", 50) &&
+                       isOptString(request.resource.data, "direccion", 200) &&
+                       isOptString(request.resource.data, "localidad", 150) &&
+                       isOptString(request.resource.data, "codigoPostal", 20) &&
+                       isOptString(request.resource.data, "ocupacion", 100) &&
+                       isOptString(request.resource.data, "nombreAfiliado", 150) &&
+                       isOptString(request.resource.data, "referidoPor", 150) &&
+                       isOptString(request.resource.data, "email", 150) &&
+                       isOptString(request.resource.data, "antiguedadLaboral", 100) &&
+                       isOptNumber(request.resource.data, "precioContado") &&
+                       isOptNumber(request.resource.data, "tasaInteresTna") &&
+                       isOptNumber(request.resource.data, "tasaMora") &&
+                       isOptTimestamp(request.resource.data, "fecha") &&
+                       isOptString(request.resource.data, "fechaIso", 100) &&
+                       isOptTimestamp(request.resource.data, "fechaCreacion") &&
+                       isOptString(request.resource.data, "comprobanteURL", 500) &&
+                       isOptString(request.resource.data, "dniFrenteURL", 500) &&
+                       isOptString(request.resource.data, "dniDorsoURL", 500);
+      allow read, update, delete: if isAdmin();
     }
 
-    // Reglas por defecto para el resto de colecciones de la aplicación
-    // (Excluye explícitamente la colección shipping_settings para evitar que el catch-all otorgue accesos indebidos)
+    match /alertas_admin/{docId} {
+      allow create: if request.resource.data.keys().hasAll(["tipo", "mensaje", "fechaCreacion", "leida"]) &&
+                       request.resource.data.keys().hasOnly(["tipo", "clienteEmail", "mensaje", "fechaCreacion", "leida"]) &&
+                       isStringWithMaxLength(request.resource.data.tipo, 100) &&
+                       isStringWithMaxLength(request.resource.data.mensaje, 1000) &&
+                       request.resource.data.fechaCreacion is timestamp &&
+                       request.resource.data.leida is bool &&
+                       isOptString(request.resource.data, "clienteEmail", 150);
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /arrepentimientos/{docId} {
+      allow create: if request.resource.data.keys().hasAll(["nombreCompleto", "dni", "email", "telefono", "producto", "estado", "fechaCreacion"]) &&
+                       request.resource.data.keys().hasOnly(["nombreCompleto", "dni", "email", "telefono", "producto", "fechaCompra", "mensaje", "estado", "fechaCreacion"]) &&
+                       isStringWithMaxLength(request.resource.data.nombreCompleto, 150) &&
+                       isStringWithMaxLength(request.resource.data.dni, 30) &&
+                       isStringWithMaxLength(request.resource.data.email, 150) &&
+                       isStringWithMaxLength(request.resource.data.telefono, 50) &&
+                       isStringWithMaxLength(request.resource.data.producto, 200) &&
+                       isStringWithMaxLength(request.resource.data.estado, 50) &&
+                       request.resource.data.fechaCreacion is timestamp &&
+                       isOptString(request.resource.data, "fechaCompra", 100) &&
+                       isOptString(request.resource.data, "mensaje", 1000);
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /solicitudes_localidad/{docId} {
+      allow create: if request.resource.data.keys().hasAll(["nombre", "localidad", "telefono", "fechaCreacion"]) &&
+                       request.resource.data.keys().hasOnly(["nombre", "localidad", "telefono", "interes", "fechaCreacion"]) &&
+                       isStringWithMaxLength(request.resource.data.nombre, 150) &&
+                       isStringWithMaxLength(request.resource.data.localidad, 150) &&
+                       isStringWithMaxLength(request.resource.data.telefono, 50) &&
+                       request.resource.data.fechaCreacion is timestamp &&
+                       isOptString(request.resource.data, "interes", 300);
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Colecciones Financieras, Ledger y Liquidaciones: Escritura cliente restringida a Admin
+    match /liquidaciones_comision/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    match /ledger_custodia_efectivo/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    match /ledger_comisiones_movimientos/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    match /rendiciones_efectivo/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    match /ledger_movimientos/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    match /ledger_imputaciones/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    match /idempotencia_ledger/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    match /ledger_operaciones/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    match /pagos_informados/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    match /configuracion_general/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    match /vendedores_configuraciones_comision/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    match /snapshots_comision_operaciones/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // Reglas por defecto para el resto de colecciones de la aplicación: Default Fail-Closed (Admin only)
     match /{collection}/{document=**} {
-      allow read, write: if collection != 'shipping_settings' && request.auth != null;
+      allow read, write: if isAdmin();
     }
   }
 }

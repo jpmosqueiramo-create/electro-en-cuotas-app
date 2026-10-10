@@ -1,6 +1,6 @@
 "use client";
 
-import { db } from "@/lib/firebase";
+import { db } from "./firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
 export type ShippingDestination = {

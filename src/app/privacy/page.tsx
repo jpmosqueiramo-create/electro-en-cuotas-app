@@ -36,7 +36,7 @@ export default function PrivacyPage() {
               <span className="text-[#FFD21A]">1.</span> Marco Legal
             </h2>
             <p className="leading-relaxed">
-              LOOP GESTIÓN INTEGRAL S.R.L., representada por su Gerente Juan Pablo Mosqueira (operando comercialmente bajo el nombre de fantasía "Cuenta Hogar"), respeta tu derecho a la privacidad. La presente política se encuentra regulada por la legislación vigente de la República Argentina, en especial la Ley de Protección de Datos Personales N° 25.326 y sus disposiciones complementarias.
+              LOOP GESTIÓN INTEGRAL S.R.L., representada por su Gerente Juan Pablo Mosqueira (operando comercialmente bajo el nombre de fantasía &quot;Cuenta Hogar&quot;), respeta tu derecho a la privacidad. La presente política se encuentra regulada por la legislación vigente de la República Argentina, en especial la Ley de Protección de Datos Personales N° 25.326 y sus disposiciones complementarias.
             </p>
           </section>
 
