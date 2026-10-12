@@ -9,9 +9,12 @@ import { db, auth } from "@/lib/firebase";
 import { collection, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from "firebase/firestore";
 import { generarPdfPresupuesto } from "@/lib/pdfGenerator";
 import { 
-  resolveLegacyAlertSolicitud, 
   SolicitudCandidate 
 } from "@/lib/budgetAlertRouting";
+import {
+  BudgetEditorLifecycleController,
+  BudgetEditorState
+} from "@/lib/budgetEditorLifecycle";
 import { 
   FileText, 
   Search, 
@@ -127,37 +130,46 @@ function PresupuestosContent() {
   const [catalogoProductos, setCatalogoProductos] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
-  const initializedKeyRef = useRef<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<string>("TODOS");
   const [busqueda, setBusqueda] = useState<string>("");
-
-  // Estado del Modal de Confección
-  const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [calculandoPricing, setCalculandoPricing] = useState(false);
-  const [leadData, setLeadData] = useState<LeadData>({
-    solicitudId: "",
-    alertaId: "",
-    nombre: "",
-    dni: "",
-    telefono: "",
-    localidad: "",
-    producto: "",
-    notas: ""
-  });
 
-  // Vinculación determinística de solicitud
-  const [resolvedSolicitudId, setResolvedSolicitudId] = useState<string | null>(null);
-  const [resolvedCollection, setResolvedCollection] = useState<"solicitudes_cuenta" | "solicitudes" | null>(null);
-  const [candidatosVinculacion, setCandidatosVinculacion] = useState<SolicitudCandidate[]>([]);
-  const [confirmarCrearNueva, setConfirmarCrearNueva] = useState(false);
+  // Controlador Canónico Único de Ciclo de Vida del Editor
+  const lifecycleRef = useRef<BudgetEditorLifecycleController>(new BudgetEditorLifecycleController());
+  const [editorState, setEditorState] = useState<BudgetEditorState>(() => lifecycleRef.current.getState());
 
-  // Selección de Producto y Pricing Canónico
-  const [selectedProductoId, setSelectedProductoId] = useState<string>("");
-  const [selectedPlazo, setSelectedPlazo] = useState<number>(0);
-  const [senaPesos, setSenaPesos] = useState<string>("0");
-  const [pricingResult, setPricingResult] = useState<CanonicalPricingSnapshot | null>(null);
-  const [persistedBudget, setPersistedBudget] = useState<PresupuestoRecord | null>(null);
+  useEffect(() => {
+    return lifecycleRef.current.subscribe((newState) => {
+      setEditorState(newState);
+    });
+  }, []);
+
+  const {
+    modalOpen,
+    leadData,
+    resolvedSolicitudId,
+    resolvedCollection,
+    candidatosVinculacion,
+    selectedProductoId,
+    selectedPlazo,
+    senaPesos,
+    pricingResult,
+    persistedBudget,
+    confirmarCrearNueva
+  } = editorState as {
+    modalOpen: boolean;
+    leadData: LeadData;
+    resolvedSolicitudId: string | null;
+    resolvedCollection: "solicitudes_cuenta" | "solicitudes" | null;
+    candidatosVinculacion: SolicitudCandidate[];
+    selectedProductoId: string;
+    selectedPlazo: number;
+    senaPesos: string;
+    pricingResult: CanonicalPricingSnapshot | null;
+    persistedBudget: PresupuestoRecord | null;
+    confirmarCrearNueva: boolean;
+  };
 
   const fetchPresupuestos = async () => {
     setLoading(true);
@@ -313,11 +325,12 @@ function PresupuestosContent() {
       allPresupuestos.sort((a, b) => (b.fechaObjeto?.getTime() ?? 0) - (a.fechaObjeto?.getTime() ?? 0));
       setPresupuestos(allPresupuestos);
       setSolicitudesPool(pool);
+      setDataLoaded(true);
     } catch (e: unknown) {
       console.error("Error al cargar presupuestos:", e);
+      setDataLoaded(false);
     } finally {
       setLoading(false);
-      setDataLoaded(true);
     }
   };
 
@@ -325,228 +338,101 @@ function PresupuestosContent() {
     fetchPresupuestos();
   }, []);
 
-  // Procesar Query Parameters de Alerta y Resolver Vinculación Determinística
+  // Procesar Query Parameters de Alerta y Resolver Vinculación Determinística mediante Controller Canónico
   useEffect(() => {
     const qParam = searchParams.get("q");
     if (qParam && !busqueda) {
       setBusqueda(qParam);
     }
 
+    const currentQueryKey = searchParams.toString();
+    const lifecycle = lifecycleRef.current;
+
+    const initialized = lifecycle.handleQueryOrDataChange({
+      queryKey: currentQueryKey,
+      searchParams,
+      dataLoaded,
+      solicitudesPool,
+      catalogoProductos
+    });
+
+    if (!initialized) {
+      return;
+    }
+
     const solId = searchParams.get("solicitudId") || "";
     const altId = searchParams.get("alertaId") || "";
-    const nom = searchParams.get("nombre") || "";
-    const dniVal = searchParams.get("dni") || "";
-    const telVal = searchParams.get("telefono") || "";
-    const locVal = searchParams.get("localidad") || "";
-    const prodVal = searchParams.get("producto") || "";
-    const notasVal = searchParams.get("notas") || "";
 
-    if (nom || prodVal || solId || altId) {
-      // 1. ESPERAR A QUE LOS DATOS ESTÉN CARGADOS (DATA LOADED)
-      if (!dataLoaded) return;
-
-      // 2. IDEMPOTENCIA POR QUERY KEY: Si ya fue inicializado para esta query exacta, NO REINICIALIZAR
-      const currentQueryKey = searchParams.toString();
-      if (initializedKeyRef.current === currentQueryKey) {
-        return;
-      }
-
-      const incomingLead: LeadData = {
-        solicitudId: solId,
-        alertaId: altId,
-        nombre: nom,
-        dni: dniVal,
-        telefono: telVal,
-        localidad: locVal,
-        producto: prodVal,
-        notas: notasVal
-      };
-
-      setLeadData(incomingLead);
-      setPricingResult(null);
-      setPersistedBudget(null);
-      setSelectedPlazo(0);
-      setSenaPesos("0");
-      setConfirmarCrearNueva(false);
-
-      // Resolución determinística de vinculación
-      if (solId) {
-        // 1. Buscar en solicitudesPool por ID y utilizar sourceCollection
-        const matchPool = solicitudesPool.find((s) => s.id === solId);
-        if (matchPool) {
-          setResolvedSolicitudId(matchPool.id);
-          setResolvedCollection(matchPool.sourceCollection);
-          setCandidatosVinculacion([matchPool]);
-        } else {
-          // 2. Si no está en el pool cargado, verificar Firestore explícitamente
-          (async () => {
-            try {
-              const snapCuenta = await getDoc(doc(db, "solicitudes_cuenta", solId));
-              if (snapCuenta.exists()) {
-                setResolvedSolicitudId(solId);
-                setResolvedCollection("solicitudes_cuenta");
-                return;
-              }
-              const snapStd = await getDoc(doc(db, "solicitudes", solId));
-              if (snapStd.exists()) {
-                setResolvedSolicitudId(solId);
-                setResolvedCollection("solicitudes");
-                return;
-              }
-              // 3. No existe en ninguna colección: fail closed
-              setResolvedSolicitudId(null);
-              setResolvedCollection(null);
-              setCandidatosVinculacion([]);
-            } catch {
-              setResolvedSolicitudId(null);
-              setResolvedCollection(null);
-              setCandidatosVinculacion([]);
-            }
-          })();
-        }
-      } else if (altId) {
-        // Alerta con ID: recuperar fechaCreacion real de Firestore (NUNCA timestamp ficticio)
+    if (solId) {
+      if (!lifecycle.getState().resolvedSolicitudId) {
+        lifecycle.beginAsyncResolution(currentQueryKey);
         (async () => {
-          let realFechaCreacion: unknown = null;
           try {
-            const altSnap = await getDoc(doc(db, "alertas_admin", altId));
-            if (altSnap.exists()) {
-              const altData = altSnap.data();
-              realFechaCreacion = altData.fechaCreacion || altData.fecha || null;
+            const snapCuenta = await getDoc(doc(db, "solicitudes_cuenta", solId));
+            if (!lifecycle.isAsyncQueryValid(currentQueryKey)) return;
+            if (snapCuenta.exists()) {
+              lifecycle.applyAsyncSolicitudResolution(currentQueryKey, solId, "solicitudes_cuenta");
+              return;
             }
+            const snapStd = await getDoc(doc(db, "solicitudes", solId));
+            if (!lifecycle.isAsyncQueryValid(currentQueryKey)) return;
+            if (snapStd.exists()) {
+              lifecycle.applyAsyncSolicitudResolution(currentQueryKey, solId, "solicitudes");
+              return;
+            }
+            lifecycle.applyAsyncSolicitudResolution(currentQueryKey, null, null);
           } catch {
-            realFechaCreacion = null;
-          }
-          const resolution = resolveLegacyAlertSolicitud(
-            {
-              id: altId,
-              tipo: "NUEVO_PRESUPUESTO",
-              mensaje: notasVal,
-              clienteEmail: telVal || nom,
-              fechaCreacion: realFechaCreacion
-            },
-            solicitudesPool
-          );
-
-          if (resolution.matched && resolution.resolvedSolicitudId) {
-            setResolvedSolicitudId(resolution.resolvedSolicitudId);
-            setResolvedCollection(resolution.sourceCollection);
-            setCandidatosVinculacion(resolution.candidates);
-          } else {
-            setResolvedSolicitudId(null);
-            setResolvedCollection(null);
-            setCandidatosVinculacion(resolution.candidates);
+            if (!lifecycle.isAsyncQueryValid(currentQueryKey)) return;
+            lifecycle.applyAsyncSolicitudResolution(currentQueryKey, null, null);
           }
         })();
-      } else {
-        // Alerta sin ID: sin fecha ficticia
-        const resolution = resolveLegacyAlertSolicitud(
-          {
-            tipo: "NUEVO_PRESUPUESTO",
-            mensaje: notasVal,
-            clienteEmail: telVal || nom,
-            fechaCreacion: null
-          },
-          solicitudesPool
-        );
-
-        if (resolution.matched && resolution.resolvedSolicitudId) {
-          setResolvedSolicitudId(resolution.resolvedSolicitudId);
-          setResolvedCollection(resolution.sourceCollection);
-          setCandidatosVinculacion(resolution.candidates);
-        } else {
-          setResolvedSolicitudId(null);
-          setResolvedCollection(null);
-          setCandidatosVinculacion(resolution.candidates);
+      }
+    } else if (altId) {
+      lifecycle.beginAsyncResolution(currentQueryKey);
+      (async () => {
+        let realFechaCreacion: unknown = null;
+        try {
+          const altSnap = await getDoc(doc(db, "alertas_admin", altId));
+          if (altSnap.exists()) {
+            const altData = altSnap.data();
+            realFechaCreacion = altData.fechaCreacion || altData.fecha || null;
+          }
+        } catch {
+          realFechaCreacion = null;
         }
-      }
-
-      // Intentar pre-seleccionar producto del catálogo si coincide exactamente
-      const matchCatalog = catalogoProductos.find(
-        (cp) => cp.nombre.toLowerCase().trim() === prodVal.toLowerCase().trim()
-      );
-      if (matchCatalog) {
-        setSelectedProductoId(matchCatalog.id);
-      } else {
-        setSelectedProductoId("");
-      }
-
-      setModalOpen(true);
-      initializedKeyRef.current = currentQueryKey;
+        if (!lifecycle.isAsyncQueryValid(currentQueryKey)) return;
+        lifecycle.applyAsyncLegacyAlertResolution(currentQueryKey, realFechaCreacion, solicitudesPool);
+      })();
     }
   }, [searchParams, dataLoaded, solicitudesPool, catalogoProductos, busqueda]);
 
   const handleCerrarModal = () => {
-    setModalOpen(false);
-    initializedKeyRef.current = null;
+    lifecycleRef.current.closeModal();
     if (typeof window !== "undefined" && window.history && window.history.replaceState) {
       window.history.replaceState({}, "", "/admin/presupuestos");
     }
   };
 
   const abrirModalNuevo = () => {
-    initializedKeyRef.current = "__manual_nuevo__";
-    setLeadData({
-      solicitudId: "",
-      alertaId: "",
-      nombre: "",
-      dni: "",
-      telefono: "",
-      localidad: "",
-      producto: "",
-      notas: ""
-    });
-    setResolvedSolicitudId(null);
-    setResolvedCollection(null);
-    setCandidatosVinculacion([]);
-    setSelectedProductoId("");
-    setSelectedPlazo(0);
-    setSenaPesos("0");
-    setPricingResult(null);
-    setPersistedBudget(null);
-    setConfirmarCrearNueva(true);
-    setModalOpen(true);
+    lifecycleRef.current.openNewManual();
   };
 
   const abrirModalConfeccion = (item: PresupuestoRecord) => {
-    initializedKeyRef.current = "__edit_" + item.id;
-    setLeadData({
+    lifecycleRef.current.openExistingBudget({
+      id: item.id,
       solicitudId: item.solicitudId || "",
-      alertaId: "",
-      nombre: item.clienteNombre !== "Cliente Sin Nombre" ? item.clienteNombre : "",
-      dni: item.clienteDni !== "-" ? item.clienteDni : "",
-      telefono: item.clienteWhatsapp !== "-" ? item.clienteWhatsapp : "",
-      localidad: item.clienteLocalidad !== "-" ? item.clienteLocalidad : "",
+      solicitudTipo: item.solicitudTipo,
+      clienteNombre: item.clienteNombre,
+      clienteDni: item.clienteDni,
+      clienteWhatsapp: item.clienteWhatsapp,
+      clienteLocalidad: item.clienteLocalidad,
       producto: item.producto || "",
-      notas: item.notas || ""
-    });
-
-    setResolvedSolicitudId(item.solicitudId || null);
-    setResolvedCollection((item.solicitudTipo === "estandar" ? "solicitudes" : "solicitudes_cuenta"));
-    setCandidatosVinculacion([]);
-    setConfirmarCrearNueva(false);
-
-    // Si ya tiene un snapshot canónico previo, conservarlo
-    if (item.pricingSchemaVersion === "CANONICAL_V1" && item.snapshotCanonico) {
-      setPricingResult(item.snapshotCanonico);
-      setPersistedBudget(item);
-    } else {
-      setPricingResult(null);
-      setPersistedBudget(null);
-    }
-
-    const matchCatalog = catalogoProductos.find(
-      (cp) => cp.nombre.toLowerCase().trim() === (item.producto || "").toLowerCase().trim()
-    );
-    if (matchCatalog) {
-      setSelectedProductoId(matchCatalog.id);
-    } else {
-      setSelectedProductoId("");
-    }
-
-    setSelectedPlazo(item.cuotas || 0);
-    setSenaPesos("0");
-    setModalOpen(true);
+      notas: item.notas || "",
+      cuotas: item.cuotas || 0,
+      pricingSchemaVersion: item.pricingSchemaVersion,
+      snapshotCanonico: item.snapshotCanonico,
+      catalogoProductos: catalogoProductos
+    }, item);
   };
 
   const selectedProductoObj = catalogoProductos.find((p) => p.id === selectedProductoId);
@@ -587,13 +473,11 @@ function PresupuestosContent() {
       const data = await response.json();
       if (!response.ok || !data.ok) {
         alert("Error al calcular pricing canónico: " + (data.error || "Falla de cálculo"));
-        setPricingResult(null);
+        lifecycleRef.current.setPricingResult(null);
         return;
       }
 
-      setPricingResult(data.resultado);
-      // Resetear presupuesto persistido si se recalculó
-      setPersistedBudget(null);
+      lifecycleRef.current.setPricingResult(data.resultado);
     } catch (err: unknown) {
       console.error("Error al calcular pricing:", err);
       alert("Error de conexión al servidor de pricing.");
@@ -683,7 +567,7 @@ function PresupuestosContent() {
         const snap = await getDoc(docRef);
         if (!snap.exists()) {
           // Documento desaparece entre apertura y guardado => FAIL CLOSED
-          setPersistedBudget(null);
+          lifecycleRef.current.setPersistedBudget(null);
           alert("Error: La solicitud vinculada ya no existe o no pudo verificarse.");
           return;
         }
@@ -695,21 +579,20 @@ function PresupuestosContent() {
         });
         persistSuccess = true;
       } else {
-        setPersistedBudget(null);
+        lifecycleRef.current.setPersistedBudget(null);
         alert("Error: La solicitud vinculada ya no existe o no pudo verificarse.");
         return;
       }
 
       if (!persistSuccess) {
-        setPersistedBudget(null);
+        lifecycleRef.current.setPersistedBudget(null);
         alert("Error: No se pudo confirmar la persistencia del presupuesto.");
         return;
       }
 
       nuevoPresupuesto.solicitudId = targetDocId || undefined;
-      setPersistedBudget(nuevoPresupuesto);
-      setResolvedSolicitudId(targetDocId);
-      setResolvedCollection(targetCollection);
+      lifecycleRef.current.setPersistedBudget(nuevoPresupuesto);
+      lifecycleRef.current.setResolvedCandidate(targetDocId, targetCollection);
       await fetchPresupuestos();
       alert("¡Presupuesto guardado exitosamente con pricing canónico CANONICAL_V1! Ahora puede descargar el PDF o enviar por WhatsApp.");
     } catch (err: unknown) {
@@ -772,7 +655,7 @@ function PresupuestosContent() {
             p.id === persistedBudget.id ? { ...p, estado: "Enviado" } : p
           );
           await updateDoc(docRef, { presupuestos: presList });
-          setPersistedBudget({ ...persistedBudget, estado: "Enviado" });
+          lifecycleRef.current.setPersistedBudget({ ...persistedBudget, estado: "Enviado" });
           fetchPresupuestos();
         }
       } catch { /* ignore */ }
@@ -1048,7 +931,7 @@ function PresupuestosContent() {
                     <input
                       type="text"
                       value={leadData.nombre}
-                      onChange={(e) => setLeadData({ ...leadData, nombre: e.target.value })}
+                      onChange={(e) => lifecycleRef.current.updateLeadData({ nombre: e.target.value })}
                       placeholder="Ej: Juan Perez"
                       className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-sans text-[#1F2928] outline-none focus:border-[#173E3B]"
                     />
@@ -1059,7 +942,7 @@ function PresupuestosContent() {
                     <input
                       type="text"
                       value={leadData.dni}
-                      onChange={(e) => setLeadData({ ...leadData, dni: e.target.value })}
+                      onChange={(e) => lifecycleRef.current.updateLeadData({ dni: e.target.value })}
                       placeholder="Ej: 30123456"
                       className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-mono text-[#1F2928] outline-none focus:border-[#173E3B]"
                     />
@@ -1070,7 +953,7 @@ function PresupuestosContent() {
                     <input
                       type="text"
                       value={leadData.telefono}
-                      onChange={(e) => setLeadData({ ...leadData, telefono: e.target.value })}
+                      onChange={(e) => lifecycleRef.current.updateLeadData({ telefono: e.target.value })}
                       placeholder="Ej: 2364123456"
                       className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-mono text-[#1F2928] outline-none focus:border-[#173E3B]"
                     />
@@ -1081,7 +964,7 @@ function PresupuestosContent() {
                     <input
                       type="text"
                       value={leadData.localidad}
-                      onChange={(e) => setLeadData({ ...leadData, localidad: e.target.value })}
+                      onChange={(e) => lifecycleRef.current.updateLeadData({ localidad: e.target.value })}
                       placeholder="Ej: Lincoln"
                       className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-sans text-[#1F2928] outline-none focus:border-[#173E3B]"
                     />
@@ -1093,7 +976,7 @@ function PresupuestosContent() {
                   <textarea
                     rows={2}
                     value={leadData.notas}
-                    onChange={(e) => setLeadData({ ...leadData, notas: e.target.value })}
+                    onChange={(e) => lifecycleRef.current.updateLeadData({ notas: e.target.value })}
                     placeholder="Detalles provistos por el cliente..."
                     className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-sans text-[#1F2928] outline-none focus:border-[#173E3B]"
                   />
@@ -1118,11 +1001,10 @@ function PresupuestosContent() {
                           onChange={(e) => {
                             const val = e.target.value;
                             if (val) {
-                              setResolvedSolicitudId(val);
                               const c = candidatosVinculacion.find((cand) => cand.id === val);
-                              if (c) setResolvedCollection(c.sourceCollection);
+                              lifecycleRef.current.setResolvedCandidate(val, c?.sourceCollection || null);
                             } else {
-                              setResolvedSolicitudId(null);
+                              lifecycleRef.current.setResolvedCandidate(null, null);
                             }
                           }}
                           className="w-full bg-white border border-amber-300 px-3 py-1.5 rounded-lg text-xs font-sans text-gray-900 outline-none"
@@ -1142,7 +1024,7 @@ function PresupuestosContent() {
                         type="checkbox"
                         id="checkNueva"
                         checked={confirmarCrearNueva}
-                        onChange={(e) => setConfirmarCrearNueva(e.target.checked)}
+                        onChange={(e) => lifecycleRef.current.setConfirmarCrearNueva(e.target.checked)}
                         className="rounded border-amber-400 text-[#173E3B] focus:ring-[#173E3B]"
                       />
                       <label htmlFor="checkNueva" className="text-xs font-bold text-amber-900 cursor-pointer">
@@ -1167,10 +1049,7 @@ function PresupuestosContent() {
                   <select
                     value={selectedProductoId}
                     onChange={(e) => {
-                      setSelectedProductoId(e.target.value);
-                      setSelectedPlazo(0);
-                      setPricingResult(null);
-                      setPersistedBudget(null);
+                      lifecycleRef.current.setSelectedProductoId(e.target.value);
                     }}
                     className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-heading font-bold text-[#1F2928] outline-none focus:border-[#173E3B]"
                   >
@@ -1215,9 +1094,7 @@ function PresupuestosContent() {
                         <select
                           value={selectedPlazo}
                           onChange={(e) => {
-                            setSelectedPlazo(Number(e.target.value));
-                            setPricingResult(null);
-                            setPersistedBudget(null);
+                            lifecycleRef.current.setSelectedPlazo(Number(e.target.value));
                           }}
                           className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-heading font-bold text-[#1F2928] outline-none focus:border-[#173E3B]"
                         >
@@ -1238,9 +1115,7 @@ function PresupuestosContent() {
                           type="number"
                           value={senaPesos}
                           onChange={(e) => {
-                            setSenaPesos(e.target.value);
-                            setPricingResult(null);
-                            setPersistedBudget(null);
+                            lifecycleRef.current.setSenaPesos(e.target.value);
                           }}
                           placeholder="0"
                           className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-mono text-[#1F2928] outline-none focus:border-[#173E3B]"

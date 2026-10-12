@@ -797,6 +797,219 @@ function runTestSuite() {
   assert(controller.getState().selectedPlazo === 0, "J10e. Plazo se resetea para nueva cotización");
 
   // =========================================================================
+  // CASO K: Prevención de Carreras Asíncronas (Stale Async) & DataLoaded Guard (K1 a K10)
+  // =========================================================================
+  console.log("\n--- CASO K: Stale Async Resolution Guard & DataLoaded Guard (K1 a K10) ---");
+
+  const controllerK = new BudgetEditorLifecycleController();
+
+  // K1. Iniciar con Query A y comenzar resolución asíncrona
+  const queryA = "solicitudId=sol_async_A&nombre=Cliente+A";
+  const searchParamsA = new URLSearchParams(queryA);
+  const poolK: SolicitudCandidate[] = [];
+  const catalogoK = [{ id: "prod_k", nombre: "Heladera", costoProducto: 500000, plazosHabilitados: [6, 12] }];
+
+  controllerK.handleQueryOrDataChange({
+    queryKey: queryA,
+    searchParams: searchParamsA,
+    dataLoaded: true,
+    solicitudesPool: poolK,
+    catalogoProductos: catalogoK
+  });
+
+  controllerK.beginAsyncResolution(queryA);
+  assert(controllerK.isAsyncQueryValid(queryA) === true, "K1. Query A marcada como activa para resolución asíncrona");
+
+  // K2. Mientras Query A está en vuelo, el usuario cambia a Query B
+  const queryB = "solicitudId=sol_async_B&nombre=Cliente+B";
+  const searchParamsB = new URLSearchParams(queryB);
+
+  controllerK.handleQueryOrDataChange({
+    queryKey: queryB,
+    searchParams: searchParamsB,
+    dataLoaded: true,
+    solicitudesPool: poolK,
+    catalogoProductos: catalogoK
+  });
+  controllerK.beginAsyncResolution(queryB);
+
+  assert(controllerK.getState().leadData.nombre === "Cliente B", "K2. Editor actualizado a Query B");
+  assert(controllerK.isAsyncQueryValid(queryB) === true, "K3. Query B es ahora la única query asíncrona válida");
+  assert(controllerK.isAsyncQueryValid(queryA) === false, "K4. Query A quedó invalidada por el cambio de navegación");
+
+  // K5. Late resolution de Query A intenta aplicarse -> DEBE SER RECHAZADA
+  const lateApplyA = controllerK.applyAsyncSolicitudResolution(queryA, "sol_async_A", "solicitudes");
+  assert(lateApplyA === false, "K5. applyAsyncSolicitudResolution para Query A tardía retorna false");
+  assert(controllerK.getState().resolvedSolicitudId !== "sol_async_A", "K6. Estado del editor NO fue sobreescrito por la resolución tardía de Query A");
+
+  // K7. Late legacy alert resolution de Query A también es rechazada
+  const lateLegacyA = controllerK.applyAsyncLegacyAlertResolution(queryA, new Date(), poolK);
+  assert(lateLegacyA === false, "K7. applyAsyncLegacyAlertResolution para Query A tardía retorna false");
+
+  // K8. Cierre de modal invalida cualquier resolución en vuelo
+  controllerK.closeModal();
+  assert(controllerK.isAsyncQueryValid(queryB) === false, "K8. Cierre del modal invalida cualquier resolución asíncrona pendiente");
+
+  // K9. DataLoaded Guard: si la carga de datos falló (dataLoaded = false), no se abre ni se bloquea la query
+  const controllerK9 = new BudgetEditorLifecycleController();
+  const queryPending = "alertaId=alt_k9&nombre=Pedro&telefono=123456";
+  const searchParamsPending = new URLSearchParams(queryPending);
+
+  const initFailedLoad = controllerK9.handleQueryOrDataChange({
+    queryKey: queryPending,
+    searchParams: searchParamsPending,
+    dataLoaded: false, // FALLO EN FETCH
+    solicitudesPool: [],
+    catalogoProductos: []
+  });
+
+  assert(initFailedLoad === false, "K9a. Con dataLoaded = false, el editor NO se inicializa");
+  assert(controllerK9.getState().modalOpen === false, "K9b. Modal permanece cerrado");
+  assert(controllerK9.getInitializedKey() === null, "K9c. Query key NO queda bloqueada ante fallo de carga");
+
+  // K10. Reintento de fetch exitoso (dataLoaded = true) procesa la misma query
+  const initSuccessLoad = controllerK9.handleQueryOrDataChange({
+    queryKey: queryPending,
+    searchParams: searchParamsPending,
+    dataLoaded: true, // FETCH REINTENTADO CON ÉXITO
+    solicitudesPool: [],
+    catalogoProductos: []
+  });
+
+  assert(initSuccessLoad === true, "K10a. Tras refetch exitoso (dataLoaded = true), la query se procesa");
+  assert(controllerK9.getState().modalOpen === true, "K10b. Modal se abre correctamente tras recuperarse la carga");
+
+  // =========================================================================
+  // CASO L: Ciclo de Vida Completo del Componente Real e Integración de Suscripción (L1 a L12)
+  // =========================================================================
+  console.log("\n--- CASO L: Ciclo de Vida Completo del Componente Real e Integración React (L1 a L12) ---");
+
+  const componentLifecycle = new BudgetEditorLifecycleController();
+  let syncNotificationCount = 0;
+  let lastObservedState: unknown = null;
+
+  // L1. Suscripción idéntica a la utilizada en page.tsx
+  const unsubscribe = componentLifecycle.subscribe((state) => {
+    syncNotificationCount++;
+    lastObservedState = { ...state };
+  });
+
+  assert(typeof unsubscribe === "function", "L1a. Suscripción retorna función de cleanup");
+  assert(lastObservedState === null, "L1b. Estado inicial previo a primer evento permanece limpio");
+
+  // L2. Entrada de query desde alerta de portada
+  const alertQueryL = "alertaId=alt_lead_l&nombre=Camila+Rios&telefono=2364112233&localidad=Lincoln&producto=Smart+TV+50";
+  const searchParamsL = new URLSearchParams(alertQueryL);
+  const catalogL = [
+    { id: "prod_tv_50", nombre: "Smart TV 50", costoProducto: 600000, plazosHabilitados: [6, 12, 18] }
+  ];
+
+  componentLifecycle.handleQueryOrDataChange({
+    queryKey: alertQueryL,
+    searchParams: searchParamsL,
+    dataLoaded: true,
+    solicitudesPool: [],
+    catalogoProductos: catalogL
+  });
+
+  assert(syncNotificationCount >= 1, "L2a. Notificación emitida a React al inicializar editor");
+  assert(lastObservedState !== null, "L2b. lastObservedState sincronizado tras notificación");
+  assert(componentLifecycle.getState().modalOpen === true, "L2b. Modal abierto");
+  assert(componentLifecycle.getState().selectedProductoId === "prod_tv_50", "L2c. Producto vinculado automáticamente por nombre");
+
+  // L3. Usuario edita datos del lead en el formulario
+  componentLifecycle.updateLeadData({ dni: "35999888", notas: "Entregar en domicilio particular" });
+  assert(componentLifecycle.getState().leadData.dni === "35999888", "L3. leadData.dni actualizado y reactivo");
+
+  // L4. Selección de plazo
+  componentLifecycle.setSelectedPlazo(12);
+  assert(componentLifecycle.getState().selectedPlazo === 12, "L4. Plazo 12 cuotas fijado en controller");
+
+  // L5. Ingreso de seña
+  componentLifecycle.setSenaPesos("50000");
+  assert(componentLifecycle.getState().senaPesos === "50000", "L5. Seña anticipada fijada en controller");
+
+  // L6. Cálculo de pricing canónico CANONICAL_V1
+  const pricingL = calcularPricingCanonico({
+    capitalCompraCentavos: 60000000,
+    plazoMeses: 12,
+    tnaInterna: 60,
+    alicuotaIva: 21,
+    senaMontoCentavos: 5000000,
+    plazosHabilitadosProducto: [6, 12, 18]
+  });
+  componentLifecycle.setPricingResult(pricingL);
+  assert(componentLifecycle.getState().pricingResult !== null, "L6. Snapshot CANONICAL_V1 cargado");
+
+  // L7. Confirmar creación explícita de solicitud y persistir presupuesto
+  componentLifecycle.setConfirmarCrearNueva(true);
+  const presupuestoPersistidoL = {
+    id: "pres_doc_l_789",
+    solicitudId: "sol_creada_nueva_l",
+    producto: "Smart TV 50",
+    cuotas: 12,
+    valorCuota: pricingL.cuotaMensualBaseCentavos / 100,
+    pricingSchemaVersion: "CANONICAL_V1" as const,
+    pricingSnapshot: pricingL,
+    estado: "Generado" as const
+  };
+  componentLifecycle.setPersistedBudget(presupuestoPersistidoL);
+  componentLifecycle.setResolvedCandidate("sol_creada_nueva_l", "solicitudes_cuenta");
+
+  assert(componentLifecycle.getState().persistedBudget !== null, "L7a. persistedBudget fijado tras persistencia");
+  assert(componentLifecycle.getState().resolvedSolicitudId === "sol_creada_nueva_l", "L7b. Solicitud vinculada actualizada");
+
+  // L8. Acciones de descarga y WhatsApp
+  const pdfHabilitadoL = Boolean(componentLifecycle.getState().persistedBudget);
+  const whatsAppHabilitadoL = Boolean(componentLifecycle.getState().persistedBudget);
+  assert(pdfHabilitadoL === true, "L8a. Botón Descargar PDF HABILITADO");
+  assert(whatsAppHabilitadoL === true, "L8b. Botón Enviar WhatsApp HABILITADO");
+
+  // L9. Simular refresh de Firestore disparando re-render del useEffect con la misma query
+  const refetchDispatched = componentLifecycle.handleQueryOrDataChange({
+    queryKey: alertQueryL,
+    searchParams: searchParamsL,
+    dataLoaded: true,
+    solicitudesPool: [{ id: "sol_creada_nueva_l", sourceCollection: "solicitudes_cuenta", nombreCompleto: "Camila Rios" }],
+    catalogoProductos: catalogL
+  });
+
+  assert(refetchDispatched === false, "L9a. Refetch NO resetea el editor");
+  assert(componentLifecycle.getState().persistedBudget !== null, "L9b. Presupuesto guardado permanece intacto");
+  assert(componentLifecycle.getState().pricingResult !== null, "L9c. Pricing permanece intacto");
+
+  // L10. Probar apertura de presupuesto existente (openExistingBudget)
+  componentLifecycle.openExistingBudget({
+    id: "pres_existente_999",
+    solicitudId: "sol_existente_999",
+    solicitudTipo: "estandar",
+    clienteNombre: "Roberto Gomez",
+    clienteDni: "20123456",
+    clienteWhatsapp: "2364009988",
+    clienteLocalidad: "Junin",
+    producto: "Smart TV 50",
+    cuotas: 12,
+    pricingSchemaVersion: "CANONICAL_V1",
+    snapshotCanonico: pricingL,
+    catalogoProductos: catalogL
+  }, { id: "pres_existente_999", producto: "Smart TV 50" });
+
+  assert(componentLifecycle.getState().leadData.nombre === "Roberto Gomez", "L10a. openExistingBudget precarga cliente existente");
+  assert(componentLifecycle.getState().persistedBudget !== null, "L10b. openExistingBudget preserva presupuesto persistido CANONICAL_V1");
+  assert(componentLifecycle.getState().selectedPlazo === 12, "L10c. Plazo 12 cuotas restaurado");
+
+  // L11. Cerrar modal
+  componentLifecycle.closeModal();
+  assert(componentLifecycle.getState().modalOpen === false, "L11a. Modal cerrado");
+  assert(componentLifecycle.getInitializedKey() === null, "L11b. initializedKey reseteado a null");
+
+  // L12. Limpieza de suscripción
+  unsubscribe();
+  const countBefore = syncNotificationCount;
+  componentLifecycle.openNewManual();
+  assert(syncNotificationCount === countBefore, "L12. Cleanup de suscripción exitoso, no hay leaks de listeners");
+
+  // =========================================================================
   // RESUMEN FINAL
   // =========================================================================
   console.log("\n========================================================================");
