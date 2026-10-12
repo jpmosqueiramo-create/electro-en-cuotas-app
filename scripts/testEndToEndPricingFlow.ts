@@ -18,7 +18,7 @@ function runEndToEndTest() {
   }
 
   // STEP A & B: Simulated empty configuration
-  const configVacia: any = null;
+  const configVacia: { tnaPorPlazo?: Record<number, number>; alicuotaIvaDefault?: number } = {};
 
   // Attempting to quote with empty config fails closed
   try {
@@ -30,8 +30,8 @@ function runEndToEndTest() {
       plazosHabilitadosProducto: [1, 12]
     });
     assert(false, 'Quotation with empty config must fail');
-  } catch (err: any) {
-    assert(err.message.includes('PRICING_TNA_NO_CONFIGURADA'), 'Quotation with unconfigured TNA fails closed');
+  } catch (err: unknown) {
+    assert((err as Error).message.includes('PRICING_TNA_NO_CONFIGURADA'), 'Quotation with unconfigured TNA fails closed');
   }
 
   // STEP C, D, E: Save manual admin config: TNA 1=24%, TNA 12=150%, IVA=21%
@@ -70,8 +70,8 @@ function runEndToEndTest() {
       plazosHabilitadosProducto: productoNuevo.plazosHabilitados
     });
     assert(false, 'Quotation for term 6 should be rejected');
-  } catch (err: any) {
-    assert(err.message.includes('PLAZO_NO_HABILITADO_PRODUCTO'), 'Rejects term 6 because it is not enabled in product');
+  } catch (err: unknown) {
+    assert((err as Error).message.includes('PLAZO_NO_HABILITADO_PRODUCTO'), 'Rejects term 6 because it is not enabled in product');
   }
 
   // STEP J: Quotation for term 12 -> ACCEPTANCE

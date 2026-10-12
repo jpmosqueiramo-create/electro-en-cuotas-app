@@ -21,14 +21,14 @@ export interface CuotaInmutableModel {
 export interface CanonicalPricingInput {
   capitalCompraCentavos: number;      // Importe aplicado a la compra (en centavos)
   plazoMeses: number;                 // 1 a 18
-  tnaInterna: number | null | undefined; // TNA % (ej: 150 para 150%)
-  alicuotaIva: number | null | undefined;// IVA % (ej: 21.0 para 21%)
+  tnaInterna?: number | null;         // TNA % obligatoria enviada o leída de config
+  alicuotaIva?: number | null;        // IVA % obligatorio enviado o leído de config
   senaMontoCentavos?: number;          // Seña abonada (en centavos)
   plazosHabilitadosProducto?: number[];// Lista de plazos habilitados en el catálogo
 }
 
 export interface CanonicalPricingResult {
-  pricingSchemaVersion?: string;
+  pricingSchemaVersion: "CANONICAL_V1";
   capitalCompraCentavos: number;
   plazoMeses: number;
   tnaInternaAplicada: number;
@@ -43,67 +43,47 @@ export interface CanonicalPricingResult {
   cuotas: CuotaInmutableModel[];
 }
 
-export const TNA_DEFAULT_CONFIG: Record<number, number> = {
-  1: 0,
-  2: 30,
-  3: 45,
-  4: 60,
-  5: 75,
-  6: 90,
-  7: 105,
-  8: 115,
-  9: 125,
-  10: 135,
-  11: 142,
-  12: 150,
-  13: 150,
-  14: 150,
-  15: 150,
-  16: 150,
-  17: 150,
-  18: 150
-};
-
-export const ALICUOTA_IVA_DEFAULT = 21.0;
-
 /**
- * Obtener la configuración global de TNA e IVA desde Firestore, o retornar defaults.
+ * Obtener la configuración global de TNA e IVA desde Firestore.
+ * FAIL CLOSED: Retorna null si la configuración no existe o está incompleta.
  */
-export async function obtenerConfiguracionPricingGlobal(db: admin.firestore.Firestore): Promise<ConfiguracionPricingGlobal> {
+export async function obtenerConfiguracionPricingGlobal(db: admin.firestore.Firestore): Promise<ConfiguracionPricingGlobal | null> {
   try {
     const docSnap = await db.collection("configuracion_general").doc("pricing").get();
     if (docSnap.exists) {
       const data = docSnap.data() || {};
-      return {
-        id: "pricing_default",
-        tnaPorPlazo: data.tnaPorPlazo || TNA_DEFAULT_CONFIG,
-        alicuotaIvaDefault: typeof data.alicuotaIvaDefault === "number" ? data.alicuotaIvaDefault : ALICUOTA_IVA_DEFAULT,
-        fechaUltimaModificacion: data.fechaUltimaModificacion || new Date().toISOString(),
-        modificadoPor: data.modificadoPor || "sistema"
-      };
+      if (data.tnaPorPlazo && typeof data.tnaPorPlazo === "object" && typeof data.alicuotaIvaDefault === "number") {
+        return {
+          id: "pricing_default",
+          tnaPorPlazo: data.tnaPorPlazo,
+          alicuotaIvaDefault: data.alicuotaIvaDefault,
+          fechaUltimaModificacion: data.fechaUltimaModificacion || new Date().toISOString(),
+          modificadoPor: data.modificadoPor || "admin"
+        };
+      }
     }
   } catch (err) {
-    console.warn("No se pudo obtener configuracion_general/pricing, usando defaults:", err);
+    console.error("Error al obtener configuracion_general/pricing:", err);
   }
-
-  return {
-    id: "pricing_default",
-    tnaPorPlazo: TNA_DEFAULT_CONFIG,
-    alicuotaIvaDefault: ALICUOTA_IVA_DEFAULT,
-    fechaUltimaModificacion: new Date().toISOString(),
-    modificadoPor: "sistema"
-  };
+  return null;
 }
 
 /**
- * Guardar o actualizar la configuración global de TNA e IVA con registro de auditoría.
+ * Guardar o actualizar la configuración global de TNA e IVA con registro ATÓMICO en WriteBatch.
  */
 export async function guardarConfiguracionPricingGlobal(
   db: admin.firestore.Firestore,
   nuevaConfig: Partial<ConfiguracionPricingGlobal>,
   userEmail: string
 ): Promise<ConfiguracionPricingGlobal> {
-  const actual = await obtenerConfiguracionPricingGlobal(db);
+  const actual = (await obtenerConfiguracionPricingGlobal(db)) || {
+    id: "pricing_default",
+    tnaPorPlazo: {},
+    alicuotaIvaDefault: 21.0,
+    fechaUltimaModificacion: new Date().toISOString(),
+    modificadoPor: userEmail
+  };
+
   const timestampIso = new Date().toISOString();
 
   const configActualizada: ConfiguracionPricingGlobal = {
@@ -114,25 +94,30 @@ export async function guardarConfiguracionPricingGlobal(
     modificadoPor: userEmail
   };
 
-  const auditEntry = {
+  const batch = db.batch();
+  const configRef = db.collection("configuracion_general").doc("pricing");
+  const auditRef = db.collection("configuracion_general").doc("pricing").collection("auditoria").doc();
+
+  batch.set(configRef, configActualizada, { merge: true });
+  batch.set(auditRef, {
     timestamp: timestampIso,
     usuario: userEmail,
     configAnterior: actual,
     configNueva: configActualizada
-  };
+  });
 
-  await db.collection("configuracion_general").doc("pricing").set(configActualizada, { merge: true });
-  await db.collection("configuracion_general").doc("pricing").collection("auditoria").add(auditEntry);
+  await batch.commit();
 
   return configActualizada;
 }
 
 /**
  * Motor canónico de cálculo de Pricing server-side en centavos seguros.
+ * FAIL CLOSED: No asume TNA 0 ni IVA 21% silenciosamente.
  */
 export function calcularPricingCanonico(input: CanonicalPricingInput): CanonicalPricingResult {
   const capitalCompraCentavos = Math.max(0, Math.round(Number(input.capitalCompraCentavos) || 0));
-  const plazoMeses = Math.round(Number(input.plazoMeses) || 1);
+  const plazoMeses = Math.round(Number(input.plazoMeses) || 0);
   const senaMontoCentavos = Math.max(0, Math.round(Number(input.senaMontoCentavos) || 0));
 
   if (capitalCompraCentavos <= 0) {
@@ -143,31 +128,34 @@ export function calcularPricingCanonico(input: CanonicalPricingInput): Canonical
     throw new Error(`400:El plazo de cuotas debe ser un número entero entre 1 y 18 (plazo ingresado: ${plazoMeses}).`);
   }
 
-  if (input.plazosHabilitadosProducto && Array.isArray(input.plazosHabilitadosProducto) && input.plazosHabilitadosProducto.length > 0) {
-    if (!input.plazosHabilitadosProducto.includes(plazoMeses)) {
-      throw new Error(`400:PLAZO_NO_HABILITADO_PRODUCTO: El plazo de ${plazoMeses} cuotas no se encuentra habilitado para este producto. Plazos permitidos: ${input.plazosHabilitadosProducto.join(", ")}.`);
-    }
+  // FAIL CLOSED EN PLAZOS DEL PRODUCTO
+  if (!input.plazosHabilitadosProducto || !Array.isArray(input.plazosHabilitadosProducto) || input.plazosHabilitadosProducto.length === 0) {
+    throw new Error("400:LEGACY_READ_ONLY_REQUIRES_CONFIG: El producto no posee plazos habilitados configurados en el catálogo. Configure los plazos en administración antes de cotizar con el motor canónico.");
   }
 
-  if (input.tnaInterna === null || input.tnaInterna === undefined) {
-    throw new Error('400:PRICING_TNA_NO_CONFIGURADA: La TNA interna debe estar configurada.');
-  }
-  if (input.alicuotaIva === null || input.alicuotaIva === undefined) {
-    throw new Error('400:PRICING_IVA_NO_CONFIGURADO: La alícuota de IVA debe estar configurada.');
+  if (!input.plazosHabilitadosProducto.includes(plazoMeses)) {
+    throw new Error(`400:PLAZO_NO_HABILITADO_PRODUCTO: El plazo de ${plazoMeses} cuotas no se encuentra habilitado para este producto. Plazos permitidos: ${input.plazosHabilitadosProducto.join(", ")}.`);
   }
 
-  const tnaInternaAplicada = Math.max(0, Number(input.tnaInterna) || 0);
-  const alicuotaIvaAplicada = Math.max(0, Number(input.alicuotaIva) || 0);
+  // FAIL CLOSED EN TNA E IVA
+  if (input.tnaInterna === undefined || input.tnaInterna === null || isNaN(Number(input.tnaInterna)) || Number(input.tnaInterna) < 0) {
+    throw new Error(`400:PRICING_TNA_NO_CONFIGURADA: No existe TNA configurada por la administración para el plazo de ${plazoMeses} cuotas.`);
+  }
+
+  if (input.alicuotaIva === undefined || input.alicuotaIva === null || isNaN(Number(input.alicuotaIva)) || Number(input.alicuotaIva) < 0) {
+    throw new Error("400:PRICING_IVA_NO_CONFIGURADO: No existe alícuota de IVA configurada en la administración general de pricing.");
+  }
+
+  const tnaInternaAplicada = Number(input.tnaInterna);
+  const alicuotaIvaAplicada = Number(input.alicuotaIva);
 
   // 1. Servicio Bruto Total (TNA Simple Nominal Proporcional al Plazo)
-  // servicioBruto = capitalCompra * (tna / 100) * (plazoMeses / 12)
   const servicioBrutoTotalCentavos = Math.round(capitalCompraCentavos * (tnaInternaAplicada / 100) * (plazoMeses / 12));
 
   // 2. Valor Total Contractual
   const valorTotalContractualCentavos = capitalCompraCentavos + servicioBrutoTotalCentavos;
 
   // 3. Servicio Neto Gravado Total e IVA Total
-  // servicioNeto = servicioBruto / (1 + iva / 100)
   const servicioNetoTotalCentavos = alicuotaIvaAplicada > 0
     ? Math.round(servicioBrutoTotalCentavos / (1 + (alicuotaIvaAplicada / 100)))
     : servicioBrutoTotalCentavos;
@@ -198,7 +186,6 @@ export function calcularPricingCanonico(input: CanonicalPricingInput): Canonical
       acumuladoNeto += netCen;
       acumuladoIva += ivaCen;
     } else {
-      // Última cuota absorbe exactamente la diferencia de redondeo de centavos
       capCen = capitalCompraCentavos - acumuladoCapital;
       netCen = servicioNetoTotalCentavos - acumuladoNeto;
       ivaCen = ivaTotalCentavos - acumuladoIva;
@@ -223,7 +210,7 @@ export function calcularPricingCanonico(input: CanonicalPricingInput): Canonical
   }
 
   return {
-    pricingSchemaVersion: 'CANONICAL_V1',
+    pricingSchemaVersion: "CANONICAL_V1",
     capitalCompraCentavos,
     plazoMeses,
     tnaInternaAplicada,
