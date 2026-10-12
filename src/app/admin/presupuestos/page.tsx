@@ -1,7 +1,7 @@
 "use client";
 
 import { AdminNav } from "@/components/AdminNav";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
@@ -126,6 +126,8 @@ function PresupuestosContent() {
   const [solicitudesPool, setSolicitudesPool] = useState<SolicitudCandidate[]>([]);
   const [catalogoProductos, setCatalogoProductos] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const initializedKeyRef = useRef<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<string>("TODOS");
   const [busqueda, setBusqueda] = useState<string>("");
 
@@ -315,6 +317,7 @@ function PresupuestosContent() {
       console.error("Error al cargar presupuestos:", e);
     } finally {
       setLoading(false);
+      setDataLoaded(true);
     }
   };
 
@@ -339,6 +342,15 @@ function PresupuestosContent() {
     const notasVal = searchParams.get("notas") || "";
 
     if (nom || prodVal || solId || altId) {
+      // 1. ESPERAR A QUE LOS DATOS ESTÉN CARGADOS (DATA LOADED)
+      if (!dataLoaded) return;
+
+      // 2. IDEMPOTENCIA POR QUERY KEY: Si ya fue inicializado para esta query exacta, NO REINICIALIZAR
+      const currentQueryKey = searchParams.toString();
+      if (initializedKeyRef.current === currentQueryKey) {
+        return;
+      }
+
       const incomingLead: LeadData = {
         solicitudId: solId,
         alertaId: altId,
@@ -460,10 +472,20 @@ function PresupuestosContent() {
       }
 
       setModalOpen(true);
+      initializedKeyRef.current = currentQueryKey;
     }
-  }, [searchParams, solicitudesPool, catalogoProductos, busqueda]);
+  }, [searchParams, dataLoaded, solicitudesPool, catalogoProductos, busqueda]);
+
+  const handleCerrarModal = () => {
+    setModalOpen(false);
+    initializedKeyRef.current = null;
+    if (typeof window !== "undefined" && window.history && window.history.replaceState) {
+      window.history.replaceState({}, "", "/admin/presupuestos");
+    }
+  };
 
   const abrirModalNuevo = () => {
+    initializedKeyRef.current = "__manual_nuevo__";
     setLeadData({
       solicitudId: "",
       alertaId: "",
@@ -487,6 +509,7 @@ function PresupuestosContent() {
   };
 
   const abrirModalConfeccion = (item: PresupuestoRecord) => {
+    initializedKeyRef.current = "__edit_" + item.id;
     setLeadData({
       solicitudId: item.solicitudId || "",
       alertaId: "",
@@ -994,7 +1017,7 @@ function PresupuestosContent() {
                   </p>
                 </div>
                 <button
-                  onClick={() => setModalOpen(false)}
+                  onClick={handleCerrarModal}
                   className="p-2 text-[#68706E] hover:text-[#173E3B] rounded-xl hover:bg-[#F7F3EC] transition cursor-pointer"
                 >
                   <X className="w-5 h-5" />
@@ -1325,7 +1348,7 @@ function PresupuestosContent() {
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                   <button
                     type="button"
-                    onClick={() => setModalOpen(false)}
+                    onClick={handleCerrarModal}
                     className="flex-1 sm:flex-none bg-[#FFFDFC] border border-[#DED8CF] hover:border-[#173E3B] text-[#68706E] px-4 py-2.5 rounded-xl text-xs font-heading font-bold transition cursor-pointer"
                   >
                     Cerrar

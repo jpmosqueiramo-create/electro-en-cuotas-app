@@ -35,6 +35,7 @@ import {
   AlertaAdminItem,
   SolicitudCandidate
 } from "../src/lib/budgetAlertRouting";
+import { BudgetEditorLifecycleController } from "../src/lib/budgetEditorLifecycle";
 import { 
   calcularPricingCanonico,
   CanonicalPricingInput,
@@ -656,6 +657,146 @@ function runTestSuite() {
   assert(resI10.errorMessage !== null, "I10e. NO se emite mensaje de éxito, se muestra advertencia de documento inexistente");
 
   // =========================================================================
+  // CASO J: Lifecycle Idempotente del Editor Post-Guardado y Refetch (J1 a J10)
+  // =========================================================================
+  console.log("\n--- CASO J: Lifecycle Idempotente del Editor Post-Guardado y Refetch (J1 a J10) ---");
+
+  const poolInicialJ: SolicitudCandidate[] = [
+    {
+      id: "sol_tevez_101",
+      sourceCollection: "solicitudes_cuenta",
+      nombreCompleto: "Carlos Tevez",
+      whatsapp: "2364001122",
+      productoNombre: "Notebook Asus"
+    }
+  ];
+
+  const catalogoInicialJ = [
+    {
+      id: "prod_notebook_101",
+      nombre: "Notebook Asus",
+      costoProducto: 400000,
+      plazosHabilitados: [3, 6, 12]
+    }
+  ];
+
+  const controller = new BudgetEditorLifecycleController();
+
+  // J1. Abrir mediante query de alerta
+  const queryAlertaJ1 = "alertaId=alt_j1&nombre=Carlos+Tevez&telefono=2364001122&producto=Notebook+Asus";
+  const searchParamsJ1 = new URLSearchParams(queryAlertaJ1);
+
+  // Antes de que los datos estén cargados (dataLoaded = false): el controller no abre el editor
+  const openedBeforeData = controller.handleQueryOrDataChange({
+    queryKey: queryAlertaJ1,
+    searchParams: searchParamsJ1,
+    dataLoaded: false,
+    solicitudesPool: [],
+    catalogoProductos: []
+  });
+  assert(!openedBeforeData && !controller.getState().modalOpen, "J1a. Editor espera a que los datos estén cargados (dataLoaded = false)");
+
+  // Datos cargados (dataLoaded = true): el controller abre e inicializa el editor
+  const openedAfterData = controller.handleQueryOrDataChange({
+    queryKey: queryAlertaJ1,
+    searchParams: searchParamsJ1,
+    dataLoaded: true,
+    solicitudesPool: poolInicialJ,
+    catalogoProductos: catalogoInicialJ,
+    realFechaCreacion: new Date("2026-10-10T12:00:00Z")
+  });
+  assert(openedAfterData && controller.getState().modalOpen === true, "J1b. Editor abierto e inicializado mediante query de alerta tras carga de datos");
+
+  // J2. Resolver lead/solicitud
+  assert(controller.getState().leadData.nombre === "Carlos Tevez", "J2a. Datos de lead precargados correctamente");
+  assert(controller.getState().resolvedSolicitudId === "sol_tevez_101", "J2b. Solicitud vinculada determinísticamente");
+  assert(controller.getState().selectedProductoId === "prod_notebook_101", "J2c. Producto del catálogo preseleccionado");
+
+  // J3. Calcular CANONICAL_V1
+  const pricingCalcJ3 = calcularPricingCanonico({
+    capitalCompraCentavos: 40000000,
+    plazoMeses: 6,
+    tnaInterna: 60,
+    alicuotaIva: 21,
+    plazosHabilitadosProducto: [3, 6, 12]
+  });
+  controller.setPricingResult(pricingCalcJ3);
+  controller.setSelectedProductAndTerm("prod_notebook_101", 6, "0");
+
+  assert(controller.getState().pricingResult !== null, "J3a. Pricing CANONICAL_V1 calculado y fijado en editor");
+  assert(controller.getState().selectedPlazo === 6, "J3b. Plazo 6 cuotas seleccionado");
+
+  // J4 & J5. Persistir correctamente -> persistedBudget != null
+  const presupuestoGuardadoJ4 = {
+    id: "pres_doc_tevez_123",
+    solicitudId: "sol_tevez_101",
+    producto: "Notebook Asus",
+    cuotas: 6,
+    valorCuota: pricingCalcJ3.cuotaMensualBaseCentavos / 100,
+    pricingSchemaVersion: "CANONICAL_V1" as const,
+    pricingSnapshot: pricingCalcJ3,
+    estado: "Generado" as const
+  };
+  controller.setPersistedBudget(presupuestoGuardadoJ4);
+
+  assert(controller.getState().persistedBudget !== null, "J4/J5. Presupuesto persistido exitosamente en base de datos (persistedBudget != null)");
+
+  // J6. Simular refresh de Firestore (fetchPresupuestos) manteniendo la misma query
+  const poolRefrescadoJ6 = [
+    ...poolInicialJ,
+    {
+      id: "sol_nueva_ingresada",
+      sourceCollection: "solicitudes_cuenta" as const,
+      nombreCompleto: "Nuevo Cliente"
+    }
+  ];
+  const catalogoRefrescadoJ6 = [...catalogoInicialJ];
+
+  // Simular disparo del useEffect debido a que solicitudesPool y catalogoProductos cambiaron en el componente
+  const reinitializedOnRefetch = controller.handleQueryOrDataChange({
+    queryKey: queryAlertaJ1, // MISMA QUERY KEY
+    searchParams: searchParamsJ1,
+    dataLoaded: true,
+    solicitudesPool: poolRefrescadoJ6,
+    catalogoProductos: catalogoRefrescadoJ6
+  });
+
+  assert(reinitializedOnRefetch === false, "J6. Refetch interno NO reinicializa el editor (handleQueryOrDataChange retorna false)");
+
+  // J7. Verificar después del refresh: persistedBudget != null, pricingResult != null, selectedPlazo preservado, resolvedSolicitudId preservado
+  assert(controller.getState().persistedBudget !== null, "J7a. persistedBudget SOBREVIVE al refetch de datos");
+  assert(controller.getState().pricingResult !== null, "J7b. pricingResult SOBREVIVE al refetch de datos");
+  assert(controller.getState().selectedPlazo === 6, "J7c. selectedPlazo (6 cuotas) PRESERVADO tras refetch");
+  assert(controller.getState().resolvedSolicitudId === "sol_tevez_101", "J7d. resolvedSolicitudId PRESERVADO tras refetch");
+  assert(controller.getState().selectedProductoId === "prod_notebook_101", "J7e. selectedProductoId PRESERVADO tras refetch");
+
+  // J8. PDF permanece habilitado
+  const canDownloadPdfJ8 = Boolean(controller.getState().persistedBudget);
+  assert(canDownloadPdfJ8 === true, "J8. Botón Descargar PDF PERMANECE HABILITADO tras refresh");
+
+  // J9. WhatsApp permanece habilitado
+  const canSendWhatsAppJ9 = Boolean(controller.getState().persistedBudget);
+  assert(canSendWhatsAppJ9 === true, "J9. Botón Enviar WhatsApp PERMANECE HABILITADO tras refresh");
+
+  // J10. Cambiar a una query/alerta distinta -> editor SÍ debe reinicializarse con la nueva solicitud
+  const queryAlertaNuevaJ10 = "alertaId=alt_j10_nueva&nombre=Lionel+Messi&telefono=2364998877&producto=Smart+TV";
+  const searchParamsNuevaJ10 = new URLSearchParams(queryAlertaNuevaJ10);
+
+  const reinitializedOnNewQuery = controller.handleQueryOrDataChange({
+    queryKey: queryAlertaNuevaJ10, // NUEVA QUERY DISTINTA
+    searchParams: searchParamsNuevaJ10,
+    dataLoaded: true,
+    solicitudesPool: poolRefrescadoJ6,
+    catalogoProductos: catalogoRefrescadoJ6
+  });
+
+  assert(reinitializedOnNewQuery === true, "J10a. Navegación a NUEVA alerta SÍ reinicializa el editor");
+  assert(controller.getState().leadData.nombre === "Lionel Messi", "J10b. Nuevo lead cargado en el editor");
+  assert(controller.getState().persistedBudget === null, "J10c. Borrador nuevo arranca sin persistedBudget (bloqueado para envío hasta guardar)");
+  assert(controller.getState().pricingResult === null, "J10d. Pricing se resetea para nueva cotización");
+  assert(controller.getState().selectedPlazo === 0, "J10e. Plazo se resetea para nueva cotización");
+
+  // =========================================================================
   // RESUMEN FINAL
   // =========================================================================
   console.log("\n========================================================================");
@@ -665,7 +806,7 @@ function runTestSuite() {
   console.log("========================================================================");
 
   if (passed === total) {
-    console.log("🎉 TODOS LOS CASOS (A - I) PASARON SATISFACTORIAMENTE");
+    console.log("🎉 TODOS LOS CASOS (A - J) PASARON SATISFACTORIAMENTE");
   } else {
     console.error("❌ HUBO FALLAS EN LA SUITE DE REGRESIÓN");
     process.exit(1);
