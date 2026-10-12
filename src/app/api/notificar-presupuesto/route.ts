@@ -10,6 +10,10 @@ export async function POST(req: Request) {
       ? `📥 NUEVO PRESUPUESTO WEB: ${nombre} (${localidad || "Sin localidad"})`
       : `📋 NUEVA APERTURA DE CUENTA: ${nombre} (DNI: ${dni || "S/D"})`;
 
+    const adminUrl = isQuick 
+      ? "https://cuentahogar.com.ar/admin/presupuestos" 
+      : "https://cuentahogar.com.ar/admin/validaciones?tab=aperturas";
+
     const emailContent = `
 NUEVA SOLICITUD DESDE CUENTA HOGAR:
 
@@ -22,7 +26,7 @@ NUEVA SOLICITUD DESDE CUENTA HOGAR:
 • Recomendado por: ${referente || "Ninguno"}
 
 Puedes ver y responder esta solicitud en el Panel de Administración:
-https://cuenta-hogar.web.app/admin/validaciones?tab=aperturas
+${adminUrl}
     `.trim();
 
     // 1. Send via FormSubmit AJAX API to jpmosqueiramo@gmail.com
@@ -72,8 +76,8 @@ https://cuenta-hogar.web.app/admin/validaciones?tab=aperturas
     }
 
     return NextResponse.json({ success: true, message: "Notificación enviada con éxito" });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error al notificar presupuesto por email:", err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }

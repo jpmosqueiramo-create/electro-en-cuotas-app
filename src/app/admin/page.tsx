@@ -5,6 +5,7 @@ import { AdminNav } from "@/components/AdminNav";
 import Link from "next/link";
 import { collection, query, where, onSnapshot, updateDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { resolveAlertAction, AlertaAdminItem } from "@/lib/budgetAlertRouting";
 import { useState, useEffect } from "react";
 import { 
   Bell, 
@@ -21,14 +22,20 @@ import {
 } from "lucide-react";
 
 export default function AdminPage() {
-  const [alertas, setAlertas] = useState<any[]>([]);
+  const [alertas, setAlertas] = useState<AlertaAdminItem[]>([]);
 
   useEffect(() => {
     const q = query(collection(db, "alertas_admin"), where("leida", "==", false));
     const unsubscribe = onSnapshot(q, (snap) => {
-      const data: any[] = [];
+      const data: AlertaAdminItem[] = [];
       snap.forEach(d => data.push({ id: d.id, ...d.data() }));
-      setAlertas(data.sort((a, b) => (b.fechaCreacion?.toMillis ? b.fechaCreacion.toMillis() : 0) - (a.fechaCreacion?.toMillis ? a.fechaCreacion.toMillis() : 0)));
+      setAlertas(data.sort((a, b) => {
+        const getMs = (item: AlertaAdminItem) => {
+          const fc = item.fechaCreacion as { toMillis?: () => number } | undefined;
+          return fc?.toMillis ? fc.toMillis() : 0;
+        };
+        return getMs(b) - getMs(a);
+      }));
     }, (error) => {
       console.error("Error listening to admin alerts:", error);
     });
@@ -39,7 +46,7 @@ export default function AdminPage() {
     try {
       await updateDoc(doc(db, "alertas_admin", id), { leida: true });
       setAlertas(alertas.filter(a => a.id !== id));
-    } catch(e){}
+    } catch { /* ignore */ }
   };
 
   const MODULE_CARDS = [
@@ -170,23 +177,29 @@ export default function AdminPage() {
                         {alerta.tipo ? alerta.tipo.replace('_', ' ') : 'ALERTA'}
                       </span>
                       <p className="text-sm font-heading font-bold text-[#1F2928]">{alerta.mensaje}</p>
-                      {alerta.fechaCreacion && (
+                      {Boolean(alerta.fechaCreacion) && (
                         <p className="text-xs text-[#68706E] font-sans mt-1">
-                          {alerta.fechaCreacion.toDate ? alerta.fechaCreacion.toDate().toLocaleString() : ''}
+                          {alerta.fechaCreacion && typeof alerta.fechaCreacion === "object" && "toDate" in alerta.fechaCreacion && typeof (alerta.fechaCreacion as { toDate?: () => Date }).toDate === "function"
+                            ? (alerta.fechaCreacion as { toDate: () => Date }).toDate().toLocaleString()
+                            : ""}
                         </p>
                       )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      {(alerta.tipo === "NUEVO_PRESUPUESTO" || alerta.tipo === "APERTURA_CUENTA") && (
-                        <Link 
-                          href="/admin/validaciones?tab=aperturas" 
-                          className="bg-[#173E3B] hover:bg-[#123230] text-white text-xs font-heading font-bold px-4 py-2 rounded-xl transition-all shadow-xs flex items-center gap-1.5"
-                        >
-                          📋 Atender Solicitud
-                        </Link>
-                      )}
+                      {(() => {
+                        const action = resolveAlertAction(alerta);
+                        if (!action) return null;
+                        return (
+                          <Link 
+                            href={action.href} 
+                            className="bg-[#173E3B] hover:bg-[#123230] text-white text-xs font-heading font-bold px-4 py-2 rounded-xl transition-all shadow-xs flex items-center gap-1.5"
+                          >
+                            📋 {action.label}
+                          </Link>
+                        );
+                      })()}
                       <button 
-                        onClick={() => marcarLeida(alerta.id)} 
+                        onClick={() => alerta.id && marcarLeida(alerta.id)} 
                         className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-[#173E3B] text-xs font-heading font-semibold text-[#68706E] px-3.5 py-2 rounded-xl transition-colors shadow-xs whitespace-nowrap cursor-pointer"
                       >
                         ✓ Marcar Leída

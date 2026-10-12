@@ -159,17 +159,11 @@ export default function HomeTechCatalog() {
       const payloadBuscás = {
         tipo: "contacto_rapido",
         nombreCompleto: qfNombre,
-        nombre: qfNombre,
-        numeroDni: qfDni,
-        dni: qfDni,
-        whatsapp: qfWhatsapp,
-        telefono: qfWhatsapp,
-        direccion: qfLocalidad,
-        localidad: qfLocalidad,
-        necesidad: qfNecesidad,
-        productoNombre: qfNecesidad,
-        productoDeseado: qfNecesidad,
-        referente: qfReferente || null,
+        numeroDni: qfDni || "",
+        whatsapp: qfWhatsapp || "",
+        direccion: qfLocalidad || "",
+        localidad: qfLocalidad || "",
+        productoNombre: qfNecesidad || "",
         referidoPor: qfReferente || null,
         fecha: serverTimestamp(),
         fechaIso: new Date().toISOString(),
@@ -177,8 +171,10 @@ export default function HomeTechCatalog() {
         estado: "Pendiente"
       };
 
+      let solId = "";
       try {
-        await addDoc(collection(db, "solicitudes_cuenta"), payloadBuscás);
+        const solRef = await addDoc(collection(db, "solicitudes_cuenta"), payloadBuscás);
+        solId = solRef.id;
       } catch (errDb) {
         console.warn("Aviso Firestore solicitudes_cuenta:", errDb);
       }
@@ -210,7 +206,7 @@ export default function HomeTechCatalog() {
         await addDoc(collection(db, "alertas_admin"), {
           tipo: "NUEVO_PRESUPUESTO",
           clienteEmail: qfWhatsapp || qfNombre,
-          mensaje: `📥 Solicitud de Opciones: ${qfNombre} (DNI: ${qfDni}, Tel: ${qfWhatsapp}, Loc: ${qfLocalidad}) - Busca: ${qfNecesidad}`,
+          mensaje: `📥 Solicitud de Opciones${solId ? ` [ID: ${solId}]` : ""}: ${qfNombre} (DNI: ${qfDni}, Tel: ${qfWhatsapp}, Loc: ${qfLocalidad}) - Busca: ${qfNecesidad}`,
           fechaCreacion: serverTimestamp(),
           leida: false
         });

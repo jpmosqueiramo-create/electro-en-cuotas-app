@@ -161,15 +161,10 @@ export default function PublicCatalog() {
       const payload = {
         tipo: "solicitud_compra",
         nombreCompleto: qfNombre,
-        nombre: qfNombre,
-        whatsapp: qfWhatsapp,
-        telefono: qfWhatsapp,
-        direccion: qfLocalidad,
-        localidad: qfLocalidad,
-        necesidad: qfNecesidad,
-        productoNombre: qfNecesidad,
-        productoDeseado: qfNecesidad,
-        referente: qfReferente || null,
+        whatsapp: qfWhatsapp || "",
+        direccion: qfLocalidad || "",
+        localidad: qfLocalidad || "",
+        productoNombre: qfNecesidad || "",
         referidoPor: qfReferente || null,
         fecha: serverTimestamp(),
         fechaIso: new Date().toISOString(),
@@ -177,8 +172,10 @@ export default function PublicCatalog() {
         estado: "Pendiente"
       };
 
+      let solId = "";
       try {
-        await addDoc(collection(db, "solicitudes_cuenta"), payload);
+        const solRef = await addDoc(collection(db, "solicitudes_cuenta"), payload);
+        solId = solRef.id;
       } catch (errDb) {
         console.warn("Aviso Firestore solicitudes_cuenta:", errDb);
       }
@@ -187,7 +184,7 @@ export default function PublicCatalog() {
         await addDoc(collection(db, "alertas_admin"), {
           tipo: "NUEVA_SOLICITUD_COMPRA",
           clienteEmail: qfWhatsapp || qfNombre,
-          mensaje: `📥 Solicitud de Servicio de Compra: ${qfNombre} (Tel: ${qfWhatsapp}, Loc: ${qfLocalidad}) - Busca: ${qfNecesidad}`,
+          mensaje: `📥 Solicitud de Servicio de Compra${solId ? ` [ID: ${solId}]` : ""}: ${qfNombre} (Tel: ${qfWhatsapp}, Loc: ${qfLocalidad}) - Busca: ${qfNecesidad}`,
           fechaCreacion: serverTimestamp(),
           leida: false
         });
