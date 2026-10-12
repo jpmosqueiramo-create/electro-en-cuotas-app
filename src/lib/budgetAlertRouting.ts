@@ -19,7 +19,7 @@ export interface AlertaAdminItem {
   mensaje?: string;
   clienteEmail?: string;
   solicitudId?: string;
-  fechaCreacion?: { toDate?: () => Date } | Date | null;
+  fechaCreacion?: unknown;
   leida?: boolean;
   [key: string]: unknown;
 }
@@ -30,6 +30,7 @@ export interface SolicitudCandidate {
   nombreCompleto?: string;
   numeroDni?: string;
   whatsapp?: string;
+  telefono?: string;
   productoNombre?: string;
   necesidad?: string;
   productoDeseado?: string;
@@ -46,6 +47,32 @@ export interface LegacyResolutionResult {
   candidatesCount: number;
   candidates: SolicitudCandidate[];
   message: string;
+}
+
+/**
+ * Normaliza determinísticamente un número telefónico extrayendo solo dígitos
+ * y estandarizando prefijos comunes. Comparación exacta sobre string normalizado.
+ */
+export function normalizePhoneForMatching(str?: string): string {
+  if (!str) return "";
+  let digits = str.replace(/\D/g, "");
+  if (digits.startsWith("549") && digits.length > 10) {
+    digits = digits.slice(3);
+  } else if (digits.startsWith("54") && digits.length > 10) {
+    digits = digits.slice(2);
+  }
+  if (digits.startsWith("0") && digits.length > 10) {
+    digits = digits.slice(1);
+  }
+  return digits;
+}
+
+/**
+ * Normaliza determinísticamente un DNI extrayendo solo dígitos.
+ */
+export function normalizeDniForMatching(str?: string): string {
+  if (!str) return "";
+  return str.replace(/\D/g, "");
 }
 
 /**
@@ -150,20 +177,20 @@ export function parseLeadFromAlert(alerta: AlertaAdminItem): ParsedLead {
 
 /**
  * Resolución determinística de solicitudes para alertas legacy sin solicitudId explícito.
- * Orden estricto de resolución:
- * 1. Teléfono / WhatsApp exacto
- * 2. DNI exacto si existe
- * 3. Producto / Necesidad
- * 4. Proximidad temporal con fechaCreacion
- * FAIL CLOSED: Si existen 0 o más de 1 candidatos, NO vincula automáticamente.
+ * Secuencia estricta y Fail-Closed:
+ * A. Teléfono: Comparación exacta de números normalizados completos (NO endsWith, NO matching parcial).
+ *    Si el teléfono existe en la alerta y tiene 0 coincidencias exactas: RETURN INMEDIATO fail-closed.
+ * B. DNI: Si quedan múltiples candidatos y la alerta tiene DNI, comparar DNI exacto.
+ *    Si tiene 0 coincidencias: RETURN INMEDIATO fail-closed.
+ * C. Producto: Reduce conjunto todavía ambiguo. Si 0 coincidencias: RETURN INMEDIATO fail-closed.
+ * D. Fecha: Sólo desempata candidatos que sobrevivieron a los pasos anteriores.
+ *    Usa fechaCreacion REAL de la alerta (NUNCA Date.now() ficticio).
  */
 export function resolveLegacyAlertSolicitud(
   alerta: AlertaAdminItem,
   solicitudes: SolicitudCandidate[]
 ): LegacyResolutionResult {
-  const cleanDigits = (str?: string) => (str || "").replace(/\D/g, "");
-
-  // 0. Si ya tiene ID explícito, buscarlo directamente
+  // 0. Si ya tiene ID explícito, buscarlo directamente en el pool
   const lead = parseLeadFromAlert(alerta);
   const explicitId = alerta.solicitudId || lead.solicitudId;
   if (explicitId) {
@@ -178,55 +205,92 @@ export function resolveLegacyAlertSolicitud(
         message: "Solicitud vinculada por ID directo."
       };
     }
+    // Si traía ID explícito pero no existe en el pool -> FAIL CLOSED
+    return {
+      matched: false,
+      resolvedSolicitudId: null,
+      sourceCollection: null,
+      candidatesCount: 0,
+      candidates: [],
+      message: "Solicitud original no vinculada automáticamente."
+    };
   }
 
-  const leadTel = cleanDigits(lead.telefono);
-  const leadDni = cleanDigits(lead.dni);
+  const leadTel = normalizePhoneForMatching(lead.telefono);
+  const leadDni = normalizeDniForMatching(lead.dni);
   const leadProd = (lead.producto || "").toLowerCase().trim();
 
   let pool = [...solicitudes];
 
-  // 1. Filtrar por Teléfono / WhatsApp exacto si existe
+  // A. Teléfono: Normalizado exacto completo (NO endsWith, NO contains, NO matching parcial)
   if (leadTel && leadTel.length >= 6) {
     const byTel = pool.filter(s => {
-      const sTel = cleanDigits(s.whatsapp || (s.telefono as string));
-      return sTel && (sTel === leadTel || sTel.endsWith(leadTel) || leadTel.endsWith(sTel));
+      const sTel = normalizePhoneForMatching(s.whatsapp || (s.telefono as string));
+      return sTel === leadTel;
     });
-    if (byTel.length > 0) {
-      pool = byTel;
+    // Si la alerta tiene teléfono y hay 0 coincidencias exactas: RETURN INMEDIATO FAIL CLOSED
+    if (byTel.length === 0) {
+      return {
+        matched: false,
+        resolvedSolicitudId: null,
+        sourceCollection: null,
+        candidatesCount: 0,
+        candidates: [],
+        message: "Solicitud original no vinculada automáticamente."
+      };
     }
+    pool = byTel;
   }
 
-  // 2. Filtrar por DNI exacto si existe y quedan múltiples
+  // B. DNI: Si después del teléfono quedan múltiples candidatos y existe DNI
   if (pool.length > 1 && leadDni && leadDni.length >= 6) {
     const byDni = pool.filter(s => {
-      const sDni = cleanDigits(s.numeroDni || (s.dni as string));
-      return sDni && sDni === leadDni;
+      const sDni = normalizeDniForMatching(s.numeroDni || (s.dni as string));
+      return sDni === leadDni;
     });
-    if (byDni.length > 0) {
-      pool = byDni;
+    // Si existen 0 coincidencias de DNI: RETURN INMEDIATO FAIL CLOSED
+    if (byDni.length === 0) {
+      return {
+        matched: false,
+        resolvedSolicitudId: null,
+        sourceCollection: null,
+        candidatesCount: 0,
+        candidates: [],
+        message: "Solicitud original no vinculada automáticamente."
+      };
     }
+    pool = byDni;
   }
 
-  // 3. Filtrar por Producto / Necesidad si aún quedan múltiples
+  // C. Producto: Sólo sirve para reducir un conjunto todavía ambiguo
   if (pool.length > 1 && leadProd) {
     const byProd = pool.filter(s => {
       const pName = String(s.productoNombre || s.necesidad || s.productoDeseado || "").toLowerCase().trim();
       return pName && (pName.includes(leadProd) || leadProd.includes(pName));
     });
-    if (byProd.length > 0) {
-      pool = byProd;
+    // Si existe producto y ninguna coincidencia: RETURN INMEDIATO FAIL CLOSED
+    if (byProd.length === 0) {
+      return {
+        matched: false,
+        resolvedSolicitudId: null,
+        sourceCollection: null,
+        candidatesCount: 0,
+        candidates: [],
+        message: "Solicitud original no vinculada automáticamente."
+      };
     }
+    pool = byProd;
   }
 
-  // 4. Filtrar por proximidad temporal si aún quedan múltiples y fechaCreacion existe
+  // D. Fecha: Sólo desempata candidatos que sobrevivieron a los criterios anteriores.
+  // Utiliza fechaCreacion real de la alerta. NUNCA Date.now() como fallback.
   if (pool.length > 1 && alerta.fechaCreacion) {
     const parseDateMs = (val: unknown): number => {
       if (!val) return 0;
       if (val instanceof Date) return val.getTime();
       const obj = val as { toMillis?: () => number; seconds?: number };
-      if (obj.toMillis) return obj.toMillis();
-      if (obj.seconds) return obj.seconds * 1000;
+      if (typeof obj.toMillis === "function") return obj.toMillis();
+      if (typeof obj.seconds === "number") return obj.seconds * 1000;
       if (typeof val === "string" || typeof val === "number") {
         const d = new Date(val);
         return isNaN(d.getTime()) ? 0 : d.getTime();

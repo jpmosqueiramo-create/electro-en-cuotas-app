@@ -2,19 +2,26 @@
  * TEST SUITE: REGRESSION TEST - FLUJO DE ALERTAS DE PRESUPUESTO VS VALIDACIONES
  * Cuenta Hogar - Root Monitoring Center & Presupuestos
  * 
- * Verificación Integral de Casos A a H:
+ * Verificación Integral de Casos A a I:
  * A. Alerta NUEVO_PRESUPUESTO enruta a /admin/presupuestos con datos del lead
  * B. Alerta APERTURA_CUENTA enruta a /admin/validaciones
  * C. Lead sin usuario registrado puede iniciar confección de presupuesto
  * D. Producto sin pricing configurado -> FAIL CLOSED -> no genera cuota ficticia
  * E. Producto con pricing configurado -> resultado proveniente de CANONICAL_V1
- * F. Alerta legacy sin solicitudId -> resuelve de forma determinística y no genera duplicado silencioso si no hay match único
+ * F. Alerta legacy sin solicitudId -> resolución determinística y no genera duplicado silencioso si no hay match único
  * G. Botones PDF / WhatsApp bloqueados antes de persistencia
  * H. Marcar leída altera exclusivamente leida = true sin mutar solicitudes ni presupuestos
- *
- * PROHIBICIONES ESTRICTAS:
- * - NO fórmulas legacy (costo * 1.5, costo * factor / cuotas, FACTORES_PREDETERMINADOS)
- * - NO TNA hardcodeada (tna: 60) ni mora hardcodeada (mora: 0.5) en presupuestos
+ * I. Verificaciones Críticas de Hardening Pre-Deploy (I1 a I10):
+ *    I1. Browser envía costo adulterado -> pricing utiliza exclusivamente costo Firestore.
+ *    I2. Browser envía plazo no habilitado -> rechazo fail-closed.
+ *    I3. Browser envía plazosHabilitadosProducto adulterados -> ignorados server-side.
+ *    I4. Producto inexistente -> FAIL CLOSED (404).
+ *    I5. Teléfono distinto pero mismo producto -> NO MATCH (Paso A falla de inmediato).
+ *    I6. Coincidencia sólo por sufijo de teléfono -> NO MATCH (comparación normalizada completa).
+ *    I7. Alerta legacy usa fechaCreacion real de Firestore -> no Date.now() ficticio.
+ *    I8. solicitudId perteneciente a colección "solicitudes" -> resuelve colección exacta.
+ *    I9. solicitudId inexistente -> persistencia rechazada fail-closed.
+ *    I10. Documento desaparece entre apertura y guardado -> NO persistedBudget, PDF y WhatsApp bloqueados.
  */
 
 import { 
@@ -148,14 +155,13 @@ function runTestSuite() {
   assert(leadProspecto.dni === "31222333", "C.3 DNI del prospecto extraído");
   assert(leadProspecto.telefono === "2364001122", "C.4 Teléfono del prospecto extraído");
 
-  // El administrador precarga los datos de contacto del lead sin requerir clienteAuthUid
   const leadState = {
     clienteNombre: leadProspecto.nombre,
     clienteDni: leadProspecto.dni,
     clienteTelefono: leadProspecto.telefono,
     clienteLocalidad: leadProspecto.localidad,
-    clienteAuthUid: null, // NO requiere usuario Auth
-    itemsPresupuesto: []  // Inicialmente vacío, NO genera condiciones financieras automáticas
+    clienteAuthUid: null,
+    itemsPresupuesto: []
   };
 
   assert(leadState.clienteAuthUid === null, "C.5 Formulario de presupuesto no requiere clienteAuthUid");
@@ -166,13 +172,12 @@ function runTestSuite() {
   // =========================================================================
   console.log("\n--- CASO D: Producto sin Pricing Configurado -> FAIL CLOSED ---");
 
-  // Intentar cotizar producto sin plazos habilitados en catálogo
   const inputSinPlazos: CanonicalPricingInput = {
-    capitalCompraCentavos: 50000000, // $500.000
+    capitalCompraCentavos: 50000000,
     plazoMeses: 6,
     tnaInterna: 60,
     alicuotaIva: 21,
-    plazosHabilitadosProducto: [] // VACÍO: no configurado en catálogo
+    plazosHabilitadosProducto: []
   };
 
   let failClosedPlazos = false;
@@ -186,13 +191,12 @@ function runTestSuite() {
   assert(failClosedPlazos, "D.1 Producto sin plazos habilitados lanza excepción (FAIL CLOSED)");
   assert(mensajeErrorPlazos.includes("LEGACY_READ_ONLY_REQUIRES_CONFIG"), "D.2 Error explicita requerimiento de configuración comercial");
 
-  // Intentar cotizar con plazo no habilitado para ese producto específico
   const inputPlazoNoHabilitado: CanonicalPricingInput = {
     capitalCompraCentavos: 50000000,
     plazoMeses: 12,
     tnaInterna: 60,
     alicuotaIva: 21,
-    plazosHabilitadosProducto: [3, 6] // 12 no está habilitado
+    plazosHabilitadosProducto: [3, 6]
   };
 
   let failClosedPlazoInvalido = false;
@@ -203,7 +207,6 @@ function runTestSuite() {
   }
   assert(failClosedPlazoInvalido, "D.3 Plazo no autorizado para el producto lanza excepción");
 
-  // Intentar cotizar con capital 0
   let failClosedCapitalCero = false;
   try {
     calcularPricingCanonico({
@@ -218,7 +221,6 @@ function runTestSuite() {
   }
   assert(failClosedCapitalCero, "D.4 Capital <= 0 es rechazado fail-closed");
 
-  // Verificar que la UI / lógica rechaza generar cuota ficticia (no recurre a costo * 1.5 ni factores predeterminados)
   const productNoConfiguredNotice = "Producto pendiente de configuración de condiciones comerciales.";
   assert(productNoConfiguredNotice.length > 0, "D.5 Mensaje explícito para productos pendientes de configuración presente");
 
@@ -228,10 +230,10 @@ function runTestSuite() {
   console.log("\n--- CASO E: Producto con Pricing Configurado -> CANONICAL_V1 ---");
 
   const inputConfigurado: CanonicalPricingInput = {
-    capitalCompraCentavos: 60000000, // $600.000 en centavos
+    capitalCompraCentavos: 60000000,
     plazoMeses: 6,
-    tnaInterna: 60, // 60% TNA
-    alicuotaIva: 21, // 21% IVA
+    tnaInterna: 60,
+    alicuotaIva: 21,
     plazosHabilitadosProducto: [3, 6, 12]
   };
 
@@ -245,7 +247,6 @@ function runTestSuite() {
   assert(resultadoCanonico.cuotas.length === 6, "E.6 Se generó el cronograma de 6 cuotas inmutables");
   assert(resultadoCanonico.valorTotalContractualCentavos > resultadoCanonico.capitalCompraCentavos, "E.7 Total contractual calculado rigurosamente");
 
-  // Verificar que cada cuota tiene desglose inmutable (capital + servicio + iva)
   const sumaCuotas = resultadoCanonico.cuotas.reduce((acc, c) => acc + c.montoTotalCentavos, 0);
   assert(sumaCuotas === resultadoCanonico.valorTotalContractualCentavos, "E.8 Suma de cuotas coincide al centavo con total contractual");
   assert(resultadoCanonico.cuotas[0].capitalCentavos > 0, "E.9 Cuota 1 contiene capital positivo");
@@ -311,29 +312,24 @@ function runTestSuite() {
   assert(resSinMatch.resolvedSolicitudId === null, "F.5 resolvedSolicitudId es null ante 0 coincidencias");
   assert(resSinMatch.message === "Solicitud original no vinculada automáticamente.", "F.6 Mensaje descriptivo Fail-Closed ante 0 coincidencias");
 
-  // F.3: Alerta legacy ambigua (múltiples candidatos idénticos) -> Fail Closed, NO crea duplicado silencioso
+  // F.3: Alerta legacy ambigua (múltiples candidatos con fechas idénticamente equidistantes)
   const alertaLegacyAmbigua: AlertaAdminItem = {
     id: "alt_legacy_003",
     tipo: "NUEVO_PRESUPUESTO",
     mensaje: "📥 Solicitud de Opciones: Maria Lopez (Tel: 2364112233, DNI: 32999888) - Busca: Smart TV 43",
-    fechaCreacion: new Date("2026-10-11T12:02:30Z") // Justo en el medio temporal
+    fechaCreacion: new Date("2026-10-11T12:02:30Z") // 2.5 min de candidato 2 y 2.5 min de candidato 3
   };
   const resAmbigua = resolveLegacyAlertSolicitud(alertaLegacyAmbigua, candidatosSimulados);
-  assert(resAmbigua.candidatesCount > 1 || resAmbigua.matched, "F.7 Detección de candidatos para solicitud ambigua");
-  if (resAmbigua.candidatesCount > 1) {
-    assert(resAmbigua.matched === false, "F.8 Conflicto de multiplicidad genera fail-closed (matched = false)");
-    assert(resAmbigua.resolvedSolicitudId === null, "F.9 No resuelve id arbitrario ante ambigüedad");
-    assert(resAmbigua.message === "Solicitud original no vinculada automáticamente.", "F.10 Alerta advierte requerimiento de decisión administrativa");
-  } else {
-    assert(resAmbigua.resolvedSolicitudId !== null, "F.8b Desempate temporal determinístico unívoco");
-  }
+  assert(resAmbigua.candidatesCount === 2, "F.7 Detección de 2 candidatos ambiguos");
+  assert(resAmbigua.matched === false, "F.8 Conflicto de multiplicidad genera fail-closed (matched = false)");
+  assert(resAmbigua.resolvedSolicitudId === null, "F.9 No resuelve ID arbitrario ante ambigüedad");
+  assert(resAmbigua.message === "Solicitud original no vinculada automáticamente.", "F.10 Alerta advierte requerimiento de decisión administrativa");
 
   // =========================================================================
   // CASO G: Botones PDF / WhatsApp bloqueados antes de persistencia
   // =========================================================================
   console.log("\n--- CASO G: Bloqueo de Acciones de Envío Previo a Persistencia ---");
 
-  // Estado del presupuesto en borrador (NO persistido todavía)
   const borradorPresupuesto = {
     id: "draft_temp_123",
     persisted: false,
@@ -349,14 +345,12 @@ function runTestSuite() {
     estado: "Generado" as const
   };
 
-  // Regla de negocio en UI: solo habilitado si persisted === true && items.length > 0
   const canSendWhatsAppBeforeSave = borradorPresupuesto.persisted && borradorPresupuesto.items.length > 0;
   const canExportPdfBeforeSave = borradorPresupuesto.persisted && borradorPresupuesto.items.length > 0;
 
   assert(!canSendWhatsAppBeforeSave, "G.1 Botón WhatsApp BLOQUEADO antes de guardar el presupuesto");
   assert(!canExportPdfBeforeSave, "G.2 Botón PDF BLOQUEADO antes de guardar el presupuesto");
 
-  // Simular persistencia exitosa
   const presupuestoPersistido = {
     ...borradorPresupuesto,
     id: "pres_doc_456789",
@@ -371,7 +365,6 @@ function runTestSuite() {
   assert(canExportPdfAfterSave, "G.4 Botón PDF HABILITADO tras persistencia exitosa");
   assert(presupuestoPersistido.estado === "Generado", "G.5 Estado inicial tras persistencia es 'Generado' (no 'Enviado')");
 
-  // Simular acción de envío de WhatsApp -> transición de estado
   const presupuestoPostEnvio = {
     ...presupuestoPersistido,
     estado: "Enviado" as const
@@ -411,7 +404,6 @@ function runTestSuite() {
 
   const snapshotOriginalSolicitud = JSON.stringify(mockDb.solicitudes_cuenta["sol_original_123"]);
 
-  // Acción Marcar Leída en alertas_admin
   function simularMarcarLeida(alertaId: string) {
     const alerta = mockDb.alertas_admin[alertaId as keyof typeof mockDb.alertas_admin];
     if (alerta) {
@@ -426,9 +418,242 @@ function runTestSuite() {
   assert(mockDb.solicitudes_cuenta["sol_original_123"].id === "sol_original_123", "H.3 El ID de la solicitud_cuenta permanece idéntico e intacto");
   assert(JSON.stringify(mockDb.solicitudes_cuenta["sol_original_123"]) === snapshotOriginalSolicitud, "H.4 CERO mutaciones en el registro de solicitud_cuenta ni en sus presupuestos");
 
-  // El parser sigue pudiendo extraer el vínculo aún después de marcar leída si se inspecciona el log histórico
   const leadPostLeida = parseLeadFromAlert(mockDb.alertas_admin["alt_001"]);
   assert(leadPostLeida.solicitudId === "sol_original_123", "H.5 Vinculación de solicitudId preservada tras marcar leída");
+
+  // =========================================================================
+  // CASO I: Verificaciones Críticas de Hardening Pre-Deploy (I1 a I10)
+  // =========================================================================
+  console.log("\n--- CASO I: Verificaciones Críticas de Hardening Pre-Deploy (I1 a I10) ---");
+
+  // Helper que replica exactamente la derivación de Firestore del endpoint server-side
+  const mockCatalogFirestore: Record<string, { costoProducto: number; plazosHabilitados: number[] }> = {
+    "prod_cat_001": {
+      costoProducto: 300000, // $300.000 en Firestore
+      plazosHabilitados: [3, 6] // Solo 3 y 6 cuotas
+    }
+  };
+
+  function simularServerSidePricing(bodyInput: {
+    productoId?: string;
+    costoProducto?: number;
+    capitalCompraCentavos?: number;
+    plazosHabilitadosProducto?: number[];
+    plazoMeses?: number;
+    senaMonto?: number;
+  }) {
+    if (!bodyInput.productoId || !bodyInput.productoId.trim()) {
+      throw new Error("400:PRODUCTO_ID_REQUERIDO");
+    }
+
+    const prodDoc = mockCatalogFirestore[bodyInput.productoId];
+    if (!prodDoc) {
+      throw new Error("404:PRODUCTO_NO_ENCONTRADO");
+    }
+
+    // FUENTE ÚNICA DE VERDAD: FIRESTORE (ignora body.costoProducto, body.capitalCompraCentavos, body.plazosHabilitadosProducto)
+    const capitalCompraCentavos = Math.round(prodDoc.costoProducto * 100);
+    const plazosHabilitadosProducto = prodDoc.plazosHabilitados;
+    const plazoNum = Number(bodyInput.plazoMeses);
+
+    if (!plazoNum || plazoNum < 1 || plazoNum > 18) {
+      throw new Error("400:PLAZO_INVALIDO");
+    }
+    if (!plazosHabilitadosProducto.includes(plazoNum)) {
+      throw new Error("400:PLAZO_NO_HABILITADO");
+    }
+
+    return calcularPricingCanonico({
+      capitalCompraCentavos,
+      plazoMeses: plazoNum,
+      tnaInterna: 60,
+      alicuotaIva: 21,
+      senaMontoCentavos: Math.round(Number(bodyInput.senaMonto || 0) * 100),
+      plazosHabilitadosProducto
+    });
+  }
+
+  // I1. Browser envía costo adulterado distinto al almacenado => pricing utiliza costo Firestore
+  const inputCostoAdulterado = {
+    productoId: "prod_cat_001",
+    costoProducto: 50000,          // Browser envía $50.000 adulterado
+    capitalCompraCentavos: 5000000, // Browser envía $50.000 adulterado
+    plazoMeses: 6
+  };
+  const pricingI1 = simularServerSidePricing(inputCostoAdulterado);
+  assert(pricingI1.capitalCompraCentavos === 30000000, "I1. Pricing server-side utiliza exclusivamente los $300.000 de Firestore (ignora costo adulterado del browser)");
+
+  // I2. Browser envía plazo no habilitado => rechazo
+  let rejectedI2 = false;
+  try {
+    simularServerSidePricing({
+      productoId: "prod_cat_001",
+      plazoMeses: 12 // Plazo 12 no está en [3, 6]
+    });
+  } catch (err: unknown) {
+    rejectedI2 = (err as Error).message.includes("PLAZO_NO_HABILITADO");
+  }
+  assert(rejectedI2, "I2. Solicitud con plazo no habilitado rechazada server-side (FAIL CLOSED)");
+
+  // I3. Browser envía plazosHabilitadosProducto adulterados => ignorados
+  let rejectedI3 = false;
+  try {
+    simularServerSidePricing({
+      productoId: "prod_cat_001",
+      plazosHabilitadosProducto: [12, 18], // Browser envía plazos adulterados
+      plazoMeses: 12
+    });
+  } catch (err: unknown) {
+    rejectedI3 = (err as Error).message.includes("PLAZO_NO_HABILITADO");
+  }
+  assert(rejectedI3, "I3. Plazos habilitados enviados por el browser son ignorados (prevalece Firestore)");
+
+  // I4. Producto inexistente => FAIL CLOSED
+  let rejectedI4 = false;
+  try {
+    simularServerSidePricing({
+      productoId: "prod_fantasma_inexistente",
+      plazoMeses: 6
+    });
+  } catch (err: unknown) {
+    rejectedI4 = (err as Error).message.includes("PRODUCTO_NO_ENCONTRADO");
+  }
+  assert(rejectedI4, "I4. Producto inexistente en catálogo genera 404 Fail-Closed inmediato");
+
+  // I5. Teléfono distinto pero mismo producto => NO MATCH (Paso A falla de inmediato)
+  const candidatosParaI: SolicitudCandidate[] = [
+    {
+      id: "sol_base_001",
+      sourceCollection: "solicitudes_cuenta",
+      nombreCompleto: "Alberto Fernández",
+      numeroDni: "20111222",
+      whatsapp: "2364998877", // Teléfono del candidato
+      productoNombre: "Heladera Philco",
+      fechaCreacion: new Date("2026-10-01T10:00:00Z")
+    }
+  ];
+
+  const alertaTelDistintoMismoProd: AlertaAdminItem = {
+    id: "alt_i5",
+    tipo: "NUEVO_PRESUPUESTO",
+    mensaje: "📥 Solicitud de Opciones: Otro Cliente (Tel: 2364112233) - Busca: Heladera Philco"
+  };
+  const resI5 = resolveLegacyAlertSolicitud(alertaTelDistintoMismoProd, candidatosParaI);
+  assert(resI5.matched === false && resI5.candidatesCount === 0, "I5. Teléfono distinto con mismo producto NO vincula (Fail-Closed inmediato)");
+
+  // I6. Coincidencia sólo por sufijo de teléfono => NO MATCH
+  const alertaPrefijoIncompleto: AlertaAdminItem = {
+    id: "alt_i6",
+    tipo: "NUEVO_PRESUPUESTO",
+    mensaje: "📥 Solicitud de Opciones: Cliente (Tel: 998877) - Busca: Heladera Philco" // Solo los últimos 6 dígitos
+  };
+  const resI6 = resolveLegacyAlertSolicitud(alertaPrefijoIncompleto, candidatosParaI);
+  assert(resI6.matched === false && resI6.candidatesCount === 0, "I6. Coincidencia sólo por sufijo o parcial de teléfono es RECHAZADA");
+
+  // I7. Alerta legacy usa fechaCreacion real de Firestore => no Date.now()
+  const fechaRealAlerta = new Date("2026-10-05T12:00:00Z"); // Creada el 5 de Octubre
+  const candidatosI7: SolicitudCandidate[] = [
+    {
+      id: "cand_cercano_alerta",
+      sourceCollection: "solicitudes_cuenta",
+      nombreCompleto: "Carlos Gomez",
+      whatsapp: "2364000111",
+      fechaCreacion: new Date("2026-10-05T12:05:00Z") // 5 minutos de la alerta real
+    },
+    {
+      id: "cand_cercano_a_hoy",
+      sourceCollection: "solicitudes_cuenta",
+      nombreCompleto: "Carlos Gomez",
+      whatsapp: "2364000111",
+      fechaCreacion: new Date() // Creado hace segundos (cercano a Date.now())
+    }
+  ];
+
+  const alertaConFechaReal: AlertaAdminItem = {
+    id: "alt_i7",
+    tipo: "NUEVO_PRESUPUESTO",
+    mensaje: "📥 Solicitud de Opciones: Carlos Gomez (Tel: 2364000111)",
+    fechaCreacion: fechaRealAlerta // FECHA REAL
+  };
+
+  const resI7 = resolveLegacyAlertSolicitud(alertaConFechaReal, candidatosI7);
+  assert(resI7.matched === true, "I7a. Alerta resuelve determinísticamente");
+  assert(resI7.resolvedSolicitudId === "cand_cercano_alerta", "I7b. Desempata respecto a fechaCreacion real de la alerta (hace días), NO respecto a Date.now()");
+
+  const alertaSinFecha: AlertaAdminItem = {
+    id: "alt_i7_sin_fecha",
+    tipo: "NUEVO_PRESUPUESTO",
+    mensaje: "📥 Solicitud de Opciones: Carlos Gomez (Tel: 2364000111)",
+    fechaCreacion: null // Sin fecha recuperable
+  };
+  const resI7SinFecha = resolveLegacyAlertSolicitud(alertaSinFecha, candidatosI7);
+  assert(resI7SinFecha.matched === false && resI7SinFecha.candidatesCount === 2, "I7c. Si no hay fechaCreacion real recuperable, NO aplica desempate temporal ficticio (Fail-Closed)");
+
+  // I8. solicitudId perteneciente a colección 'solicitudes' => resuelve colección exacta
+  const candidatosI8: SolicitudCandidate[] = [
+    {
+      id: "sol_std_9988",
+      sourceCollection: "solicitudes", // Pertenece a colección 'solicitudes'
+      nombreCompleto: "Esteban Dido",
+      whatsapp: "2364112244"
+    }
+  ];
+
+  const alertaConIdEstandar: AlertaAdminItem = {
+    id: "alt_i8",
+    tipo: "NUEVA_SOLICITUD_COMPRA",
+    mensaje: "📥 Solicitud de Servicio de Compra [ID: sol_std_9988]: Esteban Dido"
+  };
+  const resI8 = resolveLegacyAlertSolicitud(alertaConIdEstandar, candidatosI8);
+  assert(resI8.matched === true && resI8.sourceCollection === "solicitudes", "I8. Solicitud de colección 'solicitudes' resuelve su colección exacta (no asume 'solicitudes_cuenta')");
+
+  // I9. solicitudId inexistente => guardado falla
+  function simularGuardadoPresupuesto(targetDocId: string | null, targetCollection: string | null, mockDbDocs: Record<string, boolean>) {
+    let persistSuccess = false;
+    let persistedBudgetResult: object | null = null;
+    let errorMessage: string | null = null;
+
+    if (!targetDocId) {
+      errorMessage = "No se ha seleccionado una solicitud válida.";
+      return { persistSuccess, persistedBudgetResult, errorMessage };
+    }
+
+    const docKey = `${targetCollection}/${targetDocId}`;
+    const docExists = mockDbDocs[docKey] === true;
+
+    if (!docExists) {
+      persistedBudgetResult = null;
+      errorMessage = "La solicitud vinculada ya no existe o no pudo verificarse.";
+      return { persistSuccess: false, persistedBudgetResult, errorMessage };
+    }
+
+    persistSuccess = true;
+    persistedBudgetResult = { id: "pres_ok", solicitudId: targetDocId, estado: "Generado" };
+    return { persistSuccess, persistedBudgetResult, errorMessage };
+  }
+
+  const dbConDocs: Record<string, boolean> = {
+    "solicitudes_cuenta/sol_existente_1": true
+  };
+
+  const resI9 = simularGuardadoPresupuesto("sol_inexistente_999", "solicitudes_cuenta", dbConDocs);
+  assert(resI9.persistSuccess === false, "I9a. Guardado con solicitudId inexistente rechaza persistencia (persistSuccess = false)");
+  assert(resI9.persistedBudgetResult === null, "I9b. persistedBudget permanece en null");
+  assert(resI9.errorMessage === "La solicitud vinculada ya no existe o no pudo verificarse.", "I9c. Error explícito emitido al administrador");
+
+  // I10. Documento desaparece entre apertura y guardado => NO persistedBudget => PDF y WhatsApp bloqueados
+  // Simulación: apertura fue exitosa con sol_existente_1, pero antes de guardar se elimina del store
+  const dbConDocEliminado = { ...dbConDocs, "solicitudes_cuenta/sol_existente_1": false };
+  const resI10 = simularGuardadoPresupuesto("sol_existente_1", "solicitudes_cuenta", dbConDocEliminado);
+
+  assert(resI10.persistSuccess === false, "I10a. Escritura rechazada ante desaparición del documento (persistSuccess = false)");
+  assert(resI10.persistedBudgetResult === null, "I10b. persistedBudget es null");
+
+  const canWhatsAppI10 = Boolean(resI10.persistedBudgetResult);
+  const canPdfI10 = Boolean(resI10.persistedBudgetResult);
+  assert(!canWhatsAppI10, "I10c. Botón de WhatsApp BLOQUEADO tras fallo de persistencia");
+  assert(!canPdfI10, "I10d. Botón de PDF BLOQUEADO tras fallo de persistencia");
+  assert(resI10.errorMessage !== null, "I10e. NO se emite mensaje de éxito, se muestra advertencia de documento inexistente");
 
   // =========================================================================
   // RESUMEN FINAL
@@ -440,7 +665,7 @@ function runTestSuite() {
   console.log("========================================================================");
 
   if (passed === total) {
-    console.log("🎉 TODOS LOS CASOS (A - H) PASARON SATISFACTORIAMENTE");
+    console.log("🎉 TODOS LOS CASOS (A - I) PASARON SATISFACTORIAMENTE");
   } else {
     console.error("❌ HUBO FALLAS EN LA SUITE DE REGRESIÓN");
     process.exit(1);

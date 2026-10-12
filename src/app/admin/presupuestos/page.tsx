@@ -359,17 +359,81 @@ function PresupuestosContent() {
 
       // Resolución determinística de vinculación
       if (solId) {
-        setResolvedSolicitudId(solId);
-        setResolvedCollection("solicitudes_cuenta");
-        setCandidatosVinculacion([]);
+        // 1. Buscar en solicitudesPool por ID y utilizar sourceCollection
+        const matchPool = solicitudesPool.find((s) => s.id === solId);
+        if (matchPool) {
+          setResolvedSolicitudId(matchPool.id);
+          setResolvedCollection(matchPool.sourceCollection);
+          setCandidatosVinculacion([matchPool]);
+        } else {
+          // 2. Si no está en el pool cargado, verificar Firestore explícitamente
+          (async () => {
+            try {
+              const snapCuenta = await getDoc(doc(db, "solicitudes_cuenta", solId));
+              if (snapCuenta.exists()) {
+                setResolvedSolicitudId(solId);
+                setResolvedCollection("solicitudes_cuenta");
+                return;
+              }
+              const snapStd = await getDoc(doc(db, "solicitudes", solId));
+              if (snapStd.exists()) {
+                setResolvedSolicitudId(solId);
+                setResolvedCollection("solicitudes");
+                return;
+              }
+              // 3. No existe en ninguna colección: fail closed
+              setResolvedSolicitudId(null);
+              setResolvedCollection(null);
+              setCandidatosVinculacion([]);
+            } catch {
+              setResolvedSolicitudId(null);
+              setResolvedCollection(null);
+              setCandidatosVinculacion([]);
+            }
+          })();
+        }
+      } else if (altId) {
+        // Alerta con ID: recuperar fechaCreacion real de Firestore (NUNCA timestamp ficticio)
+        (async () => {
+          let realFechaCreacion: unknown = null;
+          try {
+            const altSnap = await getDoc(doc(db, "alertas_admin", altId));
+            if (altSnap.exists()) {
+              const altData = altSnap.data();
+              realFechaCreacion = altData.fechaCreacion || altData.fecha || null;
+            }
+          } catch {
+            realFechaCreacion = null;
+          }
+          const resolution = resolveLegacyAlertSolicitud(
+            {
+              id: altId,
+              tipo: "NUEVO_PRESUPUESTO",
+              mensaje: notasVal,
+              clienteEmail: telVal || nom,
+              fechaCreacion: realFechaCreacion
+            },
+            solicitudesPool
+          );
+
+          if (resolution.matched && resolution.resolvedSolicitudId) {
+            setResolvedSolicitudId(resolution.resolvedSolicitudId);
+            setResolvedCollection(resolution.sourceCollection);
+            setCandidatosVinculacion(resolution.candidates);
+          } else {
+            setResolvedSolicitudId(null);
+            setResolvedCollection(null);
+            setCandidatosVinculacion(resolution.candidates);
+          }
+        })();
       } else {
+        // Alerta sin ID: sin fecha ficticia
         const resolution = resolveLegacyAlertSolicitud(
           {
-            id: altId,
             tipo: "NUEVO_PRESUPUESTO",
             mensaje: notasVal,
             clienteEmail: telVal || nom,
-            fechaCreacion: new Date()
+            fechaCreacion: null
           },
           solicitudesPool
         );
@@ -492,9 +556,7 @@ function PresupuestosContent() {
         },
         body: JSON.stringify({
           productoId: selectedProductoObj.id,
-          costoProducto: selectedProductoObj.costoProducto,
           plazoMeses: selectedPlazo,
-          plazosHabilitadosProducto: selectedProductoObj.plazosHabilitados,
           senaMonto: Number(senaPesos) || 0
         })
       });
@@ -570,8 +632,9 @@ function PresupuestosContent() {
         estado: "Generado"
       };
 
-      let targetDocId = resolvedSolicitudId;
-      let targetCollection = resolvedCollection || "solicitudes_cuenta";
+      let persistSuccess = false;
+      let targetDocId: string | null = resolvedSolicitudId;
+      let targetCollection = resolvedCollection;
 
       if (!targetDocId && confirmarCrearNueva) {
         // Creación explícita autorizada
@@ -591,22 +654,39 @@ function PresupuestosContent() {
         });
         targetDocId = newRef.id;
         targetCollection = "solicitudes_cuenta";
-      } else if (targetDocId) {
+        persistSuccess = true;
+      } else if (targetDocId && targetCollection) {
         const docRef = doc(db, targetCollection, targetDocId);
         const snap = await getDoc(docRef);
-        if (snap.exists()) {
-          const data = snap.data();
-          const existingPresup = data.presupuestos || [];
-          await updateDoc(docRef, {
-            presupuestos: [...existingPresup, nuevoPresupuesto],
-            estado: "Presupuestado"
-          });
+        if (!snap.exists()) {
+          // Documento desaparece entre apertura y guardado => FAIL CLOSED
+          setPersistedBudget(null);
+          alert("Error: La solicitud vinculada ya no existe o no pudo verificarse.");
+          return;
         }
+        const data = snap.data();
+        const existingPresup = data.presupuestos || [];
+        await updateDoc(docRef, {
+          presupuestos: [...existingPresup, nuevoPresupuesto],
+          estado: "Presupuestado"
+        });
+        persistSuccess = true;
+      } else {
+        setPersistedBudget(null);
+        alert("Error: La solicitud vinculada ya no existe o no pudo verificarse.");
+        return;
+      }
+
+      if (!persistSuccess) {
+        setPersistedBudget(null);
+        alert("Error: No se pudo confirmar la persistencia del presupuesto.");
+        return;
       }
 
       nuevoPresupuesto.solicitudId = targetDocId || undefined;
       setPersistedBudget(nuevoPresupuesto);
       setResolvedSolicitudId(targetDocId);
+      setResolvedCollection(targetCollection);
       await fetchPresupuestos();
       alert("¡Presupuesto guardado exitosamente con pricing canónico CANONICAL_V1! Ahora puede descargar el PDF o enviar por WhatsApp.");
     } catch (err: unknown) {
