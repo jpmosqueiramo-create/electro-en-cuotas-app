@@ -5,10 +5,13 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { collection, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from "firebase/firestore";
 import { generarPdfPresupuesto } from "@/lib/pdfGenerator";
-import { FACTORES_PREDETERMINADOS } from "@/lib/financialEngine";
+import { 
+  resolveLegacyAlertSolicitud, 
+  SolicitudCandidate 
+} from "@/lib/budgetAlertRouting";
 import { 
   FileText, 
   Search, 
@@ -18,10 +21,25 @@ import {
   Plus, 
   X, 
   Send, 
-  Trash2,
-  User,
-  Tag
+  User, 
+  AlertTriangle,
+  CheckCircle2,
+  Lock,
+  RefreshCw
 } from "lucide-react";
+
+function parseAnyDate(val: unknown): Date {
+  if (!val) return new Date(0);
+  if (val instanceof Date) return val;
+  if (typeof val === "string" || typeof val === "number") {
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) return d;
+  }
+  const obj = val as { toDate?: () => Date; seconds?: number };
+  if (obj && typeof obj.toDate === "function") return obj.toDate();
+  if (obj && typeof obj.seconds === "number") return new Date(obj.seconds * 1000);
+  return new Date();
+}
 
 interface PresupuestoOpcion {
   producto: string;
@@ -30,10 +48,13 @@ interface PresupuestoOpcion {
   cuotas?: number;
   factor?: number;
   valorCuota?: number;
+  capitalCentavos?: number;
+  totalCentavos?: number;
 }
 
 interface PresupuestoRecord {
   id: string;
+  pricingSchemaVersion?: "CANONICAL_V1";
   solicitudId?: string;
   solicitudTipo?: string;
   clienteNombre: string;
@@ -46,32 +67,17 @@ interface PresupuestoRecord {
   notas?: string;
   contado?: number;
   cuotas?: number;
+  plazoMeses?: number;
   valorCuota?: number;
   costoProveedor?: number;
-  factor?: number;
+  capitalCompraCentavos?: number;
+  valorTotalContractualCentavos?: number;
+  cuotaMensualBaseCentavos?: number;
+  tnaInternaAplicada?: number;
+  alicuotaIvaAplicada?: number;
+  factorDerivado?: number;
+  snapshotCanonico?: CanonicalPricingSnapshot | null;
   fechaObjeto?: Date;
-}
-
-function parseAnyDate(val: unknown): Date {
-  if (!val) return new Date(0);
-  if (val instanceof Date) return val;
-  if (typeof val === "string" || typeof val === "number") {
-    const d = new Date(val);
-    if (!isNaN(d.getTime())) return d;
-  }
-  const obj = val as { toDate?: () => Date; seconds?: number };
-  if (obj.toDate && typeof obj.toDate === "function") return obj.toDate();
-  if (obj.seconds) return new Date(obj.seconds * 1000);
-  return new Date();
-}
-
-interface DraftItem {
-  producto: string;
-  costoProveedor: number;
-  contado: number;
-  cuotas: number;
-  factor: number;
-  valorCuota: number;
 }
 
 interface LeadData {
@@ -85,9 +91,40 @@ interface LeadData {
   notas: string;
 }
 
+interface CanonicalPricingSnapshot {
+  pricingSchemaVersion: "CANONICAL_V1";
+  capitalCompraCentavos: number;
+  plazoMeses: number;
+  tnaInternaAplicada: number;
+  alicuotaIvaAplicada: number;
+  servicioBrutoTotalCentavos: number;
+  servicioNetoTotalCentavos: number;
+  ivaTotalCentavos: number;
+  valorTotalContractualCentavos: number;
+  factorDerivado: number;
+  cuotaMensualBaseCentavos: number;
+  senaMontoCentavos: number;
+  cuotas: Array<{
+    numero: number;
+    montoTotalCentavos: number;
+    capitalCentavos: number;
+    servicioNetoGravadoCentavos: number;
+    ivaCentavos: number;
+  }>;
+}
+
+interface CatalogProduct {
+  id: string;
+  nombre: string;
+  costoProducto: number;
+  plazosHabilitados: number[];
+}
+
 function PresupuestosContent() {
   const searchParams = useSearchParams();
   const [presupuestos, setPresupuestos] = useState<PresupuestoRecord[]>([]);
+  const [solicitudesPool, setSolicitudesPool] = useState<SolicitudCandidate[]>([]);
+  const [catalogoProductos, setCatalogoProductos] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState<string>("TODOS");
   const [busqueda, setBusqueda] = useState<string>("");
@@ -95,6 +132,7 @@ function PresupuestosContent() {
   // Estado del Modal de Confección
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [calculandoPricing, setCalculandoPricing] = useState(false);
   const [leadData, setLeadData] = useState<LeadData>({
     solicitudId: "",
     alertaId: "",
@@ -105,14 +143,27 @@ function PresupuestosContent() {
     producto: "",
     notas: ""
   });
-  const [draftItems, setDraftItems] = useState<DraftItem[]>([]);
+
+  // Vinculación determinística de solicitud
+  const [resolvedSolicitudId, setResolvedSolicitudId] = useState<string | null>(null);
+  const [resolvedCollection, setResolvedCollection] = useState<"solicitudes_cuenta" | "solicitudes" | null>(null);
+  const [candidatosVinculacion, setCandidatosVinculacion] = useState<SolicitudCandidate[]>([]);
+  const [confirmarCrearNueva, setConfirmarCrearNueva] = useState(false);
+
+  // Selección de Producto y Pricing Canónico
+  const [selectedProductoId, setSelectedProductoId] = useState<string>("");
+  const [selectedPlazo, setSelectedPlazo] = useState<number>(0);
+  const [senaPesos, setSenaPesos] = useState<string>("0");
+  const [pricingResult, setPricingResult] = useState<CanonicalPricingSnapshot | null>(null);
+  const [persistedBudget, setPersistedBudget] = useState<PresupuestoRecord | null>(null);
 
   const fetchPresupuestos = async () => {
     setLoading(true);
     try {
       const allPresupuestos: PresupuestoRecord[] = [];
+      const pool: SolicitudCandidate[] = [];
 
-      // 1. Fetch de solicitudes_cuenta (Aperturas de Cuenta / Contactos Rápidos)
+      // 1. Fetch de solicitudes_cuenta
       const snapAperturas = await getDocs(collection(db, "solicitudes_cuenta"));
       snapAperturas.forEach((d) => {
         const rawData = (d.data() || {}) as Record<string, unknown>;
@@ -122,10 +173,24 @@ function PresupuestosContent() {
         const telCliente = String(rawData.whatsapp || rawData.telefono || "-");
         const locCliente = String(rawData.direccion || rawData.localidad || "-");
 
+        pool.push({
+          id: d.id,
+          sourceCollection: "solicitudes_cuenta",
+          nombreCompleto: nombreCliente,
+          numeroDni: dniCliente !== "-" ? dniCliente : undefined,
+          whatsapp: telCliente !== "-" ? telCliente : undefined,
+          productoNombre: rawData.productoNombre ? String(rawData.productoNombre) : undefined,
+          necesidad: rawData.necesidad ? String(rawData.necesidad) : undefined,
+          productoDeseado: rawData.productoDeseado ? String(rawData.productoDeseado) : undefined,
+          fechaCreacion: rawData.fechaCreacion || rawData.fecha,
+          fechaIso: rawData.fechaIso ? String(rawData.fechaIso) : undefined
+        });
+
         if (presupList.length > 0) {
           presupList.forEach((p) => {
             allPresupuestos.push({
               id: String(p.id || "pres_" + d.id),
+              pricingSchemaVersion: p.pricingSchemaVersion === "CANONICAL_V1" ? "CANONICAL_V1" : undefined,
               solicitudId: d.id,
               solicitudTipo: "apertura",
               clienteNombre: nombreCliente,
@@ -134,13 +199,19 @@ function PresupuestosContent() {
               clienteLocalidad: locCliente,
               producto: p.producto ? String(p.producto) : undefined,
               items: Array.isArray(p.items) ? (p.items as PresupuestoOpcion[]) : undefined,
-              estado: p.estado ? String(p.estado) : "Pendiente",
+              estado: p.estado ? String(p.estado) : "Generado",
               notas: p.notas ? String(p.notas) : undefined,
               contado: Number(p.contado) || undefined,
               cuotas: Number(p.cuotas) || undefined,
               valorCuota: Number(p.valorCuota) || undefined,
               costoProveedor: Number(p.costoProveedor) || undefined,
-              factor: Number(p.factor) || undefined,
+              capitalCompraCentavos: Number(p.capitalCompraCentavos) || undefined,
+              valorTotalContractualCentavos: Number(p.valorTotalContractualCentavos) || undefined,
+              cuotaMensualBaseCentavos: Number(p.cuotaMensualBaseCentavos) || undefined,
+              tnaInternaAplicada: Number(p.tnaInternaAplicada) || undefined,
+              alicuotaIvaAplicada: Number(p.alicuotaIvaAplicada) || undefined,
+              factorDerivado: Number(p.factorDerivado) || undefined,
+              snapshotCanonico: p.snapshotCanonico as CanonicalPricingSnapshot | undefined,
               fechaObjeto: parseAnyDate(p.fechaIso || p.fecha || rawData.fechaIso || rawData.fecha)
             });
           });
@@ -155,7 +226,7 @@ function PresupuestosContent() {
             clienteWhatsapp: telCliente,
             clienteLocalidad: locCliente,
             producto: prodName,
-            items: [{ producto: prodName, contado: 0, cuotas: 12, valorCuota: 0 }],
+            items: [],
             estado: "Pendiente",
             notas: "Solicitud recibida desde portada ('Buscás algo especial'). Pendiente de armar cotización por el administrador.",
             fechaObjeto: parseAnyDate(rawData.fechaIso || rawData.fecha || rawData.fechaCreacion)
@@ -174,11 +245,24 @@ function PresupuestosContent() {
         const telCliente = String(rawData.whatsapp || rawData.telefono || "-");
         const locCliente = String(rawData.direccion || rawData.localidad || "-");
 
+        pool.push({
+          id: d.id,
+          sourceCollection: "solicitudes",
+          nombreCompleto: nombreCliente,
+          numeroDni: dniCliente !== "-" ? dniCliente : undefined,
+          whatsapp: telCliente !== "-" ? telCliente : undefined,
+          productoNombre: rawData.productoDeseado ? String(rawData.productoDeseado) : undefined,
+          necesidad: rawData.necesidad ? String(rawData.necesidad) : undefined,
+          fechaCreacion: rawData.fechaCreacion,
+          fechaIso: rawData.fechaIso ? String(rawData.fechaIso) : undefined
+        });
+
         presupList.forEach((p) => {
           const pId = String(p.id || "pres_" + d.id);
           if (!allPresupuestos.some((existing) => existing.id === pId && existing.solicitudId === d.id)) {
             allPresupuestos.push({
               id: pId,
+              pricingSchemaVersion: p.pricingSchemaVersion === "CANONICAL_V1" ? "CANONICAL_V1" : undefined,
               solicitudId: d.id,
               solicitudTipo: "estandar",
               clienteNombre: nombreCliente,
@@ -187,21 +271,46 @@ function PresupuestosContent() {
               clienteLocalidad: locCliente,
               producto: p.producto ? String(p.producto) : undefined,
               items: Array.isArray(p.items) ? (p.items as PresupuestoOpcion[]) : undefined,
-              estado: p.estado ? String(p.estado) : "Pendiente",
+              estado: p.estado ? String(p.estado) : "Generado",
               notas: p.notas ? String(p.notas) : undefined,
               contado: Number(p.contado) || undefined,
               cuotas: Number(p.cuotas) || undefined,
               valorCuota: Number(p.valorCuota) || undefined,
               costoProveedor: Number(p.costoProveedor) || undefined,
-              factor: Number(p.factor) || undefined,
+              capitalCompraCentavos: Number(p.capitalCompraCentavos) || undefined,
+              valorTotalContractualCentavos: Number(p.valorTotalContractualCentavos) || undefined,
+              cuotaMensualBaseCentavos: Number(p.cuotaMensualBaseCentavos) || undefined,
+              tnaInternaAplicada: Number(p.tnaInternaAplicada) || undefined,
+              alicuotaIvaAplicada: Number(p.alicuotaIvaAplicada) || undefined,
+              factorDerivado: Number(p.factorDerivado) || undefined,
+              snapshotCanonico: p.snapshotCanonico as CanonicalPricingSnapshot | undefined,
               fechaObjeto: parseAnyDate(p.fechaIso || p.fecha || rawData.fechaCreacion)
             });
           }
         });
       });
 
+      // 3. Fetch de Catálogo de Productos
+      const snapProd = await getDocs(collection(db, "productos"));
+      const prods: CatalogProduct[] = [];
+      snapProd.forEach((d) => {
+        const pData = d.data();
+        const rawPlazos = pData.plazosHabilitados || pData.plazosHabilitadosProducto;
+        const plazos = Array.isArray(rawPlazos) 
+          ? rawPlazos.map(Number).filter((n: number) => !isNaN(n) && n > 0)
+          : [];
+        prods.push({
+          id: d.id,
+          nombre: String(pData.nombre || ""),
+          costoProducto: Number(pData.costoProducto) || 0,
+          plazosHabilitados: plazos
+        });
+      });
+      setCatalogoProductos(prods);
+
       allPresupuestos.sort((a, b) => (b.fechaObjeto?.getTime() ?? 0) - (a.fechaObjeto?.getTime() ?? 0));
       setPresupuestos(allPresupuestos);
+      setSolicitudesPool(pool);
     } catch (e: unknown) {
       console.error("Error al cargar presupuestos:", e);
     } finally {
@@ -213,7 +322,7 @@ function PresupuestosContent() {
     fetchPresupuestos();
   }, []);
 
-  // Procesar Query Parameters de Alerta o Navegación Externa
+  // Procesar Query Parameters de Alerta y Resolver Vinculación Determinística
   useEffect(() => {
     const qParam = searchParams.get("q");
     if (qParam && !busqueda) {
@@ -229,10 +338,8 @@ function PresupuestosContent() {
     const prodVal = searchParams.get("producto") || "";
     const notasVal = searchParams.get("notas") || "";
 
-    // Si viene desde una alerta con datos de lead, abrir el modal pre-cargado
     if (nom || prodVal || solId || altId) {
-      const defaultFactor = FACTORES_PREDETERMINADOS[12] || 2.5;
-      setLeadData({
+      const incomingLead: LeadData = {
         solicitudId: solId,
         alertaId: altId,
         nombre: nom,
@@ -241,23 +348,58 @@ function PresupuestosContent() {
         localidad: locVal,
         producto: prodVal,
         notas: notasVal
-      });
-      setDraftItems([
-        {
-          producto: prodVal || "Producto a cotizar",
-          costoProveedor: 0,
-          contado: 0,
-          cuotas: 12,
-          factor: defaultFactor,
-          valorCuota: 0
+      };
+
+      setLeadData(incomingLead);
+      setPricingResult(null);
+      setPersistedBudget(null);
+      setSelectedPlazo(0);
+      setSenaPesos("0");
+      setConfirmarCrearNueva(false);
+
+      // Resolución determinística de vinculación
+      if (solId) {
+        setResolvedSolicitudId(solId);
+        setResolvedCollection("solicitudes_cuenta");
+        setCandidatosVinculacion([]);
+      } else {
+        const resolution = resolveLegacyAlertSolicitud(
+          {
+            id: altId,
+            tipo: "NUEVO_PRESUPUESTO",
+            mensaje: notasVal,
+            clienteEmail: telVal || nom,
+            fechaCreacion: new Date()
+          },
+          solicitudesPool
+        );
+
+        if (resolution.matched && resolution.resolvedSolicitudId) {
+          setResolvedSolicitudId(resolution.resolvedSolicitudId);
+          setResolvedCollection(resolution.sourceCollection);
+          setCandidatosVinculacion(resolution.candidates);
+        } else {
+          setResolvedSolicitudId(null);
+          setResolvedCollection(null);
+          setCandidatosVinculacion(resolution.candidates);
         }
-      ]);
+      }
+
+      // Intentar pre-seleccionar producto del catálogo si coincide exactamente
+      const matchCatalog = catalogoProductos.find(
+        (cp) => cp.nombre.toLowerCase().trim() === prodVal.toLowerCase().trim()
+      );
+      if (matchCatalog) {
+        setSelectedProductoId(matchCatalog.id);
+      } else {
+        setSelectedProductoId("");
+      }
+
       setModalOpen(true);
     }
-  }, [searchParams, busqueda]);
+  }, [searchParams, solicitudesPool, catalogoProductos, busqueda]);
 
   const abrirModalNuevo = () => {
-    const defaultFactor = FACTORES_PREDETERMINADOS[12] || 2.5;
     setLeadData({
       solicitudId: "",
       alertaId: "",
@@ -268,21 +410,19 @@ function PresupuestosContent() {
       producto: "",
       notas: ""
     });
-    setDraftItems([
-      {
-        producto: "",
-        costoProveedor: 0,
-        contado: 0,
-        cuotas: 12,
-        factor: defaultFactor,
-        valorCuota: 0
-      }
-    ]);
+    setResolvedSolicitudId(null);
+    setResolvedCollection(null);
+    setCandidatosVinculacion([]);
+    setSelectedProductoId("");
+    setSelectedPlazo(0);
+    setSenaPesos("0");
+    setPricingResult(null);
+    setPersistedBudget(null);
+    setConfirmarCrearNueva(true);
     setModalOpen(true);
   };
 
   const abrirModalConfeccion = (item: PresupuestoRecord) => {
-    const defaultFactor = FACTORES_PREDETERMINADOS[12] || 2.5;
     setLeadData({
       solicitudId: item.solicitudId || "",
       alertaId: "",
@@ -294,192 +434,182 @@ function PresupuestosContent() {
       notas: item.notas || ""
     });
 
-    const initialItems = item.items && item.items.length > 0
-      ? item.items.map((it: PresupuestoOpcion) => ({
-          producto: it.producto || item.producto || "",
-          costoProveedor: Number(it.costoProveedor) || 0,
-          contado: Number(it.contado) || 0,
-          cuotas: Number(it.cuotas) || 12,
-          factor: Number(it.factor) || (FACTORES_PREDETERMINADOS[Number(it.cuotas) || 12] || 2.5),
-          valorCuota: Number(it.valorCuota) || 0
-        }))
-      : [
-          {
-            producto: item.producto || "",
-            costoProveedor: 0,
-            contado: 0,
-            cuotas: 12,
-            factor: defaultFactor,
-            valorCuota: 0
-          }
-        ];
+    setResolvedSolicitudId(item.solicitudId || null);
+    setResolvedCollection((item.solicitudTipo === "estandar" ? "solicitudes" : "solicitudes_cuenta"));
+    setCandidatosVinculacion([]);
+    setConfirmarCrearNueva(false);
 
-    setDraftItems(initialItems);
+    // Si ya tiene un snapshot canónico previo, conservarlo
+    if (item.pricingSchemaVersion === "CANONICAL_V1" && item.snapshotCanonico) {
+      setPricingResult(item.snapshotCanonico);
+      setPersistedBudget(item);
+    } else {
+      setPricingResult(null);
+      setPersistedBudget(null);
+    }
+
+    const matchCatalog = catalogoProductos.find(
+      (cp) => cp.nombre.toLowerCase().trim() === (item.producto || "").toLowerCase().trim()
+    );
+    if (matchCatalog) {
+      setSelectedProductoId(matchCatalog.id);
+    } else {
+      setSelectedProductoId("");
+    }
+
+    setSelectedPlazo(item.cuotas || 0);
+    setSenaPesos("0");
     setModalOpen(true);
   };
 
-  const handleItemChange = (index: number, field: keyof DraftItem, value: string | number) => {
-    setDraftItems((prev) => {
-      const next = [...prev];
-      const item = { ...next[index], [field]: value };
+  const selectedProductoObj = catalogoProductos.find((p) => p.id === selectedProductoId);
+  const isProductoConfigurado = Boolean(
+    selectedProductoObj && 
+    selectedProductoObj.costoProducto > 0 && 
+    selectedProductoObj.plazosHabilitados.length > 0
+  );
 
-      if (field === "cuotas") {
-        const nCuotas = Number(value) || 12;
-        const newFactor = FACTORES_PREDETERMINADOS[nCuotas] || (nCuotas === 18 ? 3.25 : 2.5);
-        item.factor = newFactor;
-        if (item.costoProveedor > 0) {
-          const totalFinanciado = Math.round(item.costoProveedor * newFactor);
-          item.valorCuota = Math.round(totalFinanciado / nCuotas);
-        } else if (item.contado > 0) {
-          const totalFinanciado = Math.round(item.contado * newFactor);
-          item.valorCuota = Math.round(totalFinanciado / nCuotas);
-        }
-      } else if (field === "costoProveedor") {
-        const costo = Number(value) || 0;
-        if (costo > 0) {
-          const factor = item.factor || (FACTORES_PREDETERMINADOS[item.cuotas] || 2.5);
-          item.contado = Math.round(costo * 1.5);
-          const totalFinanciado = Math.round(costo * factor);
-          item.valorCuota = Math.round(totalFinanciado / item.cuotas);
-        }
-      } else if (field === "contado") {
-        const contado = Number(value) || 0;
-        if (contado > 0 && item.costoProveedor === 0) {
-          const factor = item.factor || (FACTORES_PREDETERMINADOS[item.cuotas] || 2.5);
-          const totalFinanciado = Math.round(contado * factor);
-          item.valorCuota = Math.round(totalFinanciado / item.cuotas);
-        }
-      } else if (field === "factor") {
-        const factor = Number(value) || 2.5;
-        const base = item.costoProveedor > 0 ? item.costoProveedor : item.contado;
-        if (base > 0) {
-          item.valorCuota = Math.round((base * factor) / item.cuotas);
-        }
+  const handleCalcularPricing = async () => {
+    if (!selectedProductoObj || selectedProductoObj.costoProducto <= 0) {
+      alert("Debe seleccionar un producto con costo de compra configurado.");
+      return;
+    }
+    if (!selectedPlazo || !selectedProductoObj.plazosHabilitados.includes(selectedPlazo)) {
+      alert("Debe seleccionar un plazo de cuotas habilitado para el producto.");
+      return;
+    }
+
+    setCalculandoPricing(true);
+    try {
+      const user = auth.currentUser;
+      const token = user ? await user.getIdToken() : "";
+
+      const response = await fetch("/api/admin/calcular-pricing", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          productoId: selectedProductoObj.id,
+          costoProducto: selectedProductoObj.costoProducto,
+          plazoMeses: selectedPlazo,
+          plazosHabilitadosProducto: selectedProductoObj.plazosHabilitados,
+          senaMonto: Number(senaPesos) || 0
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        alert("Error al calcular pricing canónico: " + (data.error || "Falla de cálculo"));
+        setPricingResult(null);
+        return;
       }
 
-      next[index] = item;
-      return next;
-    });
-  };
-
-  const handleAgregarOpcion = () => {
-    const defaultFactor = FACTORES_PREDETERMINADOS[12] || 2.5;
-    setDraftItems((prev) => [
-      ...prev,
-      {
-        producto: "",
-        costoProveedor: 0,
-        contado: 0,
-        cuotas: 12,
-        factor: defaultFactor,
-        valorCuota: 0
-      }
-    ]);
-  };
-
-  const handleEliminarOpcion = (index: number) => {
-    if (draftItems.length <= 1) return;
-    setDraftItems((prev) => prev.filter((_, idx) => idx !== index));
+      setPricingResult(data.resultado);
+      // Resetear presupuesto persistido si se recalculó
+      setPersistedBudget(null);
+    } catch (err: unknown) {
+      console.error("Error al calcular pricing:", err);
+      alert("Error de conexión al servidor de pricing.");
+    } finally {
+      setCalculandoPricing(false);
+    }
   };
 
   const handleGuardarPresupuesto = async () => {
+    if (!pricingResult) {
+      alert("Debe calcular el pricing canónico antes de guardar el presupuesto.");
+      return;
+    }
     if (!leadData.nombre && !leadData.telefono) {
       alert("Por favor ingrese al menos el nombre o teléfono del cliente.");
       return;
     }
-    if (draftItems.length === 0 || !draftItems[0].producto) {
-      alert("Por favor ingrese al menos un producto para cotizar.");
+    if (!resolvedSolicitudId && !confirmarCrearNueva) {
+      alert("Solicitud original no vinculada automáticamente. Seleccione una solicitud candidata o confirme la creación explícita.");
       return;
     }
 
     setSaving(true);
     try {
-      const nuevoPresupuesto = {
+      const nuevoPresupuesto: PresupuestoRecord = {
         id: "pres_" + Date.now(),
-        items: draftItems,
-        producto: draftItems[0].producto,
-        cuotas: draftItems[0].cuotas,
-        valorCuota: draftItems[0].valorCuota,
-        contado: draftItems[0].contado,
-        costoProveedor: draftItems[0].costoProveedor,
-        factor: draftItems[0].factor,
-        tna: 60,
-        mora: 0.5,
+        pricingSchemaVersion: "CANONICAL_V1",
+        producto: selectedProductoObj?.nombre || leadData.producto,
+        solicitudId: resolvedSolicitudId || undefined,
+        clienteNombre: leadData.nombre || "Cliente Sin Nombre",
+        clienteDni: leadData.dni || "-",
+        clienteWhatsapp: leadData.telefono || "-",
+        clienteLocalidad: leadData.localidad || "-",
+        costoProveedor: Math.round(pricingResult.capitalCompraCentavos / 100),
+        capitalCompraCentavos: pricingResult.capitalCompraCentavos,
+        plazoMeses: pricingResult.plazoMeses,
+        cuotas: pricingResult.plazoMeses,
+        valorCuota: Math.round(pricingResult.cuotaMensualBaseCentavos / 100),
+        cuotaMensualBaseCentavos: pricingResult.cuotaMensualBaseCentavos,
+        valorTotalContractualCentavos: pricingResult.valorTotalContractualCentavos,
+        contado: Math.round(pricingResult.capitalCompraCentavos / 100),
+        tnaInternaAplicada: pricingResult.tnaInternaAplicada,
+        alicuotaIvaAplicada: pricingResult.alicuotaIvaAplicada,
+        factorDerivado: pricingResult.factorDerivado,
+        items: [
+          {
+            producto: selectedProductoObj?.nombre || leadData.producto,
+            contado: Math.round(pricingResult.capitalCompraCentavos / 100),
+            costoProveedor: Math.round(pricingResult.capitalCompraCentavos / 100),
+            cuotas: pricingResult.plazoMeses,
+            valorCuota: Math.round(pricingResult.cuotaMensualBaseCentavos / 100),
+            capitalCentavos: pricingResult.capitalCompraCentavos,
+            totalCentavos: pricingResult.valorTotalContractualCentavos
+          }
+        ],
+        snapshotCanonico: pricingResult,
         notas: leadData.notas || "",
-        fecha: new Date().toISOString(),
-        fechaIso: new Date().toISOString(),
-        estado: "Enviado"
+        fechaObjeto: new Date(),
+        estado: "Generado"
       };
 
-      if (leadData.solicitudId) {
-        let found = false;
-        try {
-          const docRef = doc(db, "solicitudes_cuenta", leadData.solicitudId);
-          const snap = await getDoc(docRef);
-          if (snap.exists()) {
-            const data = snap.data();
-            const existingPresup = data.presupuestos || [];
-            await updateDoc(docRef, {
-              presupuestos: [...existingPresup, nuevoPresupuesto],
-              estado: "Presupuestado"
-            });
-            found = true;
-          }
-        } catch { /* ignore */ }
+      let targetDocId = resolvedSolicitudId;
+      let targetCollection = resolvedCollection || "solicitudes_cuenta";
 
-        if (!found) {
-          try {
-            const docRef = doc(db, "solicitudes", leadData.solicitudId);
-            const snap = await getDoc(docRef);
-            if (snap.exists()) {
-              const data = snap.data();
-              const existingPresup = data.presupuestos || [];
-              await updateDoc(docRef, {
-                presupuestos: [...existingPresup, nuevoPresupuesto],
-                estado: "Presupuestado"
-              });
-              found = true;
-            }
-          } catch { /* ignore */ }
-        }
-
-        if (!found) {
-          await addDoc(collection(db, "solicitudes_cuenta"), {
-            tipo: "contacto_rapido",
-            nombreCompleto: leadData.nombre,
-            numeroDni: leadData.dni || "",
-            whatsapp: leadData.telefono || "",
-            direccion: leadData.localidad || "",
-            localidad: leadData.localidad || "",
-            productoNombre: draftItems[0].producto,
-            estado: "Presupuestado",
-            fecha: serverTimestamp(),
-            fechaCreacion: serverTimestamp(),
-            fechaIso: new Date().toISOString(),
-            presupuestos: [nuevoPresupuesto]
-          });
-        }
-      } else {
-        await addDoc(collection(db, "solicitudes_cuenta"), {
+      if (!targetDocId && confirmarCrearNueva) {
+        // Creación explícita autorizada
+        const newRef = await addDoc(collection(db, "solicitudes_cuenta"), {
           tipo: "contacto_rapido",
           nombreCompleto: leadData.nombre,
           numeroDni: leadData.dni || "",
           whatsapp: leadData.telefono || "",
           direccion: leadData.localidad || "",
           localidad: leadData.localidad || "",
-          productoNombre: draftItems[0].producto,
+          productoNombre: selectedProductoObj?.nombre || leadData.producto,
           estado: "Presupuestado",
           fecha: serverTimestamp(),
           fechaCreacion: serverTimestamp(),
           fechaIso: new Date().toISOString(),
           presupuestos: [nuevoPresupuesto]
         });
+        targetDocId = newRef.id;
+        targetCollection = "solicitudes_cuenta";
+      } else if (targetDocId) {
+        const docRef = doc(db, targetCollection, targetDocId);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          const existingPresup = data.presupuestos || [];
+          await updateDoc(docRef, {
+            presupuestos: [...existingPresup, nuevoPresupuesto],
+            estado: "Presupuestado"
+          });
+        }
       }
 
+      nuevoPresupuesto.solicitudId = targetDocId || undefined;
+      setPersistedBudget(nuevoPresupuesto);
+      setResolvedSolicitudId(targetDocId);
       await fetchPresupuestos();
-      alert("¡Presupuesto guardado exitosamente!");
-      setModalOpen(false);
-    } catch (err) {
+      alert("¡Presupuesto guardado exitosamente con pricing canónico CANONICAL_V1! Ahora puede descargar el PDF o enviar por WhatsApp.");
+    } catch (err: unknown) {
       console.error("Error al guardar presupuesto:", err);
       alert("Error al guardar el presupuesto.");
     } finally {
@@ -514,18 +644,37 @@ function PresupuestosContent() {
     });
   };
 
-  const handleEnviarWhatsApp = () => {
-    const tel = (leadData.telefono || "").replace(/[^0-9]/g, "");
+  const handleEnviarWhatsApp = async () => {
+    if (!persistedBudget) {
+      alert("Debe guardar el presupuesto antes de enviarlo por WhatsApp.");
+      return;
+    }
+    const tel = (leadData.telefono || "").replace(/\D/g, "");
     if (!tel) {
       alert("Ingrese un número de teléfono válido para enviar WhatsApp.");
       return;
     }
-    let itemsListText = "";
-    draftItems.forEach((item, idx) => {
-      itemsListText += `\n${draftItems.length > 1 ? `*Opción ${idx + 1}*: ` : ""}- *${item.producto}*: ${item.cuotas} cuotas de $${item.valorCuota.toLocaleString("es-AR")}`;
-    });
-    const msg = `Hola ${leadData.nombre || "estimado/a"}, ya armamos tu presupuesto a medida en Cuenta Hogar:${itemsListText}\n\nSi estás de acuerdo o querés cambiar la cantidad de cuotas avisame y lo coordinamos!`;
+
+    const cuotaStr = (persistedBudget.valorCuota || 0).toLocaleString("es-AR");
+    const msg = `Hola ${leadData.nombre || "estimado/a"}, ya armamos tu presupuesto a medida en Cuenta Hogar para *${persistedBudget.producto}*:\n\n- ${persistedBudget.cuotas} cuotas fijas de *$${cuotaStr}* (Total financiado: $${((persistedBudget.valorTotalContractualCentavos || 0) / 100).toLocaleString("es-AR")})\n\nSi estás de acuerdo avisame y coordinamos la entrega!`;
     const wame = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
+
+    // Transición de estado a Enviado si está vinculado
+    if (resolvedSolicitudId && resolvedCollection) {
+      try {
+        const docRef = doc(db, resolvedCollection, resolvedSolicitudId);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          const presList = (snap.data().presupuestos || []).map((p: PresupuestoRecord) => 
+            p.id === persistedBudget.id ? { ...p, estado: "Enviado" } : p
+          );
+          await updateDoc(docRef, { presupuestos: presList });
+          setPersistedBudget({ ...persistedBudget, estado: "Enviado" });
+          fetchPresupuestos();
+        }
+      } catch { /* ignore */ }
+    }
+
     window.open(wame, "_blank");
   };
 
@@ -534,7 +683,7 @@ function PresupuestosContent() {
       filtroEstado === "TODOS" ? true :
       filtroEstado === "ACEPTADO" ? (p.estado === "Aceptado" || p.estado === "Aprobado") :
       filtroEstado === "RECHAZADO" ? p.estado === "Rechazado" :
-      filtroEstado === "PENDIENTE" ? (p.estado === "Pendiente" || !p.estado) :
+      filtroEstado === "PENDIENTE" ? (p.estado === "Pendiente" || !p.estado || p.estado === "Generado" || p.estado === "Borrador") :
       filtroEstado === "ELIMINADO" ? (p.estado === "Eliminado" || p.estado === "Cancelado") : true;
 
     const queryClean = busqueda.toLowerCase().trim();
@@ -554,7 +703,7 @@ function PresupuestosContent() {
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* HEADER PRINCIPAL */}
-        <AdminNav title="Historial de Presupuestos" subtitle="Gestión comercial de cotizaciones, solicitudes de compra y presupuestos a medida" />
+        <AdminNav title="Historial de Presupuestos" subtitle="Gestión comercial de cotizaciones con motor de pricing canónico inmutable" />
 
         {/* BARRA DE CONTROLES: FILTROS, BUSCADOR Y BOTÓN NUEVO */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-[#FFFDFC] border border-[#DED8CF] p-5 rounded-2xl shadow-xs items-center">
@@ -579,7 +728,7 @@ function PresupuestosContent() {
             {[
               { key: "TODOS", label: "Todos" },
               { key: "ACEPTADO", label: "🟢 Aceptados" },
-              { key: "PENDIENTE", label: "🟡 Pendientes" },
+              { key: "PENDIENTE", label: "🟡 Pendientes / Generados" },
               { key: "RECHAZADO", label: "🔴 Rechazados" },
               { key: "ELIMINADO", label: "🗑️ Cancelados" }
             ].map((f) => (
@@ -601,7 +750,7 @@ function PresupuestosContent() {
           <div className="md:col-span-3 flex justify-end">
             <button
               onClick={abrirModalNuevo}
-              className="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-[#173E3B] hover:bg-[#123230] text-white px-4 py-2.5 rounded-xl text-xs font-heading font-bold transition-all shadow-xs"
+              className="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-[#173E3B] hover:bg-[#123230] text-white px-4 py-2.5 rounded-xl text-xs font-heading font-bold transition-all shadow-xs cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Nuevo Presupuesto
             </button>
@@ -629,6 +778,8 @@ function PresupuestosContent() {
               const isRechazado = p.estado === "Rechazado";
               const isCancelado = p.estado === "Eliminado" || p.estado === "Cancelado";
               const isPendiente = p.estado === "Pendiente" || !p.estado;
+              const isGenerado = p.estado === "Generado";
+              const isEnviado = p.estado === "Enviado";
 
               const itemsList = p.items && p.items.length > 0 ? p.items : (p.producto ? [{ producto: p.producto, contado: p.contado || 0, cuotas: p.cuotas || 12, valorCuota: p.valorCuota }] : []);
               const totalCuota = itemsList.reduce((sum: number, it: PresupuestoOpcion) => sum + (Number(it.valorCuota) || 0), 0);
@@ -644,14 +795,22 @@ function PresupuestosContent() {
                       <span className="text-[11px] font-heading font-bold text-[#B44E2A] font-mono bg-[#B44E2A]/10 px-2.5 py-0.5 rounded-md border border-[#B44E2A]/20">
                         N° {p.id ? p.id.replace("pres_", "").substring(0, 8).toUpperCase() : "S/D"}
                       </span>
+
+                      {p.pricingSchemaVersion === "CANONICAL_V1" && (
+                        <span className="text-[10px] font-heading font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          🛡️ CANONICAL_V1
+                        </span>
+                      )}
                       
                       <span className={`text-[10px] font-heading font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider border ${
                         isAceptado ? "bg-[#2F7D5C]/15 text-[#2F7D5C] border-[#2F7D5C]/30" :
                         isRechazado ? "bg-rose-100 text-rose-700 border-rose-200" :
                         isCancelado ? "bg-gray-100 text-[#68706E] border-gray-200" :
+                        isEnviado ? "bg-blue-100 text-blue-800 border-blue-200" :
+                        isGenerado ? "bg-amber-100 text-amber-800 border-amber-300" :
                         "bg-[#E7B86A]/20 text-[#8F6211] border-[#E7B86A]/50"
                       }`}>
-                        {isAceptado ? "🟢 Aceptado" : isRechazado ? "🔴 Rechazado" : isCancelado ? "🗑️ Cancelado" : "🟡 Pendiente"}
+                        {isAceptado ? "🟢 Aceptado" : isRechazado ? "🔴 Rechazado" : isCancelado ? "🗑️ Cancelado" : isEnviado ? "📤 Enviado" : isGenerado ? "📝 Generado" : "🟡 Pendiente"}
                       </span>
 
                       <span className="text-xs text-[#68706E] font-sans">
@@ -671,17 +830,20 @@ function PresupuestosContent() {
                       {itemsList.map((it: PresupuestoOpcion, itemIdx: number) => (
                         <div key={itemIdx} className="text-xs bg-[#F7F3EC] p-2.5 rounded-xl border border-[#DED8CF] flex items-center justify-between">
                           <div>
-                            {itemsList.length > 1 && (
-                              <span className="text-[9px] font-heading font-bold uppercase text-[#B44E2A] bg-[#B44E2A]/10 px-1.5 py-0.5 rounded border border-[#B44E2A]/20 mr-1.5">
-                                Opción {itemIdx + 1}
+                            <span className="font-heading font-bold text-[#173E3B]">{it.producto}</span>
+                            {it.cuotas && it.valorCuota && it.valorCuota > 0 ? (
+                              <span className="text-[#68706E] ml-2 font-sans">
+                                ({it.cuotas} cuotas de <strong className="text-[#2F7D5C] font-mono">${it.valorCuota.toLocaleString("es-AR")}</strong>)
+                              </span>
+                            ) : (
+                              <span className="text-amber-700 ml-2 font-sans italic">
+                                (Cotización pendiente)
                               </span>
                             )}
-                            <span className="font-heading font-bold text-[#173E3B]">{it.producto}</span>
-                            <span className="text-[#68706E] ml-2 font-sans">({it.cuotas} cuotas de <strong className="text-[#2F7D5C] font-mono">${(it.valorCuota || 0).toLocaleString("es-AR")}</strong>)</span>
                           </div>
                           {(it.costoProveedor ?? 0) > 0 && (
                             <span className="text-[10px] text-[#68706E] font-mono">
-                              Prov: ${it.costoProveedor}
+                              Costo Prov: ${it.costoProveedor}
                             </span>
                           )}
                         </div>
@@ -698,26 +860,28 @@ function PresupuestosContent() {
                   {/* Resumen Financiero y Acciones */}
                   <div className="flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end gap-3 flex-shrink-0 w-full md:w-auto border-t md:border-t-0 border-[#DED8CF] pt-3 md:pt-0">
                     <div className="text-left md:text-right">
-                      <span className="text-[10px] text-[#68706E] font-heading uppercase tracking-wider font-bold block">Cuota Mensual Total</span>
+                      <span className="text-[10px] text-[#68706E] font-heading uppercase tracking-wider font-bold block">Cuota Mensual</span>
                       <span className="text-xl font-heading font-extrabold text-[#173E3B] font-mono">
-                        ${totalCuota.toLocaleString("es-AR")} <span className="text-xs font-normal text-[#68706E] font-sans">/ mes</span>
+                        {totalCuota > 0 ? `$${totalCuota.toLocaleString("es-AR")}` : "--"} <span className="text-xs font-normal text-[#68706E] font-sans">/ mes</span>
                       </span>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                       <button
                         onClick={() => abrirModalConfeccion(p)}
-                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#173E3B] hover:bg-[#123230] text-white px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all shadow-xs"
+                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#173E3B] hover:bg-[#123230] text-white px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all shadow-xs cursor-pointer"
                       >
                         ✏️ {isPendiente ? "Confeccionar" : "Editar"}
                       </button>
 
-                      <button
-                        onClick={() => handleDescargarPdf(p)}
-                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#B44E2A] border border-[#DED8CF] hover:border-[#B44E2A] px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all shadow-xs"
-                      >
-                        <Download className="w-3.5 h-3.5" /> PDF
-                      </button>
+                      {itemsList.length > 0 && totalCuota > 0 ? (
+                        <button
+                          onClick={() => handleDescargarPdf(p)}
+                          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#B44E2A] border border-[#DED8CF] hover:border-[#B44E2A] px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all shadow-xs cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" /> PDF
+                        </button>
+                      ) : null}
 
                       <Link
                         href={`/admin/validaciones`}
@@ -734,7 +898,7 @@ function PresupuestosContent() {
           </div>
         )}
 
-        {/* MODAL / DRAWER DE CONFECCIÓN DE PRESUPUESTO */}
+        {/* MODAL DE CONFECCIÓN DE PRESUPUESTO */}
         {modalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
             <div className="bg-[#FFFDFC] border border-[#DED8CF] rounded-3xl max-w-3xl w-full p-6 shadow-2xl space-y-6 my-8 max-h-[90vh] overflow-y-auto">
@@ -743,10 +907,10 @@ function PresupuestosContent() {
               <div className="flex items-center justify-between border-b border-[#DED8CF] pb-4">
                 <div>
                   <h2 className="text-lg font-heading font-bold text-[#173E3B]">
-                    Confeccionar Presupuesto a Medida
+                    Confeccionar Presupuesto Canónico
                   </h2>
                   <p className="text-xs text-[#68706E] font-sans">
-                    Armado de propuesta económica para cliente prospecto
+                    Cálculo matemático inmutable mediante motor oficial CANONICAL_V1
                   </p>
                 </div>
                 <button
@@ -757,11 +921,23 @@ function PresupuestosContent() {
                 </button>
               </div>
 
-              {/* Sección Datos del Lead / Prospecto */}
+              {/* SECCIÓN 1: DATOS DEL LEAD (SEPARADA DE CONDICIONES FINANCIERAS) */}
               <div className="bg-[#F7F3EC] border border-[#DED8CF] p-4 rounded-2xl space-y-3">
-                <span className="text-[11px] font-heading font-bold uppercase tracking-wider text-[#173E3B] flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-[#B44E2A]" /> Datos del Lead / Cliente
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-heading font-bold uppercase tracking-wider text-[#173E3B] flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-[#B44E2A]" /> Datos del Lead / Solicitante
+                  </span>
+
+                  {resolvedSolicitudId ? (
+                    <span className="text-[10px] font-heading font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Solicitud Vinculada ({resolvedSolicitudId.substring(0, 10)})
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-heading font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" /> Sin Vinculación Automática
+                    </span>
+                  )}
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                   <div>
@@ -819,133 +995,251 @@ function PresupuestosContent() {
                     className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-sans text-[#1F2928] outline-none focus:border-[#173E3B]"
                   />
                 </div>
+
+                {/* GESTIÓN DE VINCULACIÓN DETERMINÍSTICA / CANDIDATOS LEGACY */}
+                {!resolvedSolicitudId && (
+                  <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl space-y-2">
+                    <p className="text-xs font-heading font-bold text-amber-900 flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4 text-amber-600" />
+                      Solicitud original no vinculada automáticamente.
+                    </p>
+                    <p className="text-[11px] text-amber-800 font-sans">
+                      No se encontró un candidato unívoco inequívoco. Seleccione una solicitud candidata o confirme la creación explícita para evitar duplicados silenciosos.
+                    </p>
+
+                    {candidatosVinculacion.length > 0 && (
+                      <div>
+                        <label className="block text-[10px] font-bold text-amber-900 mb-1">Candidatos identificados ({candidatosVinculacion.length}):</label>
+                        <select
+                          value={resolvedSolicitudId || ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val) {
+                              setResolvedSolicitudId(val);
+                              const c = candidatosVinculacion.find((cand) => cand.id === val);
+                              if (c) setResolvedCollection(c.sourceCollection);
+                            } else {
+                              setResolvedSolicitudId(null);
+                            }
+                          }}
+                          className="w-full bg-white border border-amber-300 px-3 py-1.5 rounded-lg text-xs font-sans text-gray-900 outline-none"
+                        >
+                          <option value="">-- Seleccionar solicitud a vincular --</option>
+                          {candidatosVinculacion.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              [{c.sourceCollection}] {c.nombreCompleto || "S/N"} - DNI: {c.numeroDni || "S/D"} - Tel: {c.whatsapp || "S/T"} ({c.productoNombre || "S/P"})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    <div className="pt-1 flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="checkNueva"
+                        checked={confirmarCrearNueva}
+                        onChange={(e) => setConfirmarCrearNueva(e.target.checked)}
+                        className="rounded border-amber-400 text-[#173E3B] focus:ring-[#173E3B]"
+                      />
+                      <label htmlFor="checkNueva" className="text-xs font-bold text-amber-900 cursor-pointer">
+                        Confirmar explícitamente creación de una nueva solicitud para este lead
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Sección Opciones de Cotización */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-heading font-bold uppercase tracking-wider text-[#173E3B] flex items-center gap-1.5">
-                    <Tag className="w-3.5 h-3.5 text-[#B44E2A]" /> Opciones del Presupuesto ({draftItems.length})
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleAgregarOpcion}
-                    className="text-xs font-heading font-bold text-[#B44E2A] hover:text-[#933D20] flex items-center gap-1 cursor-pointer"
+              {/* SECCIÓN 2: CONDICIONES COMERCIALES Y PRICING CANÓNICO */}
+              <div className="bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-2xl space-y-4">
+                <span className="text-[11px] font-heading font-bold uppercase tracking-wider text-[#173E3B] flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-[#B44E2A]" /> Condiciones Comerciales y Motor Canónico
+                </span>
+
+                {/* Selección de Producto del Catálogo */}
+                <div>
+                  <label className="block text-[10px] font-heading font-bold text-[#68706E] mb-1">
+                    Producto del Catálogo {leadData.producto ? `(Solicitado por lead: "${leadData.producto}")` : ""}
+                  </label>
+                  <select
+                    value={selectedProductoId}
+                    onChange={(e) => {
+                      setSelectedProductoId(e.target.value);
+                      setSelectedPlazo(0);
+                      setPricingResult(null);
+                      setPersistedBudget(null);
+                    }}
+                    className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-heading font-bold text-[#1F2928] outline-none focus:border-[#173E3B]"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Agregar Opción
-                  </button>
+                    <option value="">-- Seleccionar producto de catálogo --</option>
+                    {catalogoProductos.map((cp) => (
+                      <option key={cp.id} value={cp.id}>
+                        {cp.nombre} (Costo: ${cp.costoProducto.toLocaleString("es-AR")} | Plazos: {cp.plazosHabilitados.join(", ") || "Sin plazos"})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                <div className="space-y-3">
-                  {draftItems.map((item, idx) => (
-                    <div key={idx} className="bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-2xl space-y-3 shadow-2xs relative">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-heading font-bold uppercase tracking-wider bg-[#B44E2A]/10 text-[#B44E2A] px-2 py-0.5 rounded">
-                          Opción {idx + 1}
-                        </span>
-                        {draftItems.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleEliminarOpcion(idx)}
-                            className="text-rose-500 hover:text-rose-700 text-xs font-heading font-bold flex items-center gap-1 cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" /> Quitar
-                          </button>
-                        )}
+                {/* FAIL-CLOSED: Si el producto no está configurado */}
+                {!isProductoConfigurado ? (
+                  <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-center space-y-1">
+                    <p className="text-xs font-heading font-bold text-amber-900">
+                      ⚠️ Producto pendiente de configuración de condiciones comerciales.
+                    </p>
+                    <p className="text-[11px] text-amber-800 font-sans">
+                      El producto seleccionado no posee costo de compra positivo o plazos habilitados en el catálogo. Configure el producto antes de calcular cuotas. No se generan cuotas ficticias por defecto.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 pt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-heading font-bold text-[#68706E] mb-1">
+                          Costo Proveedor / Capital ($)
+                        </label>
+                        <input
+                          type="text"
+                          disabled
+                          value={`$ ${selectedProductoObj?.costoProducto.toLocaleString("es-AR")}`}
+                          className="w-full bg-[#F7F3EC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-mono font-bold text-[#1F2928]"
+                        />
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3">
-                        <div className="md:col-span-2">
-                          <label className="block text-[10px] font-heading font-bold text-[#68706E] mb-1">Producto / Modelo</label>
-                          <input
-                            type="text"
-                            value={item.producto}
-                            onChange={(e) => handleItemChange(idx, "producto", e.target.value)}
-                            placeholder="Ej: Heladera Drean 300L"
-                            className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-sans text-[#1F2928] outline-none focus:border-[#173E3B]"
-                          />
-                        </div>
+                      <div>
+                        <label className="block text-[10px] font-heading font-bold text-[#68706E] mb-1">
+                          Plazo de Cuotas Habilitado
+                        </label>
+                        <select
+                          value={selectedPlazo}
+                          onChange={(e) => {
+                            setSelectedPlazo(Number(e.target.value));
+                            setPricingResult(null);
+                            setPersistedBudget(null);
+                          }}
+                          className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-heading font-bold text-[#1F2928] outline-none focus:border-[#173E3B]"
+                        >
+                          <option value={0}>-- Seleccionar plazo --</option>
+                          {selectedProductoObj?.plazosHabilitados.map((plazo) => (
+                            <option key={plazo} value={plazo}>
+                              {plazo} {plazo === 1 ? "Cuota" : "Cuotas"}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                        <div>
-                          <label className="block text-[10px] font-heading font-bold text-[#68706E] mb-1">Costo Prov. ($)</label>
-                          <input
-                            type="number"
-                            value={item.costoProveedor || ""}
-                            onChange={(e) => handleItemChange(idx, "costoProveedor", e.target.value)}
-                            placeholder="Ej: 500000"
-                            className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-mono text-[#1F2928] outline-none focus:border-[#173E3B]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] font-heading font-bold text-[#68706E] mb-1">Cuotas</label>
-                          <select
-                            value={item.cuotas}
-                            onChange={(e) => handleItemChange(idx, "cuotas", Number(e.target.value))}
-                            className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-heading font-bold text-[#1F2928] outline-none focus:border-[#173E3B]"
-                          >
-                            {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
-                              <option key={n} value={n}>
-                                {n} {n === 1 ? "Cuota" : "Cuotas"} (Factor {FACTORES_PREDETERMINADOS[n] || 2.5})
-                              </option>
-                            ))}
-                            <option value={18}>18 Cuotas (Factor 3.25)</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] font-heading font-bold text-[#B44E2A] mb-1">Factor</label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={item.factor}
-                            onChange={(e) => handleItemChange(idx, "factor", Number(e.target.value))}
-                            className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-mono font-bold text-[#B44E2A] outline-none focus:border-[#173E3B]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] font-heading font-bold text-[#2F7D5C] mb-1">Cuota Final ($)</label>
-                          <input
-                            type="number"
-                            value={item.valorCuota || ""}
-                            onChange={(e) => handleItemChange(idx, "valorCuota", Number(e.target.value))}
-                            placeholder="Ej: 85000"
-                            className="w-full bg-[#FFFDFC] border border-[#2F7D5C] px-3 py-2 rounded-xl text-xs font-mono font-bold text-[#2F7D5C] outline-none focus:border-[#173E3B]"
-                          />
-                        </div>
+                      <div>
+                        <label className="block text-[10px] font-heading font-bold text-[#68706E] mb-1">
+                          Seña Anticipada ($)
+                        </label>
+                        <input
+                          type="number"
+                          value={senaPesos}
+                          onChange={(e) => {
+                            setSenaPesos(e.target.value);
+                            setPricingResult(null);
+                            setPersistedBudget(null);
+                          }}
+                          placeholder="0"
+                          className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-mono text-[#1F2928] outline-none focus:border-[#173E3B]"
+                        />
                       </div>
                     </div>
-                  ))}
-                </div>
+
+                    {/* Botón de cálculo canónico */}
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        disabled={calculandoPricing || selectedPlazo === 0}
+                        onClick={handleCalcularPricing}
+                        className="inline-flex items-center gap-1.5 bg-[#173E3B] hover:bg-[#123230] text-white px-4 py-2 rounded-xl text-xs font-heading font-bold transition shadow-xs disabled:opacity-50 cursor-pointer"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${calculandoPricing ? "animate-spin" : ""}`} />
+                        {calculandoPricing ? "Calculando..." : "Calcular Pricing Canónico (CANONICAL_V1)"}
+                      </button>
+                    </div>
+
+                    {/* Snapshot de Resultado Financiero Canónico */}
+                    {pricingResult && (
+                      <div className="bg-[#173E3B]/5 border border-[#173E3B]/20 p-4 rounded-2xl space-y-3">
+                        <div className="flex items-center justify-between border-b border-[#173E3B]/10 pb-2">
+                          <span className="text-xs font-heading font-bold text-[#173E3B]">
+                            Resultado Financiero Oficial (CANONICAL_V1)
+                          </span>
+                          <span className="text-[10px] font-mono text-[#68706E]">
+                            TNA: {pricingResult.tnaInternaAplicada}% | IVA: {pricingResult.alicuotaIvaAplicada}%
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                          <div>
+                            <span className="text-[10px] text-[#68706E] block font-heading font-bold">Capital Compra</span>
+                            <span className="font-mono font-bold text-[#1F2928]">
+                              ${(pricingResult.capitalCompraCentavos / 100).toLocaleString("es-AR")}
+                            </span>
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] text-[#68706E] block font-heading font-bold">Total Contractual</span>
+                            <span className="font-mono font-bold text-[#B44E2A]">
+                              ${(pricingResult.valorTotalContractualCentavos / 100).toLocaleString("es-AR")}
+                            </span>
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] text-[#68706E] block font-heading font-bold">Cuota Mensual ({pricingResult.plazoMeses}x)</span>
+                            <span className="font-mono font-extrabold text-[#2F7D5C] text-sm">
+                              ${(pricingResult.cuotaMensualBaseCentavos / 100).toLocaleString("es-AR")}
+                            </span>
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] text-[#68706E] block font-heading font-bold">Factor Derivado</span>
+                            <span className="font-mono font-bold text-[#173E3B]">
+                              {pricingResult.factorDerivado}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Botones de Acción */}
+              {/* SECCIÓN 3: BOTONES DE ACCIÓN Y PERSISTENCIA OBLIGATORIA */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[#DED8CF]">
+                {/* Botones de Envío y PDF: BLOQUEADOS ANTES DE PERSISTIR */}
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={handleEnviarWhatsApp}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white px-4 py-2.5 rounded-xl text-xs font-heading font-bold transition shadow-xs cursor-pointer"
-                  >
-                    <Send className="w-3.5 h-3.5" /> Enviar WhatsApp
-                  </button>
+                  <div className="relative group">
+                    <button
+                      type="button"
+                      disabled={!persistedBudget}
+                      onClick={handleEnviarWhatsApp}
+                      className="inline-flex items-center justify-center gap-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white px-4 py-2.5 rounded-xl text-xs font-heading font-bold transition shadow-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" /> Enviar WhatsApp
+                    </button>
+                    {!persistedBudget && (
+                      <span className="absolute bottom-full left-0 mb-1 hidden group-hover:block bg-gray-800 text-white text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap">
+                        Guarde el presupuesto para habilitar el envío
+                      </span>
+                    )}
+                  </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDescargarPdf({
-                      id: "pres_" + Date.now(),
-                      clienteNombre: leadData.nombre || "Cliente",
-                      clienteDni: leadData.dni || "-",
-                      clienteWhatsapp: leadData.telefono || "-",
-                      clienteLocalidad: leadData.localidad || "-",
-                      items: draftItems,
-                      notas: leadData.notas || ""
-                    })}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#B44E2A] border border-[#DED8CF] hover:border-[#B44E2A] px-4 py-2.5 rounded-xl text-xs font-heading font-bold transition shadow-xs cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5" /> Descargar PDF
-                  </button>
+                  <div className="relative group">
+                    <button
+                      type="button"
+                      disabled={!persistedBudget}
+                      onClick={() => persistedBudget && handleDescargarPdf(persistedBudget)}
+                      className="inline-flex items-center justify-center gap-1.5 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#B44E2A] border border-[#DED8CF] hover:border-[#B44E2A] px-4 py-2.5 rounded-xl text-xs font-heading font-bold transition shadow-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" /> Descargar PDF
+                    </button>
+                    {!persistedBudget && (
+                      <span className="absolute bottom-full left-0 mb-1 hidden group-hover:block bg-gray-800 text-white text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap">
+                        Guarde el presupuesto para habilitar la descarga
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
@@ -959,11 +1253,11 @@ function PresupuestosContent() {
 
                   <button
                     type="button"
-                    disabled={saving}
+                    disabled={saving || !pricingResult}
                     onClick={handleGuardarPresupuesto}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#173E3B] hover:bg-[#123230] text-white px-5 py-2.5 rounded-xl text-xs font-heading font-bold transition shadow-xs disabled:opacity-50 cursor-pointer"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#173E3B] hover:bg-[#123230] text-white px-5 py-2.5 rounded-xl text-xs font-heading font-bold transition shadow-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
-                    {saving ? "Guardando..." : "💾 Guardar Presupuesto"}
+                    {saving ? "Guardando..." : "💾 Guardar Presupuesto (CANONICAL_V1)"}
                   </button>
                 </div>
               </div>

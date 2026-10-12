@@ -24,6 +24,30 @@ export interface AlertaAdminItem {
   [key: string]: unknown;
 }
 
+export interface SolicitudCandidate {
+  id: string;
+  sourceCollection: "solicitudes_cuenta" | "solicitudes";
+  nombreCompleto?: string;
+  numeroDni?: string;
+  whatsapp?: string;
+  productoNombre?: string;
+  necesidad?: string;
+  productoDeseado?: string;
+  fechaCreacion?: unknown;
+  fecha?: unknown;
+  fechaIso?: string;
+  [key: string]: unknown;
+}
+
+export interface LegacyResolutionResult {
+  matched: boolean;
+  resolvedSolicitudId: string | null;
+  sourceCollection: "solicitudes_cuenta" | "solicitudes" | null;
+  candidatesCount: number;
+  candidates: SolicitudCandidate[];
+  message: string;
+}
+
 /**
  * Determina si una alerta corresponde a un flujo de PRESUPUESTO
  */
@@ -121,6 +145,130 @@ export function parseLeadFromAlert(alerta: AlertaAdminItem): ParsedLead {
     localidad,
     producto,
     notas: msg
+  };
+}
+
+/**
+ * Resolución determinística de solicitudes para alertas legacy sin solicitudId explícito.
+ * Orden estricto de resolución:
+ * 1. Teléfono / WhatsApp exacto
+ * 2. DNI exacto si existe
+ * 3. Producto / Necesidad
+ * 4. Proximidad temporal con fechaCreacion
+ * FAIL CLOSED: Si existen 0 o más de 1 candidatos, NO vincula automáticamente.
+ */
+export function resolveLegacyAlertSolicitud(
+  alerta: AlertaAdminItem,
+  solicitudes: SolicitudCandidate[]
+): LegacyResolutionResult {
+  const cleanDigits = (str?: string) => (str || "").replace(/\D/g, "");
+
+  // 0. Si ya tiene ID explícito, buscarlo directamente
+  const lead = parseLeadFromAlert(alerta);
+  const explicitId = alerta.solicitudId || lead.solicitudId;
+  if (explicitId) {
+    const direct = solicitudes.find(s => s.id === explicitId);
+    if (direct) {
+      return {
+        matched: true,
+        resolvedSolicitudId: direct.id,
+        sourceCollection: direct.sourceCollection,
+        candidatesCount: 1,
+        candidates: [direct],
+        message: "Solicitud vinculada por ID directo."
+      };
+    }
+  }
+
+  const leadTel = cleanDigits(lead.telefono);
+  const leadDni = cleanDigits(lead.dni);
+  const leadProd = (lead.producto || "").toLowerCase().trim();
+
+  let pool = [...solicitudes];
+
+  // 1. Filtrar por Teléfono / WhatsApp exacto si existe
+  if (leadTel && leadTel.length >= 6) {
+    const byTel = pool.filter(s => {
+      const sTel = cleanDigits(s.whatsapp || (s.telefono as string));
+      return sTel && (sTel === leadTel || sTel.endsWith(leadTel) || leadTel.endsWith(sTel));
+    });
+    if (byTel.length > 0) {
+      pool = byTel;
+    }
+  }
+
+  // 2. Filtrar por DNI exacto si existe y quedan múltiples
+  if (pool.length > 1 && leadDni && leadDni.length >= 6) {
+    const byDni = pool.filter(s => {
+      const sDni = cleanDigits(s.numeroDni || (s.dni as string));
+      return sDni && sDni === leadDni;
+    });
+    if (byDni.length > 0) {
+      pool = byDni;
+    }
+  }
+
+  // 3. Filtrar por Producto / Necesidad si aún quedan múltiples
+  if (pool.length > 1 && leadProd) {
+    const byProd = pool.filter(s => {
+      const pName = String(s.productoNombre || s.necesidad || s.productoDeseado || "").toLowerCase().trim();
+      return pName && (pName.includes(leadProd) || leadProd.includes(pName));
+    });
+    if (byProd.length > 0) {
+      pool = byProd;
+    }
+  }
+
+  // 4. Filtrar por proximidad temporal si aún quedan múltiples y fechaCreacion existe
+  if (pool.length > 1 && alerta.fechaCreacion) {
+    const parseDateMs = (val: unknown): number => {
+      if (!val) return 0;
+      if (val instanceof Date) return val.getTime();
+      const obj = val as { toMillis?: () => number; seconds?: number };
+      if (obj.toMillis) return obj.toMillis();
+      if (obj.seconds) return obj.seconds * 1000;
+      if (typeof val === "string" || typeof val === "number") {
+        const d = new Date(val);
+        return isNaN(d.getTime()) ? 0 : d.getTime();
+      }
+      return 0;
+    };
+
+    const alertMs = parseDateMs(alerta.fechaCreacion);
+    if (alertMs > 0) {
+      pool.sort((a, b) => {
+        const diffA = Math.abs(parseDateMs(a.fechaCreacion || a.fecha || a.fechaIso) - alertMs);
+        const diffB = Math.abs(parseDateMs(b.fechaCreacion || b.fecha || b.fechaIso) - alertMs);
+        return diffA - diffB;
+      });
+
+      const diff0 = Math.abs(parseDateMs(pool[0].fechaCreacion || pool[0].fecha || pool[0].fechaIso) - alertMs);
+      const diff1 = Math.abs(parseDateMs(pool[1].fechaCreacion || pool[1].fecha || pool[1].fechaIso) - alertMs);
+      if (diff0 < diff1 && diff0 < 3600 * 1000) {
+        pool = [pool[0]];
+      }
+    }
+  }
+
+  // Resultado
+  if (pool.length === 1) {
+    return {
+      matched: true,
+      resolvedSolicitudId: pool[0].id,
+      sourceCollection: pool[0].sourceCollection,
+      candidatesCount: 1,
+      candidates: pool,
+      message: "Solicitud original resuelta de manera determinística unívoca."
+    };
+  }
+
+  return {
+    matched: false,
+    resolvedSolicitudId: null,
+    sourceCollection: null,
+    candidatesCount: pool.length,
+    candidates: pool,
+    message: "Solicitud original no vinculada automáticamente."
   };
 }
 
