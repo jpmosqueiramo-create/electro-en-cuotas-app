@@ -175,7 +175,7 @@ export async function calcularEstadoFinancieroOperacion(
     if (!movQuery.empty) {
       movQuery.forEach(mDoc => {
         const mData = mDoc.data() as LedgerMovimiento;
-        const cuotaNum = (mData as any).cuotaNumero;
+        const cuotaNum = mData.cuotaNumero;
         const monto = Number(mData.montoAplicablePlanCentavos || mData.montoRecibidoCentavos || 0);
         if (cuotaNum) {
           imputacionesActivas.push({
@@ -591,7 +591,7 @@ export async function registrarPagoDirectoAdmin(
       registradoPor: params.registradoPor,
       ledgerMovimiento: resTx.movimiento
     });
-  } catch (comErr: any) {
+  } catch {
     // Financial payment in Ledger is preserved even if commission auto-devengamiento fails
   }
 
@@ -735,8 +735,8 @@ export async function reversarMovimientoPago(
 
     transaction.set(db.collection('ledger_movimientos').doc(reversaMovId), reversaMovimiento);
 
-    if (movData.medioPago === "EFECTIVO" && (movData as any).receptorEfectivoId) {
-      const valRec = await validarReceptorEfectivoAutorizado(db, (movData as any).receptorEfectivoId);
+    if (movData.medioPago === "EFECTIVO" && movData.receptorEfectivoId) {
+      const valRec = await validarReceptorEfectivoAutorizado(db, movData.receptorEfectivoId);
       if (valRec.esAutorizado && valRec.vendedorAfiliadoId) {
         const revCustId = "cust_rev_" + reversaMovId;
         const revCustMov: LedgerCustodiaEfectivoMovimiento = {
@@ -788,7 +788,7 @@ export async function reversarMovimientoPago(
       motivo: params.motivo,
       adminEmail: (params.adminEmail || params.reversadoPor || "").trim()
     });
-  } catch (comErr: any) {
+  } catch {
     // Ignore if commission movement does not exist or was not created
   }
 
@@ -799,21 +799,35 @@ export async function reversarMovimientoPago(
 
 
 
-export function obtenerSnapshotFinancieroCanonico(solData: any): { totalContractualCentavos: number; valorTotalContractualCentavos: number; totalPagadoActivoCentavos: number; saldoTotalCentavos: number; cuotas: any[] } {
-  const pricingSchemaVersion = solData?.pricingSchemaVersion || solData?.propuestaAceptadaSnapshot?.pricingSchemaVersion || solData?.propuestaAceptada?.pricingSchemaVersion;
+export interface SnapshotCuotaResumen {
+  numero: number;
+  montoTotalCentavos: number;
+  fechaVencimiento?: string | null;
+}
+
+export function obtenerSnapshotFinancieroCanonico(solData: Record<string, unknown>): {
+  totalContractualCentavos: number;
+  valorTotalContractualCentavos: number;
+  totalPagadoActivoCentavos: number;
+  saldoTotalCentavos: number;
+  cuotas: SnapshotCuotaResumen[];
+} {
+  const propuestaSnapshot = solData?.propuestaAceptadaSnapshot as Record<string, unknown> | undefined;
+  const propuestaAceptada = solData?.propuestaAceptada as Record<string, unknown> | undefined;
+  const pricingSchemaVersion = (solData?.pricingSchemaVersion || propuestaSnapshot?.pricingSchemaVersion || propuestaAceptada?.pricingSchemaVersion) as string | undefined;
   if (pricingSchemaVersion !== "CANONICAL_V1") {
     throw new Error("400:OPERACION_LEGACY_NO_CANONICAL: La operación no posee la versión de pricing CANONICAL_V1 requerida para el Ledger.");
   }
-  const cuotasContractuales: any[] = solData?.cuotasInmutables || solData?.propuestaAceptadaSnapshot?.cuotas || solData?.propuestaAceptada?.cuotas || solData?.cuotas || [];
+  const cuotasContractuales = (solData?.cuotasInmutables || propuestaSnapshot?.cuotas || propuestaAceptada?.cuotas || solData?.cuotas || []) as Array<Record<string, unknown>>;
   let totalContractualCentavos = 0;
-  const cuotas = cuotasContractuales.map((c: any) => {
+  const cuotas: SnapshotCuotaResumen[] = cuotasContractuales.map((c) => {
     const numero = Number(c.numero);
     const montoTotalCentavos = Number(c.montoTotalCentavos || 0);
     totalContractualCentavos += montoTotalCentavos;
     return {
       numero,
       montoTotalCentavos,
-      fechaVencimiento: c.fechaVencimiento
+      fechaVencimiento: (c.fechaVencimiento as string) || null
     };
   });
   return {
@@ -828,21 +842,30 @@ export function obtenerSnapshotFinancieroCanonico(solData: any): { totalContract
 
 export async function validarReceptorEfectivoAutorizado(
   db: admin.firestore.Firestore,
-  receptorId: string
-): Promise<{ esAutorizado: boolean; vendedorAfiliadoId: string }> {
-  if (!receptorId || !receptorId.trim()) {
-    return { esAutorizado: false, vendedorAfiliadoId: "" };
-  }
-  const rSnap = await db.collection("receptores_efectivo_autorizados").doc(receptorId.trim()).get();
+  receptorId: string,
+  transaction?: admin.firestore.Transaction
+): Promise<{ esAutorizado: boolean; vendedorAfiliadoId?: string | null }> {
+  if (!receptorId || !receptorId.trim()) return { esAutorizado: false };
+  const idClean = receptorId.trim();
+
+  const rRef = db.collection('receptores_efectivo_autorizados').doc(idClean);
+  const rSnap = transaction ? await transaction.get(rRef) : await rRef.get();
   if (!rSnap.exists) {
-    return { esAutorizado: false, vendedorAfiliadoId: "" };
+    return { esAutorizado: false };
   }
-  const data = rSnap.data() || {};
-  if (data.activo === false) {
-    return { esAutorizado: false, vendedorAfiliadoId: "" };
+
+  const rData = rSnap.data();
+  if (rData?.activo !== true) {
+    return { esAutorizado: false };
   }
-  if (!data.vendedorAfiliadoId || !data.vendedorAfiliadoId.trim()) {
-    throw new Error("409:RECEPTOR_VENDEDOR_SIN_VINCULO: El receptor de efectivo autorizado no posee una cuenta de vendedor afiliado vinculada.");
+
+  if (rData?.tipoReceptor === 'VENDEDOR_AFILIADO') {
+    const vId = rData?.vendedorAfiliadoId;
+    if (!vId || typeof vId !== 'string' || !vId.trim()) {
+      throw new Error('409:RECEPTOR_VENDEDOR_SIN_VINCULO: El receptor de tipo VENDEDOR_AFILIADO no posee vendedorAfiliadoId vinculado.');
+    }
+    return { esAutorizado: true, vendedorAfiliadoId: vId.trim() };
   }
-  return { esAutorizado: true, vendedorAfiliadoId: data.vendedorAfiliadoId.trim() };
+
+  return { esAutorizado: true, vendedorAfiliadoId: null };
 }

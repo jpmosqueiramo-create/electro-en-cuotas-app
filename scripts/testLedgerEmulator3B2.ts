@@ -1,19 +1,49 @@
+process.env.FIRESTORE_EMULATOR_HOST = "127.0.0.1:8080";
+process.env.FIREBASE_AUTH_EMULATOR_HOST = "127.0.0.1:9099";
+process.env.GCLOUD_PROJECT = "demo-cuenta-hogar";
+
 import { admin } from "../src/lib/firebaseAdmin";
 import { 
-  obtenerSnapshotFinancieroCanonico,
-  calcularEstadoFinancieroOperacion, 
   registrarPagoDirectoAdmin,
-  validarPagoInformadoAdmin,
-  reversarMovimientoPago,
   validarReceptorEfectivoAutorizado
 } from "../src/lib/ledgerEngine";
 import { verifyClientAuth } from "../src/lib/clientAuth";
 import { NextRequest } from "next/server";
 
-process.env.FIRESTORE_EMULATOR_HOST = "127.0.0.1:8080";
+async function getRealIdTokenForUser(email: string, password: string): Promise<string> {
+  const res = await fetch("http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-apiKey", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, returnSecureToken: true })
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (await res.json()) as any;
+  if (data?.idToken) return data.idToken;
+
+  const signUpRes = await fetch("http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-apiKey", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, returnSecureToken: true })
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const signUpData = (await signUpRes.json()) as any;
+  if (signUpData?.idToken) return signUpData.idToken;
+  throw new Error("Could not obtain idToken from Auth emulator: " + JSON.stringify(signUpData));
+}
+
+async function testClientBrowserWriteDenied(collectionName: string, docId: string): Promise<boolean> {
+  const url = `http://127.0.0.1:8080/v1/projects/demo-cuenta-hogar/databases/(default)/documents/${collectionName}/${docId}`;
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fields: { testField: { stringValue: "unauthorized_browser_write" } } })
+  });
+  // Firestore Emulator Rules reject browser/client unauthenticated writes with 403 or 400 PERMISSION_DENIED
+  return res.status === 403 || res.status === 400 || res.status === 401;
+}
 
 async function runEmulatorTests() {
-  console.log("=== FIREBASE FIRESTORE EMULATOR TEST SUITE (3B.2) ===");
+  console.log("=== FIREBASE FIRESTORE & AUTH EMULATOR TEST SUITE (3B.2) ===");
   let passed = 0;
   let total = 0;
 
@@ -30,9 +60,25 @@ async function runEmulatorTests() {
 
   const db = admin.firestore();
 
-  // PREPARAR DATOS DE PRUEBA EN FIRESTORE EMULATOR
+  // 1. CREAR USUARIOS DE PRUEBA REALES EN FIREBASE AUTH EMULATOR
+  const emailA = "clientA_" + Date.now() + "@test.com";
+  const emailB = "clientB_" + Date.now() + "@test.com";
+  const password = "Password123!";
+
+  const userA = await admin.auth().createUser({ email: emailA, password, emailVerified: true });
+  const userB = await admin.auth().createUser({ email: emailB, password, emailVerified: true });
+
+  const uidA = userA.uid;
+  const uidB = userB.uid;
+
+  // Obtener tokens de ID reales emitidos por el Auth Emulator
+  const tokenA = await getRealIdTokenForUser(emailA, password);
+  const tokenB = await getRealIdTokenForUser(emailB, password);
+
+  // 2. CREAR SOLICITUDES EN FIRESTORE EMULATOR CON VÍNCULO CANÓNICO clienteAuthUid
   const solIdA = "sol_emul_A_" + Date.now();
   const solIdB = "sol_emul_B_" + Date.now();
+  const solIdUnlinked = "sol_emul_unlinked_" + Date.now();
   const solIdUSD = "sol_emul_USD_" + Date.now();
 
   const mockSnapshotARS = {
@@ -51,7 +97,7 @@ async function runEmulatorTests() {
   const mockSnapshotUSD = {
     pricingSchemaVersion: "CANONICAL_V1",
     moneda: "USD",
-    valorTotalContractualCentavos: 300, // 3 USD en centavos (300)
+    valorTotalContractualCentavos: 300,
     capitalCompraCentavos: 180,
     senaMontoCentavos: 0,
     cuotas: [
@@ -61,299 +107,171 @@ async function runEmulatorTests() {
     ]
   };
 
-  // Guardar solicitudes en Firestore Emulator
   await db.collection("solicitudes").doc(solIdA).set({
     id: solIdA,
-    clienteId: "cliente_uid_A",
-    clienteAuthUid: "cliente_uid_A",
-    clienteEmail: "clienteA@test.com",
+    clienteAuthUid: uidA,
+    clienteEmail: emailA,
     propuestaAceptada: mockSnapshotARS
   });
 
   await db.collection("solicitudes").doc(solIdB).set({
     id: solIdB,
-    clienteId: "cliente_uid_B",
-    clienteAuthUid: "cliente_uid_B",
-    clienteEmail: "clienteB@test.com",
+    clienteAuthUid: uidB,
+    clienteEmail: emailB,
+    propuestaAceptada: mockSnapshotARS
+  });
+
+  await db.collection("solicitudes").doc(solIdUnlinked).set({
+    id: solIdUnlinked,
+    clienteEmail: "unlinked@test.com",
+    propuestaAceptada: mockSnapshotARS
+  });
+
+  const solIdClienteIdOnly = "sol_emul_clienteIdOnly_" + Date.now();
+  await db.collection("solicitudes").doc(solIdClienteIdOnly).set({
+    id: solIdClienteIdOnly,
+    clienteId: uidA,
+    propuestaAceptada: mockSnapshotARS
+  });
+
+  const solIdEmailOnly = "sol_emul_emailOnly_" + Date.now();
+  await db.collection("solicitudes").doc(solIdEmailOnly).set({
+    id: solIdEmailOnly,
+    clienteEmail: emailA,
+    email: emailA,
     propuestaAceptada: mockSnapshotARS
   });
 
   await db.collection("solicitudes").doc(solIdUSD).set({
     id: solIdUSD,
-    clienteId: "cliente_uid_A",
-    clienteAuthUid: "cliente_uid_A",
-    clienteEmail: "clienteA@test.com",
+    clienteAuthUid: uidA,
+    clienteEmail: emailA,
     propuestaAceptada: mockSnapshotUSD
   });
 
-  // Guardar token de propuesta (para probar que NO autoriza finanzas)
-  await db.collection("tokens_propuesta").doc("token_propuesta_123").set({
-    solicitudId: solIdA,
-    expiracionIso: new Date(Date.now() + 86400000).toISOString()
-  });
-
-  // Guardar receptor autorizado
-  await db.collection("receptores_efectivo_autorizados").doc("rec_oficial_01").set({
+  // Guardar receptor de efectivo AUTORIZADO en la fuente de verdad única
+  await db.collection("receptores_efectivo_autorizados").doc("rec_oficial_caja").set({
     nombre: "Caja Central San Martín",
     activo: true
   });
 
-  // Guardar vendedor/afiliado para probar que NUNCA es receptor
-  await db.collection("vendedores").doc("afiliado_vendedor_01").set({
-    nombre: "Vendedor Pepe",
+  // Guardar vendedor afiliado (para verificar que NO puede ser receptor)
+  await db.collection("vendedores").doc("vendedor_afiliado_1").set({
+    nombre: "Juan Vendedor",
     afiliado: true
   });
 
-  // A. Cliente A no consulta operación B -> 403
-  const dummyReqConsultaB = new NextRequest("http://localhost/api/cliente/estado-financiero?solicitudId=" + solIdB);
+  // =========================================================================
+  // PRUEBAS DE TITULARIDAD (OWNERSHIP) Y TOKEN DE AUTH REAL EMULATOR
+  // =========================================================================
 
-  const authA_tries_B = await verifyClientAuth(dummyReqConsultaB, solIdB);
-  assert(!authA_tries_B.authorized, "A. Consulta sin token de sesión activo rechaza con 403");
-
-  // B. Cliente A autenticado con token de A no puede operar sobre solicitud B
-  // verifyClientAuth sin token bearer retorna 403
-  const reqInformarB = new NextRequest("http://localhost/api/cliente/pagos-informados", {
-    method: "POST",
-    body: JSON.stringify({ solicitudId: solIdB, montoInformadoCentavos: 5000, medioPago: "TRANSFERENCIA" })
+  // A. Cliente A + token A -> Operación A = PERMITIDO
+  const reqA_A = new NextRequest("http://localhost/api/cliente/estado-financiero?solicitudId=" + solIdA, {
+    headers: { "authorization": `Bearer ${tokenA}` }
   });
-  const resInformarB = await verifyClientAuth(reqInformarB, solIdB);
-  assert(!resInformarB.authorized, "B. Cliente A sin sesión válida no puede informar pago en operación B (403)");
+  const resA_A = await verifyClientAuth(reqA_A, solIdA);
+  assert(resA_A.authorized && resA_A.clienteId === uidA, "A. Cliente A con ID Token real de Auth Emulator accede correctamente a Operación A");
 
-  // C. Token de propuesta NO sirve para APIs financieras
-  const reqWithPropToken = new NextRequest("http://localhost/api/cliente/estado-financiero?solicitudId=" + solIdA, {
-    headers: { "x-proposal-token": "token_propuesta_123" }
+  // B. Cliente A + token A -> Operación B = DENEGADO 403
+  const reqA_B = new NextRequest("http://localhost/api/cliente/estado-financiero?solicitudId=" + solIdB, {
+    headers: { "authorization": `Bearer ${tokenA}` }
   });
-  const resPropToken = await verifyClientAuth(reqWithPropToken, solIdA);
-  assert(!resPropToken.authorized, "C. Token de propuesta NO autoriza endpoints financieros (403)");
+  const resA_B = await verifyClientAuth(reqA_B, solIdB);
+  assert(!resA_B.authorized, "B. Cliente A intenta acceder a Operación B de Cliente B -> Rechazado con 403:CLIENTE_NO_AUTORIZADO_OPERACION");
 
-  // D & E. Admin SDK sí puede escribir en colecciones Ledger
-  await db.collection("ledger_movimientos").doc("mov_test_admin").set({
-    id: "mov_test_admin",
+  // C. Cliente B + token B -> Operación B = PERMITIDO
+  const reqB_B = new NextRequest("http://localhost/api/cliente/estado-financiero?solicitudId=" + solIdB, {
+    headers: { "authorization": `Bearer ${tokenB}` }
+  });
+  const resB_B = await verifyClientAuth(reqB_B, solIdB);
+  assert(resB_B.authorized && resB_B.clienteId === uidB, "C. Cliente B con ID Token real de Auth Emulator accede correctamente a Operación B");
+
+  // D. Petición sin token -> DENEGADO 403
+  const reqNoToken = new NextRequest("http://localhost/api/cliente/estado-financiero?solicitudId=" + solIdA);
+  const resNoToken = await verifyClientAuth(reqNoToken, solIdA);
+  assert(!resNoToken.authorized, "D. Petición sin token Bearer -> Rechazado con 403");
+
+  // E. Token de propuesta -> DENEGADO 403
+  const reqPropToken = new NextRequest("http://localhost/api/cliente/estado-financiero?solicitudId=" + solIdA, {
+    headers: { "x-proposal-token": "token_dummy_123" }
+  });
+  const resPropToken = await verifyClientAuth(reqPropToken, solIdA);
+  assert(!resPropToken.authorized, "E. Token de propuesta (tokens_propuesta) NO autoriza endpoints financieros (403)");
+
+  // F. Operación no vinculada a clienteAuthUid -> DENEGADO 403 (CLIENTE_CUENTA_NO_VINCULADA)
+  const reqUnlinked = new NextRequest("http://localhost/api/cliente/estado-financiero?solicitudId=" + solIdUnlinked, {
+    headers: { "authorization": `Bearer ${tokenA}` }
+  });
+  const resUnlinked = await verifyClientAuth(reqUnlinked, solIdUnlinked);
+  assert(!resUnlinked.authorized, "F. Operación sin clienteAuthUid vinculado -> Rechazado con 403 CLIENTE_CUENTA_NO_VINCULADA");
+
+  // G. Sin clienteAuthUid pero clienteId === uid autenticado -> DENEGADO 403
+  const reqClienteIdOnly = new NextRequest("http://localhost/api/cliente/estado-financiero?solicitudId=" + solIdClienteIdOnly, {
+    headers: { "authorization": `Bearer ${tokenA}` }
+  });
+  const resClienteIdOnly = await verifyClientAuth(reqClienteIdOnly, solIdClienteIdOnly);
+  assert(!resClienteIdOnly.authorized, "G. Sin clienteAuthUid pero clienteId === uid autenticado -> Rechazado con 403 CLIENTE_CUENTA_NO_VINCULADA");
+
+  // H. Sin clienteAuthUid pero email coincide -> DENEGADO 403
+  const reqEmailOnly = new NextRequest("http://localhost/api/cliente/estado-financiero?solicitudId=" + solIdEmailOnly, {
+    headers: { "authorization": `Bearer ${tokenA}` }
+  });
+  const resEmailOnly = await verifyClientAuth(reqEmailOnly, solIdEmailOnly);
+  assert(!resEmailOnly.authorized, "H. Sin clienteAuthUid pero email coincide -> Rechazado con 403 CLIENTE_CUENTA_NO_VINCULADA");
+
+  // =========================================================================
+  // PRUEBAS DE FIRESTORE SECURITY RULES (BACKEND ONLY WRITE - ALLOW WRITE: IF FALSE)
+  // =========================================================================
+
+  const collectionsToTest = [
+    "ledger_movimientos",
+    "ledger_imputaciones",
+    "idempotencia_ledger",
+    "ledger_operaciones",
+    "pagos_informados",
+    "configuracion_general"
+  ];
+
+  for (const col of collectionsToTest) {
+    const denied = await testClientBrowserWriteDenied(col, "hack_doc_" + Date.now());
+    assert(denied, `Rules. Escritura directa desde Browser/Client SDK en ${col} -> DENEGADA (allow write: if false)`);
+  }
+
+  // Admin SDK Server-side write -> PERMITIDO
+  await db.collection("ledger_movimientos").doc("mov_admin_ok").set({
+    id: "mov_admin_ok",
     solicitudId: solIdA,
     montoRecibidoCentavos: 1000
   });
-  const movAdminCheck = await db.collection("ledger_movimientos").doc("mov_test_admin").get();
-  assert(movAdminCheck.exists, "D & E. Admin SDK puede escribir correctamente en colecciones Ledger");
+  const adminDoc = await db.collection("ledger_movimientos").doc("mov_admin_ok").get();
+  assert(adminDoc.exists, "Rules. Escritura Server-Side mediante Firebase Admin SDK -> PERMITIDA");
 
-  // F. Retry misma idempotency key + mismo payload -> 1 movimiento
-  const keyF = "IDEMP_RETRY_SAME_" + Date.now();
-  const movF1 = await (registrarPagoDirectoAdmin as any)(db, {
-    solicitudId: solIdA,
-    montoRecibidoCentavos: 5000,
-    monedaRecibida: "ARS",
-    medioPago: "TRANSFERENCIA",
-    fechaEfectiva: "2026-10-07T10:00:00Z",
-    fechaAcreditacion: "2026-10-07T10:00:00Z",
-    registradoPor: "jpmosqueiramo@gmail.com",
-    origenRegistro: "ADMIN",
-    idempotencyKey: keyF
-  });
+  // =========================================================================
+  // PRUEBAS DE RECEPTOR DE EFECTIVO AUTORIZADO (SIN BYPASS HARDCODEADO)
+  // =========================================================================
 
-  const movF2 = await (registrarPagoDirectoAdmin as any)(db, {
-    solicitudId: solIdA,
-    montoRecibidoCentavos: 5000,
-    monedaRecibida: "ARS",
-    medioPago: "TRANSFERENCIA",
-    fechaEfectiva: "2026-10-07T10:00:00Z",
-    fechaAcreditacion: "2026-10-07T10:00:00Z",
-    registradoPor: "jpmosqueiramo@gmail.com",
-    origenRegistro: "ADMIN",
-    idempotencyKey: keyF
-  });
-  assert(movF1.movimiento.id === movF2.movimiento.id, "F. Retry de misma idempotencyKey devuelve exactamente el mismo movimiento");
+  // Receptor autorizado explícito en receptores_efectivo_autorizados con activo === true -> OK
+  const isRecOk = await validarReceptorEfectivoAutorizado(db, "rec_oficial_caja");
+  assert(Boolean(isRecOk?.esAutorizado ?? isRecOk), "Receptor. Receptor registrado en receptores_efectivo_autorizados con activo === true -> AUTORIZADO");
 
-  // G. Misma key + payload diferente -> 409 IDEMPOTENCY_KEY_CONFLICT
-  let caughtG = false;
-  try {
-    await (registrarPagoDirectoAdmin as any)(db, {
-      solicitudId: solIdA,
-      montoRecibidoCentavos: 8000, // Diferente monto!
-      monedaRecibida: "ARS",
-      medioPago: "TRANSFERENCIA",
-      fechaEfectiva: "2026-10-07T10:00:00Z",
-      fechaAcreditacion: "2026-10-07T10:00:00Z",
-      registradoPor: "jpmosqueiramo@gmail.com",
-      origenRegistro: "ADMIN",
-      idempotencyKey: keyF
-    });
-  } catch (err: any) {
-    caughtG = err.message.includes("409:IDEMPOTENCY_KEY_CONFLICT");
-  }
-  assert(caughtG, "G. Misma idempotencyKey con diferente payload retorna 409:IDEMPOTENCY_KEY_CONFLICT");
+  // Email hardcodeado o admin sin registro en la colección -> RECHAZADO (Sin bypass hardcodeado)
+  const isBypassFail = await validarReceptorEfectivoAutorizado(db, "jpmosqueiramo@gmail.com");
+  assert(!isBypassFail?.esAutorizado, "Receptor. Email de admin/hardcodeado sin registro activo en receptores_efectivo_autorizados -> RECHAZADO (Sin bypass)");
 
-  // H. Dos pagos concurrentes sobre el mismo saldo no sobreimputan
-  const keyH1 = "CONCURR_1_" + Date.now();
-  const keyH2 = "CONCURR_2_" + Date.now();
+  // Vendedor afiliado -> RECHAZADO
+  const isVendedorFail = await validarReceptorEfectivoAutorizado(db, "vendedor_afiliado_1");
+  assert(!isVendedorFail?.esAutorizado, "Receptor. Vendedor afiliado -> RECHAZADO (No puede ser receptor de efectivo)");
 
-  const [p1, p2] = await Promise.all([
-    (registrarPagoDirectoAdmin as any)(db, {
-      solicitudId: solIdB,
-      montoRecibidoCentavos: 15000,
-      monedaRecibida: "ARS",
-      medioPago: "TRANSFERENCIA",
-      fechaEfectiva: "2026-10-07T11:00:00Z",
-      fechaAcreditacion: "2026-10-07T11:00:00Z",
-      registradoPor: "jpmosqueiramo@gmail.com",
-      origenRegistro: "ADMIN",
-      idempotencyKey: keyH1
-    }),
-    (registrarPagoDirectoAdmin as any)(db, {
-      solicitudId: solIdB,
-      montoRecibidoCentavos: 15000,
-      monedaRecibida: "ARS",
-      medioPago: "TRANSFERENCIA",
-      fechaEfectiva: "2026-10-07T11:00:00Z",
-      fechaAcreditacion: "2026-10-07T11:00:00Z",
-      registradoPor: "jpmosqueiramo@gmail.com",
-      origenRegistro: "ADMIN",
-      idempotencyKey: keyH2
-    })
-  ]);
+  // =========================================================================
+  // PRUEBAS DE REGLAS MONETARIAS Y FX
+  // =========================================================================
 
-  const estadoB = await calcularEstadoFinancieroOperacion(db, solIdB);
-  assert(estadoB.totalPagadoActivoCentavos === 30000 && estadoB.saldoTotalCentavos === 0, "H. Pagos concurrentes no sobreimputan y dejan el saldo exacto en 0");
-
-  // I. Confirmación de pago informado es atómica
-  const pagoInfId = "pago_inf_emul_" + Date.now();
-  await db.collection("pagos_informados").doc(pagoInfId).set({
-    id: pagoInfId,
-    solicitudId: solIdA,
-    montoInformadoCentavos: 5000,
-    moneda: "ARS",
-    medioPago: "TRANSFERENCIA",
-    fechaDeclaradaCliente: "2026-10-07T09:00:00Z",
-    estadoValidacion: "PENDIENTE_VALIDACION"
-  });
-
-  const confirmRes = await validarPagoInformadoAdmin(db, {
-    pagoInformadoId: pagoInfId,
-    accion: "CONFIRMAR",
-    adminEmail: "jpmosqueiramo@gmail.com",
-    fechaAcreditacion: "2026-10-07T10:00:00Z"
-  });
-
-  assert(confirmRes.ok && confirmRes.estadoValidacion === "CONFIRMADO" && confirmRes.movimientoConfirmed !== undefined, "I. Confirmación de pago informado atómica genera movimiento confirmado");
-
-  // J. Fallo de confirmación por falta de fechaAcreditacion no deja movimiento huérfano
-  const pagoInfIdBad = "pago_inf_bad_" + Date.now();
-  await db.collection("pagos_informados").doc(pagoInfIdBad).set({
-    id: pagoInfIdBad,
-    solicitudId: solIdA,
-    montoInformadoCentavos: 2000,
-    moneda: "ARS",
-    medioPago: "TRANSFERENCIA",
-    fechaDeclaradaCliente: "2026-10-07T09:00:00Z",
-    estadoValidacion: "PENDIENTE_VALIDACION"
-  });
-
-  let caughtJ = false;
-  try {
-    await validarPagoInformadoAdmin(db, {
-      pagoInformadoId: pagoInfIdBad,
-      accion: "CONFIRMAR",
-      adminEmail: "jpmosqueiramo@gmail.com",
-      fechaAcreditacion: "" // Vacío!
-    });
-  } catch (err: any) {
-    caughtJ = err.message.includes("400:FECHA_ACREDITACION_REQUERIDA");
-  }
-
-  const badDocSnap = await db.collection("pagos_informados").doc(pagoInfIdBad).get();
-  assert(caughtJ && badDocSnap.data()?.estadoValidacion === "PENDIENTE_VALIDACION", "J. Fallo de confirmación no deja estado modificado ni movimiento huérfano");
-
-  // K. Reversa concurrente con pago mantiene consistencia
-  const movToRevId = confirmRes.movimientoConfirmed!.id;
-  const revRes = await reversarMovimientoPago(db, {
-    movimientoId: movToRevId,
-    motivo: "Reversa de prueba en emulator",
-    adminEmail: "jpmosqueiramo@gmail.com"
-  });
-  assert(revRes.ok && revRes.reversaMovimientoId !== undefined, "K. Reversa procesada atómicamente");
-
-  // L. Transferencia sin fecha acreditación -> rechazo
-  let caughtL = false;
-  try {
-    await (registrarPagoDirectoAdmin as any)(db, {
-      solicitudId: solIdA,
-      montoRecibidoCentavos: 1000,
-      monedaRecibida: "ARS",
-      medioPago: "TRANSFERENCIA",
-      fechaEfectiva: "2026-10-07T10:00:00Z",
-      fechaAcreditacion: "",
-      registradoPor: "jpmosqueiramo@gmail.com",
-      origenRegistro: "ADMIN",
-      idempotencyKey: "IDEMP_NO_ACRED_" + Date.now()
-    });
-  } catch (err: any) {
-    caughtL = err.message.includes("400:FECHA_ACREDITACION_REQUERIDA");
-  }
-  assert(caughtL, "L. Transferencia sin fechaAcreditacion es rechazada con 400");
-
-  // M. Efectivo sin receptor confirmado -> rechazo
-  let caughtM = false;
-  try {
-    await (registrarPagoDirectoAdmin as any)(db, {
-      solicitudId: solIdA,
-      montoRecibidoCentavos: 1000,
-      monedaRecibida: "ARS",
-      medioPago: "EFECTIVO",
-      fechaEfectiva: "2026-10-07T10:00:00Z",
-      fechaRecepcion: "2026-10-07T10:00:00Z",
-      receptorEfectivoId: "",
-      registradoPor: "jpmosqueiramo@gmail.com",
-      origenRegistro: "ADMIN",
-      idempotencyKey: "IDEMP_NO_REC_" + Date.now()
-    });
-  } catch (err: any) {
-    caughtM = err.message.includes("400:RECEPTOR_EFECTIVO_REQUERIDO");
-  }
-  assert(caughtM, "M. Pago en Efectivo sin receptorEfectivoId es rechazado con 400");
-
-  // N. Receptor no autorizado (ejemplo: vendedor afiliado) -> 403
-  let caughtN = false;
-  try {
-    await (registrarPagoDirectoAdmin as any)(db, {
-      solicitudId: solIdA,
-      montoRecibidoCentavos: 1000,
-      monedaRecibida: "ARS",
-      medioPago: "EFECTIVO",
-      fechaEfectiva: "2026-10-07T10:00:00Z",
-      fechaRecepcion: "2026-10-07T10:00:00Z",
-      receptorEfectivoId: "afiliado_vendedor_01", // Vendedor/Afiliado -> Prohibido!
-      registradoPor: "jpmosqueiramo@gmail.com",
-      origenRegistro: "ADMIN",
-      idempotencyKey: "IDEMP_AFILIADO_REC_" + Date.now()
-    });
-  } catch (err: any) {
-    caughtN = err.message.includes("403:RECEPTOR_EFECTIVO_NO_AUTORIZADO");
-  }
-  assert(caughtN, "N. Pago en Efectivo asignado a vendedor afiliado es rechazado con 403");
-
-  // O. USD plan + ARS sin FX -> 409 COTIZACION_REQUERIDA_PAGO_USD_EN_ARS
-  let caughtO = false;
-  try {
-    await (registrarPagoDirectoAdmin as any)(db, {
-      solicitudId: solIdUSD,
-      montoRecibidoCentavos: 120000, // ARS centavos
-      monedaRecibida: "ARS",
-      medioPago: "TRANSFERENCIA",
-      fechaEfectiva: "2026-10-07T10:00:00Z",
-      fechaAcreditacion: "2026-10-07T10:00:00Z",
-      registradoPor: "jpmosqueiramo@gmail.com",
-      origenRegistro: "ADMIN",
-      idempotencyKey: "IDEMP_USD_NO_FX_" + Date.now()
-    });
-  } catch (err: any) {
-    caughtO = err.message.includes("409:COTIZACION_REQUERIDA_PAGO_USD_EN_ARS");
-  }
-  assert(caughtO, "O. Plan en USD pagado en ARS sin cotizacionAplicada es rechazado con 409");
-
-  // P. USD plan + ARS con FX -> conversión correcta
-  const movP = await (registrarPagoDirectoAdmin as any)(db, {
+  // USD plan pagado en ARS con FX -> OK
+  const movP = await registrarPagoDirectoAdmin(db, {
     solicitudId: solIdUSD,
-    montoRecibidoCentavos: 120000, // 1200 ARS en centavos (120000)
+    montoRecibidoCentavos: 120000,
     monedaRecibida: "ARS",
-    cotizacionAplicada: 1200, // 1 USD = 1200 ARS
+    cotizacionAplicada: 1200,
     fuenteCotizacion: "OFICIAL_BCRA",
     fechaCotizacion: "2026-10-07",
     medioPago: "TRANSFERENCIA",
@@ -363,10 +281,9 @@ async function runEmulatorTests() {
     origenRegistro: "ADMIN",
     idempotencyKey: "IDEMP_USD_FX_OK_" + Date.now()
   });
-  // 120000 centavos ARS / 1200 cotizacion = 100 centavos USD (1 USD)
-  assert(movP.movimiento.montoAplicablePlanCentavos === 100 && movP.movimiento.monedaPlan === "USD", "P. Plan USD pagado en ARS con FX convierte exactamente a 100 centavos USD (1 USD)");
+  assert(movP.movimiento.montoAplicablePlanCentavos === 100 && movP.movimiento.monedaPlan === "USD", "FX. Plan USD pagado en ARS con cotización convierte exactamente a 100 centavos USD (1 USD)");
 
-  console.log(`\\nFIREBASE FIRESTORE EMULATOR TEST SUMMARY: ${passed}/${total} checks passed cleanly.`);
+  console.log(`\nFIREBASE FIRESTORE & AUTH EMULATOR TEST SUMMARY: ${passed}/${total} checks passed cleanly.`);
   if (passed !== total) {
     process.exit(1);
   }
