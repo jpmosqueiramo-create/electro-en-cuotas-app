@@ -882,26 +882,36 @@ export default function AdminValidacionesPage() {
   };
 
   const handleDescargarPdfPresupuestoHistorial = (sol: any, pres: any) => {
+    const rawItems = (pres.items && pres.items.length > 0)
+      ? pres.items.map((it: any) => ({
+          ...it,
+          producto: it.producto || it.nombre || "Producto",
+          contado: it.contado ?? it.precioContado ?? 0,
+          cuotas: it.cuotas || 12,
+          valorCuota: it.valorCuota || 0,
+        }))
+      : (pres.producto ? [{
+          producto: pres.producto,
+          contado: pres.contado || 0,
+          cuotas: pres.cuotas || 12,
+          valorCuota: pres.valorCuota || 0
+        }] : []);
+
     generarPdfPresupuesto({
       nroPresupuesto: pres.id.replace("pres_", "").substring(0, 8).toUpperCase(),
-      fecha: new Date(pres.fecha).toLocaleDateString("es-AR"),
-      clienteNombre: sol.nombreCompleto || sol.nombre || "Cliente",
-      clienteDni: sol.numeroDni || sol.dni || "S/D",
-      clienteWhatsapp: sol.whatsapp || "S/D",
-      clienteLocalidad: sol.localidad || "S/D",
-      items: pres.items || (pres.producto ? [{
-        producto: pres.producto,
-        contado: pres.contado || 0,
-        cuotas: pres.cuotas || 12,
-        valorCuota: pres.valorCuota
-      }] : []),
+      fecha: new Date(pres.fecha || pres.fechaIso || Date.now()).toLocaleDateString("es-AR"),
+      clienteNombre: sol.nombreCompleto || sol.nombre || sol.datosPersonales?.nombreCompleto || "Cliente",
+      clienteDni: sol.numeroDni || sol.dni || sol.datosPersonales?.numeroDni || "S/D",
+      clienteWhatsapp: sol.whatsapp || sol.datosPersonales?.telefono || "S/D",
+      clienteLocalidad: sol.localidad || sol.datosPersonales?.localidad || "S/D",
+      items: rawItems,
       notas: pres.notas || undefined
     });
   };
 
-    const toggleItemSelection = (solId: string, presId: string, itemIdx: number, totalCount: number) => {
+  const toggleItemSelection = (solId: string, presId: string, itemIdx: number, totalCount: number) => {
     const key = solId + "_" + presId;
-    const current = selectedItemsMap[key] || Array.from({ length: totalCount }, (_, i) => i);
+    const current = selectedItemsMap[key] || (totalCount > 1 ? [0] : Array.from({ length: totalCount }, (_, i) => i));
     let updated: number[];
     if (current.includes(itemIdx)) {
       if (current.length === 1) {
@@ -918,7 +928,7 @@ export default function AdminValidacionesPage() {
   const isItemSelected = (solId: string, presId: string, itemIdx: number, totalCount: number): boolean => {
     const key = solId + "_" + presId;
     const current = selectedItemsMap[key];
-    if (!current) return true;
+    if (!current) return totalCount > 1 ? itemIdx === 0 : true;
     return current.includes(itemIdx);
   };
 
@@ -928,16 +938,31 @@ export default function AdminValidacionesPage() {
 
     const key = sol.id + "_" + presId;
     const rawItems = targetPres.items || [];
-    const selectedIndices = selectedItemsMap[key] || rawItems.map((_: any, i: number) => i);
+    const selectedIndices = selectedItemsMap[key] || (rawItems.length > 1 ? [0] : rawItems.map((_: any, i: number) => i));
 
-    const itemsSeleccionados = rawItems.length > 0 
+    const rawChosen = rawItems.length > 0 
       ? rawItems.filter((_: any, i: number) => selectedIndices.includes(i))
       : (targetPres.producto ? [{
           producto: targetPres.producto,
+          nombre: targetPres.producto,
           contado: targetPres.contado || 0,
+          precioContado: targetPres.contado || 0,
+          costoProveedor: targetPres.costoProveedor || 0,
           cuotas: targetPres.cuotas || 12,
-          valorCuota: targetPres.valorCuota
+          valorCuota: targetPres.valorCuota || 0
         }] : []);
+
+    const itemsSeleccionados = rawChosen.map((it: any) => ({
+      ...it,
+      producto: it.producto || it.nombre || "Producto",
+      nombre: it.nombre || it.producto || "Producto",
+      contado: Number(it.contado ?? it.precioContado ?? it.costoProveedor ?? 0),
+      precioContado: Number(it.precioContado ?? it.contado ?? it.costoProveedor ?? 0),
+      costoProveedor: Number(it.costoProveedor ?? 0),
+      cuotas: Number(it.cuotas) || 12,
+      valorCuota: Number(it.valorCuota) || 0,
+      totalFinanciado: Number(it.totalFinanciado) || ((Number(it.valorCuota) || 0) * (Number(it.cuotas) || 12)),
+    }));
 
     if (itemsSeleccionados.length === 0) {
       return alert("Debes seleccionar al menos un producto para aceptar el presupuesto.");
@@ -945,10 +970,12 @@ export default function AdminValidacionesPage() {
 
     const nItems = itemsSeleccionados.length;
     const totalCuotaMensual = itemsSeleccionados.reduce((sum: number, it: any) => sum + (Number(it.valorCuota) || 0), 0);
-    const prodNames = itemsSeleccionados.map((it: any) => it.producto).join(" + ");
+    const prodNames = itemsSeleccionados.map((it: any) => it.producto || it.nombre).filter(Boolean).join(" + ");
     const sumContado = itemsSeleccionados.reduce((sum: number, it: any) => sum + (Number(it.contado || it.precioContado || it.costoProveedor || 0)), 0);
-    const numCuotas = itemsSeleccionados[0]?.cuotas || 12;
+    const sumCostoProv = itemsSeleccionados.reduce((sum: number, it: any) => sum + (Number(it.costoProveedor || 0)), 0) || Number(targetPres.costoProveedor || 0);
+    const numCuotas = Number(itemsSeleccionados[0]?.cuotas) || 12;
     const sumTotalFinanciado = itemsSeleccionados.reduce((sum: number, it: any) => sum + ((Number(it.valorCuota) || 0) * (Number(it.cuotas) || numCuotas)), 0);
+    const factorPromedio = sumCostoProv > 0 ? Number((sumTotalFinanciado / sumCostoProv).toFixed(4)) : Number(itemsSeleccionados[0]?.factorAplicado || itemsSeleccionados[0]?.factor || 2.5);
 
     const msgConfirm = nItems > 1 
       ? `¿Aceptar este presupuesto con las ${nItems} opciones/productos seleccionados?\n\nProductos: ${prodNames}\nCuota Mensual Combinada: $${totalCuotaMensual.toLocaleString("es-AR")}`
@@ -958,25 +985,45 @@ export default function AdminValidacionesPage() {
 
     const updatedPresupuestos = (sol.presupuestos || []).map((p: any) => {
       if (p.id === presId) {
-        return { ...p, estado: "Aceptado", itemsSeleccionados };
+        return { ...p, estado: "Aceptado", itemsSeleccionados, fechaAceptacion: new Date().toISOString() };
       }
-      return { ...p, estado: "Rechazado" };
+      return p;
     });
 
-    const isAp = aperturas.some((a) => a.id === sol.id);
+    const isAp = Boolean(sol.isApertura || aperturas.some((a) => a.id === sol.id));
     const colName = isAp ? "solicitudes_cuenta" : "solicitudes";
+
+    const propuestaAceptadaPayload = {
+      presupuestoId: presId,
+      fechaAceptacion: new Date().toISOString(),
+      pricingSchemaVersion: targetPres.pricingSchemaVersion || "MANUAL_FACTOR_V1",
+      itemsSeleccionados,
+      productoNombre: prodNames,
+      precioContado: sumContado,
+      costoProveedor: sumCostoProv,
+      cuotas: numCuotas,
+      montoCuota: totalCuotaMensual,
+      totalFinanciado: sumTotalFinanciado,
+      factorFinanciado: factorPromedio,
+    };
 
     const payloadActualizacion: any = {
       presupuestos: updatedPresupuestos,
       itemsContrato: itemsSeleccionados,
       productoDeseado: prodNames,
+      productoNombre: prodNames,
       precioContado: sumContado,
-      costoProducto: sumContado,
-      costoBien: sumContado,
+      costoProducto: sumCostoProv > 0 ? sumCostoProv : sumContado,
+      costoBien: sumCostoProv > 0 ? sumCostoProv : sumContado,
+      costoProveedor: sumCostoProv,
+      factorFinanciado: factorPromedio,
       montoCuota: totalCuotaMensual,
       totalFinanciado: sumTotalFinanciado,
       planElegido: String(numCuotas),
-      estado: "Aprobado_Presupuesto"
+      cuotas: numCuotas,
+      estadoPropuesta: "PROPUESTA_ACEPTADA",
+      propuestaAceptada: propuestaAceptadaPayload,
+      ...(isAp ? { estado: "Aprobado_Presupuesto" } : {})
     };
 
     try {
@@ -999,11 +1046,15 @@ export default function AdminValidacionesPage() {
       return p;
     });
 
+    const isAp = Boolean(sol.isApertura || aperturas.some((a) => a.id === sol.id));
+    const colName = isAp ? "solicitudes_cuenta" : "solicitudes";
+
     try {
-      await updateDoc(doc(db, "solicitudes_cuenta", sol.id), {
+      await updateDoc(doc(db, colName, sol.id), {
         presupuestos: updatedPresupuestos
       });
       alert("Presupuesto rechazado.");
+      await fetchSolicitudes();
       await fetchAperturas();
     } catch (err) {
       console.error(err);
@@ -1135,31 +1186,32 @@ export default function AdminValidacionesPage() {
     let prod = sol.productoDeseado || sol.productoNombre || "";
     let itemsContratoList: any[] = sol.itemsContrato || [];
 
-    // If it is a quick contact request, load details from the accepted budget!
-    if (sol.tipo === "contacto_rapido") {
-      const acceptedBudget = (sol.presupuestos || []).find((p: any) => p.estado === "Aceptado");
-      if (acceptedBudget) {
-        const rawItems = acceptedBudget.itemsSeleccionados || acceptedBudget.items || [];
-        if (rawItems.length > 0) {
-          itemsContratoList = rawItems;
-          prod = itemsContratoList.map((it: any) => it.producto).join(" + ");
-          planElegido = String(itemsContratoList[0].cuotas || 12);
-          montoCuota = itemsContratoList.reduce((sum: number, it: any) => sum + (Number(it.valorCuota) || 0), 0);
-          tna = acceptedBudget.tna || 60;
-          mora = acceptedBudget.mora || 0.5;
-        } else if (acceptedBudget.producto) {
-          planElegido = String(acceptedBudget.cuotas || 12);
-          montoCuota = acceptedBudget.valorCuota || 0;
-          tna = acceptedBudget.tna || 60;
-          mora = acceptedBudget.mora || 0.5;
-          prod = acceptedBudget.producto;
-          itemsContratoList = [{
-            producto: acceptedBudget.producto,
-            contado: acceptedBudget.contado || 0,
-            cuotas: acceptedBudget.cuotas || 12,
-            valorCuota: acceptedBudget.valorCuota
-          }];
-        }
+    // Load details from the accepted budget whenever present
+    const acceptedBudget = (sol.presupuestos || []).find((p: any) => p.estado === "Aceptado" || p.estado === "Aprobado");
+    if (acceptedBudget) {
+      const rawItems = acceptedBudget.itemsSeleccionados || acceptedBudget.items || [];
+      if (rawItems.length > 0) {
+        itemsContratoList = rawItems;
+        prod = itemsContratoList.map((it: any) => it.producto || it.nombre).filter(Boolean).join(" + ");
+        planElegido = String(itemsContratoList[0].cuotas || 12);
+        montoCuota = itemsContratoList.reduce((sum: number, it: any) => sum + (Number(it.valorCuota) || 0), 0);
+        tna = acceptedBudget.tna || acceptedBudget.tnaInternaAplicada || 60;
+        mora = acceptedBudget.mora || 0.5;
+      } else if (acceptedBudget.producto) {
+        planElegido = String(acceptedBudget.cuotas || 12);
+        montoCuota = acceptedBudget.valorCuota || 0;
+        tna = acceptedBudget.tna || acceptedBudget.tnaInternaAplicada || 60;
+        mora = acceptedBudget.mora || 0.5;
+        prod = acceptedBudget.producto;
+        itemsContratoList = [{
+          producto: acceptedBudget.producto,
+          nombre: acceptedBudget.producto,
+          contado: acceptedBudget.contado || 0,
+          precioContado: acceptedBudget.contado || 0,
+          costoProveedor: acceptedBudget.costoProveedor || 0,
+          cuotas: acceptedBudget.cuotas || 12,
+          valorCuota: acceptedBudget.valorCuota
+        }];
       }
     }
 
@@ -1173,7 +1225,7 @@ export default function AdminValidacionesPage() {
         observacion: c.notaAcumulacion || "Cuota mensual ordinaria"
       }));
     } else {
-      const cant = parseInt(planElegido);
+      const cant = parseInt(planElegido) || 12;
       const bDate = new Date();
       for(let i = 1; i <= cant; i++) {
         const nd = new Date(bDate);
@@ -1252,7 +1304,7 @@ export default function AdminValidacionesPage() {
       const pc = Number(it.precioContado || it.contado || it.costoProveedor || 0);
       const tf = Number(it.totalFinanciado) || (v * c);
       return {
-        producto: it.producto,
+        producto: it.producto || it.nombre || prod || "Producto",
         nserie: it.nserie || it.numeroSerie || "",
         cantidad: it.cantidad || 1,
         estadoBien: it.estadoBien || "Nuevo",
@@ -1265,13 +1317,12 @@ export default function AdminValidacionesPage() {
 
     if (itemsFinalList.length > 1) {
       const sumContado = itemsFinalList.reduce((sum, it) => sum + (it.precioContado || 0), 0);
-      const sumTotal = itemsFinalList.reduce((sum, it) => sum + (it.totalFinanciado || 0), 0);
       if (sumContado > 0) calculatedContado = sumContado;
     }
 
     setContratoAEditar({
       solId: sol.id,
-      isApertura: true,
+      isApertura: Boolean(sol.isApertura || aperturas.some((a) => a.id === sol.id)),
       originalSolicitud: sol,
       nroContrato: sol.id.substring(0, 8).toUpperCase(),
       nombreComprador: nombre,
@@ -1307,6 +1358,7 @@ export default function AdminValidacionesPage() {
     try {
       const numCuotas = parseInt(c.cuotas) || 12;
       const numImp = parseFloat(c.importeCuota) || 0;
+      const totalFinVal = Number(c.totalFinanciado) || (numCuotas * numImp);
       
       const planPagosMapped = c.cuotasPlan.map((cuota: any) => ({
         numero: cuota.numero,
@@ -1322,50 +1374,94 @@ export default function AdminValidacionesPage() {
       let targetId = c.solId;
 
       if (c.isApertura) {
-        // 1. Create request in solicitudes collection
-        const docRef = await addDoc(collection(db, "solicitudes"), {
+        const existingSol = solicitudes.find((s: any) => s.clienteId === "aperturado_" + c.solId);
+        const solPayload: Record<string, any> = {
           clienteId: "aperturado_" + c.solId,
-          clienteEmail: c.email || "no-email@cuenta-hogar.com",
+          clienteEmail: c.email || c.originalSolicitud?.email || "no-email@cuenta-hogar.com",
+          nroContrato: c.nroContrato,
           datosPersonales: {
             nombreCompleto: c.nombreComprador,
             numeroDni: c.dni,
             telefono: c.whatsapp,
             direccion: c.domicilio,
-            localidad: ""
+            localidad: c.localidad || c.originalSolicitud?.localidad || "",
+            cuil: c.originalSolicitud?.cuil || ""
           },
           documentos: {
-            dniFrente: c.originalSolicitud.dniFrenteURL || "",
-            dniDorso: c.originalSolicitud.dniDorsoURL || "",
-            reciboSueldo: "",
-            servicio: ""
+            dniFrente: c.originalSolicitud?.dniFrenteURL || "",
+            dniDorso: c.originalSolicitud?.dniDorsoURL || "",
+            reciboSueldo: c.originalSolicitud?.comprobanteURL || "",
+            servicio: c.originalSolicitud?.comprobanteDomicilioURL || ""
           },
           productoDeseado: c.producto,
+          itemsContrato: c.itemsContrato || c.originalSolicitud?.itemsContrato || [],
+          presupuestos: c.originalSolicitud?.presupuestos || [],
+          estadoPropuesta: c.originalSolicitud?.estadoPropuesta || "PROPUESTA_ACEPTADA",
+          propuestaAceptada: c.originalSolicitud?.propuestaAceptada || {
+            presupuestoId: c.solId,
+            fechaAceptacion: new Date().toISOString(),
+            productoNombre: c.producto,
+            precioContado: Number(c.precioContado),
+            cuotas: numCuotas,
+            montoCuota: numImp,
+            totalFinanciado: totalFinVal
+          },
           costoProducto: Number(c.precioContado),
           precioContado: Number(c.precioContado),
+          costoBien: Number(c.precioContado),
+          costoProveedor: Number(c.originalSolicitud?.costoProveedor || c.precioContado || 0),
           factorFinanciado: Number(c.factorFinanciado),
           montoCuota: numImp,
+          totalFinanciado: totalFinVal,
           planElegido: String(numCuotas),
           tasaInteresTna: Number(c.tnaComp),
           tasaMora: Number(c.tnaPun),
           estado: "PENDIENTE_FIRMA",
           estadoEntrega: "PENDIENTE_ENTREGA",
-          fechaCreacion: serverTimestamp(),
           cargadoPorAfiliado: false,
-          afiliadoEmail: c.originalSolicitud.referente || null,
+          afiliadoEmail: c.originalSolicitud?.referente || c.originalSolicitud?.referidoPor || c.originalSolicitud?.afiliadoEmail || null,
           planPagos: planPagosMapped
-        });
-        targetId = docRef.id;
+        };
+
+        if (existingSol) {
+          await updateDoc(doc(db, "solicitudes", existingSol.id), solPayload);
+          targetId = existingSol.id;
+        } else {
+          const docRef = await addDoc(collection(db, "solicitudes"), {
+            ...solPayload,
+            fechaCreacion: serverTimestamp()
+          });
+          targetId = docRef.id;
+        }
 
         // 2. Mark account request as approved
-        await updateDoc(doc(db, "solicitudes_cuenta", c.solId), { estado: "Aprobado" });
+        await updateDoc(doc(db, "solicitudes_cuenta", c.solId), {
+          estado: "Aprobado",
+          estadoPropuesta: "PROPUESTA_ACEPTADA"
+        });
       } else {
         // 1. Update existing request
         await updateDoc(doc(db, "solicitudes", c.solId), {
           estado: "PENDIENTE_FIRMA",
+          nroContrato: c.nroContrato,
+          productoDeseado: c.producto,
+          itemsContrato: c.itemsContrato || c.originalSolicitud?.itemsContrato || [],
+          estadoPropuesta: c.originalSolicitud?.estadoPropuesta || "PROPUESTA_ACEPTADA",
+          propuestaAceptada: c.originalSolicitud?.propuestaAceptada || {
+            presupuestoId: c.solId,
+            fechaAceptacion: new Date().toISOString(),
+            productoNombre: c.producto,
+            precioContado: Number(c.precioContado),
+            cuotas: numCuotas,
+            montoCuota: numImp,
+            totalFinanciado: totalFinVal
+          },
           costoProducto: Number(c.precioContado),
           precioContado: Number(c.precioContado),
+          costoBien: Number(c.precioContado),
           factorFinanciado: Number(c.factorFinanciado),
           montoCuota: numImp,
+          totalFinanciado: totalFinVal,
           planElegido: String(numCuotas),
           tasaInteresTna: Number(c.tnaComp),
           tasaMora: Number(c.tnaPun),
@@ -1374,7 +1470,8 @@ export default function AdminValidacionesPage() {
             nombreCompleto: c.nombreComprador,
             numeroDni: c.dni,
             telefono: c.whatsapp,
-            direccion: c.domicilio
+            direccion: c.domicilio,
+            localidad: c.localidad || c.originalSolicitud.datosPersonales?.localidad || ""
           },
           planPagos: planPagosMapped
         });
@@ -1444,7 +1541,7 @@ Quedamos a tu disposición para coordinar la entrega.`;
               });
             }
 
-            const docRef = await addDoc(collection(db, "solicitudes"), {
+            await addDoc(collection(db, "solicitudes"), {
               clienteId: "aperturado_" + req.id,
               clienteEmail: req.email || "no-email@cuenta-hogar.com",
               datosPersonales: {
@@ -1461,9 +1558,19 @@ Quedamos a tu disposición para coordinar la entrega.`;
                 reciboSueldo: req.comprobanteURL || "",
                 servicio: req.comprobanteDomicilioURL || ""
               },
-              productoDeseado: req.productoNombre || req.necesidad || "A definir",
+              productoDeseado: req.productoDeseado || req.productoNombre || req.necesidad || "A definir",
+              itemsContrato: req.itemsContrato || [],
+              presupuestos: req.presupuestos || [],
+              estadoPropuesta: req.estadoPropuesta || "PROPUESTA_ACEPTADA",
+              propuestaAceptada: req.propuestaAceptada || null,
+              costoProducto: Number(req.costoProducto || req.precioContado || 0),
+              precioContado: Number(req.precioContado || req.costoProducto || 0),
+              costoBien: Number(req.costoBien || req.precioContado || 0),
+              costoProveedor: Number(req.costoProveedor || 0),
+              factorFinanciado: Number(req.factorFinanciado || 1),
               montoCuota: montoCuotaVal,
-              planElegido: planElegidoVal,
+              totalFinanciado: Number(req.totalFinanciado || (cant * montoCuotaVal)),
+              planElegido: String(cant),
               tasaInteresTna: req.tasaInteresTna || 60,
               tasaMora: req.tasaMora || 0.5,
               estado: "APROBADO",
@@ -1546,7 +1653,7 @@ Quedamos a tu disposición para coordinar la entrega.`;
               });
             }
 
-            const docRef = await addDoc(collection(db, "solicitudes"), {
+            await addDoc(collection(db, "solicitudes"), {
               clienteId: "aperturado_" + id,
               clienteEmail: reqObj.email || "no-email@cuenta-hogar.com",
               datosPersonales: {
@@ -1563,9 +1670,19 @@ Quedamos a tu disposición para coordinar la entrega.`;
                 reciboSueldo: reqObj.comprobanteURL || "",
                 servicio: reqObj.comprobanteDomicilioURL || ""
               },
-              productoDeseado: reqObj.productoNombre || reqObj.necesidad || "A definir",
+              productoDeseado: reqObj.productoDeseado || reqObj.productoNombre || reqObj.necesidad || "A definir",
+              itemsContrato: reqObj.itemsContrato || [],
+              presupuestos: reqObj.presupuestos || [],
+              estadoPropuesta: reqObj.estadoPropuesta || "PROPUESTA_ACEPTADA",
+              propuestaAceptada: reqObj.propuestaAceptada || null,
+              costoProducto: Number(reqObj.costoProducto || reqObj.precioContado || 0),
+              precioContado: Number(reqObj.precioContado || reqObj.costoProducto || 0),
+              costoBien: Number(reqObj.costoBien || reqObj.precioContado || 0),
+              costoProveedor: Number(reqObj.costoProveedor || 0),
+              factorFinanciado: Number(reqObj.factorFinanciado || 1),
               montoCuota: montoCuotaVal,
-              planElegido: planElegidoVal,
+              totalFinanciado: Number(reqObj.totalFinanciado || (cant * montoCuotaVal)),
+              planElegido: String(cant),
               tasaInteresTna: reqObj.tasaInteresTna || 60,
               tasaMora: reqObj.tasaMora || 0.5,
               estado: "APROBADO",
@@ -1829,6 +1946,7 @@ Quedamos a tu disposición para coordinar la entrega.`;
     }
   };
   const [searchTerm, setSearchTerm] = useState("");
+  const [urlTargetId, setUrlTargetId] = useState<string | null>(null);
 
   const fetchSolicitudes = async () => {
     try {
@@ -1849,6 +1967,13 @@ Quedamos a tu disposición para coordinar la entrega.`;
   };
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const qParam = params.get("q");
+      const idParam = params.get("id");
+      if (qParam) setSearchTerm(qParam);
+      if (idParam) setUrlTargetId(idParam);
+    }
     obtenerVendedores().then(setVendedoresList).catch(console.error);
     fetchSolicitudes();
     getDoc(doc(db, "configuraciones", "empresa_remitos")).then(snap => {
@@ -1857,6 +1982,20 @@ Quedamos a tu disposición para coordinar la entrega.`;
     fetchAperturas();
     fetchProductos();
   }, []);
+
+  useEffect(() => {
+    if (!urlTargetId) return;
+    const allItems = [...aperturas, ...solicitudes];
+    const target = allItems.find((item: any) => item.id === urlTargetId || item.clienteId === "aperturado_" + urlTargetId);
+    if (target) {
+      const dni = (target.datosPersonales?.numeroDni || target.numeroDni || target.dni || "").trim().replace(/\D/g, "");
+      const cuil = (target.cuil || target.datosPersonales?.cuil || "").trim().replace(/\D/g, "");
+      const groupKey = dni || cuil || target.id;
+      setExpandedId(groupKey);
+      setActiveProductSolId((prev) => ({ ...prev, [groupKey]: target.id }));
+      setUrlTargetId(null);
+    }
+  }, [urlTargetId, aperturas, solicitudes]);
 
   useEffect(() => {
     obtenerVendedores().then(setVendedoresList).catch(console.error);
@@ -2037,7 +2176,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
     ...aperturas
       .filter((ap: any) => {
         const st = (ap.estado || "Pendiente").toLowerCase();
-        return st === "pendiente" || st === "aprobado_presupuesto" || st === "solicitante" || st === "aperturado";
+        return st === "pendiente" || st === "presupuestado" || st === "aprobado_presupuesto" || st === "solicitante" || st === "aperturado";
       })
       .map((ap: any) => {
         let sortTime = Date.now();
@@ -2050,11 +2189,11 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
           return {
             ...ap,
             isApertura: true,
-            nombreCompleto: ap.nombre,
-            numeroDni: ap.dni,
-            whatsapp: ap.whatsapp,
-            localidad: ap.localidad,
-            productoNombre: ap.necesidad,
+            nombreCompleto: ap.nombreCompleto || ap.nombre || "Cliente Sin Nombre",
+            numeroDni: ap.numeroDni || ap.dni || "",
+            whatsapp: ap.whatsapp || "",
+            localidad: ap.localidad || "",
+            productoNombre: ap.productoDeseado || ap.productoNombre || ap.necesidad || "A definir",
             fechaSort: sortTime
           };
         }
@@ -2065,7 +2204,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
         };
       }),
     ...solicitudes
-      .filter((sol: any) => sol.estado === "PENDIENTE" || sol.estado === "REQUIERE_INFO" || sol.estado === "PENDIENTE_FIRMA")
+      .filter((sol: any) => sol.estado === "PENDIENTE" || sol.estado === "Presupuestado" || sol.estado === "Aprobado_Presupuesto" || sol.estado === "REQUIERE_INFO" || sol.estado === "PENDIENTE_FIRMA")
       .map((sol: any) => {
         let sortTime = Date.now();
         if (sol.fechaCreacion?.seconds) sortTime = sol.fechaCreacion.seconds * 1000;
@@ -2081,10 +2220,10 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     if (req.isApertura) {
-      const searchStr = `${req.nombreCompleto || ''} ${req.numeroDni || ''} ${req.whatsapp || ''} ${req.productoNombre || ''}`.toLowerCase();
+      const searchStr = `${req.id || ''} ${req.nombreCompleto || ''} ${req.numeroDni || ''} ${req.whatsapp || ''} ${req.productoNombre || ''}`.toLowerCase();
       return searchStr.includes(term);
     } else {
-      const searchStr = `${req.datosPersonales?.nombreCompleto || ''} ${req.datosPersonales?.numeroDni || ''} ${req.clienteEmail || ''} ${req.productoDeseado || ''}`.toLowerCase();
+      const searchStr = `${req.id || ''} ${req.datosPersonales?.nombreCompleto || ''} ${req.datosPersonales?.numeroDni || ''} ${req.clienteEmail || ''} ${req.productoDeseado || ''}`.toLowerCase();
       return searchStr.includes(term);
     }
   });
@@ -2452,399 +2591,402 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                     </div>
                                   </div>
                                 </div>
+                              </div>
+                            ) : null}
 
-                                {/* Historial de presupuestos enviados */}
-                                <div className="space-y-3">
-                                  <h4 className="text-xs font-black text-[#68706E] uppercase tracking-widest border-b border-[#DED8CF] pb-2">Historial de Presupuestos Enviados</h4>
-                                  <div className="space-y-2">
-                                    {(!req.presupuestos || req.presupuestos.length === 0) ? (
-                                      <p className="text-xs text-[#68706E] italic text-center py-4">No se han enviado presupuestos todavía para esta solicitud especial.</p>
-                                    ) : (
-                                      req.presupuestos.map((p: any) => (
-                                        <div key={p.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#FFFDFC] p-4 rounded-xl border border-[#DED8CF] gap-4">
-                                          <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-1">
-                                              <span className="font-bold text-sm text-white">Presupuesto {p.id.replace("pres_", "").substring(0, 8).toUpperCase()}</span>
-                                              <span className={`text-[9px] px-2 py-0.5 rounded font-black uppercase ${
-                                                p.estado === "Aceptado" ? "bg-green-500/10 text-[#2F7D5C] border border-green-500/20" :
-                                                p.estado === "Rechazado" ? "bg-red-500/10 text-red-400 border border-red-500/20" :
-                                                "bg-[#F7F3EC] text-[#68706E] border border-[#DED8CF]"
-                                              }`}>
-                                                {p.estado}
-                                              </span>
-                                            </div>
+                            {/* HISTORIAL DE PRESUPUESTOS GUARDADOS / ENVIADOS / ACEPTADOS */}
+                            {(req.tipo === "contacto_rapido" || (req.presupuestos && req.presupuestos.length > 0)) && (
+                              <div className="space-y-3">
+                                <h4 className="text-xs font-black text-[#68706E] uppercase tracking-widest border-b border-[#DED8CF] pb-2">
+                                  Historial de Presupuestos Guardados / Enviados
+                                </h4>
+                                <div className="space-y-2">
+                                  {(!req.presupuestos || req.presupuestos.length === 0) ? (
+                                    <p className="text-xs text-[#68706E] italic text-center py-4">No se han registrado presupuestos todavía para esta solicitud.</p>
+                                  ) : (
+                                    req.presupuestos.map((p: any) => (
+                                      <div key={p.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#FFFDFC] p-4 rounded-xl border border-[#DED8CF] gap-4">
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <span className="font-bold text-sm text-[#173E3B]">Presupuesto {p.id.replace("pres_", "").substring(0, 8).toUpperCase()}</span>
+                                            <span className={`text-[9px] px-2 py-0.5 rounded font-black uppercase ${
+                                              p.estado === "Aceptado" || p.estado === "Aprobado" ? "bg-green-500/10 text-[#2F7D5C] border border-green-500/20" :
+                                              p.estado === "Rechazado" ? "bg-red-500/10 text-red-400 border border-red-500/20" :
+                                              "bg-[#F7F3EC] text-[#68706E] border border-[#DED8CF]"
+                                            }`}>
+                                              {p.estado || "Generado"}
+                                            </span>
+                                          </div>
 
-                                             {p.items && p.items.length > 0 ? (
-                                               <div className="space-y-2 mt-2">
-                                                 {p.items.length > 1 && p.estado !== "Aceptado" && (
-                                                   <div className="bg-amber-500/10 border border-amber-500/30 p-2 rounded-lg mb-2">
-                                                     <p className="text-[11px] font-black text-[#B44E2A] uppercase tracking-wider flex items-center gap-1">
-                                                       ☑️ Seleccioná la/s opción/es que el cliente elija comprar:
-                                                     </p>
-                                                   </div>
-                                                 )}
-                                                 {p.items.map((item: any, idx: number) => {
-                                                   const checked = isItemSelected(req.id, p.id, idx, p.items.length);
-                                                   return (
-                                                     <div key={idx} className={`p-2.5 rounded-xl border transition ${
-                                                       checked 
-                                                         ? "bg-amber-500/10 border-amber-500/50 shadow-sm" 
-                                                         : "bg-[#F7F3EC] border-[#DED8CF] opacity-60"
-                                                     }`}>
-                                                       <div className="flex items-start gap-2.5">
-                                                         {p.items.length > 1 && p.estado !== "Aceptado" && (
-                                                           <input
-                                                             type="checkbox"
-                                                             checked={checked}
-                                                             onChange={() => toggleItemSelection(req.id, p.id, idx, p.items.length)}
-                                                             className="w-4 h-4 mt-0.5 accent-amber-500 rounded cursor-pointer flex-shrink-0"
-                                                           />
-                                                         )}
-                                                         <div className="flex-1 text-xs">
-                                                           {p.items.length > 1 && (
-                                                             <span className="text-[9px] font-black uppercase text-[#B44E2A] bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 mr-1.5">
-                                                               Opción {idx + 1}
-                                                             </span>
-                                                           )}
-                                                           <span className="font-bold text-white text-xs sm:text-sm">{item.producto}</span>
-                                                           <div className="text-[#1F2928] mt-1">
-                                                             {item.cuotas} cuotas de <span className="text-[#B44E2A] font-mono font-bold">${(item.valorCuota || 0).toLocaleString("es-AR")}</span>
-                                                             {item.contado > 0 && ` (Ref. Contado: $${(item.contado || 0).toLocaleString("es-AR")})`}
-                                                           </div>
-                                                         </div>
-                                                       </div>
-                                                       {(item.proveedor || item.costoProveedor || item.linkProveedor) && (
-                                                         <div className="text-[10px] text-[#B44E2A]/90 mt-1.5 bg-amber-500/5 px-2.5 py-1 rounded-lg border border-amber-500/10 block">
-                                                           🔒 Uso Interno: {item.proveedor ? `Prov: ${item.proveedor}` : "Prov: S/D"}
-                                                           {item.costoProveedor > 0 && ` (Costo: $${item.costoProveedor})`}
-                                                           {item.linkProveedor && (
-                                                             <>
-                                                               {" | "}
-                                                               <a href={item.linkProveedor.startsWith("http") ? item.linkProveedor : `https://${item.linkProveedor}`} target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-300">
-                                                                 Ver Link ↗
-                                                               </a>
-                                                             </>
-                                                           )}
-                                                         </div>
-                                                       )}
-                                                     </div>
-                                                   );
-                                                 })}
-                                                 
-                                                 {/* SUM OF SUPPLIER COST */}
-                                                 {p.items.some((it: any) => it.costoProveedor > 0) && (
-                                                   <div className="text-[10px] text-[#B44E2A] font-bold mt-2">
-                                                     🔒 Costo Proveedor Total: ${p.items.reduce((sum: number, it: any) => sum + (it.costoProveedor || 0), 0).toLocaleString("es-AR")}
-                                                   </div>
-                                                 )}
-                                               </div>
-                                             ) : (
-                                              // Fallback for old single budgets
-                                              <div>
-                                                <div className="flex items-center gap-2 mb-1">
-                                                  <span className="font-bold text-sm text-white">{p.producto}</span>
+                                          {p.items && p.items.length > 0 ? (
+                                            <div className="space-y-2 mt-2">
+                                              {p.items.length > 1 && p.estado !== "Aceptado" && p.estado !== "Aprobado" && (
+                                                <div className="bg-amber-500/10 border border-amber-500/30 p-2 rounded-lg mb-2">
+                                                  <p className="text-[11px] font-black text-[#B44E2A] uppercase tracking-wider flex items-center gap-1">
+                                                    ☑️ Seleccioná la/s opción/es que el cliente elija comprar:
+                                                  </p>
                                                 </div>
-                                                <p className="text-xs text-[#68706E]">
-                                                  Plan: <span className="font-black text-[#B44E2A] font-mono">{p.cuotas} cuotas de ${p.valorCuota}</span>
-                                                  {p.contado > 0 && ` | Ref. Contado: $${p.contado}`}
-                                                </p>
+                                              )}
+                                              {p.items.map((item: any, idx: number) => {
+                                                const checked = isItemSelected(req.id, p.id, idx, p.items.length);
+                                                const wasAccepted =
+                                                  (p.estado === "Aceptado" || p.estado === "Aprobado") &&
+                                                  p.itemsSeleccionados &&
+                                                  p.itemsSeleccionados.some(
+                                                    (sel: any) =>
+                                                      (sel.itemId && sel.itemId === item.itemId) ||
+                                                      (sel.producto || sel.nombre) === (item.producto || item.nombre)
+                                                  );
+                                                return (
+                                                  <div key={idx} className={`p-2.5 rounded-xl border transition ${
+                                                    wasAccepted
+                                                      ? "bg-emerald-50 border-emerald-500/50 shadow-sm"
+                                                      : checked 
+                                                        ? "bg-amber-500/10 border-amber-500/50 shadow-sm" 
+                                                        : "bg-[#F7F3EC] border-[#DED8CF] opacity-60"
+                                                  }`}>
+                                                    <div className="flex items-start gap-2.5">
+                                                      {p.items.length > 1 && p.estado !== "Aceptado" && p.estado !== "Aprobado" && (
+                                                        <input
+                                                          type="checkbox"
+                                                          checked={checked}
+                                                          onChange={() => toggleItemSelection(req.id, p.id, idx, p.items.length)}
+                                                          className="w-4 h-4 mt-0.5 accent-amber-500 rounded cursor-pointer flex-shrink-0"
+                                                        />
+                                                      )}
+                                                      <div className="flex-1 text-xs">
+                                                        {p.items.length > 1 && (
+                                                          <span className="text-[9px] font-black uppercase text-[#B44E2A] bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 mr-1.5">
+                                                            Opción {idx + 1}
+                                                          </span>
+                                                        )}
+                                                        <span className="font-bold text-[#173E3B] text-xs sm:text-sm">{item.producto || item.nombre}</span>
+                                                        {wasAccepted && (
+                                                          <span className="ml-2 text-[9px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full">
+                                                            ✓ Elegida por el cliente
+                                                          </span>
+                                                        )}
+                                                        <div className="text-[#1F2928] mt-1">
+                                                          {item.cuotas} cuotas de <span className="text-[#B44E2A] font-mono font-bold">${(item.valorCuota || 0).toLocaleString("es-AR")}</span>
+                                                          {(item.contado || item.precioContado) > 0 && ` (Ref. Contado: $${(item.contado || item.precioContado || 0).toLocaleString("es-AR")})`}
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                    {(item.proveedor || item.costoProveedor || item.linkProveedor) && (
+                                                      <div className="text-[10px] text-[#B44E2A]/90 mt-1.5 bg-amber-500/5 px-2.5 py-1 rounded-lg border border-amber-500/10 block">
+                                                        🔒 Uso Interno: {item.proveedor ? `Prov: ${item.proveedor}` : "Prov: S/D"}
+                                                        {item.costoProveedor > 0 && ` (Costo: $${item.costoProveedor})`}
+                                                        {item.linkProveedor && (
+                                                          <>
+                                                            {" | "}
+                                                            <a href={item.linkProveedor.startsWith("http") ? item.linkProveedor : `https://${item.linkProveedor}`} target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-300">
+                                                              Ver Link ↗
+                                                            </a>
+                                                          </>
+                                                        )}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                );
+                                              })}
+                                              
+                                              {/* SUM OF SUPPLIER COST */}
+                                              {p.items.some((it: any) => it.costoProveedor > 0) && (
+                                                <div className="text-[10px] text-[#B44E2A] font-bold mt-2">
+                                                  🔒 Costo Proveedor Total: ${p.items.reduce((sum: number, it: any) => sum + (it.costoProveedor || 0), 0).toLocaleString("es-AR")}
+                                                </div>
+                                              )}
+                                            </div>
+                                          ) : (
+                                            <div>
+                                              <div className="flex items-center gap-2 mb-1">
+                                                <span className="font-bold text-sm text-[#173E3B]">{p.producto}</span>
                                               </div>
-                                            )}
+                                              <p className="text-xs text-[#68706E]">
+                                                Plan: <span className="font-black text-[#B44E2A] font-mono">{p.cuotas} cuotas de ${p.valorCuota}</span>
+                                                {p.contado > 0 && ` | Ref. Contado: $${p.contado}`}
+                                              </p>
+                                            </div>
+                                          )}
 
-                                            <p className="text-xs text-[#68706E] mt-2 font-bold">
-                                              TNA: {p.tna}% | Mora: {p.mora || 0.5}% diaria
-                                            </p>
-                                            {p.notas && <p className="text-[11px] text-[#68706E] italic mt-1">Notas: {p.notas}</p>}
-                                            <p className="text-[9px] text-zinc-600 mt-1">Enviado: {new Date(p.fecha).toLocaleString("es-AR")}</p>
-                                          </div>
-                                          
-                                          <div className="flex items-center gap-2">
-                                            <button 
-                                              onClick={() => handleDescargarPdfPresupuestoHistorial(req, p)}
-                                              className="bg-[#F7F3EC] hover:bg-[#FFFDFC] text-[#1F2928] font-bold px-3 py-1.5 rounded text-xs transition-colors flex items-center gap-1"
-                                            >
-                                              📄 PDF
-                                            </button>
-                                            {p.estado === "Enviado" && (
-                                              <>
-                                                <button 
-                                                  onClick={() => handleAceptarPresupuesto(req, p.id)} 
-                                                  className="bg-green-600 hover:bg-green-500 text-[#173E3B] font-bold px-3 py-1.5 rounded text-xs transition-colors"
-                                                >
-                                                  ✓ Aceptar
-                                                </button>
-                                                <button 
-                                                  onClick={() => handleRechazarPresupuesto(req, p.id)} 
-                                                  className="bg-transparent hover:bg-red-950/20 text-red-500 hover:text-red-400 font-bold px-3 py-1.5 rounded text-xs transition-colors border border-transparent hover:border-red-900/30"
-                                                >
-                                                  ✕ Rechazar
-                                                </button>
-                                                <button 
-                                                  onClick={() => handleCargarPresupuestoParaEditar(req, p)} 
-                                                  className="bg-blue-650 hover:bg-blue-500 text-[#173E3B] font-bold px-3 py-1.5 rounded text-xs transition-colors"
-                                                >
-                                                  ✏️ Editar
-                                                </button>
-                                              </>
-                                            )}
-                                          </div>
+                                          <p className="text-xs text-[#68706E] mt-2 font-bold">
+                                            TNA: {p.tna || p.tnaInternaAplicada || 60}% | Mora: {p.mora || 0.5}% diaria
+                                          </p>
+                                          {p.notas && <p className="text-[11px] text-[#68706E] italic mt-1">Notas: {p.notas}</p>}
+                                          <p className="text-[9px] text-zinc-600 mt-1">Fecha: {new Date(p.fecha || p.fechaIso || Date.now()).toLocaleString("es-AR")}</p>
                                         </div>
-                                      ))
-                                    )}
-                                  </div>
+                                        
+                                        <div className="flex items-center gap-2">
+                                          <button 
+                                            onClick={() => handleDescargarPdfPresupuestoHistorial(req, p)}
+                                            className="bg-[#F7F3EC] hover:bg-[#FFFDFC] text-[#1F2928] font-bold px-3 py-1.5 rounded text-xs transition-colors flex items-center gap-1"
+                                          >
+                                            📄 PDF
+                                          </button>
+                                          {(p.estado === "Enviado" || p.estado === "Generado" || p.estado === "Pendiente" || !p.estado) && (
+                                            <>
+                                              <button 
+                                                data-testid={`btn-aceptar-presupuesto-validaciones-${p.id}`}
+                                                onClick={() => handleAceptarPresupuesto(req, p.id)} 
+                                                className="bg-green-600 hover:bg-green-500 text-white font-bold px-3 py-1.5 rounded text-xs transition-colors"
+                                              >
+                                                ✓ Aceptar
+                                              </button>
+                                              <button 
+                                                onClick={() => handleRechazarPresupuesto(req, p.id)} 
+                                                className="bg-transparent hover:bg-red-950/20 text-red-500 hover:text-red-400 font-bold px-3 py-1.5 rounded text-xs transition-colors border border-transparent hover:border-red-900/30"
+                                              >
+                                                ✕ Rechazar
+                                              </button>
+                                              <button 
+                                                onClick={() => handleCargarPresupuestoParaEditar(req, p)} 
+                                                className="bg-blue-650 hover:bg-blue-500 text-[#173E3B] font-bold px-3 py-1.5 rounded text-xs transition-colors"
+                                              >
+                                                ✏️ Editar
+                                              </button>
+                                            </>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))
+                                  )}
                                 </div>
+                              </div>
+                            )}
 
-                                {/* Acciones de cierre del asesoramiento */}
-                                <div className="border-t border-[#DED8CF] pt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                  <div>
-                                    <a href={`https://wa.me/${req.whatsapp.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" className="bg-green-600 hover:bg-green-500 text-[#173E3B] font-bold px-4 py-2.5 rounded-lg text-xs transition-colors inline-flex items-center gap-2">
-                                      💬 Continuar Asesoramiento WhatsApp
-                                    </a>
-                                  </div>
-                                  <div className="flex items-center gap-3">
-                                    {(req.presupuestos || []).some((p: any) => p.estado === "Aceptado") ? (
-                                      <button 
-                                        onClick={() => handleOpenContratoEditor(req)} 
-                                        className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-xs"
+                            {/* VALIDACIÓN CREDITICIA, DATOS PERSONALES Y LEGAJO DE DOCUMENTOS (UNIFICADO) */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                               <div className="space-y-3 bg-[#FFFDFC]/30 border border-[#DED8CF] p-4 rounded-xl shadow-inner">
+                                 <div className="flex justify-between items-center border-b border-[#DED8CF] pb-2 mb-2">
+                                   <h4 className="text-sm font-bold text-[#B44E2A] uppercase tracking-wider">Datos Personales</h4>
+                                   {editingId !== req.id && (
+                                     <button 
+                                       onClick={() => startEditing(req)}
+                                       className="text-[10px] bg-[#F7F3EC] hover:bg-[#F7F3EC] text-[#B44E2A] font-bold px-2 py-0.5 rounded transition-all border border-[#DED8CF]"
+                                     >
+                                       ✏️ Editar
+                                     </button>
+                                   )}
+                                 </div>
+
+                                 {editingId === req.id ? (
+                                   <div className="space-y-3 text-xs text-[#1F2928]">
+                                     <div>
+                                       <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Nombre Completo</label>
+                                       <input type="text" value={editFields.nombreCompleto} onChange={e => setEditFields({...editFields, nombreCompleto: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
+                                     </div>
+                                     <div className="grid grid-cols-2 gap-2">
+                                       <div>
+                                         <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">DNI</label>
+                                         <input type="text" value={editFields.numeroDni} onChange={e => setEditFields({...editFields, numeroDni: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
+                                       </div>
+                                       <div>
+                                         <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">CUIL</label>
+                                         <input type="text" value={editFields.cuil} onChange={e => handleEditCuilChange(e.target.value)} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-mono" />
+                                       </div>
+                                     </div>
+                                     <div>
+                                       <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Email</label>
+                                       <input type="email" value={editFields.email} onChange={e => setEditFields({...editFields, email: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
+                                     </div>
+                                     <div>
+                                       <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Teléfono (WhatsApp)</label>
+                                       <input type="text" value={editFields.telefono} onChange={e => setEditFields({...editFields, telefono: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
+                                     </div>
+                                     <div>
+                                       <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Dirección y Localidad</label>
+                                       <input type="text" value={editFields.direccion} onChange={e => setEditFields({...editFields, direccion: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
+                                     </div>
+                                     <div className="flex gap-2 pt-2">
+                                       <button onClick={() => handleGuardarDatosEditados(req)} className="flex-1 bg-green-600 hover:bg-green-500 text-[#173E3B] font-bold py-2 rounded text-xs transition-all uppercase tracking-wider">💾 Guardar</button>
+                                       <button onClick={() => setEditingId(null)} className="bg-transparent border border-[#DED8CF] hover:text-[#173E3B] text-[#68706E] font-bold py-2 px-4 rounded text-xs transition-all">✕ Cancelar</button>
+                                     </div>
+                                   </div>
+                                 ) : (
+                                   <div className="space-y-2 text-sm text-[#68706E]">
+                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">DNI:</strong> {req.numeroDni || req.dni || "S/D"}</p>
+                                     {req.cuil && <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">CUIL:</strong> {req.cuil}</p>}
+                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Fecha Nacimiento:</strong> {req.fechaNacimiento || "S/D"}</p>
+                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Ocupación:</strong> {req.ocupacion || "S/D"}</p>
+                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Dirección y Localidad:</strong> {req.direccion || req.localidad || "S/D"}</p>
+                                   </div>
+                                 )}
+                               </div>
+                               <div className="space-y-3">
+                                 <h4 className="text-sm font-bold text-[#B44E2A] uppercase tracking-wider">Detalles de Scoring y Operación</h4>
+                                 <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Producto / Opción Elegida:</strong> {req.productoDeseado || req.productoNombre || req.necesidad || "S/D"}</p>
+                                 {req.montoCuota > 0 && (
+                                   <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Plan Aceptado:</strong> {req.planElegido || 12} cuotas de <strong className="text-[#2F7D5C] font-mono">${Number(req.montoCuota).toLocaleString("es-AR")}</strong></p>
+                                 )}
+                                 <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">TNA Asociada:</strong> {req.tasaInteresTna ? `${req.tasaInteresTna}%` : "No especificada"}</p>
+                                 <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Mora Asociada:</strong> {req.tasaMora ? `${req.tasaMora}% diaria` : "No especificada"}</p>
+                                 <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Asesor/Afiliado:</strong> {req.nombreAfiliado || "S/D"}</p>
+                                 <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Referido por:</strong> {req.referidoPor || req.referente || "S/D"}</p>
+                                 <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Email:</strong> {req.email || "S/D"}</p>
+                                 <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Antigüedad Laboral:</strong> {req.antiguedadLaboral ? new Date(req.antiguedadLaboral).toLocaleDateString("es-AR") : "S/D"}</p>
+                               </div>
+                               <div className="space-y-3">
+                                 <BcraScoringPanel cuit={req.cuil || req.numeroDni || req.dni || ""} />
+                                 <h4 className="text-sm font-bold text-[#B44E2A] uppercase tracking-wider">Consultas Scoring Crediticio</h4>
+                                 <div className="bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-xl space-y-3 shadow-inner">
+                                   <p className="text-[11px] text-[#68706E]">Acciones rápidas para investigar comportamiento financiero:</p>
+                                   <div className="grid grid-cols-1 gap-2">
+                                     <button
+                                       onClick={() => {
+                                         const valToCopy = (req.cuil || req.numeroDni || req.dni || "").replace(/\D/g, "");
+                                         if (valToCopy) {
+                                           navigator.clipboard.writeText(valToCopy);
+                                           alert(`CUIL/DNI ${valToCopy} copiado al portapapeles.`);
+                                         }
+                                         window.open("https://www.bcra.gob.ar/BCRAyVos/Situacion_Crediticia.asp", "_blank");
+                                      }}
+                                       className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
+                                     >
+                                       <span>🏦 Central de Deudores BCRA</span>
+                                       <span className="text-[9px] text-[#68706E] font-mono">Pegar (Ctrl+V)</span>
+                                     </button>
+                                     <button
+                                        onClick={() => {
+                                          const dniToCopy = (req.numeroDni || req.dni || req.cuil || "").replace(/\D/g, "");
+                                          const cleanDni = dniToCopy.length > 8 ? dniToCopy.substring(2, 10) : dniToCopy;
+                                          if (cleanDni) {
+                                            navigator.clipboard.writeText(cleanDni);
+                                            alert(`DNI ${cleanDni} copiado al portapapeles.`);
+                                          }
+                                          window.open("https://www.padron.gob.ar/", "_blank");
+                                        }}
+                                        className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
                                       >
-                                        ✍️ Confeccionar Contrato y Pagaré
+                                        <span>🗳️ Padrón Electoral CNE</span>
+                                        <span className="text-[9px] text-[#68706E] font-mono">Pegar (Ctrl+V)</span>
                                       </button>
-                                    ) : (
-                                      <span className="text-[#68706E] italic text-xs">Espera a que el cliente acepte un presupuesto para confeccionar formularios.</span>
-                                    )}
-                                    <button 
-                                      onClick={() => handleEliminarApertura(req.id)}
-                                      className="text-red-500 hover:text-red-400 text-xs font-bold px-3 py-2 rounded hover:bg-red-950/20 transition-all"
-                                    >
-                                      🗑️ Rechazar y Archivar
-                                    </button>
+                                     {(req.cuil || "").replace(/\D/g, "") && (
+                                       <a
+                                         href={`https://www.cuitonline.com/detalle/${(req.cuil || "").replace(/\D/g, "")}/cuit-online.html`}
+                                         target="_blank"
+                                         rel="noopener noreferrer"
+                                         className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
+                                       >
+                                         <span>📄 CUIT Online</span>
+                                         <span className="text-[10px] text-[#B44E2A] font-black">→</span>
+                                       </a>
+                                     )}
+                                     <a
+                                       href={`https://www.google.com/search?q=${(req.cuil || req.numeroDni || req.dni || "").replace(/\D/g, "")}`}
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
+                                     >
+                                       <span>🌐 Buscar en Google</span>
+                                       <span className="text-[10px] text-[#68706E]">→</span>
+                                     </a>
+                                     {(req.cuil || "").replace(/\D/g, "") && (
+                                       <a
+                                         href={`https://www.dateas.com/es/consulta_cuit_cuil?cuit=${(req.cuil || "").replace(/\D/g, "")}`}
+                                         target="_blank"
+                                         rel="noopener noreferrer"
+                                         className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
+                                       >
+                                         <span>📊 Consultar Dateas</span>
+                                         <span className="text-[10px] text-[#68706E]">→</span>
+                                       </a>
+                                     )}
+                                   </div>
+                                 </div>
+                               </div>
+                             </div>
+
+                            <div className="border-t border-[#DED8CF] pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                              <div className="flex flex-col gap-2 bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-xl shadow-inner mt-4 w-full md:w-auto min-w-[280px]">
+                                <span className="text-[10px] text-[#68706E] font-bold uppercase border-b border-[#DED8CF] pb-1 mb-1">Legajo de Documentos</span>
+                                {req.dniFrenteURL && req.dniFrenteURL !== "Pendiente envío WhatsApp" ? (
+                                  <a href={req.dniFrenteURL} target="_blank" rel="noopener noreferrer" className="text-[#B44E2A] hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
+                                    📷 DNI Frente
+                                  </a>
+                                ) : null}
+                                {req.dniDorsoURL && req.dniDorsoURL !== "Pendiente envío WhatsApp" ? (
+                                  <a href={req.dniDorsoURL} target="_blank" rel="noopener noreferrer" className="text-[#B44E2A] hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
+                                    📷 DNI Dorso
+                                  </a>
+                                ) : null}
+                                {req.comprobanteURL && req.comprobanteURL !== "Pendiente envío WhatsApp" && (
+                                  <a href={req.comprobanteURL} target="_blank" rel="noopener noreferrer" className="text-[#B44E2A] hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
+                                    📄 Comprobante de Ingresos
+                                  </a>
+                                )}
+                                {req.comprobanteDomicilioURL && req.comprobanteDomicilioURL !== "Pendiente envío WhatsApp" && (
+                                  <a href={req.comprobanteDomicilioURL} target="_blank" rel="noopener noreferrer" className="text-[#B44E2A] hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
+                                    📄 Comprobante de Domicilio
+                                  </a>
+                                )}
+                                {(!req.dniFrenteURL && !req.dniDorsoURL && !req.comprobanteURL && !req.comprobanteDomicilioURL) || 
+                                 (req.dniFrenteURL === "Pendiente envío WhatsApp" && req.dniDorsoURL === "Pendiente envío WhatsApp" && req.comprobanteURL === "Pendiente envío WhatsApp") ? (
+                                  <span className="text-zinc-650 italic text-[10px]">Sin archivos (Pendiente WhatsApp)</span>
+                                ) : null}
+
+                                <div className="border-t border-[#DED8CF] pt-2.5 mt-1 space-y-1.5">
+                                  <span className="text-[9px] text-[#68706E] font-black uppercase">Cargar Manualmente</span>
+                                  <div className="flex flex-col gap-1.5">
+                                    <label className="flex items-center justify-between bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500/50 p-1.5 rounded text-[9px] font-bold text-[#68706E] cursor-pointer transition-colors">
+                                      <span>🏠 Domicilio (Servicio)</span>
+                                      <input 
+                                        type="file" 
+                                        accept="image/*,application/pdf" 
+                                        onChange={async (e) => {
+                                          if (e.target.files && e.target.files[0]) {
+                                            await handleSubirDocumentoManual(req, e.target.files[0], "domicilio");
+                                          }
+                                        }} 
+                                        className="hidden" 
+                                      />
+                                    </label>
+                                    <label className="flex items-center justify-between bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500/50 p-1.5 rounded text-[9px] font-bold text-[#68706E] cursor-pointer transition-colors">
+                                      <span>💵 Ingresos (Recibo)</span>
+                                      <input 
+                                        type="file" 
+                                        accept="image/*,application/pdf" 
+                                        onChange={async (e) => {
+                                          if (e.target.files && e.target.files[0]) {
+                                            await handleSubirDocumentoManual(req, e.target.files[0], "ingresos");
+                                          }
+                                        }} 
+                                        className="hidden" 
+                                      />
+                                    </label>
                                   </div>
                                 </div>
                               </div>
-                            ) : (
-                              // RENDER SECCIÓN ESTÁNDAR DE APERTURA DE CUENTA
-                              <>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                   <div className="space-y-3 bg-[#FFFDFC]/30 border border-[#DED8CF] p-4 rounded-xl shadow-inner">
-                                     <div className="flex justify-between items-center border-b border-[#DED8CF] pb-2 mb-2">
-                                       <h4 className="text-sm font-bold text-[#B44E2A] uppercase tracking-wider">Datos Personales</h4>
-                                       {editingId !== req.id && (
-                                         <button 
-                                           onClick={() => startEditing(req)}
-                                           className="text-[10px] bg-[#F7F3EC] hover:bg-[#F7F3EC] text-[#B44E2A] font-bold px-2 py-0.5 rounded transition-all border border-[#DED8CF]"
-                                         >
-                                           ✏️ Editar
-                                         </button>
-                                       )}
-                                     </div>
-
-                                     {editingId === req.id ? (
-                                       <div className="space-y-3 text-xs text-[#1F2928]">
-                                         <div>
-                                           <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Nombre Completo</label>
-                                           <input type="text" value={editFields.nombreCompleto} onChange={e => setEditFields({...editFields, nombreCompleto: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
-                                         </div>
-                                         <div className="grid grid-cols-2 gap-2">
-                                           <div>
-                                             <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">DNI</label>
-                                             <input type="text" value={editFields.numeroDni} onChange={e => setEditFields({...editFields, numeroDni: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
-                                           </div>
-                                           <div>
-                                             <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">CUIL</label>
-                                             <input type="text" value={editFields.cuil} onChange={e => handleEditCuilChange(e.target.value)} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B] font-mono" />
-                                           </div>
-                                         </div>
-                                         <div>
-                                           <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Email</label>
-                                           <input type="email" value={editFields.email} onChange={e => setEditFields({...editFields, email: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
-                                         </div>
-                                         <div>
-                                           <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Teléfono (WhatsApp)</label>
-                                           <input type="text" value={editFields.telefono} onChange={e => setEditFields({...editFields, telefono: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
-                                         </div>
-                                         <div>
-                                           <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Dirección y Localidad</label>
-                                           <input type="text" value={editFields.direccion} onChange={e => setEditFields({...editFields, direccion: e.target.value})} className="w-full bg-[#FFFDFC] border border-[#DED8CF] p-2 rounded text-[#1F2928] outline-none focus:border-[#173E3B] focus:ring-1 focus:ring-[#173E3B]" />
-                                         </div>
-                                         <div className="flex gap-2 pt-2">
-                                           <button onClick={() => handleGuardarDatosEditados(req)} className="flex-1 bg-green-600 hover:bg-green-500 text-[#173E3B] font-bold py-2 rounded text-xs transition-all uppercase tracking-wider">💾 Guardar</button>
-                                           <button onClick={() => setEditingId(null)} className="bg-transparent border border-[#DED8CF] hover:text-[#173E3B] text-[#68706E] font-bold py-2 px-4 rounded text-xs transition-all">✕ Cancelar</button>
-                                         </div>
-                                       </div>
-                                     ) : (
-                                       <div className="space-y-2 text-sm text-[#68706E]">
-                                         <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">DNI:</strong> {req.numeroDni || req.dni || "S/D"}</p>
-                                         {req.cuil && <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">CUIL:</strong> {req.cuil}</p>}
-                                         <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Fecha Nacimiento:</strong> {req.fechaNacimiento || "S/D"}</p>
-                                         <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Ocupación:</strong> {req.ocupacion || "S/D"}</p>
-                                         <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Dirección y Localidad:</strong> {req.direccion || "S/D"}</p>
-                                       </div>
-                                     )}
-                                   </div>
-                                   <div className="space-y-3">
-                                     <h4 className="text-sm font-bold text-[#B44E2A] uppercase tracking-wider">Detalles de Scoring</h4>
-                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Producto Interés:</strong> {req.productoNombre || "S/D"}</p>
-                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">TNA Asociada:</strong> {req.tasaInteresTna ? `${req.tasaInteresTna}%` : "No especificada"}</p>
-                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Mora Asociada:</strong> {req.tasaMora ? `${req.tasaMora}% diaria` : "No especificada"}</p>
-                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Asesor/Afiliado:</strong> {req.nombreAfiliado || "S/D"}</p>
-                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Referido por:</strong> {req.referidoPor || "S/D"}</p>
-                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Email:</strong> {req.email || "S/D"}</p>
-                                     <p className="text-sm text-[#1F2928]"><strong className="text-[#68706E]">Antigüedad Laboral:</strong> {req.antiguedadLaboral ? new Date(req.antiguedadLaboral).toLocaleDateString("es-AR") : "S/D"}</p>
-                                   </div>
-                                   <div className="space-y-3">
-                                     <BcraScoringPanel cuit={req.cuil || req.numeroDni || req.dni || ""} />
-                                     <h4 className="text-sm font-bold text-[#B44E2A] uppercase tracking-wider">Consultas Scoring Crediticio</h4>
-                                     <div className="bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-xl space-y-3 shadow-inner">
-                                       <p className="text-[11px] text-[#68706E]">Acciones rápidas para investigar comportamiento financiero:</p>
-                                       <div className="grid grid-cols-1 gap-2">
-                                         <button
-                                           onClick={() => {
-                                             const valToCopy = (req.cuil || req.numeroDni || req.dni || "").replace(/\D/g, "");
-                                             if (valToCopy) {
-                                               navigator.clipboard.writeText(valToCopy);
-                                               alert(`CUIL/DNI ${valToCopy} copiado al portapapeles.`);
-                                             }
-                                             window.open("https://www.bcra.gob.ar/BCRAyVos/Situacion_Crediticia.asp", "_blank");
-                                          }}
-                                           className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
-                                         >
-                                           <span>🏦 Central de Deudores BCRA</span>
-                                           <span className="text-[9px] text-[#68706E] font-mono">Pegar (Ctrl+V)</span>
-                                         </button>
-                                         <button
-                                            onClick={() => {
-                                              const dniToCopy = (req.numeroDni || req.dni || req.cuil || "").replace(/\D/g, "");
-                                              const cleanDni = dniToCopy.length > 8 ? dniToCopy.substring(2, 10) : dniToCopy;
-                                              if (cleanDni) {
-                                                navigator.clipboard.writeText(cleanDni);
-                                                alert(`DNI ${cleanDni} copiado al portapapeles.`);
-                                              }
-                                              window.open("https://www.padron.gob.ar/", "_blank");
-                                            }}
-                                            className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
-                                          >
-                                            <span>🗳️ Padrón Electoral CNE</span>
-                                            <span className="text-[9px] text-[#68706E] font-mono">Pegar (Ctrl+V)</span>
-                                          </button>
-                                         {(req.cuil || "").replace(/\D/g, "") && (
-                                           <a
-                                             href={`https://www.cuitonline.com/detalle/${(req.cuil || "").replace(/\D/g, "")}/cuit-online.html`}
-                                             target="_blank"
-                                             rel="noopener noreferrer"
-                                             className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
-                                           >
-                                             <span>📄 CUIT Online</span>
-                                             <span className="text-[10px] text-[#B44E2A] font-black">→</span>
-                                           </a>
-                                         )}
-                                         <a
-                                           href={`https://www.google.com/search?q=${(req.cuil || req.numeroDni || req.dni || "").replace(/\D/g, "")}`}
-                                           target="_blank"
-                                           rel="noopener noreferrer"
-                                           className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
-                                         >
-                                           <span>🌐 Buscar en Google</span>
-                                           <span className="text-[10px] text-[#68706E]">→</span>
-                                         </a>
-                                         {(req.cuil || "").replace(/\D/g, "") && (
-                                           <a
-                                             href={`https://www.dateas.com/es/consulta_cuit_cuil?cuit=${(req.cuil || "").replace(/\D/g, "")}`}
-                                             target="_blank"
-                                             rel="noopener noreferrer"
-                                             className="bg-[#FFFDFC] hover:bg-[#FFFDFC] text-[#1F2928] p-2.5 rounded text-xs font-bold text-left border border-[#DED8CF] transition-all flex items-center justify-between"
-                                           >
-                                             <span>📊 Consultar Dateas</span>
-                                             <span className="text-[10px] text-[#68706E]">→</span>
-                                           </a>
-                                         )}
-                                       </div>
-                                     </div>
-                                   </div>
-                                 </div>
-
-                                <div className="border-t border-[#DED8CF] pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                  <div className="flex flex-col gap-2 bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-xl shadow-inner mt-4 w-full md:w-auto min-w-[280px]">
-                                    <span className="text-[10px] text-[#68706E] font-bold uppercase border-b border-[#DED8CF] pb-1 mb-1">Legajo de Documentos</span>
-                                    {req.dniFrenteURL && req.dniFrenteURL !== "Pendiente envío WhatsApp" ? (
-                                      <a href={req.dniFrenteURL} target="_blank" rel="noopener noreferrer" className="text-[#B44E2A] hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
-                                        📷 DNI Frente
-                                      </a>
-                                    ) : null}
-                                    {req.dniDorsoURL && req.dniDorsoURL !== "Pendiente envío WhatsApp" ? (
-                                      <a href={req.dniDorsoURL} target="_blank" rel="noopener noreferrer" className="text-[#B44E2A] hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
-                                        📷 DNI Dorso
-                                      </a>
-                                    ) : null}
-                                    {req.comprobanteURL && req.comprobanteURL !== "Pendiente envío WhatsApp" && (
-                                      <a href={req.comprobanteURL} target="_blank" rel="noopener noreferrer" className="text-[#B44E2A] hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
-                                        📄 Comprobante de Ingresos
-                                      </a>
-                                    )}
-                                    {req.comprobanteDomicilioURL && req.comprobanteDomicilioURL !== "Pendiente envío WhatsApp" && (
-                                      <a href={req.comprobanteDomicilioURL} target="_blank" rel="noopener noreferrer" className="text-[#B44E2A] hover:text-yellow-300 font-bold underline text-xs flex items-center gap-1.5 py-0.5">
-                                        📄 Comprobante de Domicilio
-                                      </a>
-                                    )}
-                                    {(!req.dniFrenteURL && !req.dniDorsoURL && !req.comprobanteURL && !req.comprobanteDomicilioURL) || 
-                                     (req.dniFrenteURL === "Pendiente envío WhatsApp" && req.dniDorsoURL === "Pendiente envío WhatsApp" && req.comprobanteURL === "Pendiente envío WhatsApp") ? (
-                                      <span className="text-zinc-650 italic text-[10px]">Sin archivos (Pendiente WhatsApp)</span>
-                                    ) : null}
-
-                                    <div className="border-t border-[#DED8CF] pt-2.5 mt-1 space-y-1.5">
-                                      <span className="text-[9px] text-[#68706E] font-black uppercase">Cargar Manualmente</span>
-                                      <div className="flex flex-col gap-1.5">
-                                        <label className="flex items-center justify-between bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500/50 p-1.5 rounded text-[9px] font-bold text-[#68706E] cursor-pointer transition-colors">
-                                          <span>🏠 Domicilio (Servicio)</span>
-                                          <input 
-                                            type="file" 
-                                            accept="image/*,application/pdf" 
-                                            onChange={async (e) => {
-                                              if (e.target.files && e.target.files[0]) {
-                                                await handleSubirDocumentoManual(req, e.target.files[0], "domicilio");
-                                              }
-                                            }} 
-                                            className="hidden" 
-                                          />
-                                        </label>
-                                        <label className="flex items-center justify-between bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500/50 p-1.5 rounded text-[9px] font-bold text-[#68706E] cursor-pointer transition-colors">
-                                          <span>💵 Ingresos (Recibo)</span>
-                                          <input 
-                                            type="file" 
-                                            accept="image/*,application/pdf" 
-                                            onChange={async (e) => {
-                                              if (e.target.files && e.target.files[0]) {
-                                                await handleSubirDocumentoManual(req, e.target.files[0], "ingresos");
-                                              }
-                                            }} 
-                                            className="hidden" 
-                                          />
-                                        </label>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-wrap items-center gap-3">
-                                    <a href={`https://wa.me/${(req.whatsapp || "").replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" className="bg-green-600 hover:bg-green-500 text-[#173E3B] font-bold px-4 py-2 rounded-lg text-xs transition-colors">
-                                      💬 Hablar por WhatsApp
-                                    </a>
-                                    <select 
-                                      value={req.estado || "Pendiente"} 
-                                      onChange={(e) => handleActualizarEstadoApertura(req.id, e.target.value)}
-                                      className="bg-[#F7F3EC] text-[#1F2928] border border-[#DED8CF] px-3 py-1.5 rounded-lg text-xs font-bold outline-none focus:border-yellow-500"
-                                    >
-                                      <option value="Pendiente">Pendiente</option>
-                                      <option value="Aprobado">Aprobado</option>
-                                      <option value="Rechazado">Rechazado</option>
-                                    </select>
-                                    <button onClick={() => handleOpenContratoEditor(req)} className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-xs">
-                                      ✍️ Confeccionar Contrato
-                                    </button>
-                                    <button onClick={() => handleEliminarApertura(req.id)} className="text-red-500 hover:text-red-400 text-xs font-bold px-3 py-2 rounded hover:bg-red-950/20 transition-all">
-                                      Borrar
-                                    </button>
-                                  </div>
-                                </div>
-                              </>
-                            )}
+                              <div className="flex flex-wrap items-center gap-3">
+                                <a href={`https://wa.me/${(req.whatsapp || "").replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition-colors">
+                                  💬 Hablar por WhatsApp
+                                </a>
+                                <select 
+                                  value={req.estado || "Pendiente"} 
+                                  onChange={(e) => handleActualizarEstadoApertura(req.id, e.target.value)}
+                                  className="bg-[#F7F3EC] text-[#1F2928] border border-[#DED8CF] px-3 py-1.5 rounded-lg text-xs font-bold outline-none focus:border-yellow-500"
+                                >
+                                  <option value="Pendiente">Pendiente</option>
+                                  <option value="Presupuestado">Presupuestado</option>
+                                  <option value="Aprobado_Presupuesto">Presupuesto Aceptado</option>
+                                  <option value="Aprobado">Aprobado</option>
+                                  <option value="Rechazado">Rechazado</option>
+                                </select>
+                                {(req.tipo !== "contacto_rapido" || (req.presupuestos || []).some((p: any) => p.estado === "Aceptado" || p.estado === "Aprobado") || req.estado === "Aprobado_Presupuesto") ? (
+                                  <button
+                                    data-testid="btn-confeccionar-contrato"
+                                    onClick={() => handleOpenContratoEditor(req)}
+                                    className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-4 py-2 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-xs"
+                                  >
+                                    ✍️ Confeccionar Contrato y Pagaré
+                                  </button>
+                                ) : (
+                                  <span className="text-[#68706E] italic text-xs">Aceptá un presupuesto para confeccionar Contrato y Pagaré.</span>
+                                )}
+                                <button onClick={() => handleEliminarApertura(req.id)} className="text-red-500 hover:text-red-400 text-xs font-bold px-3 py-2 rounded hover:bg-red-950/20 transition-all">
+                                  🗑️ Rechazar y Archivar
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -3200,7 +3342,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                  <div className="bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-xl">
                                    <h3 className="text-xs font-bold text-[#68706E] uppercase tracking-widest text-center mb-3">Generación Legal (PDF)</h3>
                                    <div className="grid grid-cols-2 gap-3">
-                                     <button onClick={() => handleOpenContratoEditor(req)} className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500 text-[#68706E] hover:text-[#B44E2A] py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">📄 Editar Contrato</button>
+                                     <button data-testid="btn-confeccionar-contrato" onClick={() => handleOpenContratoEditor(req)} className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500 text-[#68706E] hover:text-[#B44E2A] py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">📄 Editar Contrato</button>
                                      <button onClick={() => handleOpenContratoEditor(req)} className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-yellow-500 text-[#68706E] hover:text-[#B44E2A] py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">📄 Editar Pagaré</button>
                                    </div>
                                  </div>
@@ -3208,9 +3350,37 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
 
                               {/* COLUMNA 3 */}
                               <div className="flex flex-col gap-6">
-                                 <div className="bg-[#FFFDFC] border border-[#DED8CF] p-6 rounded-xl flex items-center justify-center text-center h-full">
-                                    <p className="text-[#68706E] text-sm">El plan de cuotas y la logística se habilitan una vez firmado el contrato.</p>
-                                 </div>
+                                 {req.presupuestos && req.presupuestos.length > 0 ? (
+                                   <div className="bg-[#FFFDFC] border border-[#DED8CF] p-5 rounded-xl space-y-3">
+                                     <div className="flex items-center justify-between border-b border-[#DED8CF] pb-2">
+                                       <h4 className="text-xs font-black text-amber-500 uppercase tracking-widest">📋 Presupuestos Vinculados ({req.presupuestos.length})</h4>
+                                       <Link href={`/admin/presupuestos?solicitudId=${req.id}`} className="text-[10px] font-black text-[#173E3B] underline hover:text-[#B44E2A]">Ir a Presupuestos</Link>
+                                     </div>
+                                     {req.presupuestos.map((p: any, idx: number) => (
+                                       <div key={p.id || idx} className="bg-[#F7F3EC] border border-[#DED8CF] p-3 rounded-lg text-xs space-y-1.5">
+                                         <div className="flex justify-between items-center">
+                                           <span className="font-bold text-[#173E3B]">{p.numeroPresupuesto || `Presupuesto #${idx + 1}`}</span>
+                                           <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${p.estado === 'Aceptado' ? 'bg-emerald-500/20 text-[#2F7D5C]' : 'bg-amber-500/20 text-amber-600'}`}>{p.estado || 'Generado'}</span>
+                                         </div>
+                                         <p className="text-[#68706E] font-medium">{(p.itemsSeleccionados || p.items || []).map((it: any) => it.producto || it.nombre).filter(Boolean).join(" + ") || req.productoDeseado}</p>
+                                         <p className="text-[#2F7D5C] font-black">{p.cuotas || req.cuotas} cuotas de ${(p.montoCuota || req.montoCuota || 0).toLocaleString("es-AR")}</p>
+                                         {(p.estado === "Enviado" || p.estado === "Generado" || p.estado === "Pendiente") && (
+                                           <button
+                                             data-testid={`btn-aceptar-presupuesto-validaciones-${p.id}`}
+                                             onClick={() => handleAceptarPresupuesto(req, p)}
+                                             className="w-full mt-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded font-black text-[10px] uppercase tracking-wider"
+                                           >
+                                             ✓ Aceptar Presupuesto
+                                           </button>
+                                         )}
+                                       </div>
+                                     ))}
+                                   </div>
+                                 ) : (
+                                   <div className="bg-[#FFFDFC] border border-[#DED8CF] p-6 rounded-xl flex items-center justify-center text-center h-full">
+                                      <p className="text-[#68706E] text-sm">El plan de cuotas y la logística se habilitan una vez firmado el contrato.</p>
+                                   </div>
+                                 )}
                               </div>
                               
                             </div>

@@ -2,7 +2,7 @@
 
 import { AdminNav } from "@/components/AdminNav";
 import { useState, useEffect, useRef, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { db, auth } from "@/lib/firebase";
@@ -127,6 +127,7 @@ interface PresupuestoRecord {
   clienteLocalidad: string;
   producto?: string;
   items?: PresupuestoOpcion[];
+  itemsSeleccionados?: PresupuestoOpcion[];
   estado?: string;
   notas?: string;
   contado?: number;
@@ -237,6 +238,7 @@ function mapOpcionToInternalBudgetItem(op: PresupuestoOpcion, idx: number): Inte
 
 function PresupuestosContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [presupuestos, setPresupuestos] = useState<PresupuestoRecord[]>([]);
   const [solicitudesPool, setSolicitudesPool] = useState<SolicitudCandidate[]>([]);
   const [catalogoProductos, setCatalogoProductos] = useState<CatalogProduct[]>([]);
@@ -246,6 +248,8 @@ function PresupuestosContent() {
   const [busqueda, setBusqueda] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [calculandoPricing, setCalculandoPricing] = useState(false);
+  const [selectedAcceptOptionsMap, setSelectedAcceptOptionsMap] = useState<Record<string, number[]>>({});
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
   // Controlador Canónico Único de Ciclo de Vida del Editor
   const lifecycleRef = useRef<BudgetEditorLifecycleController>(new BudgetEditorLifecycleController());
@@ -1153,6 +1157,190 @@ function PresupuestosContent() {
     );
   };
 
+  const getSelectedIndicesForBudget = (budgetId: string, totalItems: number): number[] => {
+    if (totalItems <= 1) return [0];
+    const current = selectedAcceptOptionsMap[budgetId];
+    if (current && current.length > 0) {
+      return current.filter((i) => i >= 0 && i < totalItems);
+    }
+    return [0];
+  };
+
+  const toggleAcceptOptionIndex = (budgetId: string, idx: number, totalItems: number) => {
+    setSelectedAcceptOptionsMap((prev) => {
+      const current = prev[budgetId] && prev[budgetId].length > 0 ? prev[budgetId] : [0];
+      const exists = current.includes(idx);
+      let next = exists ? current.filter((i) => i !== idx) : [...current, idx].sort((a, b) => a - b);
+      if (next.length === 0 && totalItems > 0) {
+        next = [idx];
+      }
+      return { ...prev, [budgetId]: next };
+    });
+  };
+
+  /**
+   * Acepta un presupuesto guardado y conecta directamente con el proceso existente en /admin/validaciones
+   * (Análisis Crediticio -> Confección de Contrato y Pagaré -> Firma Digital -> Aprobación -> Logística -> Cobranzas).
+   */
+  const handleAceptarPresupuestoYContinuar = async (targetBudget: PresupuestoRecord) => {
+    const itemsList: PresupuestoOpcion[] =
+      targetBudget.items && targetBudget.items.length > 0
+        ? targetBudget.items
+        : targetBudget.producto
+          ? [
+              {
+                producto: targetBudget.producto,
+                nombre: targetBudget.producto,
+                contado: targetBudget.contado || 0,
+                precioContado: targetBudget.contado || 0,
+                costoProveedor: targetBudget.costoProveedor || 0,
+                cuotas: targetBudget.cuotas || 12,
+                valorCuota: targetBudget.valorCuota || 0,
+                totalFinanciado: (targetBudget.cuotas || 12) * (targetBudget.valorCuota || 0),
+              },
+            ]
+          : [];
+
+    if (itemsList.length === 0) {
+      alert("Este presupuesto aún no tiene opciones cotizadas para aceptar.");
+      return;
+    }
+
+    const selectedIndices = getSelectedIndicesForBudget(targetBudget.id, itemsList.length);
+    const rawChosen = selectedIndices.map((i) => itemsList[i]).filter(Boolean);
+    const chosenItems = (rawChosen.length > 0 ? rawChosen : itemsList).map((it) => ({
+      ...it,
+      producto: it.producto || it.nombre || "Producto",
+      nombre: it.nombre || it.producto || "Producto",
+      contado: Number(it.contado ?? it.precioContado ?? 0) || 0,
+      precioContado: Number(it.precioContado ?? it.contado ?? 0) || 0,
+      costoProveedor: Number(it.costoProveedor ?? 0) || 0,
+      cuotas: Number(it.cuotas) || Number(targetBudget.cuotas) || 12,
+      valorCuota: Number(it.valorCuota) || 0,
+      factor: Number(it.factor ?? it.factorAplicado ?? targetBudget.factorDerivado ?? 1) || 1,
+      factorAplicado: Number(it.factorAplicado ?? it.factor ?? targetBudget.factorDerivado ?? 1) || 1,
+      totalFinanciado:
+        Number(it.totalFinanciado) ||
+        (Number(it.cuotas) || 12) * (Number(it.valorCuota) || 0) + (Number(it.anticipo) || 0),
+    }));
+
+    const prodNombres =
+      chosenItems.map((it) => it.producto || it.nombre).filter(Boolean).join(" + ") ||
+      targetBudget.producto ||
+      "Producto";
+    const sumaContado = chosenItems.reduce((acc, it) => acc + (Number(it.contado ?? it.precioContado) || 0), 0);
+    const sumaCostoProv =
+      chosenItems.reduce((acc, it) => acc + (Number(it.costoProveedor) || 0), 0) ||
+      Number(targetBudget.costoProveedor || 0);
+    const sumaCuota = chosenItems.reduce((acc, it) => acc + (Number(it.valorCuota) || 0), 0);
+    const cuotasElegidas = Number(chosenItems[0]?.cuotas || targetBudget.cuotas || 12);
+    const sumaTotalFinanciado = chosenItems.reduce(
+      (acc, it) => acc + (Number(it.totalFinanciado) || (Number(it.valorCuota) || 0) * cuotasElegidas),
+      0
+    );
+    const factorPromedio =
+      sumaCostoProv > 0
+        ? Number((sumaTotalFinanciado / sumaCostoProv).toFixed(4))
+        : Number(chosenItems[0]?.factorAplicado || chosenItems[0]?.factor || targetBudget.factorDerivado || 1);
+
+    const docId = targetBudget.solicitudId || resolvedSolicitudId;
+    const colName =
+      targetBudget.solicitudTipo === "estandar"
+        ? "solicitudes"
+        : resolvedCollection || "solicitudes_cuenta";
+
+    if (!docId) {
+      alert("Este presupuesto no tiene una solicitud vinculada.");
+      return;
+    }
+
+    setAcceptingId(targetBudget.id);
+    try {
+      const docRef = doc(db, colName, docId);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const currentData = snap.data();
+        const currentPresupuestos = Array.isArray(currentData.presupuestos) ? currentData.presupuestos : [];
+        const updatedPresupuestos = currentPresupuestos.map((p: PresupuestoRecord) => {
+          if (p.id === targetBudget.id) {
+            return sanitizeForFirestore({
+              ...p,
+              estado: "Aceptado",
+              itemsSeleccionados: chosenItems,
+              fechaAceptacion: new Date().toISOString(),
+            });
+          }
+          return sanitizeForFirestore(p);
+        });
+
+        const propuestaAceptadaPayload = sanitizeForFirestore({
+          presupuestoId: targetBudget.id,
+          fechaAceptacion: new Date().toISOString(),
+          aceptadoPorUid: auth.currentUser?.uid || "admin",
+          aceptadoPorEmail: auth.currentUser?.email || "admin",
+          pricingSchemaVersion: targetBudget.pricingSchemaVersion || "MANUAL_FACTOR_V1",
+          itemsSeleccionados: chosenItems,
+          productoNombre: prodNombres,
+          precioContado: sumaContado,
+          costoProveedor: sumaCostoProv,
+          cuotas: cuotasElegidas,
+          montoCuota: sumaCuota,
+          totalFinanciado: sumaTotalFinanciado,
+          factorFinanciado: factorPromedio,
+        });
+
+        const currentEstado = String(currentData.estado || "").toLowerCase();
+        const shouldAdvanceEstado =
+          colName === "solicitudes_cuenta"
+            ? currentEstado === "" ||
+              currentEstado === "pendiente" ||
+              currentEstado === "presupuestado" ||
+              currentEstado === "solicitante"
+            : false;
+
+        const updatePayload: Record<string, unknown> = sanitizeForFirestore({
+          presupuestos: updatedPresupuestos,
+          itemsContrato: chosenItems,
+          productoDeseado: prodNombres,
+          productoNombre: prodNombres,
+          precioContado: sumaContado,
+          costoProducto: sumaCostoProv > 0 ? sumaCostoProv : sumaContado,
+          costoBien: sumaCostoProv > 0 ? sumaCostoProv : sumaContado,
+          costoProveedor: sumaCostoProv,
+          factorFinanciado: factorPromedio,
+          montoCuota: sumaCuota,
+          totalFinanciado: sumaTotalFinanciado,
+          planElegido: `${cuotasElegidas} cuotas de $${sumaCuota.toLocaleString("es-AR")}`,
+          cuotas: cuotasElegidas,
+          estadoPropuesta: "PROPUESTA_ACEPTADA",
+          propuestaAceptada: propuestaAceptadaPayload,
+          ...(shouldAdvanceEstado ? { estado: "Aprobado_Presupuesto" } : {}),
+        });
+
+        await updateDoc(docRef, updatePayload);
+        if (persistedBudget && persistedBudget.id === targetBudget.id) {
+          lifecycleRef.current.setPersistedBudget({
+            ...persistedBudget,
+            estado: "Aceptado",
+            itemsSeleccionados: chosenItems,
+          });
+        }
+        await fetchPresupuestos();
+      }
+
+      const searchKey =
+        targetBudget.clienteDni && targetBudget.clienteDni !== "S/D" && targetBudget.clienteDni !== "-"
+          ? targetBudget.clienteDni
+          : targetBudget.clienteNombre || "";
+      router.push(`/admin/validaciones?q=${encodeURIComponent(searchKey)}&id=${encodeURIComponent(docId)}`);
+    } catch (err) {
+      console.error("Error al aceptar presupuesto:", err);
+      alert("Ocurrió un error al registrar la aceptación del presupuesto.");
+    } finally {
+      setAcceptingId(null);
+    }
+  };
+
   const presupuestosFiltrados = presupuestos.filter((p) => {
     const estadoMatch =
       filtroEstado === "TODOS" ? true :
@@ -1259,6 +1447,11 @@ function PresupuestosContent() {
 
               const itemsList = p.items && p.items.length > 0 ? p.items : (p.producto ? [{ producto: p.producto, contado: p.contado || 0, cuotas: p.cuotas || 12, valorCuota: p.valorCuota }] : []);
               const totalCuota = itemsList.reduce((sum: number, it: PresupuestoOpcion) => sum + (Number(it.valorCuota) || 0), 0);
+              const selectedOptionIndices = getSelectedIndicesForBudget(p.id, itemsList.length);
+              const selectedCuotaDisplay =
+                itemsList.length > 1
+                  ? selectedOptionIndices.reduce((sum, optIdx) => sum + (Number(itemsList[optIdx]?.valorCuota) || 0), 0)
+                  : Number(itemsList[0]?.valorCuota) || totalCuota;
 
               return (
                 <div
@@ -1311,34 +1504,79 @@ function PresupuestosContent() {
                       </p>
                     </div>
 
-                    {/* Listado de Productos / Opciones */}
+                    {/* Listado de Productos / Opciones (con selección si tiene múltiples opciones) */}
                     <div className="pt-2 space-y-1.5">
-                      {itemsList.map((it: PresupuestoOpcion, itemIdx: number) => (
-                        <div key={itemIdx} className="text-xs bg-[#F7F3EC] p-2.5 rounded-xl border border-[#DED8CF] flex items-center justify-between">
-                          <div>
-                            {itemsList.length > 1 && (
-                              <span className="text-[10px] font-heading font-bold text-[#B44E2A] mr-1.5">
-                                Opción {itemIdx + 1}:
-                              </span>
-                            )}
-                            <span className="font-heading font-bold text-[#173E3B]">{it.producto || it.nombre}</span>
-                            {it.cuotas && it.valorCuota && it.valorCuota > 0 ? (
-                              <span className="text-[#68706E] ml-2 font-sans">
-                                ({it.cuotas} cuotas de <strong className="text-[#2F7D5C] font-mono">${it.valorCuota.toLocaleString("es-AR")}</strong>)
-                              </span>
-                            ) : (
-                              <span className="text-amber-700 ml-2 font-sans italic">
-                                (Cotización pendiente)
+                      {itemsList.length > 1 && !isAceptado && !isCancelado && (
+                        <p className="text-[10px] font-heading font-bold text-[#68706E] uppercase tracking-wider">
+                          Seleccioná qué opción(es) eligió el cliente al aceptar:
+                        </p>
+                      )}
+                      {itemsList.map((it: PresupuestoOpcion, itemIdx: number) => {
+                        const isChecked = selectedOptionIndices.includes(itemIdx);
+                        const wasAcceptedChoice =
+                          isAceptado &&
+                          p.itemsSeleccionados &&
+                          p.itemsSeleccionados.some(
+                            (sel) =>
+                              (sel.itemId && sel.itemId === it.itemId) ||
+                              (sel.producto || sel.nombre) === (it.producto || it.nombre)
+                          );
+                        return (
+                          <div
+                            key={itemIdx}
+                            onClick={() => {
+                              if (itemsList.length > 1 && !isAceptado && !isCancelado) {
+                                toggleAcceptOptionIndex(p.id, itemIdx, itemsList.length);
+                              }
+                            }}
+                            className={`text-xs p-2.5 rounded-xl border flex items-center justify-between transition ${
+                              wasAcceptedChoice
+                                ? "bg-emerald-50 border-emerald-400"
+                                : itemsList.length > 1 && !isAceptado && isChecked
+                                  ? "bg-[#F7F3EC] border-[#173E3B]"
+                                  : "bg-[#F7F3EC] border-[#DED8CF]"
+                            } ${itemsList.length > 1 && !isAceptado && !isCancelado ? "cursor-pointer" : ""}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              {itemsList.length > 1 && !isAceptado && !isCancelado && (
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {}}
+                                  className="rounded border-[#DED8CF] text-[#173E3B] focus:ring-[#173E3B]"
+                                />
+                              )}
+                              <div>
+                                {itemsList.length > 1 && (
+                                  <span className="text-[10px] font-heading font-bold text-[#B44E2A] mr-1.5">
+                                    Opción {itemIdx + 1}:
+                                  </span>
+                                )}
+                                <span className="font-heading font-bold text-[#173E3B]">{it.producto || it.nombre}</span>
+                                {it.cuotas && it.valorCuota && it.valorCuota > 0 ? (
+                                  <span className="text-[#68706E] ml-2 font-sans">
+                                    ({it.cuotas} cuotas de <strong className="text-[#2F7D5C] font-mono">${it.valorCuota.toLocaleString("es-AR")}</strong>)
+                                  </span>
+                                ) : (
+                                  <span className="text-amber-700 ml-2 font-sans italic">
+                                    (Cotización pendiente)
+                                  </span>
+                                )}
+                                {wasAcceptedChoice && (
+                                  <span className="ml-2 text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full">
+                                    ✓ Opción Elegida
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {(it.costoProveedor ?? 0) > 0 && (
+                              <span className="text-[10px] text-[#68706E] font-mono">
+                                Costo Prov: ${it.costoProveedor?.toLocaleString("es-AR")}
                               </span>
                             )}
                           </div>
-                          {(it.costoProveedor ?? 0) > 0 && (
-                            <span className="text-[10px] text-[#68706E] font-mono">
-                              Costo Prov: ${it.costoProveedor?.toLocaleString("es-AR")}
-                            </span>
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     {p.notas && (
@@ -1352,10 +1590,10 @@ function PresupuestosContent() {
                   <div className="flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end gap-3 flex-shrink-0 w-full md:w-auto border-t md:border-t-0 border-[#DED8CF] pt-3 md:pt-0">
                     <div className="text-left md:text-right">
                       <span className="text-[10px] text-[#68706E] font-heading uppercase tracking-wider font-bold block">
-                        {itemsList.length > 1 ? `Cuota Opción 1 (${itemsList.length} opciones)` : "Cuota Mensual"}
+                        {itemsList.length > 1 ? `Cuota Opción Seleccionada (${itemsList.length} opciones)` : "Cuota Mensual"}
                       </span>
                       <span className="text-xl font-heading font-extrabold text-[#173E3B] font-mono">
-                        {(itemsList[0]?.valorCuota || totalCuota) > 0 ? `$${(itemsList[0]?.valorCuota || totalCuota).toLocaleString("es-AR")}` : "--"} <span className="text-xs font-normal text-[#68706E] font-sans">/ mes</span>
+                        {selectedCuotaDisplay > 0 ? `$${selectedCuotaDisplay.toLocaleString("es-AR")}` : "--"} <span className="text-xs font-normal text-[#68706E] font-sans">/ mes</span>
                       </span>
                     </div>
 
@@ -1370,6 +1608,20 @@ function PresupuestosContent() {
 
                       {itemsList.length > 0 && totalCuota > 0 ? (
                         <>
+                          <button
+                            data-testid={`btn-aceptar-presupuesto-idx-${idx}`}
+                            disabled={acceptingId === p.id}
+                            onClick={() => handleAceptarPresupuestoYContinuar(p)}
+                            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#2F7D5C] hover:bg-[#25664B] text-white px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            {acceptingId === p.id
+                              ? "Procesando..."
+                              : isAceptado
+                                ? "Continuar Proceso"
+                                : "Aceptar y Continuar"}
+                          </button>
+
                           <button
                             data-testid={`btn-whatsapp-presupuesto-idx-${idx}`}
                             onClick={() => handleEnviarWhatsAppDirecto(p)}
@@ -1389,7 +1641,11 @@ function PresupuestosContent() {
                       ) : null}
 
                       <Link
-                        href={`/admin/validaciones`}
+                        href={`/admin/validaciones?q=${encodeURIComponent(
+                          p.clienteDni && p.clienteDni !== "S/D" && p.clienteDni !== "-"
+                            ? p.clienteDni
+                            : p.clienteNombre || ""
+                        )}&id=${encodeURIComponent(p.solicitudId || "")}`}
                         className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#173E3B] border border-[#DED8CF] hover:border-[#173E3B] px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all shadow-xs"
                       >
                         <ExternalLink className="w-3.5 h-3.5" /> Legajo
@@ -2314,6 +2570,18 @@ function PresupuestosContent() {
                       </span>
                     )}
                   </div>
+
+                  {persistedBudget && (
+                    <button
+                      type="button"
+                      data-testid="btn-aceptar-presupuesto-modal"
+                      disabled={acceptingId === persistedBudget.id}
+                      onClick={() => handleAceptarPresupuestoYContinuar(persistedBudget)}
+                      className="inline-flex items-center justify-center gap-1.5 bg-[#2F7D5C] hover:bg-[#25664B] text-white px-4 py-2.5 rounded-xl text-xs font-heading font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Aceptar y Continuar
+                    </button>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
