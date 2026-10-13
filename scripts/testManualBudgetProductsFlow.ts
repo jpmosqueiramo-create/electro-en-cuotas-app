@@ -16,6 +16,7 @@ import {
     createInitialManualProductDraft,
     calculateManualProductPricing,
     buildCatalogPayloadFromManualProduct,
+    buildDeterministicCatalogProductId,
     findExistingCatalogDuplicate,
     createManualBudgetItem,
     createCatalogBudgetItem,
@@ -458,13 +459,15 @@ async function runTests() {
         "M10.2: El payload respeta precioAnterior, tasaInteresTna, tasaMora, fallback de imagen y los 14 planes (incluyendo 18 y 24)"
     );
 
-    // Simulación Caso A (checkbox OFF -> 0 docs) y Caso B (checkbox ON -> 1 doc, idempotente ante segundo guardado)
-    const simulatedProductosCollection: Array<{
+    // Simulación Caso A (checkbox OFF -> 0 docs) y Caso B (checkbox ON -> 1 doc por (budgetId, itemId), idempotente ante segundo guardado)
+    const simulatedProductosMap = new Map<string, {
         id: string;
         codigoProducto?: string | null;
         nombre?: string | null;
         costoProducto?: number | null;
-    }> = [];
+        sourceBudgetId?: string | null;
+        sourceBudgetItemId?: string | null;
+    }>();
 
     // Caso A: checkbox OFF
     const itemCheckboxOff = createManualBudgetItem({
@@ -472,35 +475,66 @@ async function runTests() {
         plazoSeleccionado: 12,
     });
     if (itemCheckboxOff.guardarEnCatalogo) {
-        simulatedProductosCollection.push({ id: "should_not_happen" });
+        simulatedProductosMap.set("should_not_happen", { id: "should_not_happen" });
     }
     assert(
-        simulatedProductosCollection.length === 0,
+        simulatedProductosMap.size === 0,
         "M22.2 (Caso A): Con guardarEnCatalogo = false, productos recibe 0 nuevos documentos"
     );
 
-    // Caso B: checkbox ON (primer guardado crea 1 doc, segundo guardado detecta duplicado y NO crea otro)
-    const dupBeforeInsert = findExistingCatalogDuplicate(simulatedProductosCollection, manualForCatalog);
-    if (!dupBeforeInsert) {
-        simulatedProductosCollection.push({
-            id: "prod_new_1",
-            codigoProducto: catalogPayload.codigoProducto,
-            nombre: catalogPayload.nombre,
-            costoProducto: catalogPayload.costoProducto,
+    // Caso B: checkbox ON con budgetId = PRES-IDEMP-001, itemId = ITEM-IDEMP-001
+    // Ejecutar alta 1 vez y luego simular reintento / doble click / segunda ejecución del guardado
+    const executeIdempotentCatalogSave = (
+        budgetId: string,
+        itemId: string,
+        existingProdId: string | null,
+        inputOverride?: Partial<typeof manualForCatalog>
+    ): string => {
+        const effectiveInput = { ...manualForCatalog, ...inputOverride };
+        const matchedExistingId = findExistingCatalogDuplicate(
+            Array.from(simulatedProductosMap.values()),
+            {
+                productoId: existingProdId,
+                sourceBudgetId: budgetId,
+                sourceBudgetItemId: itemId,
+            }
+        );
+        const deterministicId = matchedExistingId || buildDeterministicCatalogProductId(budgetId, itemId);
+        const payload = buildCatalogPayloadFromManualProduct(effectiveInput);
+        simulatedProductosMap.set(deterministicId, {
+            id: deterministicId,
+            codigoProducto: payload.codigoProducto,
+            nombre: payload.nombre,
+            costoProducto: payload.costoProducto,
+            sourceBudgetId: budgetId,
+            sourceBudgetItemId: itemId,
         });
-    }
-    const dupOnRetry = findExistingCatalogDuplicate(simulatedProductosCollection, manualForCatalog);
-    if (!dupOnRetry) {
-        simulatedProductosCollection.push({
-            id: "prod_new_2_duplicate",
-            codigoProducto: catalogPayload.codigoProducto,
-            nombre: catalogPayload.nombre,
-            costoProducto: catalogPayload.costoProducto,
-        });
-    }
+        return deterministicId;
+    };
+
+    const firstSavedProdId = executeIdempotentCatalogSave("PRES-IDEMP-001", "ITEM-IDEMP-001", null);
+    // Simular doble click concurrente (antes de que productoId se refleje en memoria) y reintento posterior con nombre/costo editado
+    const secondSavedProdId = executeIdempotentCatalogSave("PRES-IDEMP-001", "ITEM-IDEMP-001", null);
+    const thirdSavedProdIdAfterEdit = executeIdempotentCatalogSave("PRES-IDEMP-001", "ITEM-IDEMP-001", firstSavedProdId, {
+        nombre: "Lavarropas Automático 8kg Inverter (Editado)",
+        costoProducto: 810000,
+    });
+    const docsForItem001 = Array.from(simulatedProductosMap.values()).filter(
+        (d) => d.id === buildDeterministicCatalogProductId("PRES-IDEMP-001", "ITEM-IDEMP-001")
+    );
+    const PRODUCT_DOCUMENTS_CREATED_FOR_ITEM = docsForItem001.length;
+
+    // Verificar además que una segunda opción genuina (ITEM-IDEMP-002) con igual nombre NO colisiona con ITEM-IDEMP-001
+    const distinctOptionProdId = executeIdempotentCatalogSave("PRES-IDEMP-001", "ITEM-IDEMP-002", null);
+
     assert(
-        simulatedProductosCollection.length === 1 && dupOnRetry === "prod_new_1",
-        "M22.3 (Caso B): Con guardarEnCatalogo = true, productos recibe exactamente 1 documento y evita duplicados ante doble click/reintento"
+        PRODUCT_DOCUMENTS_CREATED_FOR_ITEM === 1 &&
+            firstSavedProdId === "prod_PRES-IDEMP-001__ITEM-IDEMP-001" &&
+            secondSavedProdId === firstSavedProdId &&
+            thirdSavedProdIdAfterEdit === firstSavedProdId &&
+            distinctOptionProdId === "prod_PRES-IDEMP-001__ITEM-IDEMP-002" &&
+            simulatedProductosMap.size === 2,
+        `M22.3 (Caso B): Idempotencia por (budgetId=PRES-IDEMP-001, itemId=ITEM-IDEMP-001) -> PRODUCT_DOCUMENTS_CREATED_FOR_ITEM = ${PRODUCT_DOCUMENTS_CREATED_FOR_ITEM}`
     );
 
     // -------------------------------------------------------------------------

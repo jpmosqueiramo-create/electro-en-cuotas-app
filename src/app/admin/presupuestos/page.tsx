@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { db, auth } from "@/lib/firebase";
-import { collection, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp } from "firebase/firestore";
 import { generarPdfPresupuesto } from "@/lib/pdfGenerator";
 import { 
   SolicitudCandidate 
@@ -17,7 +17,7 @@ import {
 } from "@/lib/budgetEditorLifecycle";
 import {
   getAvailableManualPlazos,
-  findExistingCatalogDuplicate,
+  buildDeterministicCatalogProductId,
   InternalBudgetItem,
   ManualProductInput,
   ManualProductSnapshot,
@@ -535,7 +535,13 @@ function PresupuestosContent() {
     }
   }, [searchParams, dataLoaded, solicitudesPool, catalogoProductos, busqueda]);
 
+  const savingInFlightRef = useRef<boolean>(false);
+  const sessionBudgetIdRef = useRef<string>("");
+  const sessionDraftItemIdRef = useRef<string>("");
+
   const handleCerrarModal = () => {
+    sessionBudgetIdRef.current = "";
+    sessionDraftItemIdRef.current = "";
     lifecycleRef.current.closeModal();
     if (typeof window !== "undefined" && window.history && window.history.replaceState) {
       window.history.replaceState({}, "", "/admin/presupuestos");
@@ -543,10 +549,14 @@ function PresupuestosContent() {
   };
 
   const abrirModalNuevo = () => {
+    sessionBudgetIdRef.current = "pres_" + Date.now();
+    sessionDraftItemIdRef.current = "";
     lifecycleRef.current.openNewManual();
   };
 
   const abrirModalConfeccion = (item: PresupuestoRecord) => {
+    sessionBudgetIdRef.current = item.id || "pres_" + Date.now();
+    sessionDraftItemIdRef.current = "";
     const mappedItems = Array.isArray(item.items)
       ? item.items.map((op, i) => mapOpcionToInternalBudgetItem(op, i))
       : [];
@@ -670,6 +680,9 @@ function PresupuestosContent() {
       alert("Ingrese el nombre del producto y un costo proveedor mayor a $0.");
       return;
     }
+    if (startNewAfter) {
+      sessionDraftItemIdRef.current = "";
+    }
     lifecycleRef.current.commitManualDraftToBudgetItems(startNewAfter);
   };
 
@@ -677,9 +690,13 @@ function PresupuestosContent() {
     let list = [...budgetItems];
 
     if (sourceMode === "MANUAL_PRESUPUESTO" && isManualDraftReady) {
+      if (!editingItemId && !sessionDraftItemIdRef.current) {
+        sessionDraftItemIdRef.current =
+          "item_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+      }
       const anticipoNum = Math.max(0, Math.round(Number(manualAnticipoPesos) || 0));
       const draftItem = createManualBudgetItem({
-        itemId: editingItemId || undefined,
+        itemId: editingItemId || sessionDraftItemIdRef.current,
         input: manualDraft,
         plazoSeleccionado: manualPlazoSeleccionado,
         anticipo: anticipoNum,
@@ -722,6 +739,10 @@ function PresupuestosContent() {
   };
 
   const handleGuardarPresupuesto = async () => {
+    if (savingInFlightRef.current) {
+      return;
+    }
+
     const finalItems = buildEffectiveItemsForSave();
 
     if (finalItems.length === 0) {
@@ -737,20 +758,22 @@ function PresupuestosContent() {
       return;
     }
 
+    savingInFlightRef.current = true;
     setSaving(true);
     try {
-      // 1. Si algún producto manual tiene `guardarEnCatalogo === true`, crearlo en colección `productos`
-      //    usando exactamente el esquema del Gestor de Productos e impidiendo duplicados en reintentos.
+      if (persistedBudget?.id) {
+        sessionBudgetIdRef.current = persistedBudget.id;
+      } else if (!sessionBudgetIdRef.current) {
+        sessionBudgetIdRef.current = "pres_" + Date.now();
+      }
+      const targetBudgetId = sessionBudgetIdRef.current;
+
+      // 1. Si algún producto manual tiene `guardarEnCatalogo === true`, escribirlo en colección `productos`
+      //    con ID determinístico `prod_${targetBudgetId}__${item.itemId}` (setDoc idempotente).
       const itemsWithCatalogIds: InternalBudgetItem[] = [];
-      let existingCatalogDocsCache: Array<{
-        id: string;
-        codigoProducto?: string | null;
-        nombre?: string | null;
-        costoProducto?: number | null;
-      }> | null = null;
 
       for (const item of finalItems) {
-        if (item.source === "MANUAL_PRESUPUESTO" && item.guardarEnCatalogo && !item.productoId && item.manualProductSnapshot) {
+        if (item.source === "MANUAL_PRESUPUESTO" && item.guardarEnCatalogo && item.manualProductSnapshot) {
           const snap = item.manualProductSnapshot;
           const manualInputForCatalog: ManualProductInput = {
             codigoProducto: snap.codigo || "",
@@ -772,38 +795,14 @@ function PresupuestosContent() {
             guardarEnCatalogo: true,
           };
 
-          if (!existingCatalogDocsCache) {
-            const pSnap = await getDocs(collection(db, "productos"));
-            existingCatalogDocsCache = pSnap.docs.map((d) => ({
-              id: d.id,
-              ...(d.data() as {
-                codigoProducto?: string | null;
-                nombre?: string | null;
-                costoProducto?: number | null;
-              }),
-            }));
-          }
-
-          const duplicateId = findExistingCatalogDuplicate(existingCatalogDocsCache, manualInputForCatalog);
-          if (duplicateId) {
-            itemsWithCatalogIds.push({
-              ...item,
-              productoId: duplicateId,
-            });
-          } else {
-            const catalogPayload = buildCatalogPayloadFromManualProduct(manualInputForCatalog);
-            const newProdRef = await addDoc(collection(db, "productos"), catalogPayload);
-            existingCatalogDocsCache.push({
-              id: newProdRef.id,
-              codigoProducto: catalogPayload.codigoProducto,
-              nombre: catalogPayload.nombre,
-              costoProducto: catalogPayload.costoProducto,
-            });
-            itemsWithCatalogIds.push({
-              ...item,
-              productoId: newProdRef.id,
-            });
-          }
+          const deterministicProdId =
+            item.productoId || buildDeterministicCatalogProductId(targetBudgetId, item.itemId);
+          const catalogPayload = buildCatalogPayloadFromManualProduct(manualInputForCatalog);
+          await setDoc(doc(db, "productos", deterministicProdId), catalogPayload);
+          itemsWithCatalogIds.push({
+            ...item,
+            productoId: deterministicProdId,
+          });
         } else {
           itemsWithCatalogIds.push(item);
         }
@@ -862,7 +861,7 @@ function PresupuestosContent() {
           : `${primaryItem.nombre} (+${itemsWithCatalogIds.length - 1} ${itemsWithCatalogIds.length - 1 === 1 ? "opción" : "opciones"})`;
 
       const nuevoPresupuesto: PresupuestoRecord = {
-        id: persistedBudget?.id || "pres_" + Date.now(),
+        id: targetBudgetId,
         pricingSchemaVersion: schemaVersion,
         pricingMode: schemaVersion,
         producto: resumenProducto,
@@ -947,6 +946,7 @@ function PresupuestosContent() {
       }
 
       nuevoPresupuesto.solicitudId = targetDocId || undefined;
+      sessionDraftItemIdRef.current = "";
       lifecycleRef.current.startAddingAnotherProduct(sourceMode);
       lifecycleRef.current.setBudgetItems(itemsWithCatalogIds);
       lifecycleRef.current.setPersistedBudget(nuevoPresupuesto);
@@ -957,6 +957,7 @@ function PresupuestosContent() {
       console.error("Error al guardar presupuesto:", err);
       alert("Error al guardar el presupuesto.");
     } finally {
+      savingInFlightRef.current = false;
       setSaving(false);
     }
   };

@@ -540,24 +540,39 @@ export function buildCatalogPayloadFromManualProduct(
 }
 
 /**
- * Verifica de manera determinística si un producto manual ya existe en el catálogo
- * (por productoId previo, por codigoProducto o por coincidencia exacta de nombre + costo + proveedor)
- * evitando altas duplicadas ante doble click o reintentos.
+ * Construye el ID de documento determinístico en la colección `productos` para un item manual
+ * con `guardarEnCatalogo = true`, garantizando que `(sourceBudgetId, sourceBudgetItemId)`
+ * produzca como máximo 1 documento en `productos` ante doble click, reintento o re-ejecución,
+ * mientras que una nueva opción con distinto `itemId` sí puede crear otro producto.
+ */
+export function buildDeterministicCatalogProductId(
+    sourceBudgetId: string,
+    sourceBudgetItemId: string
+): string {
+    const cleanBudget = String(sourceBudgetId || "pres")
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]/g, "_");
+    const cleanItem = String(sourceBudgetItemId || "item")
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]/g, "_");
+    return `prod_${cleanBudget}__${cleanItem}`;
+}
+
+/**
+ * Verifica de manera determinística si un item manual ya fue dado de alta en `productos`
+ * exclusivamente por su identidad de origen (`productoId` o par `sourceBudgetId + sourceBudgetItemId`),
+ * sin usar el nombre del producto como identidad.
  */
 export function findExistingCatalogDuplicate(
     existingProducts: Array<{
         id: string;
-        codigoProducto?: string | null;
-        nombre?: string | null;
-        costoProducto?: number | null;
-        proveedor?: string | null;
+        sourceBudgetId?: string | null;
+        sourceBudgetItemId?: string | null;
     }>,
     input: {
         productoId?: string | null;
-        codigoProducto?: string | null;
-        nombre: string;
-        costoProducto?: number | null;
-        proveedor?: string | null;
+        sourceBudgetId?: string | null;
+        sourceBudgetItemId?: string | null;
     }
 ): string | null {
     if (!Array.isArray(existingProducts) || !input) return null;
@@ -567,25 +582,18 @@ export function findExistingCatalogDuplicate(
         if (byId) return byId.id;
     }
 
-    const codeClean = (input.codigoProducto || "").trim().toLowerCase();
-    if (codeClean) {
-        const byCode = existingProducts.find(
-            (p) => (p.codigoProducto || "").trim().toLowerCase() === codeClean
+    if (input.sourceBudgetId && input.sourceBudgetItemId) {
+        const deterministicId = buildDeterministicCatalogProductId(
+            input.sourceBudgetId,
+            input.sourceBudgetItemId
         );
-        if (byCode) return byCode.id;
-    }
-
-    const nameClean = (input.nombre || "").trim().toLowerCase();
-    const provClean = (input.proveedor || "").trim().toLowerCase();
-    const costNum = Number(input.costoProducto) || 0;
-    if (nameClean && costNum > 0) {
-        const bySignature = existingProducts.find(
+        const byDetId = existingProducts.find(
             (p) =>
-                (p.nombre || "").trim().toLowerCase() === nameClean &&
-                Number(p.costoProducto || 0) === costNum &&
-                (!p.proveedor || (p.proveedor || "").trim().toLowerCase() === provClean)
+                p.id === deterministicId ||
+                (p.sourceBudgetId === input.sourceBudgetId &&
+                    p.sourceBudgetItemId === input.sourceBudgetItemId)
         );
-        if (bySignature) return bySignature.id;
+        if (byDetId) return byDetId.id;
     }
 
     return null;
