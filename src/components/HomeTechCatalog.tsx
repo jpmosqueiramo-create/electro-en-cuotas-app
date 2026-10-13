@@ -164,7 +164,7 @@ export default function HomeTechCatalog() {
         direccion: qfLocalidad || "",
         localidad: qfLocalidad || "",
         productoNombre: qfNecesidad || "",
-        referidoPor: qfReferente || null,
+        ...(qfReferente ? { referidoPor: qfReferente.slice(0, 150) } : {}),
         fecha: serverTimestamp(),
         fechaIso: new Date().toISOString(),
         fechaCreacion: serverTimestamp(),

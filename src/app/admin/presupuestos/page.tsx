@@ -63,6 +63,22 @@ function parseAnyDate(val: unknown): Date {
   return new Date();
 }
 
+function sanitizeForFirestore<T>(val: T): T {
+  if (val === undefined) return null as unknown as T;
+  if (val === null || typeof val !== "object") return val;
+  if (val instanceof Date) return val;
+  if (Array.isArray(val)) {
+    return val.map((item) => sanitizeForFirestore(item)) as unknown as T;
+  }
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+    if (v !== undefined) {
+      out[k] = sanitizeForFirestore(v);
+    }
+  }
+  return out as T;
+}
+
 interface PresupuestoOpcion {
   itemId?: string;
   source?: "CATALOGO" | "MANUAL_PRESUPUESTO";
@@ -125,6 +141,7 @@ interface PresupuestoRecord {
   alicuotaIvaAplicada?: number;
   factorDerivado?: number;
   snapshotCanonico?: CanonicalPricingSnapshot | null;
+  fechaIso?: string;
   fechaObjeto?: Date;
 }
 
@@ -343,7 +360,8 @@ function PresupuestosContent() {
               alicuotaIvaAplicada: Number(p.alicuotaIvaAplicada) || undefined,
               factorDerivado: Number(p.factorDerivado) || undefined,
               snapshotCanonico: p.snapshotCanonico as CanonicalPricingSnapshot | undefined,
-              fechaObjeto: parseAnyDate(p.fechaIso || p.fecha || rawData.fechaIso || rawData.fecha)
+              fechaIso: p.fechaIso ? String(p.fechaIso) : undefined,
+              fechaObjeto: parseAnyDate(p.fechaIso || p.fecha || p.fechaObjeto || rawData.fechaIso || rawData.fecha || rawData.fechaCreacion)
             });
           });
         } else if (rawData.necesidad || rawData.productoDeseado || rawData.productoNombre) {
@@ -416,7 +434,8 @@ function PresupuestosContent() {
               alicuotaIvaAplicada: Number(p.alicuotaIvaAplicada) || undefined,
               factorDerivado: Number(p.factorDerivado) || undefined,
               snapshotCanonico: p.snapshotCanonico as CanonicalPricingSnapshot | undefined,
-              fechaObjeto: parseAnyDate(p.fechaIso || p.fecha || rawData.fechaCreacion)
+              fechaIso: p.fechaIso ? String(p.fechaIso) : undefined,
+              fechaObjeto: parseAnyDate(p.fechaIso || p.fecha || p.fechaObjeto || rawData.fechaCreacion)
             });
           }
         });
@@ -467,15 +486,22 @@ function PresupuestosContent() {
     fetchPresupuestos();
   }, []);
 
+  const lastDismissedQueryKeyRef = useRef<string>("");
+
   // Procesar Query Parameters de Alerta y Resolver Vinculación Determinística mediante Controller Canónico
   useEffect(() => {
-    const qParam = searchParams.get("q");
-    if (qParam && !busqueda) {
-      setBusqueda(qParam);
+    const currentQueryKey = searchParams.toString();
+    if (currentQueryKey && lastDismissedQueryKeyRef.current === currentQueryKey) {
+      return;
     }
 
-    const currentQueryKey = searchParams.toString();
     const lifecycle = lifecycleRef.current;
+    if (lifecycle.getInitializedKey() !== currentQueryKey) {
+      const qParam = searchParams.get("q");
+      if (qParam && !busqueda) {
+        setBusqueda(qParam);
+      }
+    }
 
     const initialized = lifecycle.handleQueryOrDataChange({
       queryKey: currentQueryKey,
@@ -540,6 +566,7 @@ function PresupuestosContent() {
   const sessionDraftItemIdRef = useRef<string>("");
 
   const handleCerrarModal = () => {
+    lastDismissedQueryKeyRef.current = searchParams.toString();
     sessionBudgetIdRef.current = "";
     sessionDraftItemIdRef.current = "";
     lifecycleRef.current.closeModal();
@@ -549,12 +576,16 @@ function PresupuestosContent() {
   };
 
   const abrirModalNuevo = () => {
+    lastDismissedQueryKeyRef.current = searchParams.toString();
     sessionBudgetIdRef.current = "pres_" + Date.now();
     sessionDraftItemIdRef.current = "";
+    setBusqueda("");
+    setFiltroEstado("TODOS");
     lifecycleRef.current.openNewManual();
   };
 
   const abrirModalConfeccion = (item: PresupuestoRecord) => {
+    lastDismissedQueryKeyRef.current = searchParams.toString();
     sessionBudgetIdRef.current = item.id || "pres_" + Date.now();
     sessionDraftItemIdRef.current = "";
     const mappedItems = Array.isArray(item.items)
@@ -754,8 +785,7 @@ function PresupuestosContent() {
       return;
     }
     if (!resolvedSolicitudId && !confirmarCrearNueva) {
-      alert("Solicitud original no vinculada automáticamente. Seleccione una solicitud candidata o confirme la creación explícita.");
-      return;
+      lifecycleRef.current.setConfirmarCrearNueva(true);
     }
 
     savingInFlightRef.current = true;
@@ -798,7 +828,7 @@ function PresupuestosContent() {
           const deterministicProdId =
             item.productoId || buildDeterministicCatalogProductId(targetBudgetId, item.itemId);
           const catalogPayload = buildCatalogPayloadFromManualProduct(manualInputForCatalog);
-          await setDoc(doc(db, "productos", deterministicProdId), catalogPayload);
+          await setDoc(doc(db, "productos", deterministicProdId), sanitizeForFirestore(catalogPayload));
           itemsWithCatalogIds.push({
             ...item,
             productoId: deterministicProdId,
@@ -823,7 +853,7 @@ function PresupuestosContent() {
         itemId: it.itemId,
         source: it.source,
         pricingMode: it.pricingMode,
-        productoId: it.productoId,
+        productoId: it.productoId ?? null,
         producto: it.nombre,
         nombre: it.nombre,
         codigo: it.codigo ?? null,
@@ -860,12 +890,15 @@ function PresupuestosContent() {
           ? primaryItem.nombre
           : `${primaryItem.nombre} (+${itemsWithCatalogIds.length - 1} ${itemsWithCatalogIds.length - 1 === 1 ? "opción" : "opciones"})`;
 
+      const nowDate = new Date();
+      const nowIso = nowDate.toISOString();
+
       const nuevoPresupuesto: PresupuestoRecord = {
         id: targetBudgetId,
         pricingSchemaVersion: schemaVersion,
         pricingMode: schemaVersion,
         producto: resumenProducto,
-        solicitudId: resolvedSolicitudId || undefined,
+        ...(resolvedSolicitudId ? { solicitudId: resolvedSolicitudId } : {}),
         clienteNombre: leadData.nombre || "Cliente Sin Nombre",
         clienteDni: leadData.dni || "-",
         clienteWhatsapp: leadData.telefono || "-",
@@ -888,55 +921,72 @@ function PresupuestosContent() {
           : {}),
         items: serializedOptions,
         notas: leadData.notas || "",
-        fechaObjeto: new Date(),
+        fechaIso: nowIso,
+        fechaObjeto: nowDate,
         estado: "Generado"
       };
 
       let persistSuccess = false;
       let targetDocId: string | null = resolvedSolicitudId;
-      let targetCollection = resolvedCollection;
+      let targetCollection: "solicitudes_cuenta" | "solicitudes" | null = resolvedCollection;
 
-      if (!targetDocId && confirmarCrearNueva) {
+      const createAndPersistNewSolicitudCuenta = async (): Promise<string> => {
+        // Paso 1: Crear documento en `solicitudes_cuenta` respetando estrictamente `allow create` de firestore.rules
         const newRef = await addDoc(collection(db, "solicitudes_cuenta"), {
           tipo: "contacto_rapido",
-          nombreCompleto: leadData.nombre,
-          numeroDni: leadData.dni || "",
-          whatsapp: leadData.telefono || "",
-          direccion: leadData.localidad || "",
-          localidad: leadData.localidad || "",
-          productoNombre: resumenProducto,
+          nombreCompleto: (leadData.nombre || "Cliente Sin Nombre").slice(0, 150),
+          numeroDni: (leadData.dni || "").slice(0, 30),
+          whatsapp: (leadData.telefono || "").slice(0, 50),
+          direccion: (leadData.localidad || "").slice(0, 200),
+          localidad: (leadData.localidad || "").slice(0, 150),
+          productoNombre: (resumenProducto || "Presupuesto").slice(0, 200),
           estado: "Presupuestado",
           fecha: serverTimestamp(),
           fechaCreacion: serverTimestamp(),
-          fechaIso: new Date().toISOString(),
-          presupuestos: [nuevoPresupuesto]
+          fechaIso: nowIso,
         });
-        targetDocId = newRef.id;
+        // Paso 2: Adjuntar el presupuesto archivado mediante `updateDoc` (autorizado por `allow update: if isAdmin()`)
+        nuevoPresupuesto.solicitudId = newRef.id;
+        nuevoPresupuesto.solicitudTipo = "apertura";
+        const sanitizedPresupuesto = sanitizeForFirestore(nuevoPresupuesto);
+        await updateDoc(newRef, {
+          presupuestos: [sanitizedPresupuesto],
+          estado: "Presupuestado",
+        });
+        return newRef.id;
+      };
+
+      if (!targetDocId) {
+        targetDocId = await createAndPersistNewSolicitudCuenta();
         targetCollection = "solicitudes_cuenta";
         persistSuccess = true;
       } else if (targetDocId && targetCollection) {
         const docRef = doc(db, targetCollection, targetDocId);
         const snap = await getDoc(docRef);
         if (!snap.exists()) {
-          lifecycleRef.current.setPersistedBudget(null);
-          alert("Error: La solicitud vinculada ya no existe o no pudo verificarse.");
-          return;
+          targetDocId = await createAndPersistNewSolicitudCuenta();
+          targetCollection = "solicitudes_cuenta";
+          persistSuccess = true;
+        } else {
+          nuevoPresupuesto.solicitudId = targetDocId;
+          nuevoPresupuesto.solicitudTipo = targetCollection === "solicitudes" ? "estandar" : "apertura";
+          const sanitizedPresupuesto = sanitizeForFirestore(nuevoPresupuesto);
+          const data = snap.data();
+          const existingPresup: PresupuestoRecord[] = Array.isArray(data.presupuestos) ? data.presupuestos : [];
+          const alreadyInList = existingPresup.some((ep) => ep.id === nuevoPresupuesto.id);
+          const updatedPresupList = alreadyInList
+            ? existingPresup.map((ep) => (ep.id === nuevoPresupuesto.id ? sanitizedPresupuesto : sanitizeForFirestore(ep)))
+            : [...existingPresup.map((ep) => sanitizeForFirestore(ep)), sanitizedPresupuesto];
+          await updateDoc(docRef, {
+            presupuestos: updatedPresupList,
+            estado: "Presupuestado"
+          });
+          persistSuccess = true;
         }
-        const data = snap.data();
-        const existingPresup: PresupuestoRecord[] = data.presupuestos || [];
-        const alreadyInList = existingPresup.some((ep) => ep.id === nuevoPresupuesto.id);
-        const updatedPresupList = alreadyInList
-          ? existingPresup.map((ep) => (ep.id === nuevoPresupuesto.id ? nuevoPresupuesto : ep))
-          : [...existingPresup, nuevoPresupuesto];
-        await updateDoc(docRef, {
-          presupuestos: updatedPresupList,
-          estado: "Presupuestado"
-        });
-        persistSuccess = true;
       } else {
-        lifecycleRef.current.setPersistedBudget(null);
-        alert("Error: La solicitud vinculada ya no existe o no pudo verificarse.");
-        return;
+        targetDocId = await createAndPersistNewSolicitudCuenta();
+        targetCollection = "solicitudes_cuenta";
+        persistSuccess = true;
       }
 
       if (!persistSuccess) {
@@ -945,14 +995,24 @@ function PresupuestosContent() {
         return;
       }
 
-      nuevoPresupuesto.solicitudId = targetDocId || undefined;
+      if (leadData.alertaId) {
+        try {
+          await updateDoc(doc(db, "alertas_admin", leadData.alertaId), { leida: true });
+        } catch {
+          // Non-blocking
+        }
+      }
+
+      if (targetDocId) {
+        nuevoPresupuesto.solicitudId = targetDocId;
+      }
       sessionDraftItemIdRef.current = "";
       lifecycleRef.current.startAddingAnotherProduct(sourceMode);
       lifecycleRef.current.setBudgetItems(itemsWithCatalogIds);
       lifecycleRef.current.setPersistedBudget(nuevoPresupuesto);
       lifecycleRef.current.setResolvedCandidate(targetDocId, targetCollection);
       await fetchPresupuestos();
-      alert(`¡Presupuesto guardado exitosamente (${schemaVersion})! Ahora puede descargar el PDF o enviar por WhatsApp.`);
+      alert(`¡Presupuesto guardado y archivado exitosamente (${schemaVersion})! Ahora puede descargar el PDF o enviar por WhatsApp.`);
     } catch (err: unknown) {
       console.error("Error al guardar presupuesto:", err);
       alert("Error al guardar el presupuesto.");
@@ -999,44 +1059,43 @@ function PresupuestosContent() {
   };
 
   /**
-   * Genera el mensaje de WhatsApp EXCLUSIVAMENTE desde el snapshot público sanitizado (`toClientBudgetPayload`).
+   * Envía por WhatsApp un presupuesto ya guardado/archivado (desde el modal o desde el historial).
    */
-  const handleEnviarWhatsApp = async () => {
-    if (!persistedBudget) {
-      alert("Debe guardar el presupuesto antes de enviarlo por WhatsApp.");
-      return;
-    }
-    const tel = (leadData.telefono || "").replace(/\D/g, "");
+  const handleEnviarWhatsAppDirecto = async (targetBudget: PresupuestoRecord, overrideTel?: string) => {
+    const rawTel = overrideTel || targetBudget.clienteWhatsapp || "";
+    const tel = rawTel.replace(/\D/g, "");
     if (!tel) {
       alert("Ingrese un número de teléfono válido para enviar WhatsApp.");
       return;
     }
 
     const rawItems =
-      persistedBudget.items && persistedBudget.items.length > 0
-        ? persistedBudget.items
-        : persistedBudget.producto
+      targetBudget.items && targetBudget.items.length > 0
+        ? targetBudget.items
+        : targetBudget.producto
           ? [
               {
-                nombre: persistedBudget.producto,
-                precioContado: persistedBudget.contado || 0,
-                cuotas: persistedBudget.cuotas || 12,
-                valorCuota: persistedBudget.valorCuota || 0,
+                nombre: targetBudget.producto,
+                precioContado: targetBudget.contado || 0,
+                cuotas: targetBudget.cuotas || 12,
+                valorCuota: targetBudget.valorCuota || 0,
                 totalFinanciado:
-                  (persistedBudget.cuotas || 12) * (persistedBudget.valorCuota || 0),
+                  (targetBudget.cuotas || 12) * (targetBudget.valorCuota || 0),
               },
             ]
           : [];
 
     const clientSafePayload = toClientBudgetPayload({
-      nroPresupuesto: persistedBudget.id
-        ? persistedBudget.id.replace("pres_", "").substring(0, 8).toUpperCase()
+      nroPresupuesto: targetBudget.id
+        ? targetBudget.id.replace("pres_", "").substring(0, 8).toUpperCase()
         : "S/N",
-      fechaEmision: new Date().toLocaleDateString("es-AR"),
-      clienteNombre: leadData.nombre || persistedBudget.clienteNombre || "Cliente",
-      clienteDni: leadData.dni || persistedBudget.clienteDni || "",
-      clienteTelefono: leadData.telefono || persistedBudget.clienteWhatsapp || "",
-      clienteLocalidad: leadData.localidad || persistedBudget.clienteLocalidad || "",
+      fechaEmision: targetBudget.fechaObjeto
+        ? targetBudget.fechaObjeto.toLocaleDateString("es-AR")
+        : new Date().toLocaleDateString("es-AR"),
+      clienteNombre: targetBudget.clienteNombre || "Cliente",
+      clienteDni: targetBudget.clienteDni || "",
+      clienteTelefono: rawTel,
+      clienteLocalidad: targetBudget.clienteLocalidad || "",
       items: rawItems as Array<Record<string, unknown>>,
     });
 
@@ -1046,23 +1105,52 @@ function PresupuestosContent() {
     }
     const wame = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
 
-    // Transición de estado a Enviado si está vinculado
-    if (resolvedSolicitudId && resolvedCollection) {
+    const docId = targetBudget.solicitudId || resolvedSolicitudId;
+    const colName =
+      targetBudget.solicitudTipo === "estandar"
+        ? "solicitudes"
+        : resolvedCollection || "solicitudes_cuenta";
+
+    if (docId && colName) {
       try {
-        const docRef = doc(db, resolvedCollection, resolvedSolicitudId);
+        const docRef = doc(db, colName, docId);
         const snap = await getDoc(docRef);
         if (snap.exists()) {
-          const presList = (snap.data().presupuestos || []).map((p: PresupuestoRecord) => 
-            p.id === persistedBudget.id ? { ...p, estado: "Enviado" } : p
+          const presList = (snap.data().presupuestos || []).map((p: PresupuestoRecord) =>
+            p.id === targetBudget.id ? sanitizeForFirestore({ ...p, estado: "Enviado" }) : sanitizeForFirestore(p)
           );
           await updateDoc(docRef, { presupuestos: presList });
-          lifecycleRef.current.setPersistedBudget({ ...persistedBudget, estado: "Enviado" });
+          if (persistedBudget && persistedBudget.id === targetBudget.id) {
+            lifecycleRef.current.setPersistedBudget({ ...persistedBudget, estado: "Enviado" });
+          }
           fetchPresupuestos();
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     window.open(wame, "_blank");
+  };
+
+  /**
+   * Genera el mensaje de WhatsApp EXCLUSIVAMENTE desde el snapshot público sanitizado (`toClientBudgetPayload`).
+   */
+  const handleEnviarWhatsApp = async () => {
+    if (!persistedBudget) {
+      alert("Debe guardar el presupuesto antes de enviarlo por WhatsApp.");
+      return;
+    }
+    await handleEnviarWhatsAppDirecto(
+      {
+        ...persistedBudget,
+        clienteNombre: leadData.nombre || persistedBudget.clienteNombre || "Cliente",
+        clienteDni: leadData.dni || persistedBudget.clienteDni || "",
+        clienteWhatsapp: leadData.telefono || persistedBudget.clienteWhatsapp || "",
+        clienteLocalidad: leadData.localidad || persistedBudget.clienteLocalidad || "",
+      },
+      leadData.telefono || persistedBudget.clienteWhatsapp || ""
+    );
   };
 
   const presupuestosFiltrados = presupuestos.filter((p) => {
@@ -1070,19 +1158,20 @@ function PresupuestosContent() {
       filtroEstado === "TODOS" ? true :
       filtroEstado === "ACEPTADO" ? (p.estado === "Aceptado" || p.estado === "Aprobado") :
       filtroEstado === "RECHAZADO" ? p.estado === "Rechazado" :
-      filtroEstado === "PENDIENTE" ? (p.estado === "Pendiente" || !p.estado || p.estado === "Generado" || p.estado === "Borrador") :
+      filtroEstado === "PENDIENTE" ? (p.estado === "Pendiente" || !p.estado || p.estado === "Generado" || p.estado === "Borrador" || p.estado === "Enviado") :
       filtroEstado === "ELIMINADO" ? (p.estado === "Eliminado" || p.estado === "Cancelado") : true;
 
     const queryClean = busqueda.toLowerCase().trim();
     if (!queryClean) return estadoMatch;
 
     const matchNombre = (p.clienteNombre || "").toLowerCase().includes(queryClean);
-    const matchDni = (p.clienteDni || "").toString().includes(queryClean);
+    const matchDni = (p.clienteDni || "").toString().toLowerCase().includes(queryClean);
+    const matchTel = (p.clienteWhatsapp || "").toString().toLowerCase().includes(queryClean);
     const matchId = (p.id || "").toLowerCase().includes(queryClean);
     const matchProd = (p.producto || "").toLowerCase().includes(queryClean) ||
-      (p.items || []).some((it: PresupuestoOpcion) => (it.producto || "").toLowerCase().includes(queryClean));
+      (p.items || []).some((it: PresupuestoOpcion) => (it.producto || it.nombre || "").toLowerCase().includes(queryClean));
 
-    return estadoMatch && (matchNombre || matchDni || matchId || matchProd);
+    return estadoMatch && (matchNombre || matchDni || matchTel || matchId || matchProd);
   });
 
   return (
@@ -1280,12 +1369,23 @@ function PresupuestosContent() {
                       </button>
 
                       {itemsList.length > 0 && totalCuota > 0 ? (
-                        <button
-                          onClick={() => handleDescargarPdf(p)}
-                          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#B44E2A] border border-[#DED8CF] hover:border-[#B44E2A] px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all shadow-xs cursor-pointer"
-                        >
-                          <Download className="w-3.5 h-3.5" /> PDF
-                        </button>
+                        <>
+                          <button
+                            data-testid={`btn-whatsapp-presupuesto-idx-${idx}`}
+                            onClick={() => handleEnviarWhatsAppDirecto(p)}
+                            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all shadow-xs cursor-pointer"
+                          >
+                            <Send className="w-3.5 h-3.5" /> WhatsApp
+                          </button>
+
+                          <button
+                            data-testid={`btn-pdf-presupuesto-idx-${idx}`}
+                            onClick={() => handleDescargarPdf(p)}
+                            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#B44E2A] border border-[#DED8CF] hover:border-[#B44E2A] px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all shadow-xs cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5" /> PDF
+                          </button>
+                        </>
                       ) : null}
 
                       <Link
