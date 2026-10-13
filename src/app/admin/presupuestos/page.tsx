@@ -16,7 +16,8 @@ import {
   BudgetEditorState
 } from "@/lib/budgetEditorLifecycle";
 import {
-  MANUAL_PLAZOS_DISPONIBLES,
+  getAvailableManualPlazos,
+  findExistingCatalogDuplicate,
   InternalBudgetItem,
   ManualProductInput,
   ManualProductSnapshot,
@@ -739,12 +740,19 @@ function PresupuestosContent() {
     setSaving(true);
     try {
       // 1. Si algún producto manual tiene `guardarEnCatalogo === true`, crearlo en colección `productos`
-      //    usando exactamente el esquema del Gestor de Productos. Por defecto es `false`.
+      //    usando exactamente el esquema del Gestor de Productos e impidiendo duplicados en reintentos.
       const itemsWithCatalogIds: InternalBudgetItem[] = [];
+      let existingCatalogDocsCache: Array<{
+        id: string;
+        codigoProducto?: string | null;
+        nombre?: string | null;
+        costoProducto?: number | null;
+      }> | null = null;
+
       for (const item of finalItems) {
         if (item.source === "MANUAL_PRESUPUESTO" && item.guardarEnCatalogo && !item.productoId && item.manualProductSnapshot) {
           const snap = item.manualProductSnapshot;
-          const catalogPayload = buildCatalogPayloadFromManualProduct({
+          const manualInputForCatalog: ManualProductInput = {
             codigoProducto: snap.codigo || "",
             nombre: snap.nombre,
             marca: snap.marca || "",
@@ -762,12 +770,40 @@ function PresupuestosContent() {
             factoresPlanes: snap.factoresAplicados,
             planesActivos: snap.planesActivos,
             guardarEnCatalogo: true,
-          });
-          const newProdRef = await addDoc(collection(db, "productos"), catalogPayload);
-          itemsWithCatalogIds.push({
-            ...item,
-            productoId: newProdRef.id,
-          });
+          };
+
+          if (!existingCatalogDocsCache) {
+            const pSnap = await getDocs(collection(db, "productos"));
+            existingCatalogDocsCache = pSnap.docs.map((d) => ({
+              id: d.id,
+              ...(d.data() as {
+                codigoProducto?: string | null;
+                nombre?: string | null;
+                costoProducto?: number | null;
+              }),
+            }));
+          }
+
+          const duplicateId = findExistingCatalogDuplicate(existingCatalogDocsCache, manualInputForCatalog);
+          if (duplicateId) {
+            itemsWithCatalogIds.push({
+              ...item,
+              productoId: duplicateId,
+            });
+          } else {
+            const catalogPayload = buildCatalogPayloadFromManualProduct(manualInputForCatalog);
+            const newProdRef = await addDoc(collection(db, "productos"), catalogPayload);
+            existingCatalogDocsCache.push({
+              id: newProdRef.id,
+              codigoProducto: catalogPayload.codigoProducto,
+              nombre: catalogPayload.nombre,
+              costoProducto: catalogPayload.costoProducto,
+            });
+            itemsWithCatalogIds.push({
+              ...item,
+              productoId: newProdRef.id,
+            });
+          }
         } else {
           itemsWithCatalogIds.push(item);
         }
@@ -826,7 +862,7 @@ function PresupuestosContent() {
           : `${primaryItem.nombre} (+${itemsWithCatalogIds.length - 1} ${itemsWithCatalogIds.length - 1 === 1 ? "opción" : "opciones"})`;
 
       const nuevoPresupuesto: PresupuestoRecord = {
-        id: "pres_" + Date.now(),
+        id: persistedBudget?.id || "pres_" + Date.now(),
         pricingSchemaVersion: schemaVersion,
         pricingMode: schemaVersion,
         producto: resumenProducto,
@@ -888,9 +924,13 @@ function PresupuestosContent() {
           return;
         }
         const data = snap.data();
-        const existingPresup = data.presupuestos || [];
+        const existingPresup: PresupuestoRecord[] = data.presupuestos || [];
+        const alreadyInList = existingPresup.some((ep) => ep.id === nuevoPresupuesto.id);
+        const updatedPresupList = alreadyInList
+          ? existingPresup.map((ep) => (ep.id === nuevoPresupuesto.id ? nuevoPresupuesto : ep))
+          : [...existingPresup, nuevoPresupuesto];
         await updateDoc(docRef, {
-          presupuestos: [...existingPresup, nuevoPresupuesto],
+          presupuestos: updatedPresupList,
           estado: "Presupuestado"
         });
         persistSuccess = true;
@@ -907,6 +947,7 @@ function PresupuestosContent() {
       }
 
       nuevoPresupuesto.solicitudId = targetDocId || undefined;
+      lifecycleRef.current.startAddingAnotherProduct(sourceMode);
       lifecycleRef.current.setBudgetItems(itemsWithCatalogIds);
       lifecycleRef.current.setPersistedBudget(nuevoPresupuesto);
       lifecycleRef.current.setResolvedCandidate(targetDocId, targetCollection);
@@ -1230,6 +1271,7 @@ function PresupuestosContent() {
 
                     <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                       <button
+                        data-testid={`btn-reabrir-presupuesto-idx-${idx}`}
                         onClick={() => abrirModalConfeccion(p)}
                         className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#173E3B] hover:bg-[#123230] text-white px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all shadow-xs cursor-pointer"
                       >
@@ -1934,14 +1976,14 @@ function PresupuestosContent() {
                           onChange={(e) => lifecycleRef.current.setManualPlazoSeleccionado(Number(e.target.value))}
                           className="w-full bg-[#FFFDFC] border border-[#DED8CF] px-3 py-2 rounded-xl text-xs font-heading font-bold text-[#1F2928] outline-none focus:border-[#173E3B]"
                         >
-                          {MANUAL_PLAZOS_DISPONIBLES.filter((c) => manualDraft.planesActivos[c] !== false).map(
-                            (c) => (
+                          {getAvailableManualPlazos(manualDraft.factoresPlanes)
+                            .filter((c) => manualDraft.planesActivos[c] !== false)
+                            .map((c) => (
                               <option key={c} value={c}>
-                                {c} {c === 1 ? "Cuota" : "Cuotas"} (Factor {manualLivePricing.resultadosPorPlan[c].factor}x → $
-                                {manualLivePricing.resultadosPorPlan[c].cuotaMensual.toLocaleString("es-AR")}/mes)
+                                {c} {c === 1 ? "Cuota" : "Cuotas"} (Factor {manualLivePricing.resultadosPorPlan[c]?.factor}x → $
+                                {manualLivePricing.resultadosPorPlan[c]?.cuotaMensual.toLocaleString("es-AR")}/mes)
                               </option>
-                            )
-                          )}
+                            ))}
                         </select>
                       </div>
 
@@ -1961,11 +2003,11 @@ function PresupuestosContent() {
                       </div>
                     </div>
 
-                    {/* TABLA DE PLANES Y FACTORES PREDETERMINADOS (1..12 CUOTAS) */}
+                    {/* TABLA DE PLANES Y FACTORES PREDETERMINADOS (DERIVADOS DINÁMICAMENTE DE FACTORES_PREDETERMINADOS) */}
                     <div className="border border-[#DED8CF] rounded-2xl overflow-hidden">
                       <div className="bg-[#F7F3EC] px-4 py-2.5 border-b border-[#DED8CF] flex flex-wrap items-center justify-between gap-2">
                         <span className="text-[11px] font-heading font-bold text-[#173E3B]">
-                          🔒 Tabla de Factores por Plan (FACTORES_PREDETERMINADOS precargados y editables por opción)
+                          🔒 Tabla de Factores por Plan (FACTORES_PREDETERMINADOS: 1..12, 18 y 24 cuotas precargados y editables)
                         </span>
                         <button
                           type="button"
@@ -1978,8 +2020,9 @@ function PresupuestosContent() {
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-3 bg-[#FFFDFC]">
-                        {MANUAL_PLAZOS_DISPONIBLES.map((cuotas) => {
+                        {getAvailableManualPlazos(manualDraft.factoresPlanes).map((cuotas) => {
                           const planRes = manualLivePricing.resultadosPorPlan[cuotas];
+                          if (!planRes) return null;
                           const isSelected = manualLivePricing.plazoSeleccionado === cuotas;
                           return (
                             <div

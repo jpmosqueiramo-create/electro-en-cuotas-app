@@ -380,13 +380,15 @@ export class BudgetEditorLifecycleController {
       this.state.budgetItems = [...this.state.budgetItems, item];
     }
 
-    this.state.editingItemId = null;
     this.state.persistedBudget = null;
 
-    if (startNewAfter || true) {
+    if (startNewAfter) {
+      this.state.editingItemId = null;
       this.state.manualDraft = createInitialManualProductDraft("");
       this.state.manualPlazoSeleccionado = 12;
       this.state.manualAnticipoPesos = "0";
+    } else {
+      this.state.editingItemId = item.itemId;
     }
 
     this.notify();
@@ -567,17 +569,20 @@ export class BudgetEditorLifecycleController {
           ? originalRecord || null
           : null,
       sourceMode: firstManual && existingItems.length === 1 ? "MANUAL_PRESUPUESTO" : "CATALOGO",
-      manualDraft: firstManual
-        ? extractManualInputFromItem(firstManual).input
-        : createInitialManualProductDraft(params.producto || ""),
-      manualPlazoSeleccionado: firstManual
-        ? extractManualInputFromItem(firstManual).plazoSeleccionado
-        : params.cuotas || 12,
-      manualAnticipoPesos: firstManual
-        ? String(extractManualInputFromItem(firstManual).anticipo || 0)
-        : "0",
+      manualDraft:
+        firstManual && existingItems.length === 1
+          ? extractManualInputFromItem(firstManual).input
+          : createInitialManualProductDraft(existingItems.length === 0 ? params.producto || "" : ""),
+      manualPlazoSeleccionado:
+        firstManual && existingItems.length === 1
+          ? extractManualInputFromItem(firstManual).plazoSeleccionado
+          : params.cuotas || 12,
+      manualAnticipoPesos:
+        firstManual && existingItems.length === 1
+          ? String(extractManualInputFromItem(firstManual).anticipo || 0)
+          : "0",
       budgetItems: existingItems,
-      editingItemId: null,
+      editingItemId: firstManual && existingItems.length === 1 ? firstManual.itemId : null,
     };
 
     if (params.catalogoProductos && params.producto) {
