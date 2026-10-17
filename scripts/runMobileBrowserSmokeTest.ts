@@ -1,10 +1,11 @@
-process.env.FIRESTORE_EMULATOR_HOST = "127.0.0.1:8080";
-process.env.FIREBASE_AUTH_EMULATOR_HOST = "127.0.0.1:9099";
-process.env.GCLOUD_PROJECT = "demo-cuenta-hogar";
-
+import "./helpers/requireSafeEmulatorEnvironment";
 import { spawn } from "child_process";
 import http from "http";
 import { admin } from "../src/lib/firebaseAdmin";
+import { resolveChrome } from "./helpers/resolveChrome";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const WebSocket = (globalThis as any).WebSocket;
@@ -163,13 +164,16 @@ async function runAuthenticatedBrowserSmoke() {
   console.log("VIEWPORTS: 375px, 390px, 430px, Desktop (1280px)");
   console.log("==========================================================\n");
 
+  const chromePath = resolveChrome();
+  console.log(`CHROME_BIN_RESOLVED = ${chromePath}`);
   const { emailAdmin, emailClient, emailSeller, pass } = await ensureTestUsersExist();
-
-  const chromePath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+  const profile = mkdtempSync(join(tmpdir(), "cuenta-hogar-chrome-"));
   const port = 9222;
 
   const chromeProcess = spawn(chromePath, [
     "--headless=new",
+    `--user-data-dir=${profile}`,
+    ...(process.platform === "linux" && process.getuid?.() === 0 ? ["--no-sandbox"] : []),
     `--remote-debugging-port=${port}`,
     "--disable-gpu",
     "--no-first-run",
@@ -177,6 +181,9 @@ async function runAuthenticatedBrowserSmoke() {
     "about:blank"
   ]);
 
+  let launchError: Error | undefined;
+  chromeProcess.on("error", error => { launchError = error; });
+  try {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let versionInfo: any = null;
   for (let i = 0; i < 15; i++) {
@@ -186,9 +193,8 @@ async function runAuthenticatedBrowserSmoke() {
       if (versionInfo) break;
     } catch {}
   }
-  if (!versionInfo) throw new Error("Could not connect to Chrome CDP on port " + port);
+  if (!versionInfo) throw launchError || new Error("Could not connect to Chrome CDP on port " + port);
 
-  try {
     console.log(`[CHROME ENGINE DETECTED]: ${versionInfo.Browser}`);
 
     const targets = await fetchJson(`http://127.0.0.1:${port}/json/list`);
@@ -448,14 +454,19 @@ async function runAuthenticatedBrowserSmoke() {
 
     if (!allPass) {
       console.error("\n[ERROR CRÍTICO]: Faltó cumplir uno o más gates probatorios. El test finaliza con EXIT CODE 1.");
-      process.exit(1);
+      process.exitCode = 1;
     } else {
       console.log("\n[ÉXITO ABSOLUTO]: Los 12 viewports de los 3 paneles cumplieron al 100% todos los gates.");
-      process.exit(0);
+      process.exitCode = 0;
     }
 
   } finally {
     chromeProcess.kill();
+    await new Promise<void>(resolve => {
+      if (!chromeProcess.pid || chromeProcess.exitCode !== null || chromeProcess.signalCode !== null) resolve();
+      else chromeProcess.once("close", () => resolve());
+    });
+    rmSync(profile, { recursive: true, force: true });
   }
 }
 

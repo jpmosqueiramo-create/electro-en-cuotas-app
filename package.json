@@ -6,7 +6,24 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:pricing": "GCLOUD_PROJECT=demo-cuenta-hogar NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-cuenta-hogar tsx scripts/testCanonicalPricingEngine.ts",
+    "test:pricing-flow": "GCLOUD_PROJECT=demo-cuenta-hogar NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-cuenta-hogar tsx scripts/testEndToEndPricingFlow.ts",
+    "test:budget-routing": "GCLOUD_PROJECT=demo-cuenta-hogar NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-cuenta-hogar tsx scripts/testBudgetAlertRoutingFlow.ts",
+    "test:manual-budget": "GCLOUD_PROJECT=demo-cuenta-hogar NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-cuenta-hogar tsx scripts/testManualBudgetProductsFlow.ts",
+    "test:ledger": "GCLOUD_PROJECT=demo-cuenta-hogar NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-cuenta-hogar tsx scripts/testLedgerEngine3B2.ts",
+    "test:auth-guard": "GCLOUD_PROJECT=demo-cuenta-hogar NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-cuenta-hogar tsx scripts/testProductionAuthEmulatorGuard.ts",
+    "test:emulator:ledger": "tsx scripts/testLedgerEmulator3B2.ts",
+    "test:emulator:rules": "tsx scripts/testFirestoreRules3B6A.ts",
+    "test:emulator:commissions-ui": "tsx scripts/testAdminCommissionsUI3B5C1.ts",
+    "test:emulator:commissions": "tsx scripts/testCommissionsEngine3B4B.ts",
+    "test:emulator:settlements": "tsx scripts/testSettlementsEngine3B5B.ts",
+    "test:emulator:expiration": "tsx scripts/testEngine3B3.ts",
+    "test:emulator:seller": "tsx scripts/testSellerAccountUI3B5C2.ts",
+    "test:emulator:panels": "tsx scripts/testE2EThreePanels3B5D.ts",
+    "test:runtime-guards": "tsx scripts/testRuntimeGuards.ts",
+    "test:browser-smoke": "tsx scripts/runBrowserSmoke.ts",
+    "test:safe": "npm run test:runtime-guards && npm run test:pricing && npm run test:pricing-flow && npm run test:budget-routing && npm run test:manual-budget && npm run test:ledger && npm run test:auth-guard"
   },
   "dependencies": {
     "firebase": "^12.11.0",
@@ -25,7 +42,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "firebase-tools": "15.34.0",
     "tailwindcss": "^4",
+    "tsx": "4.23.15",
     "typescript": "^5"
   }
 }
