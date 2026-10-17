@@ -1,7 +1,5 @@
-process.env.FIRESTORE_EMULATOR_HOST = "127.0.0.1:8080";
-process.env.FIREBASE_AUTH_EMULATOR_HOST = "127.0.0.1:9099";
-const targetProjectId = process.env.GCLOUD_PROJECT || "negocio-facil-page";
-process.env.GCLOUD_PROJECT = targetProjectId;
+import "./helpers/requireSafeEmulatorEnvironment";
+const targetProjectId = process.env.GCLOUD_PROJECT!;
 
 import { admin } from "../src/lib/firebaseAdmin";
 

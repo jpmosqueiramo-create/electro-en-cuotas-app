@@ -1,3 +1,4 @@
+import "./helpers/requireSafeEmulatorEnvironment";
 import { admin } from "../src/lib/firebaseAdmin";
 import {
   crearSnapshotComisionOperacion,
