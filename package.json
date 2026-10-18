@@ -23,7 +23,9 @@
     "test:emulator:panels": "tsx scripts/testE2EThreePanels3B5D.ts",
     "test:runtime-guards": "tsx scripts/testRuntimeGuards.ts",
     "test:browser-smoke": "tsx scripts/runBrowserSmoke.ts",
-    "test:safe": "npm run test:runtime-guards && npm run test:pricing && npm run test:pricing-flow && npm run test:budget-routing && npm run test:manual-budget && npm run test:ledger && npm run test:auth-guard"
+    "test:safe": "npm run test:runtime-guards && npm run test:pricing && npm run test:pricing-flow && npm run test:budget-routing && npm run test:manual-budget && npm run test:ledger && npm run test:auth-guard",
+    "test:catalog-c2": "tsx scripts/testCatalogPublicationPure.ts",
+    "test:emulator:catalog-c2": "tsx scripts/testCatalogPublicationEmulator.ts"
   },
   "dependencies": {
     "firebase": "^12.11.0",
