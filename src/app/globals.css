@@ -189,3 +189,31 @@ input::placeholder, textarea::placeholder {
     transform: none !important;
   }
 }
+
+/* Primera capa del shell Admin: foco y overlays sin cambiar módulos heredados. */
+.admin-control:focus-visible {
+  outline: 2px solid #173E3B;
+  outline-offset: 3px;
+}
+.admin-menu::backdrop {
+  background: rgb(31 41 40 / 45%);
+}
+.admin-skip {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  padding: 0.75rem 1rem;
+  background: #FFFDFC;
+  color: #173E3B;
+}
+.admin-skip:focus {
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-shell .admin-control {
+    transition: none;
+    scroll-behavior: auto;
+  }
+}

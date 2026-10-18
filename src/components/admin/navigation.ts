@@ -1,0 +1,23 @@
+import { CalendarDays, ClipboardList, FileText, Files, Wallet, Truck, Users, Package, ChartNoAxesCombined, Settings } from "lucide-react";
+
+// Compatibilidad transitoria: las agrupaciones futuras abren módulos existentes.
+// Documentación comparte Validaciones; Logística abre Remitos (las entregas siguen
+// en Validaciones). No se inventan tabs, filtros ni rutas funcionales nuevas.
+export const ADMIN_DESTINATIONS = [
+  { id: "today", label: "Hoy", href: "/admin", icon: CalendarDays },
+  { id: "requests", label: "Solicitudes", href: "/admin/validaciones", icon: ClipboardList },
+  { id: "budgets", label: "Presupuestos", href: "/admin/presupuestos", icon: FileText },
+  { id: "documents", label: "Documentación", href: "/admin/validaciones", icon: Files },
+  { id: "collections", label: "Cobranzas", href: "/admin/cartera", icon: Wallet },
+  { id: "logistics", label: "Logística", href: "/admin/remitos", icon: Truck },
+  { id: "sellers", label: "Vendedores afiliados", href: "/admin/comisiones", icon: Users },
+  { id: "catalog", label: "Catálogo", href: "/admin/productos", icon: Package },
+  { id: "reports", label: "Reportes", href: "/admin/reportes", icon: ChartNoAxesCombined },
+  { id: "settings", label: "Configuración", href: "/admin/envios", icon: Settings },
+] as const;
+
+export function activeAdminDestination(pathname: string) {
+  if (pathname.startsWith("/admin/clientes")) return "requests";
+  if (pathname.startsWith("/admin/rendiciones")) return "collections";
+  return ADMIN_DESTINATIONS.find(item => item.href === pathname)?.id;
+}
