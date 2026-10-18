@@ -1,0 +1,18 @@
+--- a/firestore.rules
++++ b/firestore.rules
+@@ -39 +39 @@
+-    // Catálogo de productos: Lectura pública, Escritura de admin
++    // Privado: documento y subcolecciones sólo para Admin.
+@@ -41,2 +41,7 @@
+-      allow read: if true;
+-      allow write: if isAdmin();
++      allow read, write: if isAdmin();
++    }
++
++    // Sólo proyecciones reconciliadas. Admin SDK publica fuera de Rules.
++    match /catalogo_publico/{referenceId} {
++      allow read: if isAdmin() || resource.data.publicado == true;
++      allow write: if false;
+@@ -172 +177 @@
+-      allow read, write: if isAdmin();
++      allow read, write: if collection != "catalogo_publico" && isAdmin();
