@@ -28,7 +28,10 @@
     "test:emulator:catalog-c2": "tsx scripts/testCatalogPublicationEmulator.ts",
     "test:catalog-c3": "tsx scripts/testCatalogReferenceEditor.ts",
     "test:emulator:catalog-c3": "tsx scripts/testCatalogReferenceEditorEmulator.ts",
-    "test:browser:catalog-c3": "tsx scripts/runCatalogReferenceBrowser.ts"
+    "test:browser:catalog-c3": "tsx scripts/runCatalogReferenceBrowser.ts",
+    "test:catalog-c4": "tsx scripts/testPublicCatalog.ts",
+    "test:emulator:catalog-c4": "tsx scripts/testPublicCatalogEmulator.ts",
+    "test:browser:catalog-c4": "tsx scripts/runPublicCatalogBrowser.ts"
   },
   "dependencies": {
     "firebase": "^12.11.0",

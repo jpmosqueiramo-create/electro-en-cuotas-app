@@ -6,15 +6,11 @@ import { addDoc, collection, updateDoc, doc, getDocs, query, where, Timestamp } 
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { fetchPublicCatalog, fetchPublicCatalogReference } from "@/lib/publicCatalogClient";
+import { publicCatalogSelection } from "@/lib/publicCatalogContract";
+import type { CatalogReferencePublic } from "@/lib/catalogReference";
 import { useEffect, useState } from "react";
 
-type Producto = {
-  id: string;
-  nombre: string;
-  cuota12: number;
-  cuota8: number;
-  precioContado: number | null;
-};
 
 export default function AfiliadoPage() {
   const { user, loading: authLoading } = useAuth();
@@ -23,7 +19,9 @@ export default function AfiliadoPage() {
   const [activeTab, setActiveTab] = useState<"carga" | "seguimiento" | "clientes" | "comisiones">("seguimiento");
   const [notificaciones, setNotificaciones] = useState<any[]>([]);
   const [solicitudes, setSolicitudes] = useState<any[]>([]);
-  const [productos, setProductos] = useState<Producto[]>([]);
+  const [productos, setProductos] = useState<CatalogReferencePublic[]>([]);
+  const [catalogState, setCatalogState] = useState("loading");
+  const [catalogError, setCatalogError] = useState("");
   const [cargandoDatos, setCargandoDatos] = useState(true);
   const [subiendo, setSubiendo] = useState(false);
 
@@ -50,7 +48,7 @@ export default function AfiliadoPage() {
   const [comentarioEntrega, setComentarioEntrega] = useState("");
 
   const [productoId, setProductoId] = useState("");
-  const [planElegido, setPlanElegido] = useState<"12"|"8"|null>(null);
+  const [planElegido, setPlanElegido] = useState<string | null>(null);
 
   // Archivos
   const [dniFrente, setDniFrente] = useState<File | null>(null);
@@ -97,6 +95,20 @@ export default function AfiliadoPage() {
     }
   };
 
+  useEffect(() => {
+    if (!user) return;
+    const controller = new AbortController();
+    void Promise.resolve().then(() => {
+    if (controller.signal.aborted) return;
+    setCatalogState("loading"); setCatalogError("");
+    return fetchPublicCatalog(controller.signal).then(items => {
+      if (controller.signal.aborted) return;
+      setProductos(items); setCatalogState(items.length ? "ready" : "empty");
+    }).catch(error => { if (!controller.signal.aborted) { setCatalogState("error"); setCatalogError(error.message); } });
+    });
+    return () => controller.abort();
+  }, [user]);
+
   const fetchData = async () => {
     if (!user) return;
     try {
@@ -106,12 +118,6 @@ export default function AfiliadoPage() {
       const results: any[] = [];
       snapSols.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
       setSolicitudes(results.sort((a,b) => b.fechaCreacion.toMillis() - a.fechaCreacion.toMillis()));
-
-      // 2. Traer catálogo de productos para el Select
-      const snapProds = await getDocs(collection(db, "productos"));
-      const prods: Producto[] = [];
-      snapProds.forEach(doc => prods.push({ id: doc.id, ...doc.data() } as Producto));
-      setProductos(prods);
 
       const qNotif = query(collection(db, "notificaciones"), where("afiliadoEmail", "==", user.email));
       const snapNotif = await getDocs(qNotif);
@@ -262,8 +268,9 @@ export default function AfiliadoPage() {
     setSubiendo(true);
 
     try {
-      const prodSeleccionado = productos.find(p => p.id === productoId);
-      if (!prodSeleccionado) throw new Error("Producto no encontrado");
+      const prodSeleccionado = await fetchPublicCatalogReference(productoId);
+      if (!prodSeleccionado) throw new Error("Esta referencia ya no está disponible.");
+      const selection = publicCatalogSelection(prodSeleccionado, planElegido);
 
       const [urlFrente, urlDorso, urlSueldo, urlServicio] = await Promise.all([
         handleSubirArchivo(dniFrente, "dniFrente"),
@@ -279,12 +286,10 @@ export default function AfiliadoPage() {
         clienteEmail: clienteEmail,
         datosPersonales: { nombreCompleto, numeroDni, telefono, direccion, localidad },
         
-        productoId: prodSeleccionado.id,
-        productoDeseado: prodSeleccionado.nombre,
-        planElegido: planElegido,
-        montoCuota: planElegido === "12" ? prodSeleccionado.cuota12 : prodSeleccionado.cuota8,
-        tasaInteresTna: (prodSeleccionado as any).tasaInteresTna || 0,
-        tasaMora: (prodSeleccionado as any).tasaMora || 0,
+        productoId: selection.productoId,
+        productoDeseado: selection.productoNombre,
+        planElegido: selection.planElegido,
+        montoCuota: selection.montoCuota,
 
         documentos: {
           dniFrente: urlFrente,
@@ -297,7 +302,7 @@ export default function AfiliadoPage() {
         fechaCreacion: Timestamp.now()
       });
 
-      alert("¡La venta/solicitud ha sido ingresada al sistema con éxito!");
+      alert("¡La solicitud de gestión de compra ha sido ingresada al sistema con éxito!");
       setClienteEmail(""); setNombreCompleto(""); setNumeroDni(""); setTelefono(""); setDireccion(""); setLocalidad("");
       setProductoId(""); setPlanElegido(null);
       setDniFrente(null); setDniDorso(null); setReciboSueldo(null); setServicio(null);
@@ -305,13 +310,13 @@ export default function AfiliadoPage() {
       await fetchData();
     } catch (error) {
       console.error(error);
-      alert("Ocurrió un error al cargar la venta.");
+      alert("Ocurrió un error al cargar la solicitud.");
     } finally {
       setSubiendo(false);
     }
   };
 
-  const prodElegidoObj = productos.find(p => p.id === productoId);
+  const prodElegidoObj = productos.find(p => p.referenciaId === productoId);
 
   if (authLoading || cargandoDatos) return <div className="min-h-screen bg-[#121316] text-zinc-100 p-8 text-center mt-20 font-bold">Cargando panel comercial...</div>;
   if (!user) return null;
@@ -414,46 +419,36 @@ export default function AfiliadoPage() {
           {/* 1. SECCION: CARGA DE SOLICITUDES */}
           {activeTab === "carga" && (
             <div className="bg-[#121316] border border-zinc-800 rounded-xl p-6 md:p-10 shadow-2xl shadow-black/80 max-w-4xl mx-auto animate-fade-in">
-            <h2 className="text-2xl font-bold text-white mb-2">Cargar Nueva Venta (Presencial)</h2>
-            <p className="text-zinc-600 mb-8">Selecciona el producto del inventario activo y carga los documentos del cliente que tienes enfrente para pasarlo a evaluación crediticia de la mesa chica.</p>
+            <h2 className="text-2xl font-bold text-white mb-2">Cargar nueva solicitud</h2>
+            <p className="text-zinc-600 mb-8">Seleccioná una referencia publicada y un plan estimado para preparar la solicitud de gestión de compra del cliente.</p>
             
             <form onSubmit={handleSubmit} className="space-y-8">
               
+              {catalogState === "loading" && <p role="status">Cargando referencias…</p>}
+              {catalogState === "error" && <p role="alert">{catalogError}</p>}
+              {catalogState === "empty" && <p>No hay referencias publicadas en este momento.</p>}
               {/* SELECTOR DE PRODUCTO Y CUOTAS */}
               <div className="bg-[#181920] p-5 rounded-xl border border-zinc-800">
                 <div className="mb-5">
-                  <label className="block text-sm font-bold text-[#fe5000] mb-2">Seleccionar Producto del Catálogo</label>
+                  <label className="block text-sm font-bold text-[#fe5000] mb-2">Seleccionar referencia de compra</label>
                   <select 
-                    required 
+                    required aria-label="Referencia pública"
                     value={productoId} 
                     onChange={e => { setProductoId(e.target.value); setPlanElegido(null); }} 
                     className="w-full bg-zinc-800/80 border border-gray-700 rounded-lg p-3 text-white focus:border-[#fe5000] focus:outline-none font-semibold text-lg"
                   >
-                    <option value="" disabled>-- Haz clic para elegir del inventario --</option>
+                    <option value="" disabled>-- Elegí una referencia publicada --</option>
                     {productos.map(p => (
-                      <option key={p.id} value={p.id}>{p.nombre}</option>
+                      <option key={p.referenciaId} value={p.referenciaId}>{p.nombre}</option>
                     ))}
                   </select>
                 </div>
 
-                {prodElegidoObj && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div 
-                      onClick={() => setPlanElegido("12")}
-                      className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col items-center justify-center transition-all ${planElegido === "12" ? "border-[#fe5000] bg-[#fe5000]/5" : "border-zinc-800 hover:border-gray-500"}`}
-                    >
-                      <span className="text-white font-bold">12 Cuotas Ex.</span>
-                      <span className="text-2xl font-black text-[#fe5000]">${prodElegidoObj.cuota12}</span>
-                    </div>
-                    <div 
-                      onClick={() => setPlanElegido("8")}
-                      className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col items-center justify-center transition-all ${planElegido === "8" ? "border-yellow-600 bg-yellow-600/10" : "border-zinc-800 hover:border-gray-500"}`}
-                    >
-                      <span className="text-white font-bold">8 Cuotas Dir.</span>
-                      <span className="text-2xl font-black text-[#fe5000]">${prodElegidoObj.cuota8}</span>
-                    </div>
-                  </div>
-                )}
+                {prodElegidoObj && <div data-public-reference={prodElegidoObj.referenciaId} className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  {prodElegidoObj.planesPublicados.map(plan => <button key={plan.cuotas} type="button" data-public-plan={plan.cuotas} onClick={() => setPlanElegido(String(plan.cuotas))} className={`min-h-11 border-2 rounded-xl p-4 ${planElegido === String(plan.cuotas) ? "border-[#fe5000] bg-[#fe5000]/5" : "border-zinc-800 hover:border-gray-500"}`}>
+                    <span className="block font-bold">{plan.cuotas} cuotas estimadas</span><span className="text-2xl font-black text-[#fe5000]">{plan.cuotaEstimada.toLocaleString("es-AR", { style: "currency", currency: "ARS" })}</span>
+                  </button>)}
+                </div>}
               </div>
 
               {/* DATOS DEL CLIENTE */}
@@ -505,7 +500,7 @@ export default function AfiliadoPage() {
               </div>
 
               <button disabled={subiendo || !planElegido || !productoId} type="submit" className="w-full bg-yellow-500 text-black py-4 rounded-xl font-black text-lg hover:bg-yellow-400 transition-colors shadow-[0_0_20px_rgba(234,179,8,0.4)] disabled:opacity-50 disabled:shadow-none mt-8 tracking-wide">
-                {subiendo ? "Subiendo legajo pesado, no cierres..." : "Ingresar Expediente de Venta"}
+                {subiendo ? "Subiendo legajo pesado, no cierres..." : "Ingresar solicitud"}
               </button>
             </form>
           </div>
@@ -650,7 +645,7 @@ export default function AfiliadoPage() {
           
             <h2 className="text-xl font-bold text-white mb-6">Mis Solicitudes Cargadas</h2>
             {solicitudes.length === 0 ? (
-              <p className="text-zinc-500 text-sm">Aún no has gestionado ninguna venta.</p>
+              <p className="text-zinc-500 text-sm">Aún no has cargado ninguna solicitud.</p>
             ) : (
               <div className="space-y-4">
                 {solicitudes.slice(0, 10).map((sol) => (

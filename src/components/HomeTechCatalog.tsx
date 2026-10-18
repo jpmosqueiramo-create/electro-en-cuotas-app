@@ -5,12 +5,12 @@ import Footer from "@/components/Footer";
 import InstagramSection from "@/components/InstagramSection";
 
 
-import { registrarProductoBorradorSiNoExiste } from "@/lib/catalogManager";
-import { calcularTablaTodosLosPlanes } from "@/lib/financialEngine";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
+import { fetchPublicCatalog } from "@/lib/publicCatalogClient";
+import type { CatalogReferencePublic } from "@/lib/catalogReference";
 import { 
   ShieldCheck, 
   ChevronRight, 
@@ -34,20 +34,7 @@ import {
   Package
 } from "lucide-react";
 
-type Producto = {
-  id: string;
-  nombre: string;
-  precioAnterior: number | null;
-  cuota12: number;
-  cuota8: number;
-  costoProducto?: number | null;
-  precioContado?: number | null;
-  factoresPlanes?: Record<number, number>;
-  planesActivos?: Record<number, boolean>;
-  descripcion: string;
-  imagenUrl: string;
-  imagenUrls?: string[];
-};
+
 
 function WhatsAppIcon({ className = "w-5 h-5" }: { className?: string }) {
   return (
@@ -58,8 +45,9 @@ function WhatsAppIcon({ className = "w-5 h-5" }: { className?: string }) {
 }
 
 export default function HomeTechCatalog() {
-  const [productos, setProductos] = useState<Producto[]>([]);
+  const [productos, setProductos] = useState<CatalogReferencePublic[]>([]);
   const [loading, setLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState("");
 
   // Quick Form State
   const [qfNombre, setQfNombre] = useState("");
@@ -114,25 +102,11 @@ export default function HomeTechCatalog() {
   };
 
   useEffect(() => {
-    const fetchCatalog = async () => {
-      try {
-        const q = query(collection(db, "productos"));
-        const snap = await getDocs(q);
-        const prods: Producto[] = [];
-        snap.forEach(doc => {
-          const data = doc.data();
-          if (data.activo !== false && data.publicado !== false) {
-            prods.push({ id: doc.id, ...data } as Producto);
-          }
-        });
-        setProductos(prods.reverse());
-      } catch (error) {
-        console.error("Error al cargar el catálogo:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCatalog();
+    const controller = new AbortController();
+    fetchPublicCatalog(controller.signal).then(setProductos).catch(error => {
+      if (!controller.signal.aborted) setCatalogError(error instanceof Error ? error.message : "No pudimos cargar las referencias.");
+    }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -152,11 +126,7 @@ export default function HomeTechCatalog() {
     setQfSubmitting(true);
     
     try {
-      if (qfNecesidad) { 
-        await registrarProductoBorradorSiNoExiste(qfNecesidad).catch(() => {}); 
-      }
-
-      const payloadBuscás = {
+const payloadBuscás = {
         tipo: "contacto_rapido",
         nombreCompleto: qfNombre,
         numeroDni: qfDni || "",
@@ -582,7 +552,7 @@ export default function HomeTechCatalog() {
             </a>
           </div>
 
-          {loading ? (
+          {catalogError ? <p role="alert" className="p-6 text-center">{catalogError}</p> : loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3].map(i => (
                 <div key={i} className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-2xl p-6 space-y-4 animate-pulse">
@@ -606,19 +576,18 @@ export default function HomeTechCatalog() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {productos.slice(0, 6).map(prod => {
-                const planes = calcularTablaTodosLosPlanes(prod.costoProducto || prod.precioAnterior || 100000, prod.factoresPlanes, prod.planesActivos);
-                const plan12 = planes.find(p => p.cuotas === 12);
+                const plan12 = prod.planesPublicados.find(p => p.cuotas === 12);
 
                 return (
                   <div 
-                    key={prod.id} 
+                    data-public-reference={prod.referenciaId} key={prod.referenciaId}
                     className="group bg-[#F9FAFB] border border-[#E5E7EB] hover:border-[#111318] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
                   >
                     <div>
                       {/* IMAGEN DEL PRODUCTO */}
                       <div className="relative w-full h-56 bg-white p-4 flex items-center justify-center overflow-hidden border-b border-[#E5E7EB]">
                         <img 
-                          src={prod.imagenUrl || "/logo-cuenta-hogar-oficial.png"} 
+                          src={prod.imagenUrls[0] || "/logo-cuenta-hogar-oficial.png"}
                           alt={prod.nombre} 
                           className="max-h-48 w-auto object-contain group-hover:scale-105 transition-transform duration-300" 
                           onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/logo-cuenta-hogar-oficial.png"; }}
@@ -647,14 +616,14 @@ export default function HomeTechCatalog() {
                           </span>
                           {plan12 ? (
                             <div className="flex items-baseline justify-between">
-                              <span className="text-xs font-bold text-[#374151]">12 cuotas fijas de</span>
+                              <span className="text-xs font-bold text-[#374151]">12 cuotas estimadas de</span>
                               <span className="text-lg font-extrabold text-[#111318]">
-                                {formatPrice(plan12.cuotaMensual)}
+                                {formatPrice(plan12.cuotaEstimada)}
                               </span>
                             </div>
                           ) : (
                             <div className="text-sm font-bold text-[#111318]">
-                              Consultar planes de financiamiento
+                              Consultá los planes disponibles
                             </div>
                           )}
                         </div>
@@ -664,13 +633,12 @@ export default function HomeTechCatalog() {
                     {/* BOTÓN DE COTIZACIÓN */}
                     <div className="p-6 pt-0">
                       <a 
-                        href={`https://wa.me/5491125659686?text=${encodeURIComponent(`Hola, quiero solicitar cotización para gestionar la compra del producto: ${prod.nombre}`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={`/solicitar?id=${encodeURIComponent(prod.referenciaId)}${plan12 ? "&cuotas=12" : ""}`}
+
                         className="w-full inline-flex items-center justify-center gap-2 bg-[#111318] hover:bg-[#1F232D] text-white hover:text-[#FFD21A] font-extrabold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-md"
                       >
                         <WhatsAppIcon className="w-4 h-4 text-[#25D366]" />
-                        <span>Solicitar cotización</span>
+                        <span>Solicitar gestión de compra</span>
                       </a>
                     </div>
 
