@@ -60,9 +60,12 @@ function assertPositive(value: number, field: string): void {
   }
 }
 
-/** Menor entero con terminación 90 que es mayor o igual a la base sin truncar. */
+/** Conserva miles exactos; en otro caso, próxima terminación 90 sin bajar la base. */
 export function redondearCuotaCatalogo(cuotaBaseReferencia: number): number {
   assertPositive(cuotaBaseReferencia, "cuotaBaseReferencia");
+  if (Number.isSafeInteger(cuotaBaseReferencia) && cuotaBaseReferencia % 1000 === 0) {
+    return cuotaBaseReferencia;
+  }
   const result = Math.ceil((cuotaBaseReferencia - 90) / 100) * 100 + 90;
   if (!Number.isSafeInteger(result) || result < cuotaBaseReferencia) {
     throw new RangeError("cuotaExhibidaCatalogo: fuera del rango monetario seguro");

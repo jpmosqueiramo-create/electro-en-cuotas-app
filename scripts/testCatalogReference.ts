@@ -89,7 +89,9 @@ test("L–M: costo/factor no válido, overflow y total redondeado cero", () => {
 test("N–P: terminación comercial 90 y fracciones por encima del límite", () => {
   const cases = [[42137, 42190], [78412, 78490], [145833, 145890],
     [231044, 231090], [387612, 387690], [145890, 145890], [145891, 145990],
-    [145890.01, 145990], [89.99, 90], [90, 90], [90.01, 190], [0.1, 90]];
+    [145890.01, 145990], [89.99, 90], [90, 90], [90.01, 190], [0.1, 90],
+    [145000, 145000], [230000, 230000], [99999, 100090],
+    [145000.01, 145090], [144999.99, 145090]];
   for (const [base, expected] of cases) assert.equal(redondearCuotaCatalogo(base), expected);
   for (const invalid of [0, -1, NaN, Infinity, -Infinity]) {
     assert.throws(() => redondearCuotaCatalogo(invalid));
@@ -98,7 +100,11 @@ test("N–P: terminación comercial 90 y fracciones por encima del límite", () 
     const base = i / 7;
     const result = redondearCuotaCatalogo(base);
     assert.ok(Number.isSafeInteger(result));
-    assert.equal(result % 100, 90);
+    if (Number.isSafeInteger(base) && base % 1000 === 0) {
+      assert.equal(result, base);
+    } else {
+      assert.equal(result % 100, 90);
+    }
     assert.ok(result >= base);
     assert.ok(result - 100 < base);
   }
@@ -119,7 +125,7 @@ test("Q–R: allowlist pública exacta, sin claves sensibles ni mutación", () =
   const dto = toCatalogReferencePublic(privateInput);
   assert.deepEqual(Object.keys(dto).sort(), ["referenciaId", "nombre", "descripcion",
     "imagenUrls", "planesPublicados", "publicado", "schemaVersion"].sort());
-  assert.deepEqual(dto.planesPublicados, [{ cuotas: 12, cuotaEstimada: 125090 }]);
+  assert.deepEqual(dto.planesPublicados, [{ cuotas: 12, cuotaEstimada: 125000 }]);
   assert.equal(dto.schemaVersion, 1);
   const sensitive = ["skuInterno", "codigoBarras", "codigoProducto", "legacyCodigoProducto",
     "costoProducto", "costoProveedor", "proveedor", "factoresPlanes", "factor", "factorInterno",
