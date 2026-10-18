@@ -1,11 +1,11 @@
 "use client";
 
-import { registrarProductoBorradorSiNoExiste } from "@/lib/catalogManager";
-import { calcularTablaTodosLosPlanes } from "@/lib/financialEngine";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
+import { fetchPublicCatalog } from "@/lib/publicCatalogClient";
+import type { CatalogReferencePublic } from "@/lib/catalogReference";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import InstagramSection from "@/components/InstagramSection";
@@ -35,20 +35,7 @@ import {
   ArrowUpRight
 } from "lucide-react";
 
-type Producto = {
-  id: string;
-  nombre: string;
-  precioAnterior: number | null;
-  cuota12: number;
-  cuota8: number;
-  costoProducto?: number | null;
-  precioContado?: number | null;
-  factoresPlanes?: Record<number, number>;
-  planesActivos?: Record<number, boolean>;
-  descripcion: string;
-  imagenUrl: string;
-  imagenUrls?: string[];
-};
+
 
 function WhatsAppIcon({ className = "w-5 h-5" }: { className?: string }) {
   return (
@@ -59,8 +46,10 @@ function WhatsAppIcon({ className = "w-5 h-5" }: { className?: string }) {
 }
 
 export default function PublicCatalog() {
-  const [productos, setProductos] = useState<Producto[]>([]);
+  const [productos, setProductos] = useState<CatalogReferencePublic[]>([]);
+  const [galleryImages, setGalleryImages] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState("");
 
   // Filtros de búsqueda
   const [searchQuery, setSearchQuery] = useState("");
@@ -116,25 +105,11 @@ export default function PublicCatalog() {
   };
 
   useEffect(() => {
-    const fetchCatalog = async () => {
-      try {
-        const q = query(collection(db, "productos"));
-        const snap = await getDocs(q);
-        const prods: Producto[] = [];
-        snap.forEach(doc => {
-          const data = doc.data();
-          if (data.activo !== false && data.publicado !== false) {
-            prods.push({ id: doc.id, ...data } as Producto);
-          }
-        });
-        setProductos(prods.reverse());
-      } catch (error) {
-        console.error("Error al cargar el catálogo:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCatalog();
+    const controller = new AbortController();
+    fetchPublicCatalog(controller.signal).then(setProductos).catch(error => {
+      if (!controller.signal.aborted) setCatalogError(error instanceof Error ? error.message : "No pudimos cargar las referencias.");
+    }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -154,11 +129,7 @@ export default function PublicCatalog() {
     setQfSubmitting(true);
     
     try {
-      if (qfNecesidad) { 
-        await registrarProductoBorradorSiNoExiste(qfNecesidad).catch(() => {}); 
-      }
-
-      const payload = {
+const payload = {
         tipo: "solicitud_compra",
         nombreCompleto: qfNombre,
         whatsapp: qfWhatsapp || "",
@@ -251,14 +222,7 @@ export default function PublicCatalog() {
     if (!matchNombre) return false;
     if (selectedCuotas === "all") return true;
     
-    if (p.planesActivos) {
-      return p.planesActivos[selectedCuotas] !== false;
-    }
-    
-    if (selectedCuotas === 12) return Boolean(p.cuota12 && p.cuota12 > 0);
-    if (selectedCuotas === 8) return Boolean(p.cuota8 && p.cuota8 > 0);
-    
-    return true;
+    return p.planesPublicados.some(plan => plan.cuotas === selectedCuotas);
   });
 
   return (
@@ -640,8 +604,7 @@ export default function PublicCatalog() {
                   className="w-full bg-[#161922] border border-[#222530] focus:border-[#FFD21A] text-white text-xs rounded-xl p-3 outline-none transition-all font-medium cursor-pointer"
                 >
                   <option value="all">Todos los planes</option>
-                  <option value={12}>Ver plan 12 cuotas</option>
-                  <option value={8}>Ver plan 8 cuotas</option>
+                  {Array.from({ length: 18 }, (_, index) => index + 1).map(cuotas => <option key={cuotas} value={cuotas}>Ver plan {cuotas} cuotas</option>)}
                 </select>
               </div>
 
@@ -649,7 +612,7 @@ export default function PublicCatalog() {
           </div>
 
           {/* LISTADO DE PRODUCTOS */}
-          {loading ? (
+          {catalogError ? <p role="alert" className="p-6 text-center">{catalogError}</p> : loading ? (
             <div className="py-16 text-center text-[#9CA3AF] text-sm font-mono">
               Cargando opciones disponibles...
             </div>
@@ -667,21 +630,22 @@ export default function PublicCatalog() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {productosFiltrados.map((prod) => {
-                const plan12 = prod.cuota12 ? { cuotaMensual: prod.cuota12 } : null;
+                const plan12 = prod.planesPublicados.find(p => p.cuotas === 12);
 
                 return (
-                  <div key={prod.id} className="bg-[#111318] border border-[#222530] rounded-2xl overflow-hidden shadow-lg hover:border-[#FFD21A]/50 transition-all flex flex-col justify-between group">
+                  <div data-public-reference={prod.referenciaId} key={prod.referenciaId} className="bg-[#111318] border border-[#222530] rounded-2xl overflow-hidden shadow-lg hover:border-[#FFD21A]/50 transition-all flex flex-col justify-between group">
                     
                     <div>
                       <div className="relative aspect-4/3 bg-[#161922] overflow-hidden flex items-center justify-center p-4">
                         <img 
-                          src={prod.imagenUrl || "/logo-cuenta-hogar-oficial.png"} 
+                          src={galleryImages[prod.referenciaId] || prod.imagenUrls[0] || "/logo-cuenta-hogar-oficial.png"}
                           alt={prod.nombre} 
                           className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                           onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/logo-cuenta-hogar-oficial.png"; }}
                         />
                       </div>
 
+                      {prod.imagenUrls.length > 1 && <div className="flex flex-wrap gap-2 px-4 pt-3">{prod.imagenUrls.map((url, index) => <button type="button" key={index} aria-label={`Imagen ${index + 1} de ${prod.nombre}`} onClick={() => setGalleryImages(value => ({ ...value, [prod.referenciaId]: url }))} className="min-h-11 min-w-11 rounded border border-[#222530] p-1"><img src={url} alt="" className="h-9 w-9 object-contain" /></button>)}</div>}
                       <div className="p-6 space-y-4">
                         <h3 className="text-base font-bold text-white line-clamp-2 leading-snug">
                           {prod.nombre}
@@ -701,12 +665,12 @@ export default function PublicCatalog() {
                             <div className="flex items-baseline justify-between">
                               <span className="text-xs font-bold text-[#D1D5DB]">12 cuotas estimadas de</span>
                               <span className="text-base font-extrabold text-[#FFD21A]">
-                                {formatPrice(plan12.cuotaMensual)}
+                                {formatPrice(plan12.cuotaEstimada)}
                               </span>
                             </div>
                           ) : (
                             <div className="text-xs font-bold text-white">
-                              Consultar condiciones de plan
+                              Consultá los planes disponibles
                             </div>
                           )}
                         </div>
@@ -715,13 +679,12 @@ export default function PublicCatalog() {
 
                     <div className="p-6 pt-0">
                       <a 
-                        href={`https://wa.me/5491125659686?text=${encodeURIComponent(`Hola, quiero consultar por el Servicio de Compra para el producto: ${prod.nombre}. ¿Me cuentan la propuesta y el plan de cuotas?`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={`/solicitar?id=${encodeURIComponent(prod.referenciaId)}${plan12 ? "&cuotas=12" : ""}`}
+
                         className="w-full inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] font-extrabold text-xs uppercase tracking-wider py-3 rounded-xl transition-all shadow-md"
                       >
                         <WhatsAppIcon className="w-4 h-4 text-[#111318]" />
-                        <span>Consultar por este producto</span>
+                        <span>Solicitar gestión de compra</span>
                       </a>
                     </div>
 

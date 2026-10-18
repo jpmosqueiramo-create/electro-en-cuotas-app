@@ -1,15 +1,15 @@
 "use client";
 
-import { registrarProductoBorradorSiNoExiste } from "@/lib/catalogManager";
-import { calcularTablaTodosLosPlanes } from "@/lib/financialEngine";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight, ArrowLeft, Upload } from "lucide-react";
 import { db, storage } from "@/lib/firebase";
-import { doc, getDoc, addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useAuth } from "@/components/AuthProvider";
-import { sanitizePhoneWhatsApp } from "@/lib/phoneUtils";
+import { fetchPublicCatalogReference } from "@/lib/publicCatalogClient";
+import { selectPublishedPlan, publicCatalogSelection } from "@/lib/publicCatalogContract";
+import type { CatalogReferencePublic } from "@/lib/catalogReference";
 
 function SolicitarForm() {
   const router = useRouter();
@@ -17,7 +17,7 @@ function SolicitarForm() {
   const productoId = searchParams.get("id");
   const { user } = useAuth();
 
-  const [productoData, setProductoData] = useState<any>(null);
+  const [productoData, setProductoData] = useState<CatalogReferencePublic | null>(null);
   const [activeSolImage, setActiveSolImage] = useState<string>("");
   
   // Nombres de los campos requeridos
@@ -37,8 +37,10 @@ function SolicitarForm() {
 
   const [dniFrente, setDniFrente] = useState<File | null>(null);
   const [dniDorso, setDniDorso] = useState<File | null>(null);
-  const cuotasParam = searchParams.get("cuotas") || "12";
-  const [planElegido, setPlanElegido] = useState(cuotasParam);
+  const cuotasParam = searchParams.get("cuotas");
+  const [planElegido, setPlanElegido] = useState("");
+  const [referenceState, setReferenceState] = useState("loading");
+  const [referenceError, setReferenceError] = useState("");
 
   const handleCuilChange = (val: string) => {
     const clean = val.replace(/\D/g, "").slice(0, 11);
@@ -53,25 +55,25 @@ function SolicitarForm() {
   };
 
   useEffect(() => {
-    if (productoId) {
-      const fetchProd = async () => {
-        try {
-          const d = await getDoc(doc(db, "productos", productoId));
-          if (d.exists()) {
-            const data = { id: d.id, ...d.data() } as any;
-            setProductoData(data);
-            setActiveSolImage(data.imagenUrl || "");
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      };
-      fetchProd();
-    }
-  }, [productoId]);
+    const controller = new AbortController();
+    void Promise.resolve().then(() => {
+    if (controller.signal.aborted) return;
+    setProductoData(null); setPlanElegido(""); setReferenceError("");
+    if (!productoId) { setReferenceState("empty"); return; }
+    setReferenceState("loading");
+    return fetchPublicCatalogReference(productoId, controller.signal).then(reference => {
+      if (controller.signal.aborted) return;
+      setProductoData(reference); setReferenceState(reference ? "ready" : "not_found");
+      setActiveSolImage(reference?.imagenUrls[0] ?? "");
+      if (reference) setPlanElegido(selectPublishedPlan(reference, cuotasParam));
+    }).catch(error => { if (!controller.signal.aborted) { setReferenceState("error"); setReferenceError(error.message); } });
+    });
+    return () => controller.abort();
+  }, [productoId, cuotasParam]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (productoId && (!productoData || referenceState !== "ready" || !productoData.planesPublicados.some(plan => String(plan.cuotas) === planElegido))) return alert("Elegí un plan publicado disponible.");
 // DNI Photo Upload disabled by requirement
 
     const cuilRegex = /^\d{2}-\d{8}-\d{1}$/;
@@ -86,18 +88,16 @@ function SolicitarForm() {
     btn.disabled = true;
 
     try {
-      let dniFrenteUrlReal = "No requerido en solicitud inicial";
-      let dniDorsoUrlReal = "No requerido en solicitud inicial";
+      const dniFrenteUrlReal = "No requerido en solicitud inicial";
+      const dniDorsoUrlReal = "No requerido en solicitud inicial";
 
-      const planesProducto = productoData ? calcularTablaTodosLosPlanes(Number(productoData.costoProducto || productoData.precioContado) || 0, productoData.factoresPlanes, productoData.planesActivos).filter(pl => pl.activo && pl.cuotaMensual > 0) : [];
-      const planSelObj = planesProducto.find(pl => String(pl.cuotas) === planElegido);
-      const planCuotas = planSelObj ? planSelObj.cuotaMensual : (planElegido === "8" ? (productoData?.cuota8 || 0) : (productoData?.cuota12 || 0));
+      const selection = productoData ? publicCatalogSelection(productoData, planElegido) : null;
 
       const datos = {
-        productoId: productoId || "A definir",
-        productoNombre: productoData ? productoData.nombre : "A definir",
-        planElegido: planElegido,
-        montoCuota: planCuotas,
+        productoId: selection?.productoId || "A definir",
+        productoNombre: selection?.productoNombre || "A definir",
+        planElegido: selection?.planElegido || "",
+        ...(selection ? { montoCuota: selection.montoCuota } : {}),
         nombreCompleto, 
         numeroDni, 
         cuil,
@@ -117,16 +117,12 @@ function SolicitarForm() {
         localStorage.setItem("datosPreliminares", JSON.stringify(datos));
       }
       
-      if (productoData?.nombre) { await registrarProductoBorradorSiNoExiste(productoData.nombre, productoData.precioContado || 0, productoData.imagenUrl || "").catch(() => {}); }
       
       // 1. Guardar en solicitudes_cuenta (Colección de recepción de solicitudes de apertura)
       try {
         await addDoc(collection(db, "solicitudes_cuenta"), {
           tipo: "apertura_cuenta",
           ...datos,
-          precioContado: productoData?.precioContado || 0,
-          tasaInteresTna: productoData?.tasaInteresTna || 0,
-          tasaMora: productoData?.tasaMora || 0,
           fecha: serverTimestamp(),
         fechaIso: new Date().toISOString(),
           estado: "Pendiente",
@@ -172,7 +168,7 @@ function SolicitarForm() {
 
       const textMsg = `Hola, acabo de llenar el formulario de Apertura de Cuenta. Elegí el plan de ${planElegido} cuotas para el producto ${productoData?.nombre || 'A definir'}. Mi DNI es ${numeroDni}`;
       window.location.href = `https://wa.me/5491125659686?text=${encodeURIComponent(textMsg)}`;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error al procesar solicitud:", err);
       const textMsg = `Hola, acabo de llenar el formulario de Apertura de Cuenta. Elegí el plan de ${planElegido} cuotas para el producto ${productoData?.nombre || 'A definir'}. Mi DNI es ${numeroDni}`;
       window.location.href = `https://wa.me/5491125659686?text=${encodeURIComponent(textMsg)}`;
@@ -196,6 +192,10 @@ function SolicitarForm() {
         
         <form onSubmit={handleSubmit} className="space-y-6">
           
+          {referenceState === "loading" && <p role="status">Cargando referencia…</p>}
+          {referenceState === "error" && <p role="alert">{referenceError}</p>}
+          {referenceState === "not_found" && <p role="alert">Esta referencia ya no está disponible.</p>}
+          {referenceState === "empty" && <p>Referencia de compra: A definir.</p>}
           {/* SECCIÓN PRODUCTO */}
           {productoData && (
             <div className="bg-[#111318] border border-[#222530] p-6 rounded-2xl space-y-6 shadow-sm">
@@ -204,7 +204,7 @@ function SolicitarForm() {
                   <div className="w-24 h-24 bg-[#161922] border border-[#222530] rounded-xl p-1 flex items-center justify-center relative overflow-hidden shadow-sm">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
-                      src={activeSolImage || productoData.imagenUrl} 
+                      src={activeSolImage || productoData.imagenUrls[0]}
                       alt={productoData.nombre} 
                       className="max-w-full max-h-full object-contain" 
                       onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/logo-cuenta-hogar-oficial.png"; }} 
@@ -219,7 +219,7 @@ function SolicitarForm() {
                           type="button"
                           onClick={() => setActiveSolImage(url)}
                           className={`w-4 h-4 rounded border transition-all ${
-                            (activeSolImage || productoData.imagenUrl) === url 
+                            (activeSolImage || productoData.imagenUrls[0]) === url
                               ? 'border-[#173E3B] bg-[#FFD21A]/10' 
                               : 'border-[#222530] hover:border-[#173E3B]'
                           }`}
@@ -240,38 +240,19 @@ function SolicitarForm() {
               <div className="border-t border-[#222530] pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Elegir Plan de Cuotas</label>
-                  <select 
+                  <select aria-label="Plan publicado" required
                     value={planElegido} 
                     onChange={e => setPlanElegido(e.target.value)}
                     className="w-full bg-[#161922] border border-[#222530] p-3.5 rounded-xl text-white outline-none focus:border-[#FFD21A] focus:ring-2 focus:ring-[#173E3B]/20 transition-all font-bold text-base shadow-sm"
                   >
-                    {(() => {
-                      const list = calcularTablaTodosLosPlanes(Number(productoData.costoProducto || productoData.precioContado) || 0, productoData.factoresPlanes, productoData.planesActivos).filter(pl => pl.activo && pl.cuotaMensual > 0);
-                      if (list.length === 0) {
-                        return (
-                          <>
-                            <option value="12">Financiación en 12 Cuotas</option>
-                            <option value="8">Financiación en 8 Cuotas</option>
-                          </>
-                        );
-                      }
-                      return list.map(pl => (
-                        <option key={pl.cuotas} value={String(pl.cuotas)}>
-                          Financiación en {pl.cuotas} {pl.cuotas === 1 ? "Cuota" : "Cuotas"} (${pl.cuotaMensual.toLocaleString("es-AR")} / mes)
-                        </option>
-                      ));
-                    })()}
+                    <option value="">Elegí un plan publicado</option>
+                    {productoData.planesPublicados.map(plan => <option key={plan.cuotas} value={String(plan.cuotas)}>{plan.cuotas} cuotas estimadas (${plan.cuotaEstimada.toLocaleString("es-AR")} / mes)</option>)}
                   </select>
                 </div>
                 <div className="flex flex-col justify-center bg-[#161922] p-4 rounded-xl border border-[#222530] shadow-sm">
                   <p className="text-xs text-[#9CA3AF] font-bold uppercase tracking-wider">Valor Mensual de la Cuota</p>
                   <p className="text-2xl font-bold text-[#FFD21A] mt-1 font-heading">
-                    ${(() => {
-                      const list = calcularTablaTodosLosPlanes(Number(productoData.costoProducto || productoData.precioContado) || 0, productoData.factoresPlanes, productoData.planesActivos).filter(pl => pl.activo && pl.cuotaMensual > 0);
-                      const found = list.find(pl => String(pl.cuotas) === planElegido);
-                      const val = found ? found.cuotaMensual : (planElegido === "8" ? productoData.cuota8 : productoData.cuota12);
-                      return (val || 0).toLocaleString("es-AR");
-                    })()} <span className="text-xs font-normal text-[#9CA3AF]">/ mes</span>
+                    {productoData.planesPublicados.find(plan => String(plan.cuotas) === planElegido)?.cuotaEstimada.toLocaleString("es-AR", { style: "currency", currency: "ARS" }) ?? "Elegí un plan"} <span className="text-xs font-normal text-[#9CA3AF]">/ mes</span>
                   </p>
                 </div>
               </div>
@@ -366,7 +347,7 @@ function SolicitarForm() {
             </div>
           </div>
 
-          <button type="submit" className="w-full group flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#123230] text-white font-bold text-base sm:text-lg py-4.5 sm:py-5 rounded-2xl hover:scale-[1.01] active:scale-95 transition-all duration-300 shadow-md shadow-[#173E3B]/20">
+          <button disabled={!!productoId && (referenceState !== "ready" || !planElegido)} type="submit" className="w-full group flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#123230] text-white font-bold text-base sm:text-lg py-4.5 sm:py-5 rounded-2xl hover:scale-[1.01] active:scale-95 transition-all duration-300 shadow-md shadow-[#173E3B]/20">
             Enviar Solicitud y Hablar con un Asesor <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
         </form>

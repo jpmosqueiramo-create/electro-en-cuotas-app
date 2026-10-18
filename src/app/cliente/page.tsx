@@ -2,11 +2,14 @@
 
 import { useAuth } from "@/components/AuthProvider";
 import { db, storage } from "@/lib/firebase";
-import { addDoc, collection, getDocs, query, where, Timestamp, updateDoc, doc, getDoc } from "firebase/firestore";
+import { addDoc, collection, getDocs, query, where, Timestamp, updateDoc, doc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAuth, sendEmailVerification } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { fetchPublicCatalogReference } from "@/lib/publicCatalogClient";
+import { publicCatalogSelection, selectPublishedPlan } from "@/lib/publicCatalogContract";
+import type { CatalogReferencePublic } from "@/lib/catalogReference";
 import { useEffect, useState, useMemo } from "react";
 import { generarComprobantePago, generarEstadoCuenta } from "@/lib/pdfGenerator";
 import { 
@@ -73,8 +76,10 @@ export default function ClientePage() {
   const [producto, setProducto] = useState("");
   const [productoId, setProductoId] = useState("");
   const [planElegido, setPlanElegido] = useState("");
-  const [montoCuota, setMontoCuota] = useState(0);
-  const [productoObj, setProductoObj] = useState<any>(null);
+
+  const [productoObj, setProductoObj] = useState<CatalogReferencePublic | null>(null);
+  const [referenceState, setReferenceState] = useState("empty");
+  const [referenceError, setReferenceError] = useState("");
 
   const [dniFrente, setDniFrente] = useState<File | null>(null);
   const [dniDorso, setDniDorso] = useState<File | null>(null);
@@ -82,24 +87,22 @@ export default function ClientePage() {
   const [servicio, setServicio] = useState<File | null>(null);
 
   useEffect(() => {
-    if (productoId && productoId !== "sin-id") {
-      const fetchProd = async () => {
-        try {
-          const d = await getDoc(doc(db, "productos", productoId));
-          if (d.exists()) {
-            const pData = d.data();
-            setProductoObj({ id: d.id, ...pData });
-            const plan = planElegido || "12";
-            setPlanElegido(plan);
-            setMontoCuota(plan === "8" ? pData.cuota8 : pData.cuota12);
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      };
-      fetchProd();
-    }
-  }, [productoId, planElegido]);
+    const controller = new AbortController();
+    void Promise.resolve().then(() => {
+    if (controller.signal.aborted) return;
+    setProductoObj(null); setReferenceError("");
+    if (!productoId || productoId === "sin-id") { setReferenceState("empty"); return; }
+    setReferenceState("loading");
+    return fetchPublicCatalogReference(productoId, controller.signal).then(reference => {
+      if (controller.signal.aborted) return;
+      setProductoObj(reference); setReferenceState(reference ? "ready" : "not_found");
+      if (reference) { setProducto(reference.nombre); setPlanElegido(value => selectPublishedPlan(reference, value)); }
+    }).catch(error => { if (!controller.signal.aborted) { setReferenceState("error"); setReferenceError(error.message); } });
+    });
+    return () => controller.abort();
+  }, [productoId]);
+
+  const publicPlan = productoObj?.planesPublicados.find(plan => String(plan.cuotas) === planElegido);
 
   useEffect(() => {
     try {
@@ -110,7 +113,7 @@ export default function ClientePage() {
           if(data.productoNombre && !producto) setProducto(data.productoNombre);
           if(data.productoId) setProductoId(data.productoId);
           if(data.planElegido) setPlanElegido(data.planElegido);
-          if(data.montoCuota) setMontoCuota(data.montoCuota);
+
           if(data.producto && !producto) setProducto(data.producto);
           if(data.nombreCompleto && !nombreCompleto) setNombreCompleto(data.nombreCompleto);
           if(data.numeroDni && !numeroDni) setNumeroDni(data.numeroDni);
@@ -426,6 +429,9 @@ export default function ClientePage() {
     setSubiendo(true);
 
     try {
+      const reference = productoId && productoId !== "sin-id" ? await fetchPublicCatalogReference(productoId) : null;
+      if (productoId && productoId !== "sin-id" && !reference) throw new Error("Esta referencia ya no está disponible.");
+      const selection = reference ? publicCatalogSelection(reference, planElegido) : null;
       const [urlFrente, urlDorso, urlSueldo, urlServicio] = await Promise.all([
         handleSubirArchivo(dniFrente, "dniFrente"),
         handleSubirArchivo(dniDorso, "dniDorso"),
@@ -433,34 +439,15 @@ export default function ClientePage() {
         handleSubirArchivo(servicio, "servicio")
       ]);
 
-      let tna = 0;
-      let mora = 0;
-      let precioContado = 0;
-      if (productoId && productoId !== "sin-id") {
-        try {
-          const prodSnap = await getDoc(doc(db, "productos", productoId));
-          if (prodSnap.exists()) {
-            const prodData = prodSnap.data();
-            tna = prodData.tasaInteresTna || 0;
-            mora = prodData.tasaMora || 0;
-            precioContado = prodData.precioContado || 0;
-          }
-        } catch (e) {
-          console.error("Error al obtener tasas del producto:", e);
-        }
-      }
 
       await addDoc(collection(db, "solicitudes"), {
         clienteId: user.uid,
         clienteEmail: user.email,
         datosPersonales: { nombreCompleto, numeroDni, telefono, direccion, localidad, email, antiguedadLaboral },
-        productoDeseado: producto,
-        productoId: productoId || "sin-id",
-        planElegido: planElegido || "no-indicado",
-        montoCuota: montoCuota || 0,
-        precioContado: precioContado,
-        tasaInteresTna: tna,
-        tasaMora: mora,
+        productoDeseado: selection?.productoNombre ?? producto,
+        productoId: selection?.productoId ?? "sin-id",
+        planElegido: selection?.planElegido ?? "no-indicado",
+        ...(selection ? { montoCuota: selection.montoCuota } : {}),
         documentos: {
           dniFrente: urlFrente,
           dniDorso: urlDorso,
@@ -690,6 +677,16 @@ export default function ClientePage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {referenceState === "loading" && <p role="status">Cargando referencia…</p>}
+              {referenceState === "error" && <p role="alert">{referenceError}</p>}
+              {referenceState === "not_found" && <p role="alert">Esta referencia ya no está disponible.</p>}
+              {productoObj && <div data-public-reference={productoObj.referenciaId} className="rounded-xl border border-[#252A32] p-4 space-y-3">
+                <p>Referencia de compra: {productoObj.nombre}</p>
+                <label className="block">Plan publicado<select aria-label="Plan publicado" required className="block min-h-11 w-full rounded-xl border border-[#252A32] bg-[#111318] p-3 text-sm text-white" value={planElegido} onChange={event => setPlanElegido(event.target.value)}>
+                  <option value="">Elegí un plan publicado</option>{productoObj.planesPublicados.map(plan => <option key={plan.cuotas} value={String(plan.cuotas)}>{plan.cuotas} cuotas estimadas</option>)}
+                </select></label>
+                <p data-public-amount>Cuota estimada: {publicPlan ? publicPlan.cuotaEstimada.toLocaleString("es-AR", { style: "currency", currency: "ARS" }) : "Elegí un plan disponible"}</p>
+              </div>}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Producto o Bien Deseado</label>
