@@ -25,7 +25,10 @@
     "test:browser-smoke": "tsx scripts/runBrowserSmoke.ts",
     "test:safe": "npm run test:runtime-guards && npm run test:pricing && npm run test:pricing-flow && npm run test:budget-routing && npm run test:manual-budget && npm run test:ledger && npm run test:auth-guard",
     "test:catalog-c2": "tsx scripts/testCatalogPublicationPure.ts",
-    "test:emulator:catalog-c2": "tsx scripts/testCatalogPublicationEmulator.ts"
+    "test:emulator:catalog-c2": "tsx scripts/testCatalogPublicationEmulator.ts",
+    "test:catalog-c3": "tsx scripts/testCatalogReferenceEditor.ts",
+    "test:emulator:catalog-c3": "tsx scripts/testCatalogReferenceEditorEmulator.ts",
+    "test:browser:catalog-c3": "tsx scripts/runCatalogReferenceBrowser.ts"
   },
   "dependencies": {
     "firebase": "^12.11.0",
