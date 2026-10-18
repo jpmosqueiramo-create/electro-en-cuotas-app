@@ -5,7 +5,7 @@ import { CalendarDays, ClipboardList, FileText, Files, Wallet, Truck, Users, Pac
 // en Validaciones). No se inventan tabs, filtros ni rutas funcionales nuevas.
 export const ADMIN_DESTINATIONS = [
   { id: "today", label: "Hoy", href: "/admin", icon: CalendarDays },
-  { id: "requests", label: "Solicitudes", href: "/admin/validaciones", icon: ClipboardList },
+  { id: "requests", label: "Solicitudes", href: "/admin/solicitudes", icon: ClipboardList },
   { id: "budgets", label: "Presupuestos", href: "/admin/presupuestos", icon: FileText },
   { id: "documents", label: "Documentación", href: "/admin/validaciones", icon: Files },
   { id: "collections", label: "Cobranzas", href: "/admin/cartera", icon: Wallet },
@@ -17,6 +17,7 @@ export const ADMIN_DESTINATIONS = [
 ] as const;
 
 export function activeAdminDestination(pathname: string) {
+  if (pathname === "/admin/solicitudes" || pathname.startsWith("/admin/solicitudes/")) return "requests";
   if (pathname.startsWith("/admin/clientes")) return "requests";
   if (pathname.startsWith("/admin/rendiciones")) return "collections";
   return ADMIN_DESTINATIONS.find(item => item.href === pathname)?.id;
