@@ -172,9 +172,30 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    function isContractServerOnlyRoot(root) {
+      return root in [
+        "contractSnapshotsV2", "contractNumbersV2", "contractOriginsV2",
+        "contractOriginEvidenceV2", "contractNumberingV2",
+        "contractInfrastructureCommandsV2", "contractInfrastructureEventsV2",
+        "contractInfrastructureFixturesV2", "contractClientDataRequests",
+        "contractClientDataLimits"
+      ];
+    }
+
+    // Preserve existing Admin access outside the server-mediated contract subtree.
+    match /presupuestos_v2/{budgetId} {
+      allow read, write: if isAdmin();
+    }
+    match /presupuestos_v2/{budgetId}/{section}/{document=**} {
+      allow read, write: if section != "contracts" && isAdmin();
+    }
+
     // Reglas por defecto para el resto de colecciones de la aplicación: Default Fail-Closed (Admin only)
     match /{collection}/{document=**} {
-      allow read, write: if collection != "catalogo_publico" && isAdmin();
+      allow read, write: if collection != "catalogo_publico"
+        && collection != "presupuestos_v2"
+        && !isContractServerOnlyRoot(collection)
+        && isAdmin();
     }
   }
 }
