@@ -2,6 +2,7 @@ import "./helpers/requireSafeEmulatorEnvironment";
 import assert from "node:assert/strict";
 import { mkdirSync,writeFileSync } from "node:fs";
 import { admin } from "../src/lib/firebaseAdmin";
+import { budgetFixture } from "./helpers/budgetV2Fixtures";
 import { CatalogBrowser } from "./helpers/catalogBrowser";
 import { adminEmail,adminPassword } from "./helpers/adminSolicitudesFixtures";
 import { createCatalogReferenceDraft,buildCatalogReferencePrivatePatch } from "../src/lib/catalogReferenceEditor";
@@ -9,23 +10,38 @@ export async function testBudgetV2Browser(){
  const db=admin.firestore();try{const u=await admin.auth().getUserByEmail(adminEmail);await admin.auth().updateUser(u.uid,{password:adminPassword,emailVerified:true});}catch(e){if((e as {code?:string}).code!=="auth/user-not-found")throw e;await admin.auth().createUser({email:adminEmail,password:adminPassword,emailVerified:true});}
  const draft=createCatalogReferenceDraft();Object.assign(draft,{nombre:"Referencia existente P3",descripcion:"Gestión de compra",costoProveedor:"580000",proveedor:"SECRET_PROVIDER",imagenUrls:["http://localhost:3000/logo-cuenta-hogar-oficial.png"]});draft.planesActivos[12]=true;
  await db.doc("productos/p3-browser-existing").set({...buildCatalogReferencePrivatePatch(draft),activo:false,publicado:false,stock:[{id:"unit"}]});const original=(await db.doc("productos/p3-browser-existing").get()).data();
- const browser=await CatalogBrowser.open();mkdirSync("/tmp/cuenta-hogar-p3",{recursive:true});
+ let browser=await CatalogBrowser.open();mkdirSync("/tmp/cuenta-hogar-p3",{recursive:true});
  async function capture(name:string){await browser.evaluate("document.fonts.ready.then(()=>true)");const r=await browser.command("Page.captureScreenshot",{format:"png",captureBeyondViewport:false});writeFileSync(`/tmp/cuenta-hogar-p3/${name}`,Buffer.from(r.data as string,"base64"));}
  async function select(label:string,value:string){await browser.evaluate(`(()=>{const el=[...document.querySelectorAll('label')].find(x=>x.querySelector(':scope > span')?.textContent===${JSON.stringify(label)})?.querySelector('select');if(!el)throw Error('Select missing');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(el,${JSON.stringify(value)});el.dispatchEvent(new Event('change',{bubbles:true}));})()`);}
  try{
  await browser.navigate("/login");await browser.until("typeof window.__FIREBASE_SIGN_IN__==='function'","auth hook");await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(adminEmail)},${JSON.stringify(adminPassword)}).then(()=>true)`);
+ const apiInvalid={action:"SAVE",commandId:"api-adversarial",budget:budgetFixture("api-adversarial"),expectedRevision:0,privateOptionIds:[],extra:"reject"};
+ const response=await browser.evaluate<{status:number;body:{error:string}}>(`(async()=>{const token=await window.__FIREBASE_AUTH__.currentUser.getIdToken();const r=await fetch('/api/admin/presupuestos-v2',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:${JSON.stringify(JSON.stringify(apiInvalid))}});return {status:r.status,body:await r.json()};})()`);
+ assert.equal(response.status,409);assert.equal(typeof response.body.error,"string");assert.ok(!response.body.error.includes("Firestore"));assert.equal((await db.doc("presupuestos_v2/api-adversarial").get()).exists,false);
  for(const view of [{width:1280,height:800,name:"desktop"},{width:390,height:844,name:"mobile"}]){
+  if(view.name==="mobile"){
+   assert.equal(browser.storageWrites,0);assert.deepEqual(browser.externalFirebase,[]);assert.equal(browser.publishBodies.length,0);
+   await browser.close();browser=await CatalogBrowser.open();await browser.navigate("/login");await browser.until("typeof window.__FIREBASE_SIGN_IN__==='function'","mobile isolated auth hook");await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(adminEmail)},${JSON.stringify(adminPassword)}).then(()=>true)`);
+  }
+
   const id=`p3-browser-${view.name}`;
   const legacyBudget={id:`pres_legacy_${view.name}`,fecha:new Date().toISOString(),estado:"Enviado",pricingSchemaVersion:"MANUAL_FACTOR_V1",items:[{itemId:"legacy-option",nombre:"Histórico conservado",producto:"Histórico conservado",cuotas:8,valorCuota:1234,costoProveedor:777,proveedor:"SECRET_PROVIDER"}]};
-  await db.doc(`solicitudes/${id}`).set({estado:"PENDIENTE",clienteEmail:"client@example.invalid",datosPersonales:{nombreCompleto:`Cliente ${view.name}`,numeroDni:"12345678",telefono:"5491100000000",localidad:"Lincoln"},productoDeseado:"Heladera",presupuestos:[legacyBudget]});await db.doc(`solicitudes_cuenta/${id}`).set({estado:"Pendiente",nombreCompleto:"No elegir"});
+  await db.doc(`solicitudes/${id}`).set({whatsapp:"5491100000000",estado:"PENDIENTE",clienteEmail:"client@example.invalid",datosPersonales:{nombreCompleto:`Cliente ${view.name}`,numeroDni:"12345678",telefono:"5491100000000",localidad:"Lincoln"},productoDeseado:"Heladera",presupuestos:[legacyBudget]});await db.doc(`solicitudes_cuenta/${id}`).set({estado:"Pendiente",nombre:"Solicitud pendiente",nombreCompleto:"Solicitud pendiente",necesidad:"Nueva referencia pendiente",whatsapp:"5491100000000"});
   await browser.command("Emulation.setDeviceMetricsOverride",{...view,deviceScaleFactor:1,mobile:view.width===390});await browser.navigate(`/admin/presupuestos?sourceCollection=solicitudes&solicitudId=${id}`);
   await browser.until("!!document.querySelector('[data-new-budget-v2]')","budget entry");
   await browser.until(`!!document.querySelector('[data-legacy-budget-id="${legacyBudget.id}"]')`,"legacy history");
-  const legacyBefore=(await db.doc(`solicitudes/${id}`).get()).data()!.presupuestos;
-  await browser.click(`[data-legacy-budget-id="${legacyBudget.id}"]`);await browser.until("!!document.querySelector('[aria-label=\"Presupuesto histórico\"]')","legacy view");
-  assert.ok(await browser.evaluate("document.querySelector('[aria-label=\"Presupuesto histórico\"]').textContent.includes('1.234')"));
-  assert.ok(!(await browser.evaluate<string>("document.querySelector('[aria-label=\"Presupuesto histórico\"] a').href")).includes("SECRET_PROVIDER"));
-  await browser.clickText("PDF legacy");await browser.clickText("Cerrar histórico");assert.deepEqual((await db.doc(`solicitudes/${id}`).get()).data()!.presupuestos,legacyBefore);
+  await browser.evaluate("(()=>{window.alert=message=>{window.__legacyAlerts.push(message);};window.__legacyAlerts=[];window.__legacyOpened=[];window.open=url=>{window.__legacyOpened.push(url);return null;};return true;})()");
+  await browser.click(`[data-legacy-budget-id="${legacyBudget.id}"]`);await browser.until("!!document.querySelector('[aria-label=\"Editar presupuesto legacy\"]')","legacy editor");
+  assert.ok(await browser.evaluate("document.querySelector('[aria-label=\"Editar presupuesto legacy\"]').textContent.includes('Histórico conservado')"));
+  assert.equal(await browser.evaluate("document.querySelector('[data-testid=btn-guardar-presupuesto]').disabled"),false);
+  await browser.change('textarea[placeholder="Detalles provistos por el cliente..."]',`Nota editada ${view.name}`);
+  await browser.click('[data-testid="btn-guardar-presupuesto"]');await browser.until("window.__legacyAlerts.some(x=>x.includes('guardado exitosamente'))","legacy saved");
+  const legacySaved=(await db.doc(`solicitudes/${id}`).get()).data()!.presupuestos;assert.equal(legacySaved.length,1);assert.equal(legacySaved[0].id,legacyBudget.id);assert.equal(legacySaved[0].notas,`Nota editada ${view.name}`);assert.equal(legacySaved[0].items[0].valorCuota,1234);assert.equal(legacySaved[0].items[0].cuotas,8);
+  await browser.click('[data-testid="btn-descargar-pdf"]');await browser.click('[data-testid="btn-enviar-whatsapp"]');await browser.until("window.__legacyOpened.length===1","legacy WhatsApp");assert.ok(!(await browser.evaluate<string>("decodeURIComponent(window.__legacyOpened[0])")).includes("SECRET_PROVIDER"));
+  await browser.clickText("Cerrar","document.querySelector('[aria-label=\"Editar presupuesto legacy\"]')");
+  await browser.click(`[data-legacy-budget-id="pres_pend_${id}"]`);await browser.until("!!document.querySelector('[data-testid=budget-v2-editor]')","pending goes V2");assert.equal(await browser.evaluate("!!document.querySelector('[aria-label=\"Editar presupuesto legacy\"]')"),false);
+  assert.ok(await browser.evaluate("document.querySelector('[data-testid=budget-v2-editor]').textContent.includes('Solicitud pendiente')"));assert.equal(await browser.evaluate("[...document.querySelectorAll('label')].find(l=>l.querySelector(':scope > span')?.textContent==='Solicitud de origen').querySelector('select').value"),`solicitudes_cuenta:${id}`);assert.equal((await db.doc(`solicitudes_cuenta/${id}`).get()).data()!.presupuestos,undefined);
+  await browser.clickText("Cerrar presupuesto");
   await browser.clickText("Nuevo presupuesto V2");
   await browser.until("!!document.querySelector('[data-testid=budget-v2-editor]')","editor");
   await browser.until("[...document.querySelectorAll('label')].find(l=>l.querySelector(':scope > span')?.textContent==='Solicitud de origen')?.querySelectorAll('option').length>=3","source options");await select("Solicitud de origen",`solicitudes:${id}`);assert.ok(await browser.evaluate("document.querySelector('[data-testid=budget-v2-editor]').textContent.includes('GENERADO')"));
@@ -85,5 +101,5 @@ export async function testBudgetV2Browser(){
   console.log(`P3_BROWSER_${view.name.toUpperCase()} = PASS`);
  }
  assert.equal(browser.storageWrites,0);assert.deepEqual(browser.externalFirebase,[]);assert.equal(browser.publishBodies.length,0);assert.deepEqual((await db.doc("productos/p3-browser-existing").get()).data(),original);console.log("PUBLICATION_CALLS_FROM_BUDGET = 0; PRODUCTION_DATABASE_MUTATIONS = 0");
- }catch(error){console.error("P3_BROWSER_PRIMARY_ERROR",error);console.error("VALIDATION_FIXTURE_STATES",(await db.collection("solicitudes_cuenta").get()).docs.filter(d=>d.id.startsWith("p3-validation-")).map(d=>({id:d.id,estado:d.data().estado,nombre:d.data().nombre})));console.error("P3_BROWSER_DIAGNOSTIC",await browser.evaluate("document.body.innerText.slice(0,2000)").catch(()=>"DOM unavailable"));throw error;}finally{await browser.close();}
+ }catch(error){console.error("P3_BROWSER_PRIMARY_ERROR",error);console.error("LEGACY_TEST_DIAGNOSTIC",await browser.evaluate("JSON.stringify({alerts:window.__legacyAlerts,editor:!!document.querySelector('[aria-label=\"Editar presupuesto legacy\"]'),saveDisabled:document.querySelector('[data-testid=btn-guardar-presupuesto]')?.disabled,saveText:document.querySelector('[data-testid=btn-guardar-presupuesto]')?.textContent,notes:document.querySelector('textarea[placeholder=\"Detalles provistos por el cliente...\"]')?.value})").catch(()=>"DOM unavailable"));console.error("VALIDATION_FIXTURE_STATES",(await db.collection("solicitudes_cuenta").get()).docs.filter(d=>d.id.startsWith("p3-validation-")).map(d=>({id:d.id,estado:d.data().estado,nombre:d.data().nombre})));console.error("P3_BROWSER_DIAGNOSTIC",await browser.evaluate("document.body.innerText.slice(0,2000)").catch(()=>"DOM unavailable"));throw error;}finally{await browser.close();}
 }

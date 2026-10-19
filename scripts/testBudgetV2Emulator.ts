@@ -23,6 +23,22 @@ async function main(){
  const other=command();await run(other);assert.equal((await db.doc(`presupuestos_v2/${other.budget.id}/versions/1`).get()).exists,true);
  const wrong=command({...review,sourceCollection:"solicitudes_cuenta"});await assert.rejects(()=>run(wrong),/origen/);
  const source=await db.doc("solicitudes/p3-shared-id").get();assert.equal(source.data()!.presupuestos,undefined);assert.equal(source.data()!.estado,"PENDIENTE");
+ // Rejected payloads cannot create a family, command, reference or public projection.
+ const invalidBase=command(budgetFixture(`adversarial-${process.pid}`));
+ const familyCount=(await db.collection("presupuestos_v2").get()).size;
+ const productCount=(await db.collection("productos").get()).size;
+ for(const path of [[],["budget"],["budget","clienteSnapshot"],["budget","options","0"],["budget","options","0","referenceSnapshot"],["budget","options","0","referenceSnapshot","planesOfrecidos","0"]]){
+  const invalid=JSON.parse(JSON.stringify(invalidBase)) as Record<string,unknown>;let at:Record<string,unknown>=invalid;for(const key of path)at=at[key] as Record<string,unknown>;at.extra="rejected";
+  await assert.rejects(()=>persistBudgetV2(db,invalid,"demo-admin"));
+ }
+ const unconfirmed=budgetFixture(`unconfirmed-${process.pid}`);
+ unconfirmed.options=unconfirmed.options.map((o,i)=>i?o:{...o,referenceSnapshot:{...o.referenceSnapshot,referenceId:privateBudgetReferenceId(unconfirmed.id,o.optionId)}});
+ await assert.rejects(()=>run(command(unconfirmed)),/no confirmada/);
+ assert.equal((await db.collection("presupuestos_v2").get()).size,familyCount);
+ assert.equal((await db.collection("productos").get()).size,productCount);
+ assert.equal((await db.collection("catalogo_publico").get()).size,publicBefore);
+ assert.deepEqual(stored.options[0].referenceSnapshot.planesOfrecidos,privateCommand.budget.options[0].referenceSnapshot.planesOfrecidos);
+ console.log("P3_ADVERSARIAL_PERSISTENCE = PASS; DETERMINISTIC_PRIVATE_REFERENCE_CONFIRMED = YES; REJECTED_PAYLOAD_WRITES = 0");
  console.log("P3_PERSISTENCE_EMULATOR = PASS; P3_IMMUTABILITY_TESTS = PASS; PRIVATE_REFERENCE_IDEMPOTENT = YES; PRIVATE_REFERENCE_AUTOPUBLISH = NO");
  await admin.app().delete();
 }

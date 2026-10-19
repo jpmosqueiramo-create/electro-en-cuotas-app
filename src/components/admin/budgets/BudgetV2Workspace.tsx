@@ -17,7 +17,7 @@ type Source={sourceCollection:BudgetV2["sourceCollection"];id:string;nombre:stri
 type Reference=Record<string,unknown>&{id:string;nombre:string};
 const button="min-h-11 rounded-xl border border-border-color bg-surface px-4 py-2 text-sm font-semibold text-brand-primary disabled:opacity-40";
 const input="min-h-11 w-full min-w-0 rounded-xl border border-border-color bg-surface px-3 py-2";
-export function BudgetV2Workspace({legacyHistory}:{legacyHistory:(onNew:()=>void)=>ReactNode}){
+export function BudgetV2Workspace({legacyHistory}:{legacyHistory:(onNew:(identity?:{sourceCollection:"solicitudes"|"solicitudes_cuenta";id:string})=>void)=>ReactNode}){
   const {user}=useAuth();const params=useSearchParams();
   const [sources,setSources]=useState<Source[]>([]),[references,setReferences]=useState<Reference[]>([]),[budgets,setBudgets]=useState<BudgetV2[]>([]);
   const [budget,setBudget]=useState<BudgetV2|null>(null),[draft,setDraft]=useState<CatalogReferenceDraft|null>(null);
@@ -41,7 +41,7 @@ export function BudgetV2Workspace({legacyHistory}:{legacyHistory:(onNew:()=>void
     }).catch(e=>{if(current)setError((e as Error).message);});return()=>{current=false;};
   },[user,request]);
   function selectSource(key:string){if(!budget||budget.revision>0)return;const source=sources.find(s=>`${s.sourceCollection}:${s.id}`===key);if(!source)return;setBudget({...budget,sourceCollection:source.sourceCollection,solicitudId:source.id,clienteSnapshot:{nombre:source.nombre,dni:source.dni,cuil:source.cuil,whatsapp:source.whatsapp,localidad:source.localidad}});}
-  function newBudget(){const now=new Date().toISOString();const id=params.get("solicitudId"),collection=params.get("sourceCollection");const matches=sources.filter(s=>s.id===id&&(!collection||s.sourceCollection===collection));const source=matches.length===1?matches[0]:undefined;
+  function newBudget(identity?:{sourceCollection:"solicitudes"|"solicitudes_cuenta";id:string}){const now=new Date().toISOString();const id=identity?.id??params.get("solicitudId"),collection=identity?.sourceCollection??params.get("sourceCollection");const matches=sources.filter(s=>s.id===id&&(!collection||s.sourceCollection===collection));const source=matches.length===1?matches[0]:undefined;
     setBudget({schemaVersion:"BUDGET_V2",id:crypto.randomUUID(),version:1,sourceCollection:source?.sourceCollection??"solicitudes_cuenta",solicitudId:source?.id??"",clienteSnapshot:{nombre:source?.nombre??params.get("nombre")??"",dni:source?.dni??params.get("dni")??"",cuil:source?.cuil??"",whatsapp:source?.whatsapp??params.get("telefono")??"",localidad:source?.localidad??params.get("localidad")??""},options:[],estado:"GENERADO",createdAt:now,updatedAt:now,issuedAt:null,revision:0,revisionOf:null});setDraft(null);setPrivateIds([]);setError("");setMessage("");setWhatsapp("");pending.current=null;
   }
   function beginOption(reference?:Reference){if(!budget||budget.estado==="EMITIDO")return;setOptionId(crypto.randomUUID());setDraft(createCatalogReferenceDraft(reference));setReferenceId(reference?.id??null);setOptionSource(reference?"EXISTING_REFERENCE":"NEW_REFERENCE");setSavePrivate(false);setFiles([]);setUrl("");setError("");if(!reference){const source=sources.find(s=>s.sourceCollection===budget.sourceCollection&&s.id===budget.solicitudId);setDraft(d=>d?{...d,nombre:source?.necesidad??params.get("producto")??""}:d);}}
@@ -63,7 +63,7 @@ export function BudgetV2Workspace({legacyHistory}:{legacyHistory:(onNew:()=>void
   const emitted=budget?.estado==="EMITIDO";
   const visible=budgets.filter(b=>(stateFilter==="TODOS"||b.estado===stateFilter)&&`${b.id} ${b.clienteSnapshot.nombre} ${b.clienteSnapshot.dni} ${b.options.map(o=>o.referenceSnapshot.nombre).join(" ")}`.toLocaleLowerCase().includes(q.toLocaleLowerCase()));
   return <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-7">
-    <PageHeader title="Presupuestos" subtitle="Propuestas de gestión de compra · Opciones alternativas y cuotas estimadas" actions={<button data-new-budget-v2 className={button} disabled={busy} onClick={newBudget}>Nuevo presupuesto V2</button>}/>
+    <PageHeader title="Presupuestos" subtitle="Propuestas de gestión de compra · Opciones alternativas y cuotas estimadas" actions={<button data-new-budget-v2 className={button} disabled={busy} onClick={()=>newBudget()}>Nuevo presupuesto V2</button>}/>
     {error&&<p role="alert" className="rounded-xl bg-red-50 p-4 text-red-800">{error}</p>}{message&&<p role="status" className="rounded-xl border border-border-color p-4">{message}</p>}
     {budget&&<section data-testid="budget-v2-editor" className="min-w-0 space-y-4 rounded-2xl border border-border-color bg-surface p-4 sm:p-6">
       <div className="flex flex-wrap justify-between gap-3"><h2 className="font-heading text-xl font-bold">Presupuesto V2 · Versión {budget.version} · {budget.estado}</h2><button className={button} disabled={busy} onClick={()=>{setBudget(null);setDraft(null);}}>Cerrar presupuesto</button></div>

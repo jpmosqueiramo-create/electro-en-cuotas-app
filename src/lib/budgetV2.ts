@@ -29,21 +29,81 @@ export function duplicateBudgetOption(option: BudgetOptionV2, newId: string): Bu
   return buildBudgetOptionV2(newId,{draft:referenceSnapshotToDraft(s),fechaCotizacion:s.fechaCotizacion,
     ...(s.source==="EXISTING_REFERENCE"?{source:s.source,referenceId:s.referenceId!}:{source:"NEW_REFERENCE",referenceId:null})});
 }
-export function validateBudgetV2(b: BudgetV2): void {
-  if(b.schemaVersion!=="BUDGET_V2" || !/^[a-zA-Z0-9_-]{1,100}$/.test(b.id) || !Number.isInteger(b.version)||b.version<1)throw new Error("Identidad V2 inválida.");
-  if(!["solicitudes","solicitudes_cuenta"].includes(b.sourceCollection)||!b.solicitudId||b.solicitudId.includes("/"))throw new Error("Seleccioná la solicitud y su colección.");
-  if(!b.clienteSnapshot.nombre.trim()||!b.clienteSnapshot.whatsapp.trim())throw new Error("Nombre y WhatsApp requeridos.");
-  for(const value of Object.values(b.clienteSnapshot))if(typeof value!=="string"||value.length>500)throw new Error("Datos comerciales inválidos.");
-  if(!Array.isArray(b.options)||!b.options.length||new Set(b.options.map(o=>o.optionId)).size!==b.options.length)throw new Error("Incorporá opciones con identidades únicas.");
-  for(const option of b.options){
-    if(!/^[a-zA-Z0-9_-]{1,100}$/.test(option.optionId))throw new Error("optionId inválido.");
-    const s=option.referenceSnapshot;
-    if(!["EXISTING_REFERENCE","NEW_REFERENCE"].includes(s.source))throw new Error("Origen de referencia inválido.");
-    const rebuilt=buildBudgetOptionV2(option.optionId,{draft:referenceSnapshotToDraft(s),fechaCotizacion:s.fechaCotizacion,
-      ...(s.source==="EXISTING_REFERENCE"?{source:s.source,referenceId:s.referenceId!}:{source:"NEW_REFERENCE",referenceId:null})});
-    if(s.schemaVersion!=="BUDGET_REFERENCE_V2"||JSON.stringify(rebuilt.referenceSnapshot.planesOfrecidos)!==JSON.stringify(s.planesOfrecidos))throw new Error("Planes inconsistentes con el snapshot.");
+export class BudgetV2DomainError extends Error {}
+export function budgetV2SafeErrorMessage(error: unknown): string {
+  return error instanceof BudgetV2DomainError ? error.message : "No se pudo completar la operación.";
+}
+function invalid(message = "Estructura de presupuesto V2 inválida."): never { throw new BudgetV2DomainError(message); }
+export function budgetV2ExactObject(value: unknown, keys: readonly string[]): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value) || ![Object.prototype, null].includes(Object.getPrototypeOf(value))) invalid();
+  const record = value as Record<string, unknown>;
+  if (Object.keys(record).length !== keys.length || keys.some(key => !Object.hasOwn(record, key))) invalid();
+  return record;
+}
+export function budgetV2OpaqueId(value: unknown): value is string {
+  return typeof value === "string" && /^[a-zA-Z0-9_-]{1,100}$/.test(value) && !/^\d+$/.test(value);
+}
+function text(value: unknown, max: number, required = false): value is string {
+  return typeof value === "string" && value.length <= max && (!required || !!value.trim());
+}
+function integer(value: unknown, min: number): value is number { return typeof value === "number" && Number.isSafeInteger(value) && value >= min; }
+function iso(value: unknown): value is string {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}T/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
+}
+function canonicalSnapshot(value: unknown): string {
+  function sorted(v: unknown): unknown {
+    if (Array.isArray(v)) return v.map(sorted);
+    if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)).map(([k, item]) => [k, sorted(item)]));
+    return v;
   }
-  if(JSON.stringify(b).length>750000)throw new Error("El presupuesto supera el tamaño permitido; reducí imágenes embebidas.");
+  return JSON.stringify(sorted(value));
+}
+/** Runtime boundary: exact nested allowlists, P2 canonical reconstruction, no browser spreads. */
+export function validateBudgetV2(value: unknown, privateId?: (budgetId: string, optionId: string) => string): asserts value is BudgetV2 {
+  const b = budgetV2ExactObject(value, ["schemaVersion", "id", "version", "sourceCollection", "solicitudId", "clienteSnapshot", "options", "estado", "createdAt", "updatedAt", "issuedAt", "revision", "revisionOf"]);
+  if (b.schemaVersion !== "BUDGET_V2" || !budgetV2OpaqueId(b.id) || !integer(b.version, 1)) invalid("Identidad V2 inválida.");
+  if (!["solicitudes", "solicitudes_cuenta"].includes(String(b.sourceCollection)) || typeof b.sourceCollection !== "string" || !text(b.solicitudId, 1500, true) || b.solicitudId.includes("/") || [".", ".."].includes(b.solicitudId)) invalid("Seleccioná la solicitud y su colección.");
+  if (!integer(b.revision, 0) || !(b.revisionOf === null || (integer(b.revisionOf, 1) && b.revisionOf < b.version)) || (b.version === 1 && b.revisionOf !== null)) invalid();
+  if (!iso(b.createdAt) || !iso(b.updatedAt) || !["GENERADO", "EMITIDO"].includes(String(b.estado)) || typeof b.estado !== "string" || (b.estado === "GENERADO" ? b.issuedAt !== null : !iso(b.issuedAt))) invalid();
+  const client = budgetV2ExactObject(b.clienteSnapshot, ["nombre", "dni", "cuil", "whatsapp", "localidad"]);
+  for (const [key, field] of Object.entries(client)) if (!text(field, 500, key === "nombre" || key === "whatsapp")) invalid("Datos comerciales inválidos.");
+  if (!Array.isArray(b.options) || !b.options.length) invalid("Incorporá opciones con identidades únicas.");
+  const ids = new Set<string>();
+  for (const raw of b.options) {
+    const option = budgetV2ExactObject(raw, ["optionId", "referenceSnapshot"]);
+    if (!budgetV2OpaqueId(option.optionId) || ids.has(option.optionId)) invalid("optionId inválido.");
+    ids.add(option.optionId);
+    const s = budgetV2ExactObject(option.referenceSnapshot, ["schemaVersion", "referenceId", "source", "nombre", "descripcion", "imagenUrls", "skuInternoSnapshot", "codigoBarrasSnapshot", "costoProveedorSnapshot", "proveedorSnapshot", "factoresSnapshot", "planesActivosSnapshot", "planesOfrecidos", "fechaCotizacion"]);
+    if (s.schemaVersion !== "BUDGET_REFERENCE_V2" || !text(s.nombre, 500, true) || !text(s.descripcion, 10000) || !text(s.proveedorSnapshot, 500) || !iso(s.fechaCotizacion)) invalid();
+    for (const code of [s.skuInternoSnapshot, s.codigoBarrasSnapshot]) if (code !== null && !text(code, 500)) invalid();
+    if (typeof s.costoProveedorSnapshot !== "number" || !Number.isFinite(s.costoProveedorSnapshot) || s.costoProveedorSnapshot <= 0) invalid();
+    if (!Array.isArray(s.imagenUrls) || s.imagenUrls.length > 4 || s.imagenUrls.some(url => !text(url, 750000, true))) invalid();
+    if (s.source === "EXISTING_REFERENCE") {
+      if (!text(s.referenceId, 1500, true) || s.referenceId.includes("/") || [".", ".."].includes(s.referenceId)) invalid("referenceId requerido.");
+    } else if (s.source === "NEW_REFERENCE") {
+      if (s.referenceId !== null && (!privateId || s.referenceId !== privateId(b.id, option.optionId))) invalid("Referencia privada inválida.");
+    } else invalid("Origen de referencia inválido.");
+    for (const [map, kind] of [[s.factoresSnapshot, "number"], [s.planesActivosSnapshot, "boolean"]] as const) {
+      if (!map || typeof map !== "object" || Array.isArray(map) || Object.getPrototypeOf(map) !== Object.prototype) invalid();
+      for (const [key, field] of Object.entries(map)) {
+        if (!/^(?:[1-9]|1[0-8])$/.test(key) || typeof field !== kind || (kind === "number" && (typeof field !== "number" || !Number.isFinite(field)))) invalid();
+      }
+    }
+    if (!Array.isArray(s.planesOfrecidos) || !s.planesOfrecidos.length || s.planesOfrecidos.length > 18) invalid();
+    for (const plan of s.planesOfrecidos) {
+      const p = budgetV2ExactObject(plan, ["cuotas", "cuotaEstimada"]);
+      if (!integer(p.cuotas, 1) || p.cuotas > 18 || !integer(p.cuotaEstimada, 1)) invalid();
+    }
+    const snapshot = s as unknown as BudgetReferenceSnapshotV2;
+    let rebuilt: BudgetOptionV2;
+    try {
+      rebuilt = buildBudgetOptionV2(option.optionId, { draft: referenceSnapshotToDraft(snapshot), fechaCotizacion: snapshot.fechaCotizacion,
+        ...(snapshot.source === "EXISTING_REFERENCE" ? { source: snapshot.source, referenceId: snapshot.referenceId! } : { source: "NEW_REFERENCE", referenceId: null }) });
+    } catch { invalid("Snapshot de referencia inválido."); }
+    const expected = { ...rebuilt.referenceSnapshot, referenceId: snapshot.referenceId };
+    if (canonicalSnapshot(expected) !== canonicalSnapshot(snapshot)) invalid("Snapshot inconsistente con su representación canónica.");
+  }
+  if (JSON.stringify(b).length > 750000) invalid("El presupuesto supera el tamaño permitido; reducí imágenes embebidas.");
 }
 export function toClientBudgetV2(b: BudgetV2): BudgetClientV2 {
   if(b.estado!=="EMITIDO"||!b.issuedAt)throw new Error("Emití y archivá antes de compartir.");

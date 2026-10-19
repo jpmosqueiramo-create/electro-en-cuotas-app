@@ -67,3 +67,49 @@ const selectionJs=ts.transpile(`(${acceptedSelection})`,{target:ts.ScriptTarget.
 const v2Accepted={id:"v2",schemaVersion:"BUDGET_V2",estado:"Aceptado"};const historicalAccepted={id:"legacy",estado:"Aceptado"};
 assert.equal(runInNewContext(selectionJs,{sol:{presupuestos:[v2Accepted]}}),undefined);
 assert.equal(runInNewContext(selectionJs,{sol:{presupuestos:[v2Accepted,historicalAccepted]}}).id,"legacy");
+
+import { parseBudgetCommandV2, privateBudgetReferenceId } from "../src/lib/budgetV2Persistence";
+import { BudgetV2DomainError, budgetV2SafeErrorMessage } from "../src/lib/budgetV2";
+function schemaCommand(): Record<string, unknown> {
+ return JSON.parse(JSON.stringify({action:"SAVE",commandId:"schema-command",budget:budgetFixture("schema-budget"),expectedRevision:0,privateOptionIds:[]}));
+}
+function target(root:unknown,path:string[]):Record<string,unknown>{let v=root;for(const key of path)v=(v as Record<string,unknown>)[key];return v as Record<string,unknown>;}
+for(const action of ["SAVE","ISSUE","REVISE"]){
+ for(const path of [[],["budget"],["budget","clienteSnapshot"],["budget","options","0"],["budget","options","0","referenceSnapshot"],["budget","options","0","referenceSnapshot","planesOfrecidos","0"]]){
+  const cmd=schemaCommand();cmd.action=action;target(cmd,path).unexpected="must reject";assert.throws(()=>parseBudgetCommandV2(cmd),BudgetV2DomainError);
+ }
+}
+for(const [path,key,value] of [
+ [[],"privateOptionIds",["option-0","option-0"]],[[],"privateOptionIds",[null]],[[],"privateOptionIds","option-0"],[[],"privateOptionIds",["bad/id"]],
+ [[],"expectedRevision",-1],[[],"expectedRevision","0"],[[],"commandId",null],[[],"action","DELETE"],
+ [["budget"],"version",0],[["budget"],"revision",-1],[["budget"],"estado","ACCEPTED"],[["budget"],"createdAt","yesterday"],
+ [["budget","clienteSnapshot"],"nombre",null],[["budget","clienteSnapshot"],"dni",42],[["budget","clienteSnapshot"],"localidad","x".repeat(501)],
+ [["budget","options","0","referenceSnapshot"],"referenceId","arbitrary-product-id"],
+ [["budget","options","0","referenceSnapshot"],"nombre","Referencia 1 "],
+ [["budget","options","0","referenceSnapshot"],"costoProveedorSnapshot","580000"],
+ [["budget","options","0","referenceSnapshot","factoresSnapshot"],"19",3],
+ [["budget","options","0","referenceSnapshot","planesActivosSnapshot"],"8","true"],
+ [["budget","options","0","referenceSnapshot","planesOfrecidos","0"],"cuotaEstimada",1]
+] as [string[],string,unknown][]){const cmd=schemaCommand();target(cmd,path)[key]=value;assert.throws(()=>parseBudgetCommandV2(cmd),BudgetV2DomainError);}
+for(const value of [null,[],"bad",42,{},undefined])assert.throws(()=>parseBudgetCommandV2(value),BudgetV2DomainError);
+const deterministic=schemaCommand();target(deterministic,["budget","options","0","referenceSnapshot"]).referenceId=privateBudgetReferenceId("schema-budget","option-0");assert.doesNotThrow(()=>parseBudgetCommandV2(deterministic));
+const existing=schemaCommand();target(existing,["budget","options","0","referenceSnapshot"]).source="EXISTING_REFERENCE";assert.throws(()=>parseBudgetCommandV2(existing),BudgetV2DomainError);target(existing,["budget","options","0","referenceSnapshot"]).referenceId="existing-product";assert.doesNotThrow(()=>parseBudgetCommandV2(existing));
+assert.equal(budgetV2SafeErrorMessage(new Error("Firestore SDK secret /internal/path")),"No se pudo completar la operación.");
+assert.equal(budgetV2SafeErrorMessage(new BudgetV2DomainError("Conflicto de revisión.")),"Conflicto de revisión.");
+console.log("P3_ADVERSARIAL_SCHEMA_TESTS = PASS; UNEXPECTED_SERVER_ERRORS_SANITIZED = YES");
+
+const baseBudgets=execFileSync("git",["show","f2d4d061ce41086d3a4c559462fb54e120ab0454:src/app/admin/presupuestos/page.tsx"],{encoding:"utf8"});
+const currentBudgets=readFileSync(new URL("../src/app/admin/presupuestos/page.tsx",import.meta.url),"utf8");
+function mapping(source:string){const ast=ts.createSourceFile("budgets.tsx",source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);const fn=ast.statements.find(n=>ts.isFunctionDeclaration(n)&&n.name?.text==="mapOpcionToInternalBudgetItem");assert.ok(fn);return fn!.getText(ast);}
+assert.equal(mapping(currentBudgets),mapping(baseBudgets));
+assert.equal(handler(currentBudgets,"abrirModalConfeccion").replace('    if (!item.persistedLegacy) { onNew({sourceCollection: item.solicitudTipo === \"estandar\" ? \"solicitudes\" : \"solicitudes_cuenta\", id: item.solicitudId || \"\"}); return; }\n    legacyEditingRef.current = item;\n',"").replace('sessionBudgetIdRef.current = item.id;','sessionBudgetIdRef.current = item.id || "pres_" + Date.now();'),handler(baseBudgets,"abrirModalConfeccion"));
+async function budgetSaveRegression(source:string,existing=true){
+ const events:unknown[]=[];const option={itemId:"historical-item",source:"MANUAL_PRESUPUESTO",pricingMode:"MANUAL_FACTOR_V1",productoId:null,nombre:"Histórico",cuotas:8,valorCuota:1234,anticipo:0,totalFinanciado:9872,precioContado:9000,costoProveedor:777,cantidad:1};
+ const original={id:"pres_historical",persistedLegacy:true,items:[option]};const noop=()=>{};
+ const ctx={legacyEditingRef:{current:existing?original:null},persistedBudget:existing?original:null,resolvedSolicitudId:"sol-historical",resolvedCollection:"solicitudes",savingInFlightRef:{current:false},sessionBudgetIdRef:{current:"pres_historical"},sessionDraftItemIdRef:{current:""},setSaving:noop,buildEffectiveItemsForSave:()=>[option],leadData:{nombre:"Cliente",telefono:"5491100000000",notas:"Nota editada"},confirmarCrearNueva:false,sourceMode:"MANUAL_PRESUPUESTO",pricingResult:null,db:{},doc:(_db:unknown,col:string,id:string)=>`${col}/${id}`,getDoc:async()=>({exists:()=>true,data:()=>({presupuestos:[{id:"pres_historical"}]})}),updateDoc:async(path:unknown,payload:unknown)=>events.push([path,payload]),fetchPresupuestos:async()=>{},alert:noop,onNew:()=>events.push(["V2"]),console,lifecycleRef:{current:{startAddingAnotherProduct:noop,setBudgetItems:noop,setPersistedBudget:noop,setResolvedCandidate:noop}}};
+ const fn=runInNewContext(ts.transpile(`const run=${handler(source,"handleGuardarPresupuesto")};run;`,{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}),ctx);await fn();
+ const normalized=JSON.parse(JSON.stringify(events)) as unknown[][];for(const event of normalized){const payload=event[1] as {presupuestos?:Record<string,unknown>[]};for(const p of payload?.presupuestos??[]) {p.fechaObjeto="generated";p.fecha="generated";p.fechaIso="generated";}}
+ return normalized;
+}
+async function primaryLegacyRegression(){const old=await budgetSaveRegression(baseBudgets);const current=await budgetSaveRegression(currentBudgets);assert.deepEqual(current,old);assert.equal(current.length,1);assert.equal(current[0][0],"solicitudes/sol-historical");assert.deepEqual(await budgetSaveRegression(currentBudgets,false),[["V2"]]);console.log("LEGACY_EDIT_IN_PRESUPUESTOS_PRESERVED = PASS; NEW_LEGACY_CREATION_FROM_PRESUPUESTOS = 0");}
+primaryLegacyRegression().catch(error=>{console.error(error);process.exitCode=1;});
