@@ -215,3 +215,99 @@ Modificados durante P5-C (5):
 Estado Git esperado al cierre: 3 tracked modificados + 16 untracked de alcance,
 ninguno stageado. Sin cambios en Validaciones, firestore.rules o storage.rules.
 Sin formalización ni PDFs nuevos; revisión legal requerida hacia P5-D.
+
+## Evolución posterior P5-D1A — datos de domicilio
+
+Esta sección documenta una ampliación posterior a P5-C; los apartados anteriores
+conservan las decisiones y resultados históricos de esa fase.
+
+Base P5-D1A: `71ea1eaec6c193f9e0f14697e8696153e1776b11`.
+Se agregan province y postalCode, pendientes permitidos en DRAFT y obligatorios
+para considerar completos los datos personales. No se implementa READY, freeze,
+formalización, numeración, firma ni documentos PDF. Laborales siguen opcionales.
+Economía, helper compartido, vencimientos, Budget, Acceptance y P4 no cambian.
+
+### Catálogo y validación
+
+`contractAddress.ts` conserva la edición `AR_INDEC_2010_ADDRESS_V1` del catálogo
+local. Fuente oficial verificada: INDEC, *Códigos de las unidades geográficas
+utilizadas en el Censo Nacional de Población, Hogares y Viviendas 2010*, página
+impresa 4 (página PDF 4), tabla de provincias:
+https://redatam.indec.gob.ar/redarg/censos/cpv2010rad/Docs/codigos_provincias.pdf
+
+Se transcriben sus 24 pares código/denominación. Códigos de dos caracteres,
+incluido el cero inicial: CABA 02 es diferente de Provincia de Buenos Aires 06.
+No son códigos postales. Esta edición no debe modificarse en el futuro: otra
+edición exige otra versión conservando la anterior para interpretar históricos.
+No se incorporan alias, APIs externas, inferencias por localidad ni valores por
+defecto. La UI presenta denominaciones y persiste códigos canónicos.
+
+PostalCode es string: cuatro dígitos o letra ASCII + cuatro dígitos + tres letras
+ASCII. Trim/NFC y CPA mayúsculas; no se eliminan ceros iniciales. Es validación
+estructural, no certificación del domicilio ni correspondencia postal/provincia.
+El servidor valida ambos campos; el formulario agrega selector y pattern HTML.
+
+### Compatibilidad de persistencia y API
+
+`personalDataVersion` opcional en Draft, request y submission. Ausencia corresponde
+exclusivamente al contrato histórico LEGACY_SIX; versión desconocida se rechaza.
+Los nuevos Drafts y requests usan AR_INDEC_2010_ADDRESS_V1. No se cambia el schema
+raíz existente ni las rutas API. No se ejecuta migración/backfill ni escritura
+al leer; OPEN_OR_CREATE de Draft existente no reescribe sus datos personales.
+La UI representa campos históricos ausentes como pendientes, sin persistirlos.
+Guardar personales explícitamente valida ocho claves exactas y registra versión,
+revisión CAS y evento existente. No se incorporan datos desde solicitudes vivas.
+
+GET público autenticado por capacidad agrega únicamente personalDataVersion a
+{available:true}, sin personales, IDs internos, economía o datos P4. Es metadata
+del formulario necesaria para seleccionar seis u ocho controles. El formato
+POST se decide desde el request persistido en servidor, nunca desde el payload.
+Requests históricos conservan seis campos hasta vencimiento/revocación incluso
+si el Draft ya tiene domicilio ampliado. Requests nuevos requieren ocho. No se
+acepta intercambiar formatos; se conservan allowlists exactas y errores genéricos.
+
+La normalización y digest de los seis campos originales no cambian. La metadata
+nueva no se incorpora al digest del payload histórico. Submissions anteriores no
+se reescriben ni se les agregan campos. La aplicación Admin valida la versión
+contra el request: las seis claves históricas se aplican conservando province y
+postalCode actuales; los envíos nuevos aplican los ocho campos. La UI explica la
+preservación de los campos no informados. Laborales y día mensual mantienen su
+semántica y primera fecha contractual no se reemplaza por el formulario.
+
+### Seguridad y verificación
+
+Sin cambios de Rules, permisos, rutas públicas ni acceso cliente directo Firebase.
+Se mantienen fragmento, header secreto, expiración/revocación, rate limits,
+request activo único, submission única, aplicación Admin, CAS e idempotencia.
+No se agregan logs de PII, tokens o payloads. No hay escrituras productivas.
+
+La suite pura testContractV2 cubre catálogo, formatos, faltantes y regresión de
+los 18 planes y calendario. testContractAddressCompatibility se ejecuta dentro
+de testContractV2Emulator: lectura histórica sin migración, ambos requests,
+digests/submissions históricos intactos, aplicación de ambas versiones,
+preservación de domicilio, CAS concurrente de personales y aplicaciones,
+idempotencia y privacidad. Se mantienen las pruebas adversariales y carreras
+P5-C. Browser verifica los controles y aplicación real. Los resultados de la
+presente fase se informan al cierre, sin reutilizar PASS históricos como nuevos.
+
+### Resultados verificados P5-D1A
+
+TypeScript, ESLint de los diez archivos TypeScript tocados, test:safe y build:
+PASS. testContractV2: PASS (validación de domicilio y regresión económica/calendario).
+Emulator P5-C + compatibilidad P5-D1A: PASS, con demo-cuenta-hogar y hosts locales
+Auth 9099 / Firestore 8080 / Storage 9199. Regresión P4 modelo, acceptance,
+documentación Storage y API adversarial: PASS.
+Browser Admin 1280px, público 390px, aplicación nueva y enlace histórico de seis
+campos con preservación de domicilio: PASS. Capturas fuera de Git en
+/tmp/cuenta-hogar-p5d1a/. Una primera ejecución detectó una consulta al Auth
+Emulator de la sesión Admin heredada: se separaron las sesiones Admin/pública en
+el test, sin filtrar requests ni reducir la assertion de cero terceros.
+Reejecución final completa de contratos Emulator y browser: PASS.
+Raw token en Firestore = 0; filtraciones públicas/P4 detectadas = 0; requests
+Firebase externos al emulador = 0. Diff de Rules/configuración/pricing/Budget/
+Acceptance/P4 sin cambios. Sin tests productivos, migraciones ni deploy.
+
+Limitaciones: validación postal estructural; no valida existencia del domicilio
+ni relación CPA/provincia. El enlace portador no verifica identidad; la revisión
+Admin sigue siendo obligatoria. La revisión jurídica, SEC-STORAGE-1 y etapas de
+freeze/documentos/firma permanecen pendientes y fuera de este alcance.

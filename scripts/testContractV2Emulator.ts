@@ -4,9 +4,11 @@ import { createHash } from 'node:crypto';
 import { NextRequest } from 'next/server';
 import { admin } from '../src/lib/firebaseAdmin';
 import { contractCommand,contractRefs,getContract,publicContractData,unavailable } from '../src/lib/contractV2Server';
-import { fixture,clientPayload } from './testContractV2';
+import { fixture,addressPayload as clientPayload } from './testContractV2';
 import * as pub from '../src/app/api/public/contract-data/[requestId]/route';
 import * as api from '../src/app/api/admin/presupuestos-v2/[budgetId]/versions/[version]/contract/route';
+import { PERSONAL_ADDRESS_VERSION } from '../src/lib/contractAddress';
+import { addressCompatibilityTests } from './testContractAddressCompatibility';
 import { ADMIN_EMAIL } from '../src/lib/adminAuth';
 async function main(){
  const db=admin.firestore(),id=`p5c-${Date.now()}`,r=contractRefs(db,id,1),{b,a}=fixture(id);
@@ -71,7 +73,7 @@ async function main(){
  console.log('P5C_CLIENT_REQUEST_EMULATOR = PASS');
  const active=await update('CREATE_CLIENT_DATA_REQUEST'),activeId=d.activeClientDataRequestId!,ctx={params:Promise.resolve({requestId:activeId})};
  const req=(method:string,body?:unknown,secret=active.secret!,query='')=>new NextRequest(`http://localhost:3000/api/public/contract-data/${activeId}${query}`,{method,headers:{'X-Client-Data-Token':secret,'Origin':'http://localhost:3000','Content-Type':'application/json'},...(body!==undefined?{body:JSON.stringify(body)}:{})});
- const get=await pub.GET(req('GET'),ctx);assert.equal(get.status,200);const bootstrap=await get.text();assert.equal(bootstrap,'{"available":true}');for(const key of ['capitalAmount','factor','service','budgetId','storagePath'])assert.ok(!bootstrap.includes(key));
+ const get=await pub.GET(req('GET'),ctx);assert.equal(get.status,200);const bootstrap=await get.text();assert.deepEqual(JSON.parse(bootstrap),{available:true,personalDataVersion:PERSONAL_ADDRESS_VERSION});for(const key of ['capitalAmount','factor','service','budgetId','storagePath'])assert.ok(!bootstrap.includes(key));
  assert.equal((await pub.GET(req('GET',undefined,'x'.repeat(43)),ctx)).status,400);assert.equal((await pub.GET(req('GET',undefined,active.secret!,'?token=bad'),ctx)).status,400);
  for(const payload of [...wrong,{...clientPayload,personalData:{...clientPayload.personalData,address:'x'.repeat(20000)}}])assert.equal((await pub.POST(req('POST',payload),ctx)).status,400);
  assert.equal((await pub.POST(new NextRequest(`http://localhost:3000/api/public/contract-data/${activeId}`,{method:'POST',headers:{Origin:'https://evil.test','Content-Type':'application/json','X-Client-Data-Token':active.secret!},body:JSON.stringify(clientPayload)}),ctx)).status,400);
@@ -102,6 +104,7 @@ async function main(){
  console.log('RAW_TOKEN_FIRESTORE_OCCURRENCES = 0');
  const state=await getContract(db,id,1);assert.ok(!JSON.stringify(state).includes('tokenHash'));
  console.log('P5C_PUBLIC_API_ADVERSARIAL = PASS');console.log('DOCUMENTATION_CLIENT_LEAKS = 0; PUBLIC_CONTRACT_DATA_LEAKS = 0');
+ await addressCompatibilityTests(db);
  await admin.app().delete();
 }
 main().catch(error=>{console.error('P5C_EMULATOR_FAILED',error instanceof Error&&error.message.startsWith('RAW_TOKEN_DETECTED_AT ')?error.message:error instanceof Error?error.stack?.split('\n').slice(1,3).join('\n'):'unexpected error');process.exitCode=1;});

@@ -1,8 +1,9 @@
 import './helpers/requireSafeEmulatorEnvironment';
 import assert from 'node:assert/strict';
+import {createHash,randomBytes} from 'node:crypto';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {admin} from '../src/lib/firebaseAdmin';
-import {fixture,clientPayload} from './testContractV2';
+import {fixture,clientPayload as historicalPayload,addressPayload as clientPayload} from './testContractV2';
 import {CatalogBrowser} from './helpers/catalogBrowser';
 import {adminEmail,adminPassword} from './helpers/adminSolicitudesFixtures';
 import {contractRefs} from '../src/lib/contractV2Server';
@@ -10,8 +11,8 @@ export async function testContractV2Browser(){
  const db=admin.firestore(),id=`p5c-browser-${Date.now()}`,{b,a}=fixture(id),r=contractRefs(db,id,1);
  await r.family.set({sourceCollection:b.sourceCollection,solicitudId:b.solicitudId,lastVersion:1});await r.budget.set(b);await r.acceptance.set(a);
  try{const u=await admin.auth().getUserByEmail(adminEmail);await admin.auth().updateUser(u.uid,{password:adminPassword,emailVerified:true});}catch{await admin.auth().createUser({email:adminEmail,password:adminPassword,emailVerified:true});}
- const browser=await CatalogBrowser.open();mkdirSync('/tmp/cuenta-hogar-p5c',{recursive:true});
- async function capture(name:string,selector:string){await browser.evaluate(`document.querySelector(${JSON.stringify(selector)}).scrollIntoView({block:'start'})`);await browser.evaluate('document.fonts.ready.then(()=>true)');const image=await browser.command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(`/tmp/cuenta-hogar-p5c/${name}`,Buffer.from(image.data as string,'base64'));}
+ const browser=await CatalogBrowser.open();mkdirSync('/tmp/cuenta-hogar-p5d1a',{recursive:true});
+ async function capture(name:string,selector:string){await browser.evaluate(`document.querySelector(${JSON.stringify(selector)}).scrollIntoView({block:'start'})`);await browser.evaluate('document.fonts.ready.then(()=>true)');const image=await browser.command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(`/tmp/cuenta-hogar-p5d1a/${name}`,Buffer.from(image.data as string,'base64'));}
  async function select(selector:string,value:string){await browser.evaluate(`(()=>{const el=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(el,${JSON.stringify(value)});el.dispatchEvent(new Event('change',{bubbles:true}));})()`);}
  async function idle(){await browser.until("!document.querySelector('[data-testid=contract-composer] fieldset')?.disabled",'contract idle');}
  async function open(){await browser.navigate('/admin/presupuestos');await browser.until("!![...document.querySelectorAll('label')].find(x=>x.textContent.includes('Buscar presupuesto V2'))",'history loaded');await browser.field('Buscar presupuesto V2',id);await browser.until("[...document.querySelectorAll('section')].find(s=>s.querySelector('h2')?.textContent==='Historial V2')?.querySelectorAll('article').length===1",'exact budget');await browser.clickText('Abrir versión 1',"[...document.querySelectorAll('section')].find(s=>s.querySelector('h2')?.textContent==='Historial V2')");await browser.until("!!document.querySelector('[data-testid=acceptance-registered]')",'accepted');await browser.clickText('Confeccionar contrato');await browser.until("!!document.querySelector('[data-testid=contract-composer]')",'composer');await idle();}
@@ -24,16 +25,39 @@ export async function testContractV2Browser(){
   await browser.change('[aria-label="Primera cuota"]','2026-12-15');await select('[aria-label="Día habitual"]','30');await browser.clickText('Guardar fechas y revisar cronograma');await browser.until("document.querySelector('[data-testid=contract-schedule]').textContent.includes('28/02/2027')",'schedule');await idle();await capture('03-payment-schedule.png','[data-testid=contract-schedule]');
   await browser.clickText('Solicitar datos al cliente');await browser.until("!!document.querySelector('[data-testid=client-open-link]')",'link');await idle();const link=await browser.evaluate<string>("document.querySelector('[data-testid=client-open-link]').href");assert.ok(link.includes('#'));const wa=await browser.evaluate<string>("document.querySelector('[data-testid=client-whatsapp]').href");assert.ok(decodeURIComponent(wa).includes(link));await capture('04-client-data-request.png','[data-testid=contract-request]');
   const before=(await r.draft.get()).data()!;console.log('P5C_BROWSER_ADMIN_DESKTOP = PASS');
+  await browser.evaluate('window.__FIREBASE_SIGN_OUT__().then(()=>true)');
   await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await browser.navigate(new URL(link).pathname+new URL(link).hash);await browser.until("!!document.querySelector('input[name=fullName]')",'public form');assert.equal(await browser.evaluate('location.hash'),'');
-  for(const [k,v] of Object.entries(clientPayload.personalData))await browser.change(`input[name=${k}]`,v);
+  for(const [k,v] of Object.entries(clientPayload.personalData)){if(k==='province')await select('select[name=province]',v);else await browser.change(`input[name=${k}]`,v);}
+  assert.equal(await browser.evaluate("document.querySelector('select[name=province]').required"),true);
+  assert.equal(await browser.evaluate("document.querySelector('input[name=postalCode]').required"),true);
   await select('select[name=preferredMonthlyDueDay]','30');await browser.overflow('public mobile');
   const thirdParty=await browser.evaluate<string[]>("performance.getEntriesByType('resource').map(e=>e.name).filter(u=>/^https?:/.test(u)&&new URL(u).origin!==location.origin)");assert.deepEqual(thirdParty,[]);console.log('PUBLIC_FORM_THIRD_PARTY_REQUESTS = 0');
   const html=await browser.evaluate<string>('document.body.innerText');for(const text of ['SECRET_PROVIDER','Capital aplicado','Factor snapshot',id,'storagePath','167.490'])assert.ok(!html.includes(text));await capture('05-public-form-mobile.png','[data-testid=public-contract-form]');
   await browser.clickText('Enviar datos');await browser.until("document.body.innerText.includes('Gracias. Recibimos tus datos.')",'submitted');await capture('06-public-submitted.png','[data-testid=public-contract-form]');assert.deepEqual((await r.draft.get()).data(),before);console.log('P5C_BROWSER_PUBLIC_MOBILE = PASS');
-  await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:800,deviceScaleFactor:1,mobile:false});await open();await browser.until("!!document.querySelector('[data-testid=client-data-review]')",'review');await capture('07-admin-review-client-data.png','[data-testid=client-data-review]');
+  await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:800,deviceScaleFactor:1,mobile:false});await browser.navigate('/login');await browser.until("typeof window.__FIREBASE_SIGN_IN__==='function'",'admin reauth');await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(adminEmail)},${JSON.stringify(adminPassword)}).then(()=>true)`);await open();await browser.until("!!document.querySelector('[data-testid=client-data-review]')",'review');await capture('07-admin-review-client-data.png','[data-testid=client-data-review]');
   // Handle only the explicit apply confirmation, via CDP dialog event polling.
   const click=browser.clickText('Aplicar datos recibidos');await browser.delay(200);await browser.command('Page.handleJavaScriptDialog',{accept:true});await click;await browser.until("document.querySelector('[data-testid=contract-personal] input[name=address]').value==='Domicilio demo'",'applied');await idle();
   const subBefore=(await r.draft.collection('submissions').doc(before.activeClientDataRequestId).get()).data();await browser.change('[data-testid=contract-personal] input[name=address]','Revisado después de aplicar');await browser.clickText('Guardar datos personales');await idle();assert.deepEqual((await r.draft.collection('submissions').doc(before.activeClientDataRequestId).get()).data(),subBefore);
   await browser.until("document.querySelector('[data-testid=contract-review]').textContent.includes('Borrador completo para futura formalización')",'complete');await capture('08-draft-complete.png','[data-testid=contract-review]');await browser.overflow('composer desktop');await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await browser.overflow('composer mobile');assert.deepEqual(browser.externalFirebase,[]);console.log('P5C_BROWSER_ADMIN_REVIEW = PASS');console.log('PUBLIC_CONTRACT_DATA_LEAKS = 0');
+  // An existing P5-C link keeps its original six-field contract in the real UI.
+  const legacyId='historical-browser',legacyToken=randomBytes(32).toString('base64url');
+  await r.draft.collection('requests').doc(legacyId).set({schemaVersion:'CONTRACT_CLIENT_DATA_REQUEST_V2',requestId:legacyId,contractDraftId:before.contractDraftId,budgetId:id,budgetVersion:1,tokenHash:createHash('sha256').update(legacyToken).digest('hex'),status:'ACTIVE',createdAt:new Date().toISOString(),createdBy:'admin-demo',expiresAt:new Date(Date.now()+86400000).toISOString(),submittedAt:null,revokedAt:null,submissionDigest:null});
+  await db.collection('contractClientDataRequests').doc(legacyId).set({budgetId:id,version:1});await r.draft.update({activeClientDataRequestId:legacyId});
+  await browser.evaluate('window.__FIREBASE_SIGN_OUT__().then(()=>true)');
+  await browser.navigate(`/completar-datos/${legacyId}#${legacyToken}`);await browser.until("!!document.querySelector('input[name=fullName]')",'historical six fields');
+  assert.equal(await browser.evaluate("document.querySelector('select[name=province]')===null && document.querySelector('input[name=postalCode]')===null"),true);
+  assert.equal(await browser.evaluate('location.hash'),'');
+  for(const [k,v] of Object.entries(historicalPayload.personalData))await browser.change(`input[name=${k}]`,v);
+  await select('select[name=preferredMonthlyDueDay]','30');await browser.overflow('historical public mobile');await browser.clickText('Enviar datos');await browser.until("document.body.innerText.includes('Gracias. Recibimos tus datos.')",'historical received');
+  const historicalSub=(await r.draft.collection('submissions').doc(legacyId).get()).data();assert.ok(!Object.hasOwn(historicalSub!.personalData,'province'));
+  await browser.navigate('/login');await browser.until("typeof window.__FIREBASE_SIGN_IN__==='function'",'history admin auth');await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(adminEmail)},${JSON.stringify(adminPassword)}).then(()=>true)`);await open();
+  const historySection="[...document.querySelectorAll('[data-testid=client-data-review]')].find(s=>s.textContent.includes('No informado en este envío'))";
+  await browser.until(`!!(${historySection})`,'historical preservation notice');
+  const applyHistory=browser.clickText('Aplicar datos recibidos',historySection);await browser.delay(200);await browser.command('Page.handleJavaScriptDialog',{accept:true});await applyHistory;await idle();
+  await browser.until("document.querySelector('[data-testid=contract-personal] input[name=address]').value==='Domicilio demo'",'historical applied');
+  assert.equal((await r.draft.get()).data()!.personalData.province,'06');assert.equal((await r.draft.get()).data()!.personalData.postalCode,'6070');
+  assert.equal(await browser.evaluate("document.querySelector('[data-testid=contract-personal] select[name=province]').value"),'06');assert.equal(await browser.evaluate("document.querySelector('[data-testid=contract-personal] input[name=postalCode]').value"),'6070');
+  assert.deepEqual((await r.draft.collection('submissions').doc(legacyId).get()).data(),historicalSub);
+  assert.deepEqual(browser.externalFirebase,[]);console.log('P5D1A_BROWSER_HISTORICAL_LINK_AND_ADMIN_PRESERVATION = PASS');
  }finally{await browser.close();}
 }

@@ -1,0 +1,89 @@
+import './helpers/requireSafeEmulatorEnvironment';
+import assert from 'node:assert/strict';
+import { createHash,randomBytes } from 'node:crypto';
+import type { Firestore } from 'firebase-admin/firestore';
+import { readFileSync } from 'node:fs';
+import { fixture,clientPayload,addressPayload } from './testContractV2';
+import { stable,completeness,type ContractDraftV2 } from '../src/lib/contractV2';
+import { PERSONAL_ADDRESS_VERSION } from '../src/lib/contractAddress';
+import { contractRefs,contractCommand,getContract,publicContractData } from '../src/lib/contractV2Server';
+const digest=(v:unknown)=>createHash('sha256').update(stable(v)).digest('hex');
+export async function addressCompatibilityTests(db:Firestore){
+ const id=`p5d1a-history-${Date.now()}`,r=contractRefs(db,id,1),{b,a}=fixture(id);
+ await r.budget.set(b);await r.acceptance.set(a);
+ const opened=await contractCommand(db,id,1,{action:'OPEN_OR_CREATE',commandId:'initial'},'admin');
+ const legacy={...opened.draft,personalData:{...clientPayload.personalData}};
+ delete legacy.personalDataVersion;
+ await r.draft.set(legacy);
+ const before=(await r.draft.get()).data();
+ const read=await getContract(db,id,1);assert.deepEqual(read.draft,before);
+ assert.ok(completeness(read.draft!).some(x=>x.includes('province')));
+ await contractCommand(db,id,1,{action:'OPEN_OR_CREATE',commandId:'reopen-legacy'},'admin');
+ assert.deepEqual((await r.draft.get()).data(),before);
+ console.log('P5D1A_HISTORICAL_DRAFT_READ_WITHOUT_MIGRATION = PASS');
+ let d=legacy as ContractDraftV2;
+ async function update(action:string,extra:Record<string,unknown>={}){
+  const result=await contractCommand(db,id,1,{action,commandId:crypto.randomUUID(),expectedRevision:d.revision,...extra},'admin');d=result.draft;return result;
+ }
+ // Historical request has no version marker; its contract remains six fields.
+ const token=randomBytes(32).toString('base64url'),requestId='legacy-request';
+ const rr=r.draft.collection('requests').doc(requestId);
+ await rr.set({schemaVersion:'CONTRACT_CLIENT_DATA_REQUEST_V2',requestId,contractDraftId:d.contractDraftId,budgetId:id,budgetVersion:1,tokenHash:createHash('sha256').update(token).digest('hex'),status:'ACTIVE',createdAt:new Date().toISOString(),createdBy:'admin',expiresAt:new Date(Date.now()+86400000).toISOString(),submittedAt:null,revokedAt:null,submissionDigest:null});
+ await db.collection('contractClientDataRequests').doc(requestId).set({budgetId:id,version:1});
+ await r.draft.update({activeClientDataRequestId:requestId});d=(await r.draft.get()).data() as ContractDraftV2;
+ assert.deepEqual(await publicContractData(db,requestId,token),{available:true,personalDataVersion:'LEGACY_SIX'});
+ await assert.rejects(()=>publicContractData(db,requestId,token,addressPayload));
+ const unmodified=(await r.draft.get()).data();
+ await publicContractData(db,requestId,token,clientPayload);
+ const subRef=r.draft.collection('submissions').doc(requestId),submission=(await subRef.get()).data();
+ const originalDigest=(await rr.get()).data()!.submissionDigest;
+ assert.equal(originalDigest,digest(clientPayload));assert.ok(!Object.hasOwn(submission!,'personalDataVersion'));
+ assert.deepEqual((await r.draft.get()).data(),unmodified);
+ await update('UPDATE_PERSONAL_DATA',{personalData:addressPayload.personalData});
+ assert.equal(d.personalDataVersion,PERSONAL_ADDRESS_VERSION);
+ // Replay the historical payload after the Draft has moved to the address format.
+ await publicContractData(db,requestId,token,clientPayload);
+ assert.equal((await rr.get()).data()!.submissionDigest,originalDigest);
+ assert.deepEqual((await subRef.get()).data(),submission);
+ const apply={action:'APPLY_CLIENT_SUBMISSION',submissionId:requestId,expectedRevision:d.revision,commandId:'apply-history'};
+ const applied=await contractCommand(db,id,1,apply,'admin');d=applied.draft;
+ assert.equal(d.personalData.province,'06');assert.equal(d.personalData.postalCode,'6070');
+ assert.deepEqual((await subRef.get()).data(),submission);
+ assert.equal((await contractCommand(db,id,1,apply,'admin')).replayed,true);
+ assert.deepEqual((await r.draft.get()).data(),d);
+ const rev=d.revision;
+ const edits=await Promise.allSettled(['02','06'].map(province=>contractCommand(db,id,1,{action:'UPDATE_PERSONAL_DATA',personalData:{...addressPayload.personalData,province},expectedRevision:rev,commandId:`personal-${province}`},'admin')));
+ assert.equal(edits.filter(x=>x.status==='fulfilled').length,1);assert.equal(edits.filter(x=>x.status==='rejected').length,1);
+ d=(await r.draft.get()).data() as ContractDraftV2;
+ const apps=await Promise.allSettled(['apply-a','apply-b'].map(commandId=>contractCommand(db,id,1,{...apply,commandId,expectedRevision:d.revision},'admin')));
+ assert.equal(apps.filter(x=>x.status==='fulfilled').length,1);assert.equal(apps.filter(x=>x.status==='rejected').length,1);
+ d=(await r.draft.get()).data() as ContractDraftV2;
+ const fresh=await update('CREATE_CLIENT_DATA_REQUEST');const freshId=d.activeClientDataRequestId!;
+ assert.equal((await r.draft.collection('requests').doc(freshId).get()).data()!.personalDataVersion,PERSONAL_ADDRESS_VERSION);
+ await assert.rejects(()=>publicContractData(db,freshId,fresh.secret!,clientPayload));
+ await assert.rejects(()=>publicContractData(db,freshId,fresh.secret!,{...addressPayload,personalData:{...addressPayload.personalData,province:'99'}}));
+ await assert.rejects(()=>publicContractData(db,freshId,fresh.secret!,{...addressPayload,personalData:{...addressPayload.personalData,postalCode:'bad'}}));
+ const newPayload={...addressPayload,personalData:{...addressPayload.personalData,province:'02',postalCode:'c1425abc'}};
+ const untouched=(await r.draft.get()).data();
+ await publicContractData(db,freshId,fresh.secret!,newPayload);
+ assert.deepEqual((await r.draft.get()).data(),untouched);
+ const newRef=r.draft.collection('submissions').doc(freshId),newSub=(await newRef.get()).data();
+ assert.equal(newSub!.personalData.postalCode,'C1425ABC');assert.equal(newSub!.personalDataVersion,PERSONAL_ADDRESS_VERSION);
+ await publicContractData(db,freshId,fresh.secret!,newPayload);assert.deepEqual((await newRef.get()).data(),newSub);
+ await update('APPLY_CLIENT_SUBMISSION',{submissionId:freshId});assert.equal(d.personalData.province,'02');assert.equal(d.personalData.postalCode,'C1425ABC');
+ // Reapplying old evidence must preserve the now-confirmed address fields.
+ await update('APPLY_CLIENT_SUBMISSION',{submissionId:requestId});assert.equal(d.personalData.province,'02');assert.equal(d.personalData.postalCode,'C1425ABC');
+ assert.deepEqual((await subRef.get()).data(),submission);assert.equal((await rr.get()).data()!.submissionDigest,originalDigest);
+ assert.deepEqual((await r.budget.get()).data(),b);assert.deepEqual((await r.acceptance.get()).data(),a);
+ for(const file of ['src/lib/contractAddress.ts','src/lib/contractV2.ts','src/lib/contractV2Server.ts','src/app/completar-datos/[requestId]/public-form.tsx','src/components/admin/contracts/ContractDataFields.tsx','src/components/admin/contracts/ContractV2Composer.tsx']){
+  const source=readFileSync(file,'utf8');assert.ok(!/console\.(log|warn|error|debug|info)/.test(source));
+ }
+ const form=readFileSync('src/app/completar-datos/[requestId]/public-form.tsx','utf8');assert.ok(!/from ['"](?:firebase|@\/lib\/firebase)/.test(form));
+ for(const secret of [token,fresh.secret!]){
+  for(const col of ['requests','submissions','commands','events'])for(const doc of (await r.draft.collection(col).get()).docs)assert.ok(!JSON.stringify(doc.data()).includes(secret),'Raw token must never be persisted');
+ }
+ console.log('P5D1A_HISTORICAL_REQUEST_SUBMISSION_DIGEST_PRESERVED = PASS');
+ console.log('P5D1A_NEW_ADDRESS_REQUEST_AND_ADMIN_APPLICATION = PASS');
+ console.log('P5D1A_PERSONAL_AND_APPLICATION_CONCURRENCY = PASS');
+ console.log('P5D1A_PRIVACY_AND_ORIGIN_INTEGRITY = PASS');
+}
