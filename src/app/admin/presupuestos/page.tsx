@@ -1,5 +1,6 @@
 "use client";
 
+import { BudgetV2Workspace } from "@/components/admin/budgets/BudgetV2Workspace";
 import { AdminNav } from "@/components/AdminNav";
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -100,6 +101,7 @@ interface PresupuestoOpcion {
 }
 
 interface PresupuestoRecord {
+  persistedLegacy?: boolean;
   id: string;
   pricingSchemaVersion?: "CANONICAL_V1" | "MANUAL_FACTOR_V1" | "MIXED_V1";
   pricingMode?: "CANONICAL_V1" | "MANUAL_FACTOR_V1" | "MIXED_V1";
@@ -218,7 +220,8 @@ function mapOpcionToInternalBudgetItem(op: PresupuestoOpcion, idx: number): Inte
   };
 }
 
-function PresupuestosContent() {
+function PresupuestosContent({ onNew }: { onNew: (source?: {sourceCollection: "solicitudes" | "solicitudes_cuenta"; id: string}) => void }) {
+  const legacyEditingRef = useRef<PresupuestoRecord | null>(null);
   const searchParams = useSearchParams();
   const [presupuestos, setPresupuestos] = useState<PresupuestoRecord[]>([]);
   const [solicitudesPool, setSolicitudesPool] = useState<SolicitudCandidate[]>([]);
@@ -320,6 +323,7 @@ function PresupuestosContent() {
           presupList.forEach((p) => {
             allPresupuestos.push({
               id: String(p.id || "pres_" + d.id),
+              persistedLegacy: true,
               pricingSchemaVersion: parseSchemaVersion(p.pricingSchemaVersion),
               pricingMode: parseSchemaVersion(p.pricingMode ?? p.pricingSchemaVersion),
               solicitudId: d.id,
@@ -393,6 +397,7 @@ function PresupuestosContent() {
           if (!allPresupuestos.some((existing) => existing.id === pId && existing.solicitudId === d.id)) {
             allPresupuestos.push({
               id: pId,
+              persistedLegacy: true,
               pricingSchemaVersion: parseSchemaVersion(p.pricingSchemaVersion),
               pricingMode: parseSchemaVersion(p.pricingMode ?? p.pricingSchemaVersion),
               solicitudId: d.id,
@@ -474,12 +479,12 @@ function PresupuestosContent() {
       setBusqueda(qParam);
     }
 
-    const currentQueryKey = searchParams.toString();
+    const currentQueryKey = ""; // New lead confección belongs exclusively to the V2 workspace.
     const lifecycle = lifecycleRef.current;
 
     const initialized = lifecycle.handleQueryOrDataChange({
       queryKey: currentQueryKey,
-      searchParams,
+      searchParams: new URLSearchParams(),
       dataLoaded,
       solicitudesPool,
       catalogoProductos
@@ -489,8 +494,8 @@ function PresupuestosContent() {
       return;
     }
 
-    const solId = searchParams.get("solicitudId") || "";
-    const altId = searchParams.get("alertaId") || "";
+    const solId = "";
+    const altId = "";
 
     if (solId) {
       if (!lifecycle.getState().resolvedSolicitudId) {
@@ -540,6 +545,7 @@ function PresupuestosContent() {
   const sessionDraftItemIdRef = useRef<string>("");
 
   const handleCerrarModal = () => {
+    legacyEditingRef.current = null;
     sessionBudgetIdRef.current = "";
     sessionDraftItemIdRef.current = "";
     lifecycleRef.current.closeModal();
@@ -548,14 +554,12 @@ function PresupuestosContent() {
     }
   };
 
-  const abrirModalNuevo = () => {
-    sessionBudgetIdRef.current = "pres_" + Date.now();
-    sessionDraftItemIdRef.current = "";
-    lifecycleRef.current.openNewManual();
-  };
+
 
   const abrirModalConfeccion = (item: PresupuestoRecord) => {
-    sessionBudgetIdRef.current = item.id || "pres_" + Date.now();
+    if (!item.persistedLegacy) { onNew({sourceCollection: item.solicitudTipo === "estandar" ? "solicitudes" : "solicitudes_cuenta", id: item.solicitudId || ""}); return; }
+    legacyEditingRef.current = item;
+    sessionBudgetIdRef.current = item.id;
     sessionDraftItemIdRef.current = "";
     const mappedItems = Array.isArray(item.items)
       ? item.items.map((op, i) => mapOpcionToInternalBudgetItem(op, i))
@@ -739,6 +743,7 @@ function PresupuestosContent() {
   };
 
   const handleGuardarPresupuesto = async () => {
+    if (!legacyEditingRef.current?.persistedLegacy || !resolvedSolicitudId || !resolvedCollection) { onNew(); return; }
     if (savingInFlightRef.current) {
       return;
     }
@@ -925,6 +930,7 @@ function PresupuestosContent() {
         const data = snap.data();
         const existingPresup: PresupuestoRecord[] = data.presupuestos || [];
         const alreadyInList = existingPresup.some((ep) => ep.id === nuevoPresupuesto.id);
+        if (!alreadyInList) throw new Error("El presupuesto histórico ya no existe en la solicitud vinculada.");
         const updatedPresupList = alreadyInList
           ? existingPresup.map((ep) => (ep.id === nuevoPresupuesto.id ? nuevoPresupuesto : ep))
           : [...existingPresup, nuevoPresupuesto];
@@ -1090,7 +1096,7 @@ function PresupuestosContent() {
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* HEADER PRINCIPAL */}
-        <AdminNav title="Historial de Presupuestos" subtitle="Gestión comercial de cotizaciones de catálogo (CANONICAL_V1) y opciones manuales fuera de catálogo (MANUAL_FACTOR_V1)" />
+        <AdminNav title="Historial de Presupuestos" subtitle="Históricos legacy · Importes y snapshots conservados sin migración" />
 
         {/* BARRA DE CONTROLES: FILTROS, BUSCADOR Y BOTÓN NUEVO */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-[#FFFDFC] border border-[#DED8CF] p-5 rounded-2xl shadow-xs items-center">
@@ -1136,7 +1142,7 @@ function PresupuestosContent() {
           {/* Botón Nuevo Presupuesto */}
           <div className="md:col-span-3 flex justify-end">
             <button
-              onClick={abrirModalNuevo}
+              onClick={() => onNew()}
               className="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-[#173E3B] hover:bg-[#123230] text-white px-4 py-2.5 rounded-xl text-xs font-heading font-bold transition-all shadow-xs cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Nuevo Presupuesto
@@ -1164,7 +1170,6 @@ function PresupuestosContent() {
               const isAceptado = p.estado === "Aceptado" || p.estado === "Aprobado";
               const isRechazado = p.estado === "Rechazado";
               const isCancelado = p.estado === "Eliminado" || p.estado === "Cancelado";
-              const isPendiente = p.estado === "Pendiente" || !p.estado;
               const isGenerado = p.estado === "Generado";
               const isEnviado = p.estado === "Enviado";
 
@@ -1273,10 +1278,11 @@ function PresupuestosContent() {
                     <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                       <button
                         data-testid={`btn-reabrir-presupuesto-idx-${idx}`}
+                        data-legacy-budget-id={p.id}
                         onClick={() => abrirModalConfeccion(p)}
                         className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#173E3B] hover:bg-[#123230] text-white px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all shadow-xs cursor-pointer"
                       >
-                        ✏️ {isPendiente ? "Confeccionar" : "Editar"}
+                        {p.persistedLegacy ? "✏️ Editar" : "Confeccionar V2"}
                       </button>
 
                       {itemsList.length > 0 && totalCuota > 0 ? (
@@ -1305,7 +1311,7 @@ function PresupuestosContent() {
 
         {/* MODAL DE CONFECCIÓN DE PRESUPUESTO */}
         {modalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
+          <div role="dialog" aria-modal="true" aria-label="Editar presupuesto legacy" className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
             <div className="bg-[#FFFDFC] border border-[#DED8CF] rounded-3xl max-w-4xl w-full p-6 shadow-2xl space-y-6 my-8 max-h-[92vh] overflow-y-auto">
               
               {/* Header Modal */}
@@ -2254,7 +2260,7 @@ export default function PresupuestosPage() {
           <p className="text-sm font-heading font-semibold text-[#68706E] animate-pulse">Cargando módulo de presupuestos...</p>
         </div>
       }>
-        <PresupuestosContent />
+        <BudgetV2Workspace legacyHistory={onNew => <PresupuestosContent onNew={onNew} />} />
       </Suspense>
     </AdminProtectedRoute>
   );

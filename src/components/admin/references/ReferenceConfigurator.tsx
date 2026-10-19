@@ -20,8 +20,9 @@ export function Section({ number, title, children, id }: { number: string; title
 
 /** Controlled Admin fields. All IO and pending image state belong to the caller. */
 export function ReferenceConfigurator({ draft, onChange: change, legacyCode, externalUrl, files,
-  onExternalUrlChange, onAddUrl, onAddFiles, onRemoveFile,
+  onExternalUrlChange, onAddUrl, onAddFiles, onRemoveFile, context = "CATALOG",
 }: {
+  context?: "CATALOG" | "BUDGET";
   draft: CatalogReferenceDraft;
   onChange: (patch: Partial<CatalogReferenceDraft>) => void;
   legacyCode?: string;
@@ -39,7 +40,7 @@ export function ReferenceConfigurator({ draft, onChange: change, legacyCode, ext
             <div className="grid gap-4 sm:grid-cols-2"><Field label="Costo proveedor"><input className={input} required type="number" step="0.01" min="0.01" value={draft.costoProveedor} onChange={e => change({ costoProveedor: e.target.value })} /></Field><Field label="Nombre del proveedor"><input className={input} value={draft.proveedor} onChange={e => change({ proveedor: e.target.value })} /></Field></div>
             {legacyCode && <p data-testid="legacy-code" className="mt-4 rounded-xl bg-background-main p-3 text-sm text-text-secondary">Código legacy: <span className="font-mono">{legacyCode}</span><span className="mt-1 block text-xs">Pendiente de clasificación. No se asigna automáticamente a SKU o EAN.</span></p>}
           </Section>
-          <Section number="03" title="Planes" id="catalog-plans"><div className="mb-4 space-y-3"><div><p className="text-sm font-semibold">Planes estimados · 1 a 18 cuotas</p><p className="mt-1 text-xs text-text-secondary">Elegí los planes habilitados. Los factores son internos; las cuotas son una estimación para catálogo.</p></div><button type="button" className={secondary} onClick={() => change({ factoresPlanes: { ...CATALOGO_REFERENCIA_FACTORES_DEFAULT } })}>Restaurar factores de referencia</button></div>
+          <Section number="03" title="Planes" id="catalog-plans"><div className="mb-4 space-y-3"><div><p className="text-sm font-semibold">{context === "BUDGET" ? "Planes ofrecidos · 1 a 18 cuotas" : "Planes estimados · 1 a 18 cuotas"}</p><p className="mt-1 text-xs text-text-secondary">{context === "BUDGET" ? "Elegí todos los planes que querés ofrecer en esta propuesta. Los factores son internos." : "Elegí los planes habilitados. Los factores son internos; las cuotas son una estimación para catálogo."}</p></div><button type="button" className={secondary} onClick={() => change({ factoresPlanes: { ...CATALOGO_REFERENCIA_FACTORES_DEFAULT } })}>Restaurar factores de referencia</button></div>
             <div className="space-y-2">{Array.from({ length: 18 }, (_, i) => i + 1).map(n => {
               const active = draft.planesActivos[n] === true;
               let estimated: number | null = null;
@@ -51,7 +52,7 @@ export function ReferenceConfigurator({ draft, onChange: change, legacyCode, ext
               </div>;
             })}</div>
           </Section>
-          <Section number="04" title="Descripción"><Field label="Descripción pública de la referencia"><textarea className={`${input} min-h-32`} rows={4} value={draft.descripcion} onChange={e => change({ descripcion: e.target.value })} /></Field><p className="mt-2 text-xs text-text-secondary">Este texto será visible al público cuando publiques la referencia. No incluyas proveedor, costos, códigos internos ni otra información sensible.</p></Section>
+          <Section number="04" title="Descripción"><Field label={context === "BUDGET" ? "Descripción para la propuesta" : "Descripción pública de la referencia"}><textarea className={`${input} min-h-32`} rows={4} value={draft.descripcion} onChange={e => change({ descripcion: e.target.value })} /></Field><p className="mt-2 text-xs text-text-secondary">{context === "BUDGET" ? "Descripción comercial para el cliente. No incluyas proveedor, costos ni códigos internos." : "Este texto será visible al público cuando publiques la referencia. No incluyas proveedor, costos, códigos internos ni otra información sensible."}</p></Section>
           <Section number="05" title="Imágenes"><p className="mb-3 text-sm text-text-secondary">Hasta 4 imágenes. Quitar del borrador no elimina archivos de Storage.</p>
             <div className="grid grid-cols-2 gap-3">{draft.imagenUrls.map((url, i) => <div key={`${url}-${i}`} className="min-w-0 rounded-xl border border-border-color p-2"><div className="aspect-square bg-background-main p-2">{ /* eslint-disable-next-line @next/next/no-img-element */ }
 <img onError={event => { if (!event.currentTarget.src.endsWith("/logo-cuenta-hogar-oficial.png")) event.currentTarget.src = "/logo-cuenta-hogar-oficial.png"; }} src={url} alt={`Imagen de referencia ${i + 1}`} className="h-full w-full object-contain" /></div><button type="button" className={`${secondary} mt-2 w-full`} onClick={() => change({ imagenUrls: draft.imagenUrls.filter((_, index) => index !== i) })}>Quitar imagen {i + 1}</button></div>)}</div>

@@ -799,6 +799,7 @@ export default function AdminValidacionesPage() {
   };
 
   const handleEnviarPresupuesto = async (sol: any) => {
+    if (!editandoPresupuestoId) { window.location.assign(`/admin/presupuestos?sourceCollection=solicitudes_cuenta&solicitudId=${encodeURIComponent(sol.id)}`); return; }
     if (draftItems.length === 0) return alert("Debes agregar al menos un producto al presupuesto.");
 
     let updatedPresupuestos = [];
@@ -925,6 +926,7 @@ export default function AdminValidacionesPage() {
   const handleAceptarPresupuesto = async (sol: any, presId: string) => {
     const targetPres = (sol.presupuestos || []).find((p: any) => p.id === presId);
     if (!targetPres) return;
+    if (targetPres.schemaVersion === "BUDGET_V2") return alert("La aceptación V2 se habilitará en su fase específica.");
 
     const key = sol.id + "_" + presId;
     const rawItems = targetPres.items || [];
@@ -1137,7 +1139,7 @@ export default function AdminValidacionesPage() {
 
     // If it is a quick contact request, load details from the accepted budget!
     if (sol.tipo === "contacto_rapido") {
-      const acceptedBudget = (sol.presupuestos || []).find((p: any) => p.estado === "Aceptado");
+      const acceptedBudget = (sol.presupuestos || []).find((p: any) => p.schemaVersion !== "BUDGET_V2" && p.estado === "Aceptado");
       if (acceptedBudget) {
         const rawItems = acceptedBudget.itemsSeleccionados || acceptedBudget.items || [];
         if (rawItems.length > 0) {
@@ -2212,6 +2214,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                   </div>
 
                                   {/* Formulario para cargar nuevo presupuesto con Motor Financiero Unificado */}
+                                  {editandoPresupuestoId ? (
                                   <div className="bg-[#FFFDFC] p-4 rounded-xl border border-[#DED8CF] space-y-3">
                                     <div className="flex justify-between items-center border-b border-[#DED8CF] pb-2">
                                       <h4 className="text-sm font-black text-[#B44E2A] uppercase tracking-wider">
@@ -2451,6 +2454,14 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                       )}
                                     </div>
                                   </div>
+                                  ) : (
+                                    <a
+                                      href={`/admin/presupuestos?sourceCollection=solicitudes_cuenta&solicitudId=${encodeURIComponent(req.id)}`}
+                                      className="bg-[#FFFDFC] p-4 rounded-xl border border-[#DED8CF] font-bold text-sm text-[#B44E2A] flex items-center min-h-11"
+                                    >
+                                      Confeccionar presupuesto V2
+                                    </a>
+                                  )}
                                 </div>
 
                                 {/* Historial de presupuestos enviados */}
@@ -2461,6 +2472,12 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                       <p className="text-xs text-[#68706E] italic text-center py-4">No se han enviado presupuestos todavía para esta solicitud especial.</p>
                                     ) : (
                                       req.presupuestos.map((p: any) => (
+                                        p.schemaVersion === "BUDGET_V2" ? (
+                                          <div key={p.id} data-budget-v2-history className="bg-[#FFFDFC] p-4 rounded-xl border border-[#DED8CF] text-sm">
+                                            <p className="font-bold">Presupuesto V2</p>
+                                            <a href={`/admin/presupuestos?sourceCollection=solicitudes_cuenta&solicitudId=${encodeURIComponent(req.id)}`} className="inline-flex items-center min-h-11 text-[#B44E2A] font-bold">Consultar en editor V2</a>
+                                          </div>
+                                        ) : (
                                         <div key={p.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#FFFDFC] p-4 rounded-xl border border-[#DED8CF] gap-4">
                                           <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-1">
@@ -2589,6 +2606,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                             )}
                                           </div>
                                         </div>
+                                        )
                                       ))
                                     )}
                                   </div>
@@ -2602,7 +2620,7 @@ const handleAsignarAfiliado = async (id: string, email: string) => {
                                     </a>
                                   </div>
                                   <div className="flex items-center gap-3">
-                                    {(req.presupuestos || []).some((p: any) => p.estado === "Aceptado") ? (
+                                    {(req.presupuestos || []).some((p: any) => p.schemaVersion !== "BUDGET_V2" && p.estado === "Aceptado") ? (
                                       <button 
                                         onClick={() => handleOpenContratoEditor(req)} 
                                         className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-xs"
