@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-/** Preparada, NO ejecutada en C5A. No carga ni modifica Rules. */
+/** C5B-3A: exige Rules exactas previamente cargadas sólo en Emulator. */
 async function main(){
   const plan=JSON.parse(readFileSync("docs/CATALOGO_REFERENCIAS_RULES_C5B_PLAN.json","utf8")) as {expectedRulesSha256:string};
   const actual=createHash("sha256").update(readFileSync("firestore.rules")).digest("hex");
@@ -19,6 +19,7 @@ async function main(){
     const candidate=await previewCatalogReferencePublication(db,prefix);assert.ok(candidate.fingerprint);
     await publishCatalogReference(db,prefix,candidate.fingerprint!);
     await db.doc(`catalogo_publico/${prefix}-hidden`).set({referenciaId:`${prefix}-hidden`,publicado:false,schemaVersion:1});
+    await db.doc(`catalogo_publico/${prefix}/unidades/unit`).set({fixture:true});
     const emails=["",`${prefix}-client@example.test`,`${prefix}-seller@example.test`,"jpmosqueiramo@gmail.com"];
     const tokens=[""];
     for(const email of emails.slice(1)){
@@ -29,7 +30,16 @@ async function main(){
     async function rest(method:string,path:string,token:string,body?:unknown){return fetch(base+path,{method,headers:{...(token?{Authorization:`Bearer ${token}`}:{"X-Test-Anonymous":"true"}),...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});}
     for(const [index,token] of tokens.entries()){
       const isAdmin=index===3;
-      assert.equal((await rest("GET",`/productos/${prefix}`,token)).status,isAdmin?200:403);
+      const role=["anonymous","client","affiliate","admin"][index];
+      assert.equal((await rest("GET",`/productos/${prefix}`,token)).status,isAdmin?200:403,`${role}: product GET`);
+      assert.equal((await rest("GET","/productos",token)).status,isAdmin?200:403,`${role}: product LIST`);
+      assert.equal((await rest("GET",`/productos/${prefix}/unidades`,token)).status,isAdmin?200:403,`${role}: product subcollection LIST`);
+      for(const method of ["GET","PATCH","DELETE"]){
+        assert.equal((await rest(method,`/catalogo_publico/${prefix}/unidades/unit`,token,method==="PATCH"?{fields:{fixture:{booleanValue:true}}}:undefined)).status,403,`${role}: public subcollection ${method}`);
+      }
+      assert.equal((await rest("GET",`/catalogo_publico/${prefix}/unidades`,token)).status,403,`${role}: public subcollection LIST`);
+      assert.equal((await rest("POST",":runQuery",token,{structuredQuery:{from:[{collectionId:"catalogo_publico"}]}})).status,isAdmin?200:403,`${role}: unfiltered public query`);
+      assert.equal((await rest("GET","/catalogo_publico",token)).status,isAdmin?200:403,`${role}: public LIST`);
       assert.equal((await rest("GET",`/productos/${prefix}/unidades/unit`,token)).status,isAdmin?200:403);
       assert.equal((await rest("GET",`/catalogo_publico/${prefix}`,token)).status,200);
       assert.equal((await rest("GET",`/catalogo_publico/${prefix}-hidden`,token)).status,isAdmin?200:403);
@@ -38,15 +48,28 @@ async function main(){
       const query={structuredQuery:{from:[{collectionId:"catalogo_publico"}],where:{fieldFilter:{field:{fieldPath:"publicado"},op:"EQUAL",value:{booleanValue:true}}}}};
       assert.equal((await rest("POST",":runQuery",token,query)).status,200);
       assert.equal((await rest("POST",":runQuery",token,{structuredQuery:{from:[{collectionId:"productos"}]}})).status,isAdmin?200:403);
+      assert.equal((await rest("POST",":runQuery",token,{structuredQuery:{from:[{collectionId:"productos"}],where:{fieldFilter:{field:{fieldPath:"nombre"},op:"EQUAL",value:{stringValue:"Edición privada"}}}}})).status,isAdmin?200:403,`${role}: filtered product query`);
+      assert.equal((await rest("PATCH",`/productos/${prefix}/unidades/new-${index}`,token,{fields:{fixture:{booleanValue:true}}})).status,isAdmin?200:403,`${role}: private subcollection write`);
     }
-    // Colecciones ajenas al catálogo: permisos de lectura Admin/público vigentes.
-    for(const collection of ["vendedores","solicitudes","solicitudes_cuenta","alertas_admin","ledger_movimientos","rendiciones_efectivo"]){
+    // Regresión de colecciones ajenas: matriz completa de roles y operaciones.
+    const privateCollections=["vendedores","solicitudes","solicitudes_cuenta","alertas_admin","arrepentimientos","solicitudes_localidad","liquidaciones_comision","ledger_custodia_efectivo","ledger_comisiones_movimientos","rendiciones_efectivo","ledger_movimientos","ledger_imputaciones","idempotencia_ledger","ledger_operaciones","pagos_informados","configuracion_general","vendedores_configuraciones_comision","snapshots_comision_operaciones"];
+    for(const collection of privateCollections){
       await db.doc(`${collection}/${prefix}`).set({fixture:true});
-      assert.equal((await rest("GET",`/${collection}/${prefix}`,tokens[3])).status,200);
-      assert.equal((await rest("GET",`/${collection}/${prefix}`,"")).status,403);
+      for(const [index,token] of tokens.entries()){
+        const expected=index===3?200:403;
+        assert.equal((await rest("GET",`/${collection}/${prefix}`,token)).status,expected,`${collection}: read role ${index}`);
+        assert.equal((await rest("PATCH",`/${collection}/${prefix}`,token,{fields:{fixture:{booleanValue:true}}})).status,expected,`${collection}: update role ${index}`);
+        assert.equal((await rest("PATCH",`/${collection}/${prefix}-invalid-${index}`,token,{fields:{fixture:{booleanValue:true}}})).status,expected,`${collection}: arbitrary create role ${index}`);
+        assert.equal((await rest("DELETE",`/${collection}/${prefix}`,token)).status,expected,`${collection}: delete role ${index}`);
+      }
     }
-    await db.doc("shipping_settings/published_config").set({fixture:true});
-    assert.equal((await rest("GET","/shipping_settings/published_config","")).status,200);
+    for(const config of ["draft_config","published_config"]){
+      await db.doc(`shipping_settings/${config}`).set({fixture:true});
+      for(const [index,token] of tokens.entries()){
+        assert.equal((await rest("GET",`/shipping_settings/${config}`,token)).status,index===3||config==="published_config"?200:403);
+        assert.equal((await rest("PATCH",`/shipping_settings/${config}`,token,{fields:{fixture:{booleanValue:true}}})).status,index===3?200:403);
+      }
+    }
     console.log("C5B_RULES_TESTS = PASS; ADMIN_BROWSER_PUBLIC_WRITES = DENY; ADMIN_SDK_PUBLICATION = PASS");
   }finally{await Promise.all(admin.apps.map(app=>app?.delete()));}
 }

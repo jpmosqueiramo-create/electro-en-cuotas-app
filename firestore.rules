@@ -36,10 +36,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Catálogo de productos: Lectura pública, Escritura de admin
+    // Privado: documento y subcolecciones sólo para Admin.
     match /productos/{document=**} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
+    }
+
+    // Sólo proyecciones reconciliadas. Admin SDK publica fuera de Rules.
+    match /catalogo_publico/{referenceId} {
+      allow read: if isAdmin() || resource.data.publicado == true;
+      allow write: if false;
     }
 
     // Vendedores: Lectura y escritura exclusiva de Admin
@@ -169,7 +174,7 @@ service cloud.firestore {
 
     // Reglas por defecto para el resto de colecciones de la aplicación: Default Fail-Closed (Admin only)
     match /{collection}/{document=**} {
-      allow read, write: if isAdmin();
+      allow read, write: if collection != "catalogo_publico" && isAdmin();
     }
   }
 }
