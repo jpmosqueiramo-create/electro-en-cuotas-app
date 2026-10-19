@@ -1,4 +1,5 @@
 "use client";
+import { ContractV2Composer } from '@/components/admin/contracts/ContractV2Composer';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import type { BudgetV2 } from '@/lib/budgetV2';
@@ -12,6 +13,7 @@ export function BudgetAcceptanceDocumentation({ budget }: { budget: BudgetV2 }) 
   const [acceptance, setAcceptance] = useState<BudgetAcceptanceV2 | null>(null);
   const [documentation, setDocumentation] = useState<BudgetDocumentationCaseV2 | null>(null);
   const [loaded, setLoaded] = useState(false), [error, setError] = useState(''), [busy, setBusy] = useState(false);
+  const [compose,setCompose]=useState(false);
   const [open, setOpen] = useState(false), [confirm, setConfirm] = useState(false), [manage, setManage] = useState(false);
   const [selected, setSelected] = useState(''), [preferred, setPreferred] = useState('');
   const [notes, setNotes] = useState<Partial<Record<DocumentType, string>>>({});
@@ -88,9 +90,11 @@ export function BudgetAcceptanceDocumentation({ budget }: { budget: BudgetV2 }) 
       <h4 className="font-semibold">ACEPTACIÓN REGISTRADA</h4><p>Opción aceptada: {acceptance.optionSnapshot.referenceSnapshot.nombre}</p>
       <p>Planes originalmente ofrecidos:</p><ul>{acceptance.optionSnapshot.referenceSnapshot.planesOfrecidos.map(p => <li key={p.cuotas}>{p.cuotas} cuotas estimadas de {money(p.cuotaEstimada)}</li>)}</ul>
       <p>{acceptance.preferredPlanCuotas === null ? 'Sin preferencia definida' : `Plan preferido: ${acceptance.preferredPlanCuotas} cuotas — ${money(acceptance.preferredPlanAmountSnapshot!)}`}</p>
+      <button className={button} disabled={busy} onClick={()=>setCompose(!compose)}>Confeccionar contrato</button>
       <p>Fecha: {new Date(acceptance.acceptedAt).toLocaleString('es-AR')}</p><p>Etapa actual: DOCUMENTACIÓN</p>
       <button className={button} disabled={busy} onClick={() => void act(async () => { await reloadDocumentation(); setManage(!manage); })}>Gestionar documentación</button>
     </div>}
+    {compose && acceptance && <ContractV2Composer key={`${budget.id}:${budget.version}`} budgetId={budget.id} version={budget.version}/>}
     {manage && documentation && <div data-testid="documentation-panel" className="space-y-4">
       <h4 className="font-heading text-lg font-bold">Documentación privada</h4><p className="text-sm text-text-secondary">Los cuatro documentos son opcionales. Su ausencia no bloquea la etapa. Archivos JPEG, PNG, WEBP o PDF de hasta 10 MiB.</p>
       <div className="grid min-w-0 gap-4 lg:grid-cols-2">{DOCUMENT_TYPES.map(type => { const slot = documentation.slots[type]; return <article key={type} data-document-type={type} className="min-w-0 space-y-3 rounded-xl border border-border-color p-4">
