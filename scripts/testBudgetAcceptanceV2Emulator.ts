@@ -53,21 +53,25 @@ async function main() {
     const downloaded=await downloadBudgetDocument(db,bucket,prefix,1,'DNI_FRONT',a.attachmentId);assert.deepEqual(downloaded.bytes,f.bytes);
     await observeBudgetDocument(db,prefix,1,'DNI_FRONT',{observation:'Revisar legibilidad'},'admin-fixture');
     assert.equal((await loadDocumentation(db,prefix,1)).documentation.slots.DNI_FRONT.status,'OBSERVADO');
-    await deleteBudgetDocument(db,bucket,prefix,1,'DNI_FRONT',a.attachmentId,'admin-fixture');
-    await deleteBudgetDocument(db,bucket,prefix,1,'DNI_FRONT',a.attachmentId,'admin-fixture');
+    await deleteBudgetDocument(db,bucket,prefix,1,'DNI_FRONT',a.attachmentId,{commandId:`delete-${i}`},'admin-fixture');
+    await deleteBudgetDocument(db,bucket,prefix,1,'DNI_FRONT',a.attachmentId,{commandId:`delete-${i}`},'admin-fixture');
     assert.equal((await bucket.file(a.storagePath).exists())[0],false);
     await assert.rejects(()=>uploadBudgetDocument(db,bucket,prefix,1,'DNI_FRONT',fields,f.bytes,'admin-fixture'));
   }
   assert.equal((await loadDocumentation(db,prefix,1)).documentation.slots.DNI_FRONT.status,'SIN_CARGAR');
+  const deletedRecords=await db.collection('presupuestos_v2').doc(prefix).collection('documentCommands').get();
+  assert.equal(deletedRecords.docs.filter(d=>d.data().operation==='DELETE'&&d.data().state==='COMMITTED').length,4);
+  const deletedEvents=(await loadDocumentation(db,prefix,1)).documentation.events.filter(e=>e.type==='DELETED');assert.equal(deletedEvents.length,4);
+  console.log('DOCUMENT_DELETE_NORMAL_TEST = PASS');
   for(const bad of [{mime:'text/plain',bytes:Buffer.from('text')},{mime:'image/png',bytes:fixtureFiles[0].bytes},{mime:'image/png',bytes:Buffer.alloc(MAX_ATTACHMENT_SIZE_BYTES+1)}]) await assert.rejects(()=>uploadBudgetDocument(db,bucket,prefix,1,'DNI_FRONT',{commandId:'invalid',originalName:'synthetic',mimeType:bad.mime},bad.bytes,'admin-fixture'));
-  await assert.rejects(()=>deleteBudgetDocument(db,bucket,prefix,1,'DNI_FRONT','../../arbitrary','admin-fixture'));
+  await assert.rejects(()=>deleteBudgetDocument(db,bucket,prefix,1,'DNI_FRONT','../../arbitrary',{commandId:'invalid-delete'},'admin-fixture'));
   await assert.rejects(()=>observeBudgetDocument(db,prefix,1,'DNI_FRONT',{observation:'no attachment'},'admin-fixture'));
   await assert.rejects(()=>observeBudgetDocument(db,prefix,1,'DNI_FRONT',{observation:'x',storagePath:'arbitrary'},'admin-fixture'));
   const realRunTransaction = db.runTransaction.bind(db);
-  function metadataFailureDb(offline = false) {
+  function metadataFailureDb(offline = false, failureAt = 2) {
     let calls = 0;
     const run = <T>(update: (transaction: Transaction) => Promise<T>, options?: Parameters<Firestore['runTransaction']>[1]): Promise<T> => {
-      if (++calls === 2 || (offline && calls > 2)) return Promise.reject(new Error('SECRET_RAW_FIRESTORE /internal/path'));
+      if (++calls === failureAt || (offline && calls > failureAt)) return Promise.reject(new Error('SECRET_RAW_FIRESTORE /internal/path'));
       return realRunTransaction(update, options);
     };
     return new Proxy(db, { get(target, prop) {
@@ -150,6 +154,76 @@ async function main() {
   assert.equal(logs.at(-1)?.durableReservationRecorded,false); assert.equal(logs.at(-1)?.error,'RESERVATION_MARK_UNAVAILABLE');
   console.log('COMPENSATION_CAN_DELETE_FOREIGN_OBJECT = NO; FIRESTORE_OUTAGE_LIMIT_TEST = PASS');
   assert.deepEqual((await source.get()).data(),legacy);
+  const deleteFields = (commandId: string) => ({commandId});
+  const putForDelete = (name: string) => uploadBudgetDocument(db,bucket,prefix,1,'ADDRESS_PROOF',fields(`delete-fixture-${name}`),bytes,'admin-fixture');
+  const eventCount = async (attachmentId: string) => (await loadDocumentation(db,prefix,1)).documentation.events.filter(e=>e.type==='DELETED'&&e.attachmentId===attachmentId).length;
+  const storageFailureAttachment = await putForDelete('storage-fail');
+  const failedDeleteCommand='delete-storage-fail';
+  await captureLog(()=>assert.rejects(()=>deleteBudgetDocument(db,failingDeleteBucket,prefix,1,'ADDRESS_PROOF',storageFailureAttachment.attachmentId,deleteFields(failedDeleteCommand),'admin-fixture')));
+  const storagePending=(await records.doc(failedDeleteCommand).get()).data()!;
+  assert.equal(storagePending.operation,'DELETE');assert.equal(storagePending.state,'DELETE_RESERVED');assert.equal(storagePending.leaseUntil,0);
+  assert.equal(storagePending.storagePath,storageFailureAttachment.storagePath);assert.equal(storagePending.sha256,storageFailureAttachment.sha256);
+  assert.equal((await bucket.file(storageFailureAttachment.storagePath).exists())[0],true);
+  assert.equal(await eventCount(storageFailureAttachment.attachmentId),0);
+  assert.ok((await loadDocumentation(db,prefix,1)).documentation.slots.ADDRESS_PROOF.attachments.some(a=>a.attachmentId===storageFailureAttachment.attachmentId));
+  const recoveredDelete=await deleteBudgetDocument(db,bucket,prefix,1,'ADDRESS_PROOF',storageFailureAttachment.attachmentId,deleteFields(failedDeleteCommand),'admin-fixture');
+  assert.equal(await eventCount(storageFailureAttachment.attachmentId),1);
+  const deleteCalls=deletes;
+  const afterCommitCase=(await loadDocumentation(db,prefix,1)).documentation;
+  assert.deepEqual(await deleteBudgetDocument(db,failingDeleteBucket,prefix,1,'ADDRESS_PROOF',storageFailureAttachment.attachmentId,deleteFields(failedDeleteCommand),'admin-fixture'),recoveredDelete);
+  assert.equal(deletes,deleteCalls);assert.deepEqual((await loadDocumentation(db,prefix,1)).documentation,afterCommitCase);
+  console.log('DOCUMENT_DELETE_STORAGE_FAILURE_TEST = PASS; DOCUMENT_DELETE_IDEMPOTENT_TEST = PASS');
+
+  const finalizationAttachment=await putForDelete('finalization');
+  await captureLog(()=>assert.rejects(()=>deleteBudgetDocument(metadataFailureDb(false,3),bucket,prefix,1,'ADDRESS_PROOF',finalizationAttachment.attachmentId,deleteFields('delete-finalization'),'admin-fixture')));
+  const finalPending=(await records.doc('delete-finalization').get()).data()!;
+  assert.equal(finalPending.state,'DELETE_FINALIZATION_PENDING');assert.equal(finalPending.storagePath,finalizationAttachment.storagePath);assert.ok(finalPending.objectGeneration);
+  assert.equal((await bucket.file(finalizationAttachment.storagePath).exists())[0],false);
+  assert.equal(await eventCount(finalizationAttachment.attachmentId),0);
+  assert.ok((await loadDocumentation(db,prefix,1)).documentation.slots.ADDRESS_PROOF.attachments.some(a=>a.attachmentId===finalizationAttachment.attachmentId));
+  assert.equal(logs.at(-1)?.event,'DOCUMENT_DELETE_FINALIZATION_PENDING');
+  await deleteBudgetDocument(db,bucket,prefix,1,'ADDRESS_PROOF',finalizationAttachment.attachmentId,deleteFields('delete-finalization'),'admin-fixture');
+  const finalized=(await records.doc('delete-finalization').get()).data()!;
+  assert.equal(finalized.state,'COMMITTED');assert.equal(finalized.commandId,finalPending.commandId);assert.equal(finalized.attachmentId,finalPending.attachmentId);
+  assert.equal(await eventCount(finalizationAttachment.attachmentId),1);
+  assert.equal((await loadDocumentation(db,prefix,1)).documentation.slots.ADDRESS_PROOF.attachments.length,0);
+  console.log('DOCUMENT_DELETE_FINALIZATION_FAILURE_TEST = PASS; DELETE_PENDING_RETRY_RECONCILES = PASS');
+
+  // Complete Firestore outage after Storage deletion: the prior intent/generation survives.
+  const outageAttachment=await putForDelete('outage');
+  await captureLog(()=>assert.rejects(()=>deleteBudgetDocument(metadataFailureDb(true,3),bucket,prefix,1,'ADDRESS_PROOF',outageAttachment.attachmentId,deleteFields('delete-offline'),'admin-fixture')));
+  const outageRecord=(await records.doc('delete-offline').get()).data()!;
+  assert.equal(outageRecord.state,'DELETE_RESERVED');assert.equal(outageRecord.storageDeleteStatus,'MAY_HAVE_RUN');assert.equal(outageRecord.generationRecorded,true);
+  assert.equal((await bucket.file(outageAttachment.storagePath).exists())[0],false);
+  assert.equal(logs.at(-1)?.pendingStateRecorded,false);assert.equal(logs.at(-1)?.durableReservationRecorded,true);
+  await records.doc('delete-offline').update({leaseUntil:1}); // Simulate expiry after service recovery, without sleeps.
+  await deleteBudgetDocument(db,bucket,prefix,1,'ADDRESS_PROOF',outageAttachment.attachmentId,deleteFields('delete-offline'),'admin-fixture');
+  assert.equal(await eventCount(outageAttachment.attachmentId),1);
+  console.log('DOCUMENT_DELETE_FIRESTORE_OUTAGE_TEST = PASS');
+
+  const conflictAttachment=await putForDelete('conflict');
+  for(const [version,type,attachmentId] of [[1,'ADDRESS_PROOF',conflictAttachment.attachmentId],[1,'DNI_FRONT',storageFailureAttachment.attachmentId],[2,'ADDRESS_PROOF',storageFailureAttachment.attachmentId]] as const) {
+    await assert.rejects(()=>deleteBudgetDocument(db,bucket,prefix,version,type,attachmentId,deleteFields(failedDeleteCommand),'admin-fixture'));
+  }
+  for(const extra of [{storagePath:'../arbitrary'},{bucket:'arbitrary'},{attachmentId:'arbitrary'},{sha256:'arbitrary'}]) await assert.rejects(()=>deleteBudgetDocument(db,bucket,prefix,1,'ADDRESS_PROOF',conflictAttachment.attachmentId,{...deleteFields('extra-delete'),...extra},'admin-fixture'));
+  assert.equal((await bucket.file(conflictAttachment.storagePath).exists())[0],true);
+  await assert.rejects(()=>uploadBudgetDocument(db,bucket,prefix,1,'ADDRESS_PROOF',fields(failedDeleteCommand),bytes,'admin-fixture'));
+  const foreignAttachment=await uploadBudgetDocument(db,bucket,second.id,1,'ADDRESS_PROOF',fields('foreign-delete-fixture'),bytes,'admin-fixture');
+  const absent=await deleteBudgetDocument(db,failingDeleteBucket,prefix,1,'ADDRESS_PROOF',foreignAttachment.attachmentId,deleteFields('absent-foreign'),'admin-fixture');assert.equal(absent.deleted,false);
+  assert.equal((await bucket.file(foreignAttachment.storagePath).exists())[0],true);
+  assert.equal(deletes,deleteCalls); // Only the deliberate Storage failure used this proxy.
+  await deleteBudgetDocument(db,bucket,second.id,1,'ADDRESS_PROOF',foreignAttachment.attachmentId,deleteFields('foreign-cleanup'),'admin-fixture');
+  await deleteBudgetDocument(db,bucket,prefix,1,'ADDRESS_PROOF',conflictAttachment.attachmentId,deleteFields('conflict-cleanup'),'admin-fixture');
+  const replacedAttachment=await putForDelete('generation');
+  await captureLog(()=>assert.rejects(()=>deleteBudgetDocument(db,failingDeleteBucket,prefix,1,'ADDRESS_PROOF',replacedAttachment.attachmentId,deleteFields('delete-generation'),'admin-fixture')));
+  const foreignBytes=Buffer.concat([bytes,Buffer.from('replacement from different operation')]);
+  await bucket.file(replacedAttachment.storagePath).save(foreignBytes,{resumable:false});
+  await captureLog(()=>assert.rejects(()=>deleteBudgetDocument(db,bucket,prefix,1,'ADDRESS_PROOF',replacedAttachment.attachmentId,deleteFields('delete-generation'),'admin-fixture')));
+  assert.deepEqual((await bucket.file(replacedAttachment.storagePath).download())[0],foreignBytes);
+  assert.equal(await eventCount(replacedAttachment.attachmentId),0);
+  await bucket.file(replacedAttachment.storagePath).delete(); // Fixture owner cleanup; the helper never deletes the replacement.
+  await deleteBudgetDocument(db,bucket,prefix,1,'ADDRESS_PROOF',replacedAttachment.attachmentId,deleteFields('delete-generation'),'admin-fixture');
+  console.log('DOCUMENT_DELETE_COMMAND_CONFLICT_TEST = PASS; DELETE_CAN_TARGET_FOREIGN_OBJECT = NO');
   console.log('P4_DOCUMENT_STORAGE_EMULATOR = PASS');
 
   const email='jpmosqueiramo@gmail.com',password='emulator-fixture-password';
@@ -194,6 +268,20 @@ async function main() {
     const record=(await records.doc(id).get()).data()!;
     await bucket.file(record.storagePath).delete({ignoreNotFound:true});
   }
+  const apiDeleteAttachment=await putForDelete('api-storage-failure');
+  try {
+    storageService.bucket=()=>failingDeleteBucket;
+    const response=await captureLog(()=>api(['documentation','ADDRESS_PROOF','attachments',apiDeleteAttachment.attachmentId],'DELETE',deleteFields('api-delete-pending')));
+    assert.equal(response.status,409);
+    const body=await response.json();assert.equal(typeof body.error,'string');assert.ok(!JSON.stringify(body).includes('SECRET_RAW'));assert.ok(!JSON.stringify(body).includes(apiDeleteAttachment.storagePath));
+    assert.equal((await records.doc('api-delete-pending').get()).data()!.state,'DELETE_RESERVED');
+  } finally { storageService.bucket=originalBucket; }
+  const apiDeleteOk=await api(['documentation','ADDRESS_PROOF','attachments',apiDeleteAttachment.attachmentId],'DELETE',deleteFields('api-delete-pending'));assert.equal(apiDeleteOk.status,200);
+  const apiResult=await apiDeleteOk.json();assert.equal(apiResult.deletion.state,'COMMITTED');
+  const apiRetry=await api(['documentation','ADDRESS_PROOF','attachments',apiDeleteAttachment.attachmentId],'DELETE',deleteFields('api-delete-pending'));assert.deepEqual(await apiRetry.json(),apiResult);
+  assert.equal(await eventCount(apiDeleteAttachment.attachmentId),1);
+  assert.equal((await api(['documentation','ADDRESS_PROOF','attachments',apiDeleteAttachment.attachmentId],'DELETE')).status,409);
+  for(const invalid of [{},{commandId:[]},{commandId:'../bad'},{commandId:'bad',storagePath:'arbitrary'},{commandId:'bad',bucket:'arbitrary'}]) assert.equal((await api(['documentation','ADDRESS_PROOF','attachments',apiDeleteAttachment.attachmentId],'DELETE',invalid)).status,409);
   console.log('ROLLBACK_FAILURE_API_ERROR_SANITIZED = YES');
   console.log('P4_API_ADVERSARIAL_TESTS = PASS');
   await admin.app().delete();

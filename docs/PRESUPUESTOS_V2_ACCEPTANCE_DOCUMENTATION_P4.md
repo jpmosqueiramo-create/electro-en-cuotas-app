@@ -95,7 +95,7 @@ Bajo `/api/admin/presupuestos-v2/{budgetId}/versions/{version}`:
 
 Todas verifican Admin, rechazan query params arbitrarios y sanitizan errores.
 El navegador nunca envía snapshot, importe aceptado ni storagePath como autoridad.
-Los endpoints de lectura/eliminación no admiten cuerpos. Metadata debe pertenecer
+GET no admite cuerpo; DELETE exige JSON con exactamente commandId. Metadata debe pertenecer
 al expediente y al path exacto validado antes de usar Storage.
 
 Upload deriva attachmentId de budgetId/version/type/commandId con SHA256 y compara
@@ -161,11 +161,52 @@ No genera getDownloadURL, signed URLs persistentes ni download tokens. Las URLs
 blob temporales de UI se revocan y no se guardan en Firestore. Attachment metadata
 contiene ID/path/nombre/MIME/tamaño/fecha/autor/hash, nunca URL, token, base64 o bytes.
 
-Delete elimina sólo el path registrado y luego actualiza metadata/evento en una
-transacción. Un retry con objeto ya ausente puede terminar la metadata pendiente;
-si metadata ya no existe, no deriva ni elimina un path a partir del cliente.
-Si falla Firestore después del borrado, debe reintentarse el delete; no se afirma
-atomicidad entre ambos servicios. El evento de auditoría permanece al completarse.
+UPLOAD y DELETE usan la misma colección privada documentCommands, discriminada por
+operation (UPLOAD/DELETE), sin nuevas colecciones paralelas. DELETE recibe un
+commandId explícito y estable desde la UI; el servidor deriva path/hash/generación
+desde metadata validada, nunca del body. El payload JSON es exactamente {commandId}.
+Cualquier clave extra (path, bucket, sha256, attachmentId) se rechaza.
+
+Protocolo DELETE:
+
+1. Transacción: valida expediente, slot, identidad y capacidad de auditoría antes
+   del borrado; crea DELETE_RESERVED con commandId, budgetId, budgetVersion,
+   documentType, attachmentId, path canónico, sha256, owner, timestamps y lease120s.
+   La metadata del archivo permanece en el slot.
+2. Consulta Storage: valida contenido/hash y obtiene generación. Persiste la
+   generación y storageDeleteStatus=MAY_HAVE_RUN antes de la llamada externa.
+   El borrado usa esa generación como precondición. Un retry nunca captura una
+   generación distinta ni elimina un objeto reemplazado por otra operación.
+3. Storage DELETE sólo actúa sobre el path reservado. Si falla, conserva metadata
+   y DELETE_RESERVED, libera únicamente la lease para retry y devuelve error seguro.
+   No agrega evento DELETED ni simula éxito.
+4. Transacción final: verifica propiedad y comando; quita attachment, recalcula
+   estado, registra DELETED y pasa el comando a COMMITTED. El resultado técnico
+   {commandId,budgetId,budgetVersion,documentType,attachmentId,state,deleted} es
+   estable y no contiene PII, bytes, URLs ni tokens.
+5. Si falla esa transacción, se intenta marcar DELETE_FINALIZATION_PENDING.
+   El evento estructurado DOCUMENT_DELETE_FINALIZATION_PENDING sólo incluye IDs
+   técnicos y error normalizado. Si Firestore está totalmente indisponible,
+   permanece la reserva previa con path/hash/generación/intención de borrado;
+   pendingStateRecorded=false reconoce que la actualización adicional no se guardó.
+   No se promete consistencia perfecta entre servicios.
+
+Retry del mismo commandId en DELETE_RESERVED/DELETE_FINALIZATION_PENDING toma la
+misma identidad técnica. Si el objeto ya no existe, completa la finalización
+Firestore sin intentar otro path. La lease evita solicitudes simultáneas; tras
+fallo controlado se libera la lease, no la reserva. Si una caída impide actualizar
+la lease, el retry podrá recuperar la operación tras su vencimiento.
+COMMITTED devuelve el mismo resultado sin tocar Storage ni agregar eventos.
+Otro attachment/type/version u operación con el mismo commandId falla cerrado.
+
+Si no hay metadata ni comando previo, no se toca Storage: se registra un resultado
+COMMITTED idempotente con deleted=false y path/hash null. Una metadata ausente no
+habilita al cliente a aportar un path. Dos comandos sobre el mismo archivo no
+duplican DELETED: la transacción final comprueba si la metadata ya fue eliminada.
+
+CROSS_SERVICE_ATOMICITY = NOT_POSSIBLE
+
+BEST_EFFORT_DELETE_WITH_DURABLE_RESERVATION = YES
 
 ## UI y privacidad
 
@@ -251,3 +292,31 @@ la corrección quedó exclusivamente server-side, tests y documentación; la UI 
 las siete capturas anteriores permanecen intactas. No hay interfaz de reconciliación
 ni resolución automática de ROLLBACK_PENDING en P4. Ese estado requiere revisión
 administrativa posterior autorizada.
+
+
+## Corrección pre-PR: DELETE durable
+
+El commit P4 original se conserva. Esta corrección incorpora commandId estable en
+UI/API, reserva DELETE previa, precondición de generación y reparación automática
+por retry de una finalización pendiente. No cambia aceptación, oferta, Rules,
+firebase.json ni Validaciones. No incorpora Contrato ni interfaz de reconciliación.
+
+Tests agregados al archivo Emulator P4 existente: DELETE normal, Storage falla,
+Firestore finalización falla, caída total después del borrado, retry repara,
+COMMITTED idempotente sin segundo evento ni borrado, conflicto de comando,
+payloads extra, archivo ajeno y reemplazo de generación/contenido. El browser P4
+verifica también la reserva COMMITTED creada por el click real y el retry HTTP
+con el mismo commandId sin alterar el expediente nuevamente.
+
+Resultado de la corrección DELETE: PASS en DOCUMENT_DELETE_NORMAL_TEST,
+DOCUMENT_DELETE_STORAGE_FAILURE_TEST, DOCUMENT_DELETE_FINALIZATION_FAILURE_TEST,
+DELETE_PENDING_RETRY_RECONCILES, DOCUMENT_DELETE_IDEMPOTENT_TEST y
+DOCUMENT_DELETE_COMMAND_CONFLICT_TEST. Se comprobó también la caída completa de
+Firestore después del borrado: reserva e intención previas permanecen y el retry
+repara el expediente después de recuperar disponibilidad/vencer la lease.
+
+PASS: modelos/aceptación/documentación/Storage Emulator/API adversarial P4,
+compensación de UPLOAD (incluidos rollback fallido y retry bloqueado), browser P4
+desktop/mobile con nuevo payload, test:safe, TypeScript, ESLint de tocados y build.
+Se preservan privacidad de DTO/PDF/WhatsApp y el commit previo
+`533972bf865a8e666799e8b5f2786d57365179b4`, sin amend ni force push.

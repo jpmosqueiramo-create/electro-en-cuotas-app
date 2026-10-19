@@ -74,6 +74,12 @@ export async function testBudgetAcceptanceV2Browser() {
       await browser.until("document.querySelector('[data-document-type=DNI_FRONT] [data-slot-status]')?.textContent==='SIN CARGAR'",'deleted');
       const d=(await db.doc(`presupuestos_v2/${id}/documentation/1`).get()).data()!;
       assert.deepEqual(d.events.map((e:{type:string})=>e.type),['UPLOADED','OBSERVED','DELETED']);
+      const deletes=await db.collection('presupuestos_v2').doc(id).collection('documentCommands').where('operation','==','DELETE').get();
+      assert.equal(deletes.size,1);const deletion=deletes.docs[0].data();assert.equal(deletion.state,'COMMITTED');assert.ok(deletion.commandId);assert.equal(deletion.storagePath,`budget-documentation-v2/${id}/v1/DNI_FRONT/${deletion.attachmentId}`);
+      const repeated=await browser.evaluate<{status:number;body:unknown}>(`(async()=>{const token=await window.__FIREBASE_AUTH__.currentUser.getIdToken();const r=await fetch(${JSON.stringify('/api/admin/presupuestos-v2/'+id+'/versions/1/documentation/DNI_FRONT/attachments/')}+${JSON.stringify(deletion.attachmentId)},{method:'DELETE',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:${JSON.stringify(JSON.stringify({commandId:deletion.commandId}))}});return {status:r.status,body:await r.json()};})()`);
+      assert.equal(repeated.status,200);assert.deepEqual(repeated.body,{deletion:deletion.result});
+      assert.deepEqual((await db.doc(`presupuestos_v2/${id}/documentation/1`).get()).data(),d);
+
       assert.deepEqual((await db.doc(`presupuestos_v2/${id}/versions/1`).get()).data(),b);
       // A distinct exact version records an optional preference, with frozen amount.
       const preferredId=`${id}-preferred`;const preferredBudget={...b,id:preferredId};

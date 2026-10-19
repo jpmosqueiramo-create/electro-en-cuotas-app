@@ -1,4 +1,4 @@
-import type { Bucket } from '@google-cloud/storage';
+import type { Bucket, FileMetadata } from '@google-cloud/storage';
 import type { Firestore } from 'firebase-admin/firestore';
 import { createHash, randomUUID } from 'node:crypto';
 import { budgetV2ExactObject, budgetV2OpaqueId } from './budgetV2';
@@ -59,7 +59,7 @@ export async function uploadBudgetDocument(db: Firestore, bucket: Bucket, budget
   const command = refs.family.collection('documentCommands').doc(c.commandId);
   const owner = randomUUID();
   const reconciliationMessage = 'No se pudo completar la carga y quedó pendiente una reconciliación administrativa.';
-  const operation = { commandId: c.commandId, budgetId, budgetVersion: version, documentType: type, attachmentId, storagePath: path, sha256: hash };
+  const operation = { operation: 'UPLOAD', commandId: c.commandId, budgetId, budgetVersion: version, documentType: type, attachmentId, storagePath: path, sha256: hash };
   const logPending = (reason: string, durableReservationRecorded: boolean) => console.error(JSON.stringify({
     event: 'DOCUMENT_UPLOAD_ROLLBACK_PENDING', budgetId, version, documentType: type,
     attachmentId, commandId: c.commandId, error: reason, durableReservationRecorded,
@@ -67,6 +67,7 @@ export async function uploadBudgetDocument(db: Firestore, bucket: Bucket, budget
   const replay = await db.runTransaction(async tx => {
     const { documentation } = await loadDocumentation(db, budgetId, version, tx);
     const prior = await tx.get(command);
+    if (prior.data()?.operation === 'DELETE') fail('Conflicto de commandId.');
     if (prior.data()?.state === 'ROLLBACK_PENDING') fail(reconciliationMessage);
     if (prior.exists && prior.data()!.digest !== digest) fail('Conflicto de commandId: archivo diferente.');
     if (prior.data()?.state === 'COMMITTED') {
@@ -157,20 +158,111 @@ export async function downloadBudgetDocument(db: Firestore, bucket: Bucket, budg
   if (bytes.length !== attachment.size || sha(bytes) !== attachment.sha256) fail('El archivo no superó la validación de integridad.');
   validateDocumentBytes(bytes, attachment.mimeType); return { attachment, bytes };
 }
-export async function deleteBudgetDocument(db: Firestore, bucket: Bucket, budgetId: string, version: number, rawType: unknown, id: unknown, actor: string) {
+export interface BudgetDocumentDeleteResult {
+  commandId: string; budgetId: string; budgetVersion: number; documentType: DocumentType;
+  attachmentId: string; state: 'COMMITTED'; deleted: boolean;
+}
+export async function deleteBudgetDocument(db: Firestore, bucket: Bucket, budgetId: string, version: number, rawType: unknown, id: unknown, input: unknown, actor: string): Promise<BudgetDocumentDeleteResult> {
   const type = documentType(rawType); validAttachmentId(id);
-  const refs = caseRefs(db, budgetId, version);
-  const { documentation } = await loadDocumentation(db, budgetId, version);
-  const attachment = documentation.slots[type].attachments.find(a => a.attachmentId === id);
-  if (!attachment) return documentation; // Idempotent: never derive a deletion path from an absent attachment.
-  if (attachment.storagePath !== storagePath(budgetId, version, type, id)) fail('Identidad de archivo inconsistente.');
-  await bucket.file(attachment.storagePath).delete({ ignoreNotFound: true });
-  return db.runTransaction(async tx => {
-    const { documentation: current } = await loadDocumentation(db, budgetId, version, tx);
-    if (!current.slots[type].attachments.some(a => a.attachmentId === id)) return current;
-    const next = applyDocumentEvent(current, type, { type: 'DELETED', documentType: type, attachmentId: id, at: new Date().toISOString(), by: actor, note: null });
-    tx.set(refs.documentation, next); return next;
+  const payload = budgetV2ExactObject(input, ['commandId']);
+  if (!budgetV2OpaqueId(payload.commandId)) fail('Comando de eliminación inválido.');
+  const commandId = payload.commandId, owner = randomUUID();
+  const refs = caseRefs(db, budgetId, version), command = refs.family.collection('documentCommands').doc(commandId);
+  const canonicalPath = storagePath(budgetId, version, type, id);
+  const digest = sha(JSON.stringify(['DELETE', budgetId, version, type, id]));
+  const pendingMessage = 'No se pudo completar la eliminación. Reintentá la misma operación; si persiste, requiere reconciliación administrativa.';
+  const identity = { operation: 'DELETE', commandId, budgetId, budgetVersion: version, documentType: type, attachmentId: id };
+  const result = (deleted: boolean): BudgetDocumentDeleteResult => ({ commandId, budgetId, budgetVersion: version, documentType: type, attachmentId: id, state: 'COMMITTED', deleted });
+  const reservation = await db.runTransaction(async tx => {
+    const { documentation } = await loadDocumentation(db, budgetId, version, tx);
+    const previous = await tx.get(command), prior = previous.data();
+    const attachment = documentation.slots[type].attachments.find(a => a.attachmentId === id);
+    if (prior && (prior.operation !== 'DELETE' || prior.digest !== digest || prior.budgetId !== budgetId || prior.budgetVersion !== version || prior.documentType !== type || prior.attachmentId !== id || prior.commandId !== commandId)) fail('Conflicto de commandId.');
+    if (prior?.state === 'COMMITTED') return { completed: result(prior.result.deleted), path: null, hash: null, generation: null, generationRecorded: false };
+    if (prior && !['DELETE_RESERVED', 'DELETE_FINALIZATION_PENDING'].includes(prior.state)) fail('Estado de eliminación inconsistente.');
+    if (prior && prior.leaseUntil > Date.now()) fail('Eliminación en curso; reintentá la misma operación.');
+    if (attachment && (attachment.storagePath !== canonicalPath || !/^[a-f0-9]{64}$/.test(attachment.sha256))) fail('Identidad de archivo inconsistente.');
+    if (prior && (prior.storagePath !== canonicalPath || !/^[a-f0-9]{64}$/.test(prior.sha256) || (attachment && attachment.sha256 !== prior.sha256))) fail('Identidad reservada inconsistente.');
+    const at = new Date().toISOString();
+    if (!prior && !attachment) {
+      const completed = result(false);
+      tx.create(command, { ...identity, digest, storagePath: null, sha256: null, state: 'COMMITTED', owner, createdAt: at, updatedAt: at, leaseUntil: 0, result: completed });
+      return { completed, path: null, hash: null, generation: null, generationRecorded: false };
+    }
+    // Capacity/identity validation precedes any irreversible Storage operation.
+    if (attachment) applyDocumentEvent(documentation, type, { type: 'DELETED', documentType: type, attachmentId: id, at, by: actor, note: null });
+    const path: string = prior?.storagePath ?? attachment!.storagePath;
+    const hash: string = prior?.sha256 ?? attachment!.sha256;
+    const generation: string | null = prior?.objectGeneration ?? null;
+    const generationRecorded: boolean = prior?.generationRecorded === true;
+    if (previous.exists) tx.update(command, { owner, leaseUntil: Date.now() + 120000, updatedAt: at });
+    else tx.create(command, { ...identity, digest, storagePath: path, sha256: hash, state: 'DELETE_RESERVED', owner, leaseUntil: Date.now() + 120000, createdAt: at, updatedAt: at, generationRecorded: false, objectGeneration: null, storageDeleteStatus: 'NOT_CONFIRMED' });
+    return { completed: null, path, hash, generation, generationRecorded };
   });
+  if (reservation.completed) return reservation.completed;
+  const path = reservation.path!;
+  const file = bucket.file(path);
+  const markPending = async (phase: 'STORAGE' | 'FINALIZATION') => {
+    let pendingStateRecorded = false;
+    try {
+      pendingStateRecorded = await db.runTransaction(async tx => {
+        const current = await tx.get(command), data = current.data();
+        if (data?.operation === 'DELETE' && data.digest === digest && data.owner === owner && data.state !== 'COMMITTED') {
+          tx.update(command, { state: phase === 'FINALIZATION' ? 'DELETE_FINALIZATION_PENDING' : 'DELETE_RESERVED', leaseUntil: 0, updatedAt: new Date().toISOString(), failureAt: new Date().toISOString(), failureCode: phase === 'FINALIZATION' ? 'FIRESTORE_FINALIZATION_FAILED' : 'STORAGE_DELETE_NOT_CONFIRMED' });
+          return true;
+        }
+        return false;
+      });
+    } catch { /* The reservation predates Storage and remains the durable recovery signal. */ }
+    console.error(JSON.stringify({ event: phase === 'FINALIZATION' ? 'DOCUMENT_DELETE_FINALIZATION_PENDING' : 'DOCUMENT_DELETE_STORAGE_PENDING', budgetId, version, documentType: type, attachmentId: id, commandId,
+      error: phase === 'FINALIZATION' ? 'FIRESTORE_FINALIZATION_FAILED' : 'STORAGE_DELETE_NOT_CONFIRMED', durableReservationRecorded: true, pendingStateRecorded }));
+  };
+  try {
+    let metadata: FileMetadata | null = null;
+    try { metadata = (await file.getMetadata())[0]; }
+    catch (error) { if ((error as { code?: number }).code !== 404) throw error; }
+    let generation: string | null = metadata ? String(metadata.generation) : null;
+    if (generation !== null && (!/^\d+$/.test(generation) || !Number.isSafeInteger(Number(generation)))) fail('Generación de archivo inválida.');
+    if (reservation.generationRecorded) {
+      if (generation !== null && generation !== reservation.generation) fail('El objeto ya no coincide con la generación reservada.');
+      generation = metadata ? reservation.generation : null;
+      if (generation !== null && sha((await bucket.file(path, { generation }).download())[0]) !== reservation.hash) fail('El objeto no coincide con el archivo reservado.');
+    } else {
+      if (generation !== null) {
+        const bytes = (await bucket.file(path, { generation }).download())[0];
+        if (sha(bytes) !== reservation.hash) fail('El objeto no coincide con el archivo registrado.');
+      }
+      // Persist exact generation and intent BEFORE the external delete. Never recapture on retry.
+      await db.runTransaction(async tx => {
+        const current = await tx.get(command), data = current.data();
+        if (data?.owner !== owner || data.digest !== digest || !['DELETE_RESERVED', 'DELETE_FINALIZATION_PENDING'].includes(data.state)) fail('Reserva de eliminación perdida.');
+        tx.update(command, { generationRecorded: true, objectGeneration: generation, storageDeleteStatus: 'MAY_HAVE_RUN', updatedAt: new Date().toISOString() });
+      });
+    }
+    if (generation !== null) await file.delete({ ifGenerationMatch: Number(generation), ignoreNotFound: true });
+  } catch {
+    await markPending('STORAGE');
+    fail(pendingMessage);
+  }
+  try {
+    return await db.runTransaction(async tx => {
+      const { documentation } = await loadDocumentation(db, budgetId, version, tx);
+      const current = await tx.get(command), data = current.data();
+      if (data?.operation !== 'DELETE' || data.digest !== digest || data.owner !== owner || !['DELETE_RESERVED', 'DELETE_FINALIZATION_PENDING'].includes(data.state)) fail('Reserva de eliminación perdida.');
+      const attachment = documentation.slots[type].attachments.find(a => a.attachmentId === id);
+      if (attachment) {
+        if (attachment.storagePath !== path || attachment.sha256 !== reservation.hash) fail('Identidad de archivo inconsistente.');
+        const next = applyDocumentEvent(documentation, type, { type: 'DELETED', documentType: type, attachmentId: id, at: new Date().toISOString(), by: actor, note: null });
+        tx.set(refs.documentation, next);
+      }
+      const completed = result(true);
+      tx.update(command, { state: 'COMMITTED', leaseUntil: 0, result: completed, storageDeleteStatus: 'COMPLETED_OR_ABSENT', updatedAt: new Date().toISOString() });
+      return completed;
+    });
+  } catch {
+    await markPending('FINALIZATION');
+    fail(pendingMessage);
+  }
 }
 export async function observeBudgetDocument(db: Firestore, budgetId: string, version: number, rawType: unknown, input: unknown, actor: string) {
   const type = documentType(rawType), c = budgetV2ExactObject(input, ['observation']);

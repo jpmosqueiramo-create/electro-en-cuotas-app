@@ -16,6 +16,7 @@ export function BudgetAcceptanceDocumentation({ budget }: { budget: BudgetV2 }) 
   const [selected, setSelected] = useState(''), [preferred, setPreferred] = useState('');
   const [notes, setNotes] = useState<Partial<Record<DocumentType, string>>>({});
   const flight = useRef(false), command = useRef<{ key: string; id: string } | null>(null);
+  const deleteCommands = useRef(new Map<string, string>());
   const uploadCommands = useRef(new Map<string, string>());
   const base = `/api/admin/presupuestos-v2/${encodeURIComponent(budget.id)}/versions/${budget.version}`;
   const request = useCallback(async (path: string, options: RequestInit = {}) => {
@@ -102,7 +103,8 @@ export function BudgetAcceptanceDocumentation({ budget }: { budget: BudgetV2 }) 
             const response = await request(`documentation/${type}/attachments/${a.attachmentId}`); const url = URL.createObjectURL(await response.blob());
             const link = document.createElement('a'); link.href = url; link.download = a.originalName; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
           })}>Descargar</button>
-          <button className={button} disabled={busy} onClick={() => { if (window.confirm('¿Eliminar este archivo? Se conservará el evento de auditoría.')) void act(async () => { await request(`documentation/${type}/attachments/${a.attachmentId}`, { method: 'DELETE' }); await reloadDocumentation(); }); }}>Eliminar</button>
+          <button className={button} disabled={busy} onClick={() => { if (window.confirm('¿Eliminar este archivo? Se conservará el evento de auditoría.')) void act(async () => { const key = `${type}:${a.attachmentId}`; let commandId = deleteCommands.current.get(key); if (!commandId) { commandId = crypto.randomUUID(); deleteCommands.current.set(key, commandId); }
+            await request(`documentation/${type}/attachments/${a.attachmentId}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ commandId }) }); await reloadDocumentation(); deleteCommands.current.delete(key); }); }}>Eliminar</button>
         </div></div>)}
         {!!slot.attachments.length && <div className="space-y-2"><label className="block space-y-2"><span className="text-sm">Observación administrativa</span><textarea className={input} maxLength={1000} value={notes[type] ?? ''} onChange={e => setNotes({ ...notes, [type]: e.target.value })} /></label>
           <button className={button} disabled={busy || !notes[type]?.trim()} onClick={() => void act(async () => { await request(`documentation/${type}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ observation: notes[type] }) }); await reloadDocumentation(); })}>Marcar observado</button>

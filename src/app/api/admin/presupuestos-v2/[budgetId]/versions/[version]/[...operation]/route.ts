@@ -22,7 +22,7 @@ async function handle(req: NextRequest, ctx: Context) {
   if (!auth.authorized) return NextResponse.json({ error: 'Acceso Admin requerido.' }, { status: auth.errorResponse?.status === 403 ? 403 : 401 });
   try {
     if ([...req.nextUrl.searchParams.keys()].length) fail();
-    if (['GET', 'DELETE'].includes(req.method) && req.body !== null) await boundedBody(req, 0);
+    if (req.method === 'GET' && req.body !== null) await boundedBody(req, 0);
     const { budgetId, version: raw, operation } = await ctx.params;
     if (!/^[1-9]\d*$/.test(raw)) fail();
     const version = Number(raw); identity(budgetId, version);
@@ -59,7 +59,7 @@ async function handle(req: NextRequest, ctx: Context) {
     }
     if (operation.length === 4) {
       const id = operation[3];
-      if (req.method === 'DELETE') return result({ documentation: await deleteBudgetDocument(db, await getBudgetDocumentationBucket(), budgetId, version, type, id, auth.uid!) });
+      if (req.method === 'DELETE') return result({ deletion: await deleteBudgetDocument(db, await getBudgetDocumentationBucket(), budgetId, version, type, id, await json(), auth.uid!) });
       if (req.method === 'GET') {
         const { attachment, bytes } = await downloadBudgetDocument(db, await getBudgetDocumentationBucket(), budgetId, version, type, id);
         return new Response(new Uint8Array(bytes), { headers: {
