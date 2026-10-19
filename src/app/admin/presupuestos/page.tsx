@@ -1,5 +1,6 @@
 "use client";
 
+import { BudgetV2Workspace } from "@/components/admin/budgets/BudgetV2Workspace";
 import { AdminNav } from "@/components/AdminNav";
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -172,53 +173,8 @@ interface CatalogProduct {
   proveedor?: string;
 }
 
-function mapOpcionToInternalBudgetItem(op: PresupuestoOpcion, idx: number): InternalBudgetItem {
-  const source =
-    op.source === "MANUAL_PRESUPUESTO" || op.pricingMode === "MANUAL_FACTOR_V1" || op.manualProductSnapshot
-      ? "MANUAL_PRESUPUESTO"
-      : "CATALOGO";
-  const pricingMode = source === "MANUAL_PRESUPUESTO" ? "MANUAL_FACTOR_V1" : "CANONICAL_V1";
-  const cuotas = Number(op.cuotas) || 12;
-  const valorCuota = Number(op.valorCuota) || 0;
-  const anticipo = Number(op.anticipo) || 0;
-  const totalFinanciado =
-    Number(op.totalFinanciado) ||
-    (op.totalCentavos ? Math.round(Number(op.totalCentavos) / 100) : cuotas * valorCuota + anticipo);
-
-  return {
-    itemId: op.itemId || `item-hist-${idx}`,
-    source,
-    pricingMode,
-    productoId: op.productoId ?? null,
-    nombre: String(op.nombre || op.producto || "Producto"),
-    codigo: op.codigo ?? null,
-    marca: op.marca ?? null,
-    modelo: op.modelo ?? null,
-    categoria: op.categoria ?? null,
-    descripcion: op.descripcion || "",
-    imagenUrl: op.imagenUrl || "",
-    imagenUrls: op.imagenUrls || (op.imagenUrl ? [op.imagenUrl] : []),
-    cantidad: Number(op.cantidad) || 1,
-    precioContado: Number(op.precioContado ?? op.contado ?? totalFinanciado) || 0,
-    cuotas,
-    valorCuota,
-    anticipo,
-    totalFinanciado,
-    observacionesComerciales: op.observacionesComerciales ?? null,
-    costoProveedor: op.costoProveedor ?? null,
-    proveedor: op.proveedor ?? null,
-    linkProveedor: null,
-    factorAplicado: op.factorAplicado ?? op.factor ?? null,
-    margenEstimado: op.margenEstimado ?? null,
-    tnaInternaAplicada: op.tnaInternaAplicada ?? null,
-    observacionesInternas: op.observacionesInternas ?? null,
-    guardarEnCatalogo: Boolean(op.guardarEnCatalogo),
-    pricingSnapshot: op.pricingSnapshot ?? null,
-    manualProductSnapshot: op.manualProductSnapshot ?? null,
-  };
-}
-
-function PresupuestosContent() {
+function PresupuestosContent({ onNew }: { onNew: () => void }) {
+  const [legacyRead, setLegacyRead] = useState<PresupuestoRecord | null>(null);
   const searchParams = useSearchParams();
   const [presupuestos, setPresupuestos] = useState<PresupuestoRecord[]>([]);
   const [solicitudesPool, setSolicitudesPool] = useState<SolicitudCandidate[]>([]);
@@ -474,12 +430,12 @@ function PresupuestosContent() {
       setBusqueda(qParam);
     }
 
-    const currentQueryKey = searchParams.toString();
+    const currentQueryKey = ""; // New lead confección belongs exclusively to the V2 workspace.
     const lifecycle = lifecycleRef.current;
 
     const initialized = lifecycle.handleQueryOrDataChange({
       queryKey: currentQueryKey,
-      searchParams,
+      searchParams: new URLSearchParams(),
       dataLoaded,
       solicitudesPool,
       catalogoProductos
@@ -489,8 +445,8 @@ function PresupuestosContent() {
       return;
     }
 
-    const solId = searchParams.get("solicitudId") || "";
-    const altId = searchParams.get("alertaId") || "";
+    const solId = "";
+    const altId = "";
 
     if (solId) {
       if (!lifecycle.getState().resolvedSolicitudId) {
@@ -548,35 +504,18 @@ function PresupuestosContent() {
     }
   };
 
-  const abrirModalNuevo = () => {
-    sessionBudgetIdRef.current = "pres_" + Date.now();
-    sessionDraftItemIdRef.current = "";
-    lifecycleRef.current.openNewManual();
-  };
+
 
   const abrirModalConfeccion = (item: PresupuestoRecord) => {
-    sessionBudgetIdRef.current = item.id || "pres_" + Date.now();
-    sessionDraftItemIdRef.current = "";
-    const mappedItems = Array.isArray(item.items)
-      ? item.items.map((op, i) => mapOpcionToInternalBudgetItem(op, i))
-      : [];
-    lifecycleRef.current.openExistingBudget({
-      id: item.id,
-      solicitudId: item.solicitudId || "",
-      solicitudTipo: item.solicitudTipo,
-      clienteNombre: item.clienteNombre,
-      clienteDni: item.clienteDni,
-      clienteWhatsapp: item.clienteWhatsapp,
-      clienteLocalidad: item.clienteLocalidad,
-      producto: item.producto || "",
-      notas: item.notas || "",
-      cuotas: item.cuotas || 0,
-      pricingSchemaVersion: item.pricingSchemaVersion,
-      snapshotCanonico: item.snapshotCanonico,
-      catalogoProductos: catalogoProductos,
-      items: mappedItems,
-    }, item);
+    if (item.id.startsWith("pres_pend_")) { onNew(); return; }
+    setLegacyRead(item);
   };
+  const legacyClient = legacyRead ? toClientBudgetPayload({
+    nroPresupuesto: legacyRead.id, fechaEmision: legacyRead.fechaObjeto?.toLocaleDateString("es-AR"),
+    clienteNombre: legacyRead.clienteNombre, clienteDni: legacyRead.clienteDni,
+    clienteTelefono: legacyRead.clienteWhatsapp, clienteLocalidad: legacyRead.clienteLocalidad,
+    items: (legacyRead.items?.length ? legacyRead.items : [{ nombre: legacyRead.producto, cuotas: legacyRead.cuotas, valorCuota: legacyRead.valorCuota, precioContado: legacyRead.contado }]) as Array<Record<string, unknown>>,
+  }) : null;
 
   const selectedProductoObj = catalogoProductos.find((p) => p.id === selectedProductoId);
   const isProductoConfigurado = Boolean(
@@ -739,6 +678,7 @@ function PresupuestosContent() {
   };
 
   const handleGuardarPresupuesto = async () => {
+    if (modalOpen) { alert("Los históricos se conservan sin reescritura. Creá un presupuesto V2 nuevo."); return; }
     if (savingInFlightRef.current) {
       return;
     }
@@ -1090,7 +1030,7 @@ function PresupuestosContent() {
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* HEADER PRINCIPAL */}
-        <AdminNav title="Historial de Presupuestos" subtitle="Gestión comercial de cotizaciones de catálogo (CANONICAL_V1) y opciones manuales fuera de catálogo (MANUAL_FACTOR_V1)" />
+        <AdminNav title="Historial de Presupuestos" subtitle="Históricos legacy · Importes y snapshots conservados sin migración" />
 
         {/* BARRA DE CONTROLES: FILTROS, BUSCADOR Y BOTÓN NUEVO */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-[#FFFDFC] border border-[#DED8CF] p-5 rounded-2xl shadow-xs items-center">
@@ -1136,7 +1076,7 @@ function PresupuestosContent() {
           {/* Botón Nuevo Presupuesto */}
           <div className="md:col-span-3 flex justify-end">
             <button
-              onClick={abrirModalNuevo}
+              onClick={onNew}
               className="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-[#173E3B] hover:bg-[#123230] text-white px-4 py-2.5 rounded-xl text-xs font-heading font-bold transition-all shadow-xs cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Nuevo Presupuesto
@@ -1273,10 +1213,11 @@ function PresupuestosContent() {
                     <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                       <button
                         data-testid={`btn-reabrir-presupuesto-idx-${idx}`}
+                        data-legacy-budget-id={p.id}
                         onClick={() => abrirModalConfeccion(p)}
                         className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#173E3B] hover:bg-[#123230] text-white px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all shadow-xs cursor-pointer"
                       >
-                        ✏️ {isPendiente ? "Confeccionar" : "Editar"}
+                        {isPendiente ? "Confeccionar V2" : "Ver / WhatsApp legacy"}
                       </button>
 
                       {itemsList.length > 0 && totalCuota > 0 ? (
@@ -1303,6 +1244,16 @@ function PresupuestosContent() {
           </div>
         )}
 
+        {legacyRead && legacyClient && <div role="dialog" aria-modal="true" aria-label="Presupuesto histórico" className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="max-h-[90dvh] w-full max-w-3xl space-y-4 overflow-y-auto rounded-2xl bg-surface p-5">
+            <h2 className="font-heading text-xl font-bold">Presupuesto histórico · Sólo lectura</h2>
+            <p>{legacyRead.clienteNombre} · {legacyRead.estado}</p>
+            {legacyClient.items.map((item, i) => <div key={i} className="rounded-xl border border-border-color p-3"><p>Opción {i + 1} · {item.nombre}</p><p>{item.cuotas} cuotas de ${item.valorCuota.toLocaleString("es-AR")}</p></div>)}
+            <div className="flex flex-wrap gap-3"><button className="min-h-11 rounded-xl border px-4" onClick={() => handleDescargarPdf(legacyRead)}>PDF legacy</button>
+              <a className="inline-flex min-h-11 items-center rounded-xl border px-4" href={`https://wa.me/${(legacyRead.clienteWhatsapp || "").replace(/\D/g, "")}?text=${encodeURIComponent(buildClientWhatsAppMessage(legacyClient))}`} target="_blank" rel="noopener noreferrer">WhatsApp legacy</a>
+              <button className="min-h-11 rounded-xl border px-4" onClick={() => setLegacyRead(null)}>Cerrar histórico</button></div>
+          </div>
+        </div>}
         {/* MODAL DE CONFECCIÓN DE PRESUPUESTO */}
         {modalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
@@ -1326,6 +1277,8 @@ function PresupuestosContent() {
                 </button>
               </div>
 
+              <p className="text-sm">Histórico de sólo lectura: importes y snapshots conservados.</p>
+              <fieldset disabled>
               {/* SECCIÓN 1: DATOS DEL LEAD (SEPARADA DE CONDICIONES FINANCIERAS) */}
               <div className="bg-[#F7F3EC] border border-[#DED8CF] p-4 rounded-2xl space-y-3">
                 <div className="flex items-center justify-between">
@@ -2177,6 +2130,7 @@ function PresupuestosContent() {
                 )}
               </div>
 
+              </fieldset>
               {/* SECCIÓN 4: BOTONES DE ACCIÓN Y PERSISTENCIA OBLIGATORIA */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[#DED8CF]">
                 {/* Botones de Envío y PDF: BLOQUEADOS ANTES DE PERSISTIR */}
@@ -2228,7 +2182,7 @@ function PresupuestosContent() {
                   <button
                     type="button"
                     data-testid="btn-guardar-presupuesto"
-                    disabled={saving || !canSaveBudget}
+                    disabled={modalOpen || saving || !canSaveBudget}
                     onClick={handleGuardarPresupuesto}
                     className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-[#173E3B] hover:bg-[#123230] text-white px-5 py-2.5 rounded-xl text-xs font-heading font-bold transition shadow-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
@@ -2254,7 +2208,7 @@ export default function PresupuestosPage() {
           <p className="text-sm font-heading font-semibold text-[#68706E] animate-pulse">Cargando módulo de presupuestos...</p>
         </div>
       }>
-        <PresupuestosContent />
+        <BudgetV2Workspace legacyHistory={onNew => <PresupuestosContent onNew={onNew} />} />
       </Suspense>
     </AdminProtectedRoute>
   );
