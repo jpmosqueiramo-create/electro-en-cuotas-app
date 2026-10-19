@@ -126,7 +126,10 @@ async function runRulesTests() {
   assert(resAdminVendedores.status === 200, "Administrador Único leyendo /vendedores permitido con HTTP 200");
 
   const resPublicProductos = await firestoreRestCall("GET", "/productos");
-  assert(resPublicProductos.status === 200, "Lectura pública de catálogo en /productos permitida con HTTP 200");
+  assert(resPublicProductos.status === 403, "Lectura anónima de /productos denegada con HTTP 403");
+
+  const resAdminProductos = await firestoreRestCall("GET", "/productos", undefined, idTokenAdmin);
+  assert(resAdminProductos.status === 200, "Administrador leyendo /productos permitido con HTTP 200");
 
   // ==========================================================
   // BLOQUE 2: PUBLIC WRITE HARDENING — SOLICITUDES_CUENTA (11 A 15)
