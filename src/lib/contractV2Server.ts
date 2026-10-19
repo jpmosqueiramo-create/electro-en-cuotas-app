@@ -1,9 +1,11 @@
+import { PERSONAL_ADDRESS_VERSION } from './contractAddress';
 import { createHash,randomBytes,timingSafeEqual } from 'node:crypto';
 import type { Firestore, DocumentData } from 'firebase-admin/firestore';
 import { validateBudgetV2 } from './budgetV2';
 import { privateBudgetReferenceId } from './budgetV2Persistence';
 import type { BudgetAcceptanceV2 } from './budgetAcceptanceV2';
-import { calendarDate,contractEconomics,contractSchedule,dataFields,dueDay,employmentFields,exact,newContractDraft,opaque,personalFields,reject,submissionPayload,type ClientDataSubmissionV2,type ContractClientDataRequestV2,type ContractDraftV2,stable } from './contractV2';
+import { personalVersion,calendarDate,contractEconomics,contractSchedule,dataFields,dueDay,employmentFields,exact,newContractDraft,opaque,personalFields,reject,submissionPayload,type ClientDataSubmissionV2,type ContractClientDataRequestV2,type ContractDraftV2,stable } from './contractV2';
+function submissionBody(s:ClientDataSubmissionV2){return {personalData:s.personalData,employmentData:s.employmentData,preferredMonthlyDueDay:s.preferredMonthlyDueDay};}
 const digest=(o:unknown)=>createHash('sha256').update(stable(o)).digest('hex');
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 export function contractRefs(db:Firestore,budgetId:string,version:number) {
@@ -32,27 +34,31 @@ export async function contractCommand(db:Firestore,id:string,v:number,input:unkn
     let d:ContractDraftV2=old.exists?old.data() as ContractDraftV2:newContractDraft(budget,a.data() as BudgetAcceptanceV2,actor,now);
     if(d.schemaVersion!=='CONTRACT_DRAFT_V2'||d.status!=='DRAFT'||d.budgetId!==id||d.budgetVersion!==v)reject();
     if(action!=='OPEN_OR_CREATE'&&(!old.exists||o.expectedRevision!==d.revision))reject('Conflicto de revisión. Recargá el borrador.');
+    personalVersion(d.personalDataVersion);
     const before=structuredClone(d);
     const activeRef=d.activeClientDataRequestId?r.draft.collection('requests').doc(opaque(d.activeClientDataRequestId)):null;
     const active=activeRef?await tx.get(activeRef):null;
     let sub:ClientDataSubmissionV2|null=null;
+    let subVersion=personalVersion(undefined);
     if(action==='APPLY_CLIENT_SUBMISSION') {
       const snap=await tx.get(r.draft.collection('submissions').doc(opaque(o.submissionId)));
       if(!snap.exists)reject();sub=snap.data() as ClientDataSubmissionV2;
       const req=await tx.get(r.draft.collection('requests').doc(opaque(sub.requestId)));
       if(!req.exists||req.data()!.contractDraftId!==d.contractDraftId||req.data()!.budgetId!==id||req.data()!.budgetVersion!==v||sub.contractDraftId!==d.contractDraftId||sub.submissionId!==o.submissionId)reject();
+      subVersion=personalVersion(req.data()!.personalDataVersion);
+      if(personalVersion(sub.personalDataVersion)!==subVersion)reject('Submission incompatible.');
     }
-    if(action==='UPDATE_PERSONAL_DATA')d={...d,personalData:dataFields(o.personalData,personalFields)};
+    if(action==='UPDATE_PERSONAL_DATA')d={...d,personalDataVersion:PERSONAL_ADDRESS_VERSION,personalData:dataFields(o.personalData,personalFields)};
     if(action==='UPDATE_EMPLOYMENT_DATA')d={...d,employmentData:dataFields(o.employmentData,employmentFields)};
     if(action==='SET_CONTRACT_PLAN') {
       if(typeof o.contractPlanCuotas!=='number')reject();
       d={...d,economicTerms:contractEconomics({...d.acceptedReferenceSnapshot,imagenUrls:[]},o.contractPlanCuotas)};
     }
     if(action==='SET_PAYMENT_DATES') d={...d,firstInstallmentDueDate:o.firstInstallmentDueDate===null?null:calendarDate(o.firstInstallmentDueDate),preferredMonthlyDueDay:o.preferredMonthlyDueDay===null?null:dueDay(o.preferredMonthlyDueDay)};
-    if(sub)d={...d,personalData:dataFields(sub.personalData,personalFields,true),employmentData:dataFields(sub.employmentData,employmentFields),preferredMonthlyDueDay:dueDay(sub.preferredMonthlyDueDay),lastClientSubmissionId:sub.submissionId,lastClientSubmissionAppliedAt:now,lastClientSubmissionAppliedBy:actor};
+    if(sub)d={...d,...(subVersion==='LEGACY_SIX'?{}:{personalDataVersion:PERSONAL_ADDRESS_VERSION}),personalData:subVersion==='LEGACY_SIX'?{...d.personalData,...submissionPayload(submissionBody(sub),subVersion).personalData}:dataFields(sub.personalData,personalFields,true),employmentData:dataFields(sub.employmentData,employmentFields),preferredMonthlyDueDay:dueDay(sub.preferredMonthlyDueDay),lastClientSubmissionId:sub.submissionId,lastClientSubmissionAppliedAt:now,lastClientSubmissionAppliedBy:actor};
     if(action==='CREATE_CLIENT_DATA_REQUEST') {
       if(active?.exists&&active.data()!.status==='ACTIVE')tx.update(activeRef!,{status:'REVOKED',revokedAt:now});
-      const request:ContractClientDataRequestV2={schemaVersion:'CONTRACT_CLIENT_DATA_REQUEST_V2',requestId,contractDraftId:d.contractDraftId,budgetId:id,budgetVersion:v,tokenHash:hash(secret!),status:'ACTIVE',createdAt:now,createdBy:actor,expiresAt:new Date(Date.parse(now)+7*86400000).toISOString(),submittedAt:null,revokedAt:null,submissionDigest:null};
+      const request:ContractClientDataRequestV2={schemaVersion:'CONTRACT_CLIENT_DATA_REQUEST_V2',personalDataVersion:PERSONAL_ADDRESS_VERSION,requestId,contractDraftId:d.contractDraftId,budgetId:id,budgetVersion:v,tokenHash:hash(secret!),status:'ACTIVE',createdAt:now,createdBy:actor,expiresAt:new Date(Date.parse(now)+7*86400000).toISOString(),submittedAt:null,revokedAt:null,submissionDigest:null};
       tx.create(r.draft.collection('requests').doc(requestId),request);
       tx.create(db.collection('contractClientDataRequests').doc(requestId),{budgetId:id,version:v});
       d={...d,activeClientDataRequestId:requestId};
@@ -90,11 +96,12 @@ export async function publicContractData(db:Firestore,requestId:string,token:str
     const r=rs.data() as ContractClientDataRequestV2,d=ds.data() as ContractDraftV2;
     const actual=Buffer.from(hash(token),'hex'),expected=Buffer.from(r.tokenHash,'hex');
     if(actual.length!==expected.length||!timingSafeEqual(actual,expected)||d.status!=='DRAFT'||Date.parse(r.expiresAt)<=Date.now()||r.status==='REVOKED'||r.status==='EXPIRED')reject(unavailable);
-    if(input===undefined){if(r.status!=='ACTIVE')reject(unavailable);return {available:true};}
-    const p=submissionPayload(input),dg=digest(p);
+    if(input===undefined){if(r.status!=='ACTIVE')reject(unavailable);return {available:true,personalDataVersion:personalVersion(r.personalDataVersion)};}
+    const version=personalVersion(r.personalDataVersion);
+    const p=submissionPayload(input,version),dg=digest(p);
     if(r.status==='SUBMITTED'){if(r.submissionDigest===dg)return {received:true};reject(unavailable);}
     if(r.status!=='ACTIVE'||d.activeClientDataRequestId!==requestId)reject(unavailable);
-    const s:ClientDataSubmissionV2={schemaVersion:'CLIENT_DATA_SUBMISSION_V2',submissionId:requestId,requestId,contractDraftId:d.contractDraftId,submittedAt:new Date().toISOString(),...p};
+    const s:ClientDataSubmissionV2={schemaVersion:'CLIENT_DATA_SUBMISSION_V2',...(version==='LEGACY_SIX'?{}:{personalDataVersion:version}),submissionId:requestId,requestId,contractDraftId:d.contractDraftId,submittedAt:new Date().toISOString(),...p};
     tx.create(refs.draft.collection('submissions').doc(requestId),s);tx.update(rr,{status:'SUBMITTED',submittedAt:s.submittedAt,submissionDigest:dg});
     // Deliberately no Draft update on receipt.
     return {received:true};

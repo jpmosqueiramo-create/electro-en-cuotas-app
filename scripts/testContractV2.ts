@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { budgetFixture } from './helpers/budgetV2Fixtures';
 import { buildAcceptance } from '../src/lib/budgetAcceptanceV2';
-import { contractEconomics,contractSchedule,newContractDraft,completeness,submissionPayload,exact } from '../src/lib/contractV2';
+import { contractEconomics,contractSchedule,newContractDraft,completeness,submissionPayload,exact,personalForEditing,personalVersion,dataFields,personalFields } from '../src/lib/contractV2';
+import { PERSONAL_ADDRESS_VERSION,jurisdictions,provinceLabel } from '../src/lib/contractAddress';
 import { calcularPlanReferenciaCatalogo } from '../src/lib/catalogReference';
 export function fixture(id='p5c-fixture'){
   const b=budgetFixture(id);b.estado='EMITIDO';b.issuedAt='2026-10-18T13:00:00.000Z';
@@ -9,6 +10,7 @@ export function fixture(id='p5c-fixture'){
   return {b,a};
 }
 export const clientPayload={personalData:{fullName:'Cliente sintético',dni:'12345678',address:'Domicilio demo',locality:'Lincoln',email:'demo@example.test',whatsapp:'5491100000000'},employmentData:{cuil:'',employerOrWorkName:'',workAddress:''},preferredMonthlyDueDay:30};
+export const addressPayload={...clientPayload,personalData:{...clientPayload.personalData,province:'06',postalCode:'6070'}};
 export function modelTests(){
  const {b,a}=fixture(),before=JSON.stringify({b,a}),d=newContractDraft(b,a,'admin-demo','2026-12-01T00:00:00.000Z');
  assert.equal(d.personalData.address,'');assert.equal(d.personalData.email,'');assert.equal(d.economicTerms,null);assert.equal(d.preferredPlanCuotas,12);assert.equal('imagenUrls' in d.acceptedReferenceSnapshot,false);assert.equal(d.preparedAt,'2026-12-01T00:00:00.000Z');assert.ok(completeness(d).length);
@@ -23,7 +25,22 @@ export function modelTests(){
  assert.equal(schedule.reduce((s,p)=>s+p.amount,0),e.contractTotal);assert.equal(JSON.stringify({b,a}),before);
  assert.deepEqual(submissionPayload(clientPayload),clientPayload);for(const day of [0,32,1.5])assert.throws(()=>submissionPayload({...clientPayload,preferredMonthlyDueDay:day}));
  assert.throws(()=>submissionPayload({...clientPayload,capitalAmount:10}));assert.throws(()=>submissionPayload({...clientPayload,personalData:{...clientPayload.personalData,email:''}}));assert.throws(()=>exact({x:1,y:2},['x']));
- assert.deepEqual(completeness({...d,personalData:clientPayload.personalData,economicTerms:e,firstInstallmentDueDate:'2026-12-15',preferredMonthlyDueDay:30,paymentScheduleDraft:schedule}),[]);
+ assert.deepEqual(completeness({...d,personalData:addressPayload.personalData,economicTerms:e,firstInstallmentDueDate:'2026-12-15',preferredMonthlyDueDay:30,paymentScheduleDraft:schedule}),[]);
+ assert.equal(jurisdictions.length,24);assert.equal(new Set(jurisdictions.map(([code])=>code)).size,24);
+ assert.notEqual(provinceLabel('02'),provinceLabel('06'));
+ for(const province of ['02','06','94'])assert.equal(submissionPayload({...addressPayload,personalData:{...addressPayload.personalData,province}},PERSONAL_ADDRESS_VERSION).personalData.province,province);
+ for(const postalCode of ['0123','6070','c1425abc'])assert.equal(submissionPayload({...addressPayload,personalData:{...addressPayload.personalData,postalCode}},PERSONAL_ADDRESS_VERSION).personalData.postalCode,postalCode.toUpperCase());
+ for(const postalCode of ['123','12345','C1234AB','C12345ABC','1234 ABC','<1234>','１２３４','c1425abſ','c1425aß'])assert.throws(()=>submissionPayload({...addressPayload,personalData:{...addressPayload.personalData,postalCode}},PERSONAL_ADDRESS_VERSION));
+ for(const province of ['CABA','Buenos Aires','99',''])assert.throws(()=>submissionPayload({...addressPayload,personalData:{...addressPayload.personalData,province}},PERSONAL_ADDRESS_VERSION));
+ assert.throws(()=>submissionPayload(addressPayload));assert.throws(()=>submissionPayload(clientPayload,PERSONAL_ADDRESS_VERSION));
+ assert.throws(()=>dataFields({...addressPayload.personalData,extra:'x'},personalFields));
+ assert.throws(()=>personalVersion('UNKNOWN'));
+ assert.equal(d.personalDataVersion,PERSONAL_ADDRESS_VERSION);assert.equal(d.personalData.province,'');
+ const historical={...d,personalData:clientPayload.personalData};delete historical.personalDataVersion;
+ const historyBefore=JSON.stringify(historical);assert.ok(completeness(historical).some(x=>x.includes('province')));assert.ok(completeness(historical).some(x=>x.includes('postalCode')));assert.equal(JSON.stringify(historical),historyBefore);
+ assert.equal(personalForEditing(historical.personalData).province,'');
+ assert.deepEqual(submissionPayload(addressPayload,PERSONAL_ADDRESS_VERSION).employmentData,{cuil:'',employerOrWorkName:'',workAddress:''});
+ console.log('P5D1A_ADDRESS_VALIDATION_AND_COMPATIBILITY = PASS');
  console.log('P5C_MODEL_TESTS = PASS');console.log('P5C_SCHEDULE_TESTS = PASS');
 }
 modelTests();
