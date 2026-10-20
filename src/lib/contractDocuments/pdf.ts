@@ -84,7 +84,7 @@ function render(kind:ReviewDocumentKind,p:ContractReviewProjection){
   let offset=13;for(const row of customerRows){const height=Math.max(text(row[0],20,start+offset,8.5,body,90),text(row[1],115,start+offset,8.5,body,75));offset+=Math.max(7,height+1);}
   offset+=text('Email: '+p.customer.email,20,start+offset,8.5,body,170);if(offset>38)throw Error('REFERENCE_FORMAT_CONTENT_OVERFLOW');
   y=start+44;doc.setDrawColor(148,163,184);doc.line(60,y,150,y);y+=5;text('Firma del Librador / Deudor Principal',78.5,y,8.5,ink,112);y+=5;y+=text(`Aclaración Manuscrita y DNI: ${p.customer.fullName} (DNI: ${p.customer.dni})`,61,y,7.5,[100,116,139],133);
-  y+=12;paragraph(`Referencia V2, no importe del pagaré: total contractual ${money(p.economics.total)}.`,8,3);paragraph('Importe, vencimiento/exigibilidad, lugar y fecha de emisión del título: PENDIENTES de confirmación jurídica. No se presume el total contractual como importe del pagaré.',8,3);requireFits(264);
+  y+=12;paragraph(`Importe propuesto del pagaré — referencia técnica pendiente de aprobación jurídica: ${money(p.economics.total)}.`,8,3);paragraph('Importe, vencimiento/exigibilidad, lugar y fecha de emisión del título: PENDIENTES de confirmación jurídica. No se presume el total contractual como importe del pagaré.',8,3);requireFits(264);
  }
  const pages=doc.getNumberOfPages();for(let pageNo=1;pageNo<=pages;pageNo++){
   doc.setPage(pageNo);text(REVIEW_WARNING,15,6,7,[153,27,27],180);

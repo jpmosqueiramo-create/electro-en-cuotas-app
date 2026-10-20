@@ -1,0 +1,256 @@
+{
+  "schemaVersion": "CONTRACT_SNAPSHOT_V2",
+  "currency": "ARS",
+  "contractId": "cv2_c19880f52f1f592c5dbe61f8494418048f327782e39d13dfc1818755f4346800",
+  "contractSnapshotId": "cv2_c19880f52f1f592c5dbe61f8494418048f327782e39d13dfc1818755f4346800_s1",
+  "snapshotVersion": 1,
+  "contractNumber": "CH-000001",
+  "numbering": {
+    "policyId": "CONTRACT_NUMBERING_V1",
+    "sequence": "1"
+  },
+  "sourceDraft": {
+    "budgetId": "synthetic-document-review",
+    "budgetVersion": 1,
+    "contractDraftId": "v1",
+    "acceptedOptionId": "option-1",
+    "revision": 1,
+    "readyDigest": "02516062983c8b2a484c0e7ee99010a232a1477ef438e25de8331820ec6a16d0"
+  },
+  "origin": {
+    "sourceCollection": "solicitudes",
+    "solicitudId": "p3-shared-id",
+    "acceptedAt": "2026-10-18T14:00:00.000Z",
+    "acceptedBy": "synthetic-admin",
+    "budgetHash": "6c01f5bc4fd1651aaa11cf323395626c7f86e5e92d94b17acaf2dd404a61f26f",
+    "acceptanceHash": "f6cbd28614e64f8ce8acc40262af1ef4ab269033128d2f731adc64cebfa3829b",
+    "draftHash": "8844dcba19649b8f2d48b6b1419bcb0a01adc87b6416d9abf4ce49212f2d74d2",
+    "preferredPlanCuotas": 12,
+    "preferredPlanAmountSnapshot": 145000
+  },
+  "acceptedReference": {
+    "schemaVersion": "BUDGET_REFERENCE_V2",
+    "referenceId": null,
+    "source": "NEW_REFERENCE",
+    "nombre": "Referencia 2",
+    "descripcion": "Referencia de compra completamente sintética para revisión. No representa una operación real.",
+    "skuInternoSnapshot": "SECRET_SKU",
+    "codigoBarrasSnapshot": "SECRET_EAN",
+    "costoProveedorSnapshot": 580000,
+    "proveedorSnapshot": "SECRET_PROVIDER",
+    "factoresSnapshot": {
+      "1": 1.1,
+      "2": 1.27,
+      "3": 1.45,
+      "4": 1.62,
+      "5": 1.79,
+      "6": 1.96,
+      "7": 2.14,
+      "8": 2.31,
+      "9": 2.48,
+      "10": 2.65,
+      "11": 2.83,
+      "12": 3,
+      "13": 3.17,
+      "14": 3.35,
+      "15": 3.52,
+      "16": 3.69,
+      "17": 3.86,
+      "18": 4.04
+    },
+    "planesActivosSnapshot": {
+      "1": false,
+      "2": false,
+      "3": false,
+      "4": false,
+      "5": false,
+      "6": false,
+      "7": false,
+      "8": false,
+      "9": false,
+      "10": false,
+      "11": false,
+      "12": true,
+      "13": false,
+      "14": false,
+      "15": false,
+      "16": false,
+      "17": false,
+      "18": true
+    },
+    "planesOfrecidos": [
+      {
+        "cuotas": 12,
+        "cuotaEstimada": 145000
+      },
+      {
+        "cuotas": 18,
+        "cuotaEstimada": 130190
+      }
+    ],
+    "fechaCotizacion": "2026-10-18T12:00:00.000Z"
+  },
+  "personalDataVersion": "AR_INDEC_2010_ADDRESS_V1",
+  "personalData": {
+    "fullName": "Persona sintética",
+    "dni": "12345678",
+    "address": "Domicilio ficticio",
+    "locality": "Localidad ficticia",
+    "province": "02",
+    "postalCode": "C1425ABC",
+    "email": "synthetic@example.test",
+    "whatsapp": "5491100000000"
+  },
+  "addressInterpretation": {
+    "jurisdictionCatalogVersion": "AR_INDEC_2010_ADDRESS_V1",
+    "provinceDisplayName": "Ciudad Autónoma de Buenos Aires",
+    "postalPolicyVersion": "AR_POSTAL_STRUCTURE_V1"
+  },
+  "employmentData": {
+    "cuil": "",
+    "employerOrWorkName": "",
+    "workAddress": ""
+  },
+  "economicTerms": {
+    "capitalAmount": 580000,
+    "contractPlanCuotas": 18,
+    "factorSnapshot": 4.04,
+    "factorComputedTotal": 2343200,
+    "roundingAdjustment": 220,
+    "serviceAmount": 1763420,
+    "contractInstallmentAmount": 130190,
+    "contractTotal": 2343420
+  },
+  "calculationPolicyVersion": "P5C_SHARED_C1_V1",
+  "roundingPolicy": "NEXT_90_V1",
+  "paymentSchedule": {
+    "calendarPolicyVersion": "P5C_EXPLICIT_MONTH_CLAMP_V1",
+    "firstInstallmentDueDate": "2026-12-15",
+    "preferredMonthlyDueDay": 30,
+    "installments": [
+      {
+        "installmentNumber": 1,
+        "dueDate": "2026-12-15",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 2,
+        "dueDate": "2027-01-30",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 3,
+        "dueDate": "2027-02-28",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 4,
+        "dueDate": "2027-03-30",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 5,
+        "dueDate": "2027-04-30",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 6,
+        "dueDate": "2027-05-30",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 7,
+        "dueDate": "2027-06-30",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 8,
+        "dueDate": "2027-07-30",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 9,
+        "dueDate": "2027-08-30",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 10,
+        "dueDate": "2027-09-30",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 11,
+        "dueDate": "2027-10-30",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 12,
+        "dueDate": "2027-11-30",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 13,
+        "dueDate": "2027-12-30",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 14,
+        "dueDate": "2028-01-30",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 15,
+        "dueDate": "2028-02-29",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 16,
+        "dueDate": "2028-03-30",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 17,
+        "dueDate": "2028-04-30",
+        "amount": 130190
+      },
+      {
+        "installmentNumber": 18,
+        "dueDate": "2028-05-30",
+        "amount": 130190
+      }
+    ]
+  },
+  "issuer": {
+    "profileId": "synthetic-profile",
+    "profileVersion": "TEST_ONLY_V1",
+    "profileHash": "06a6a9b1cadce16e28eea52189763af194b6289db57fb99831bc759e120008c6",
+    "legalName": "ENTIDAD SINTÉTICA NO PRODUCTIVA",
+    "tradeName": "PRUEBA",
+    "taxId": "SYNTHETIC_NOT_A_TAX_ID",
+    "legalAddress": "Domicilio ficticio",
+    "representative": {
+      "fullName": "Representante sintético",
+      "capacity": "SYNTHETIC_ROLE"
+    }
+  },
+  "documentContext": {
+    "policyVersion": "TEST_ONLY_V1",
+    "contractIssueDate": "2026-10-19",
+    "contractIssuePlace": "Lugar sintético",
+    "promissoryNoteIssueDate": "2026-10-19",
+    "promissoryNoteIssuePlace": "Lugar sintético",
+    "parameterSchemaId": "SYNTHETIC_PARAMETERS_V1",
+    "parameters": {}
+  },
+  "freeze": {
+    "state": "TERMS_FROZEN",
+    "preparedAt": "2026-10-18T15:00:00.000Z",
+    "readyAt": "2026-10-18T15:00:00.000Z",
+    "readyBy": "synthetic-admin",
+    "termsFrozenAt": "2026-10-19T15:00:00.000Z",
+    "termsFrozenBy": "synthetic-admin",
+    "commandId": "freeze-test",
+    "readinessPolicyVersion": "EMULATOR_FIXTURE_ONLY_V1",
+    "provenanceManifestHash": "02516062983c8b2a484c0e7ee99010a232a1477ef438e25de8331820ec6a16d0"
+  }
+}

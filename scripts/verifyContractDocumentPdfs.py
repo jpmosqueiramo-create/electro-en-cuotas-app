@@ -51,6 +51,7 @@ for name, page_count in [('mandato', 2), ('pagare', 1)]:
     else:
         for key in ['notePromise', 'noteReason', 'noteArrears']:
             assert normalize(copy[key]) in full, 'Promissory note wording changed'
+        assert 'Importe propuesto del pagaré' in full and 'referencia técnica pendiente de aprobación jurídica' in full, 'Missing proposed, non-enforceable amount warning'
         assert 'POR $ [PENDIENTE]' in full and '[IMPORTE PENDIENTE]' in full, 'Unapproved note amount assigned'
         assert f"Contrato N° {expected['contractNumber']}" in full
     # Physical anchors from the confirmed original, in PDF points (bottom origin).
