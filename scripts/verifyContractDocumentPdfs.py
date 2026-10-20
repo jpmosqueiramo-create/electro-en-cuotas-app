@@ -30,6 +30,11 @@ for name, page_count in [('mandato', 2), ('pagare', 1)]:
         assert value not in full, 'Reference personal/internal data leaked'
     assert 'NO FIRMAR' in full and not reader.get_fields(), 'Signature restriction violated'
     if name == 'mandato':
+        economic_block = full.split(copy['clauses']['2']['heading'], 1)[1].split(copy['clauses']['3']['heading'], 1)[0]
+        for label, field in [('Capital aplicado a la compra','capital'),('Servicios de Cuenta Hogar','service'),('Total contractual','total')]:
+            assert economic_block.count(label) == 1 and f"{label} {expected['economics'][field]}" in economic_block, 'Approved snapshot breakdown changed'
+        for legacy in ['Valor Neto del Bien', 'Gastos de logística + Servicio de Soporte técnico:', 'Costo Financiero Total (CFT)', 'VALOR TOTAL A FINANCIAR', 'Datos V2 del snapshot']:
+            assert legacy not in economic_block, 'Legacy breakdown still present'
         cursor = 0
         for row in expected['rows']:
             found = re.search(r'(?<!\d)' + str(row['number']) + r':\s+' + re.escape(row['date']), full[cursor:])

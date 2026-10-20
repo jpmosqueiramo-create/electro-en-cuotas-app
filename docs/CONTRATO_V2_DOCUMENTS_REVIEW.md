@@ -55,10 +55,9 @@ FIRMAR. Estas marcas y los campos pendientes son diferencias intencionales.
 | Cliente, DNI, domicilio, localidad, provincia, CP, email y WhatsApp | Copia allowlist del snapshot, sin usar datos del ejemplo original. |
 | CUIT/CUIL cliente | No existe en la proyección personal aprobada; NO CONSTA EN SNAPSHOT. Nunca se sustituye por DNI. |
 | Nombre y descripción del bien | Copia del snapshot. Cantidad y condición nuevo/usado no se presumen: pendientes. |
-| Valor Neto del Bien | No se presupone equivalencia jurídica con capitalAmount; pendiente de mapeo. |
-| Logística + soporte y CFT | El snapshot no separa estos importes. Pendientes, sin reparto 60/40 legacy. |
-| Valor total a financiar | La etiqueta legacy necesita mapeo jurídico; no se equipara automáticamente con total contractual. |
-| Capital, servicio y total V2 | Se muestran identificados como datos V2 del snapshot junto al bloque económico. No se recalculan. |
+| Capital aplicado a la compra | capitalAmount del snapshot, sin recalcular. |
+| Servicios de Cuenta Hogar | serviceAmount del snapshot, sin distribución porcentual. |
+| Total contractual | contractTotal del snapshot. |
 | Cuotas e importes | Mismos valores y orden del cronograma materializado. Sin anticipo inventado ni ventana de fechas inferida. |
 | Importe del pagaré en cifras y letras | PENDIENTE. No se presume capital, total o cuota como importe del título. El total V2 aparece sólo como referencia separada. |
 | Lugar y fecha | Valores sintéticos del contexto congelado, con advertencia de parámetros legales pendientes. No acreditan emisión o firma. |
@@ -81,7 +80,7 @@ Se excluyen costos/proveedores internos, factores, márgenes, datos laborales,
 tokens, documentos privados y metadatos ajenos. Los originales no se distribuyen
 con el código ni se usan como fondos que puedan conservar datos personales.
 
-REFERENCE_FORMAT_REVIEW_V2 y CONTRACT_REFERENCE_REVIEW_PDF_V2 identifican la nueva
+REFERENCE_FORMAT_REVIEW_V3 y CONTRACT_REFERENCE_REVIEW_PDF_V2 identifican la nueva
 revisión. Las definiciones incluyen hashes de texto, referencias y paquete. Un
 snapshot con otras definiciones se rechaza; nunca se actualizan digests o paquetes
 congelados para hacerlo compatible. Reproducir el diseño genérico anterior exige
@@ -118,7 +117,31 @@ Muestras y capturas comparativas fuera de Git:
 
 ## Límites
 
-No se emiten documentos reales ni se incorpora aprobación legal. La equivalencia
-de campos económicos y jurídicos indicada arriba sigue pendiente. Los caracteres
+No se emiten documentos reales ni se incorpora aprobación legal. Las adaptaciones
+jurídicas y las condiciones del pagaré indicadas arriba siguen pendientes. Los caracteres
 fuera de Helvetica/WinAnsi se rechazan, sin corrupción o sustituciones silenciosas.
 No hay merge, deploy, freeze ni mutaciones productivas autorizadas por este módulo.
+
+## Decisión comercial aprobada: desglose V2
+
+La cláusula SEGUNDA presenta únicamente una tabla de tres conceptos: Capital
+aplicado a la compra, Servicios de Cuenta Hogar y Total contractual, copiados de
+capitalAmount, serviceAmount y contractTotal del mismo snapshot. Se eliminan los
+importes/etiquetas legacy y el bloque duplicado de referencia V2. No se modifican
+las cláusulas jurídicas por esta decisión.
+
+Referencias textuales que requieren adaptación y aprobación legal posterior:
+
+- Título SEGUNDA: «Liquidación de Costos, Honorarios y Financiación» y su párrafo
+  introductorio: menciones a honorarios, gastos logísticos y costo financiero.
+  Deben armonizarse con los tres conceptos aprobados, sin decidir aquí su alcance.
+- TERCERA: «Valor Total indicado en la Cláusula Segunda» y garantía mediante
+  pagaré «por la suma total financiada». No fijan el importe del pagaré en V2.
+- Aclaración de facturación, SEXTA, SÉPTIMA y texto justificativo del pagaré:
+  referencias a gestión/financiación y facilidades de pago; revisión de su
+  compatibilidad con Servicios de Cuenta Hogar.
+- CUARTA y cláusula de mora del pagaré: tasa 0.5%, mora/exigibilidad; permanecen
+  texto de referencia, nunca parámetros económicos V2 aplicados por el renderer.
+
+El importe, vencimiento/exigibilidad y restantes condiciones del pagaré siguen
+pendientes; no hay emisión válida para firma ni cambio de seguridad productiva.

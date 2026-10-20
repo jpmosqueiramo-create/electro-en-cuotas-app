@@ -48,9 +48,12 @@ function render(kind:ReviewDocumentKind,p:ContractReviewProjection){
   box(15,y,180,rh,[255,255,255]);text('Pendiente',18,y+5,7.5,body,25);text(productLines.join('\n'),45,y+5,8,ink,105);text('Pendiente',157,y+5,8,body,35);y+=rh+4;
   paragraph(referenceCopy.intermediary,7.5,1);paragraph(referenceCopy.billing,7.5,6);
   clause('2');
-  // Labels retained; V2 does not define the legacy 60/40 split or its equivalence.
-  for(const line of ['• Valor Neto del Bien: PENDIENTE DE MAPEO JURÍDICO','• Gastos de logística + Servicio de Soporte técnico: PENDIENTE','• Costo Financiero Total (CFT): PENDIENTE','• VALOR TOTAL A FINANCIAR: PENDIENTE DE MAPEO JURÍDICO']){y+=text(line,20,y,8);y+=1;}
-  paragraph(`Datos V2 del snapshot — capital: ${money(p.economics.capital)}; servicio: ${money(p.economics.service)}; total contractual: ${money(p.economics.total)}.`,7.5,5);
+  // Approved V2 breakdown: display frozen amounts without any legacy allocation.
+  box(15,y,180,6,[241,245,249]);text('Concepto',18,y+4.5,8,ink,120);text('Importe ($)',145,y+4.5,8,ink,47);y+=6;
+  for(const [label,amount] of [['Capital aplicado a la compra',p.economics.capital],['Servicios de Cuenta Hogar',p.economics.service],['Total contractual',p.economics.total]] as const){
+   box(15,y,180,5,[255,255,255]);text(label,18,y+3.8,8,ink,120);text(money(amount),145,y+3.8,8,ink,47);y+=5;
+  }
+  y+=5;
   clause('3');
   box(15,y,180,6,[241,245,249]);text('Anticipo / Cuota N°',20,y+4.5,8,ink,60);text('Monto ($)',90,y+4.5,8,ink,45);text('Fecha de Vencimiento',145,y+4.5,8,ink,48);y+=6;
   // Each row contains exact materialized dates. No inferred monthly window.
