@@ -1,3 +1,4 @@
+import { operationFromAcceptance, operationRef } from './operationV2';
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
 import { validateBudgetV2 } from './budgetV2';
@@ -31,6 +32,7 @@ export async function acceptBudgetV2(db: Firestore, input: unknown, actor: strin
       return old.data() as BudgetAcceptanceV2;
     }
     if (old.exists || doc.exists) fail('La aceptación ya fue registrada. No puede reemplazarse.');
+    tx.create(operationRef(db, c.budgetId, c.version), operationFromAcceptance(candidate));
     tx.create(refs.acceptance, candidate); tx.create(refs.documentation, createDocumentationCase(candidate));
     tx.create(commandRef, { digest, version: c.version, createdAt: candidate.acceptedAt, by: actor });
     return candidate;
