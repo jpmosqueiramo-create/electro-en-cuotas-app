@@ -1,3 +1,4 @@
+import { reserveContactSlot, cleanupExpiredContactLimits } from "./publicSolicitudRateLimit";
 import { createHash } from "node:crypto";
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import { parsePublicSolicitud } from "./publicSolicitud";
@@ -5,7 +6,7 @@ import { parsePublicCatalogReference } from "./publicCatalogContract";
 
 /** One canonical operation. Replays never overwrite administrative state or captured prices. */
 export async function persistPublicSolicitud(db: Firestore, id: string, raw: unknown,
-  notify?: (id: string, payload: Record<string,unknown>)=>Promise<void>) {
+  notify?: (id: string, payload: Record<string,unknown>)=>Promise<void>, clock: () => number = Date.now) {
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))throw Error("INVALID_REQUEST");
   const input=parsePublicSolicitud(raw);
   const hash=createHash('sha256').update(JSON.stringify(input)).digest('hex');
@@ -19,6 +20,7 @@ export async function persistPublicSolicitud(db: Firestore, id: string, raw: unk
       const plan=dto?.planesPublicados.find(p=>String(p.cuotas)===input.planElegido);
       if(!dto||dto.nombre!==input.productoNombre||plan?.cuotaEstimada!==input.montoCuota)throw Error('CATALOG_SELECTION_CHANGED');
     }
+    await reserveContactSlot(tx,db,input.whatsapp,clock());
     tx.create(ref,{...input,publicSubmissionHash:hash,estado:'Pendiente',fecha:FieldValue.serverTimestamp(),fechaIso:new Date().toISOString()});
     return false;
   });
@@ -30,5 +32,7 @@ export async function persistPublicSolicitud(db: Firestore, id: string, raw: unk
     if(notify)await notify(documentId,alert);
     else await db.runTransaction(async tx=>{const a=db.collection('alertas_admin').doc(documentId);if(!(await tx.get(a)).exists)tx.create(a,alert);});
   }catch{notificationPending=true;}
+  // Cleanup never changes the confirmed result or the idempotent receipt.
+  if(!replay)try{await cleanupExpiredContactLimits(db,clock());}catch{/* Retry on a later new request. */}
   return {id:documentId,sourceCollection:'solicitudes_cuenta' as const,persisted:true as const,replay,notificationPending};
 }
