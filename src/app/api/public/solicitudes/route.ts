@@ -1,3 +1,4 @@
+import { isPublicSolicitudOriginAllowed } from "@/lib/publicSolicitudOrigin";
 import { ContactLimitExceeded } from "@/lib/publicSolicitudRateLimit";
 import { NextResponse } from "next/server";
 import { admin } from "@/lib/firebaseAdmin";
@@ -5,7 +6,7 @@ import { persistPublicSolicitud } from "@/lib/publicSolicitudService";
 export const runtime="nodejs";
 export async function POST(req: Request) {
   const origin=req.headers.get('origin');
-  if(origin&&origin!==new URL(req.url).origin)return NextResponse.json({error:'Origen no permitido.'},{status:403});
+  if(!isPublicSolicitudOriginAllowed(origin))return NextResponse.json({error:'Origen no permitido.'},{status:403});
   try {
     const text=await req.text();if(text.length>16000)return NextResponse.json({error:'Solicitud demasiado extensa.'},{status:413});
     const body=JSON.parse(text);
