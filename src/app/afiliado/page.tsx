@@ -1,5 +1,7 @@
 "use client";
 
+import { isAdminEmail } from "@/lib/adminIdentity";
+
 import { useAuth } from "@/components/AuthProvider";
 import { db, storage } from "@/lib/firebase";
 import { addDoc, collection, updateDoc, doc, getDocs, query, where, Timestamp } from "firebase/firestore";
@@ -62,7 +64,7 @@ export default function AfiliadoPage() {
     if (!authLoading) {
       if (!user) {
         router.push("/login");
-      } else if (user.email !== "jpmosqueiramo@gmail.com") {
+      } else if (!isAdminEmail(user.email)) {
         try {
           const role = localStorage.getItem("userRole");
           if (role === "cliente") {
@@ -322,7 +324,7 @@ export default function AfiliadoPage() {
   if (!user) return null;
 
   // Forzar verificación de correo electrónico (excepto admin)
-  if (!user.emailVerified && user.email !== "jpmosqueiramo@gmail.com") {
+  if (!user.emailVerified && !isAdminEmail(user.email)) {
     return (
       <div className="min-h-screen bg-[#121316] text-zinc-100 p-4 flex flex-col items-center justify-center">
         <div className="bg-[#181920] border border-zinc-800 shadow-[0_0_30px_rgba(0,0,0,0.5)] p-8 rounded-lg w-full max-w-md shadow-2xl shadow-black/90 text-center">

@@ -1,5 +1,7 @@
 "use client";
 
+import { isAdminEmail } from "@/lib/adminIdentity";
+
 import { useAuth } from "@/components/AuthProvider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -21,7 +23,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user && !loading) {
-      if (user.email === "jpmosqueiramo@gmail.com") {
+      if (isAdminEmail(user.email)) {
         router.push("/admin");
       } else {
         // Si ya está logueado y entra a esta URL, forzamos el rol a cliente
@@ -45,7 +47,7 @@ export default function LoginPage() {
       if (isLogin) {
         // Modo Ingresar
         await signInWithEmailAndPassword(auth, email, password);
-        if (email.trim().toLowerCase() === "jpmosqueiramo@gmail.com") {
+        if (isAdminEmail(email.trim().toLowerCase())) {
           router.push("/admin");
           return;
         }

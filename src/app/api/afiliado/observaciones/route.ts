@@ -1,3 +1,4 @@
+import { isAdminEmail } from "@/lib/adminIdentity";
 import { NextResponse } from "next/server";
 import { admin } from "@/lib/firebaseAdmin";
 
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
     let esActivo = false;
     if (vendedorDoc) {
       if (vendedorDoc.activo !== false) esActivo = true;
-    } else if (userEmail === "jpmosqueiramo@gmail.com") {
+    } else if (isAdminEmail(userEmail)) {
       esActivo = true;
     }
 
@@ -62,7 +63,7 @@ export async function POST(req: Request) {
       (solData.afiliadoId && (solData.afiliadoId === vendedorId || solData.afiliadoId === callerUid)) ||
       (solData.afiliadoEmail && solData.afiliadoEmail.toLowerCase().trim() === userEmail) ||
       (solData.vendedorAfiliadoEmail && solData.vendedorAfiliadoEmail.toLowerCase().trim() === userEmail) ||
-      (userEmail === "jpmosqueiramo@gmail.com");
+      (isAdminEmail(userEmail));
 
     if (!isAssigned) {
       return NextResponse.json({ error: "403:VENDEDOR_NO_AUTORIZADO: Operación no asignada a este vendedor" }, { status: 403 });

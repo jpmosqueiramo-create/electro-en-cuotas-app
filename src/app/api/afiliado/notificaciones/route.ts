@@ -1,3 +1,4 @@
+import { isAdminEmail } from "@/lib/adminIdentity";
 import { NextRequest, NextResponse } from "next/server";
 import { admin } from "@/lib/firebaseAdmin";
 
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
       vendedoresSnap.forEach((doc) => {
         if (doc.data().activo !== false) esActivo = true;
       });
-    } else if (userEmail === "jpmosqueiramo@gmail.com") {
+    } else if (isAdminEmail(userEmail)) {
       esActivo = true;
     }
 
@@ -89,7 +90,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const data = docSnap.data() || {};
-    if ((data.afiliadoEmail || "").toLowerCase().trim() !== userEmail && userEmail !== "jpmosqueiramo@gmail.com") {
+    if ((data.afiliadoEmail || "").toLowerCase().trim() !== userEmail && !isAdminEmail(userEmail)) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 

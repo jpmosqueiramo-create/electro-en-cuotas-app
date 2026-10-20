@@ -1,8 +1,8 @@
+import { isAdminEmail } from "@/lib/adminIdentity";
 import { NextRequest, NextResponse } from "next/server";
 import { admin } from "@/lib/firebaseAdmin";
 import { registrarPromesaPago } from "@/lib/expirationEngine";
 
-const ADMIN_EMAIL = "jpmosqueiramo@gmail.com";
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       vendedoresSnap.forEach((doc) => {
         if (doc.data().activo !== false) esActivo = true;
       });
-    } else if (userEmail === ADMIN_EMAIL) {
+    } else if (isAdminEmail(userEmail)) {
       esActivo = true;
     }
 
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     const solData = docSnap.data() || {};
     const solAfiliado = (solData.afiliadoEmail || solData.vendedorEmail || solData.vendedorId || solData.afiliadoId || "").toString().toLowerCase().trim();
 
-    if (solAfiliado !== userEmail && solAfiliado !== decodedToken.uid && userEmail !== ADMIN_EMAIL) {
+    if (solAfiliado !== userEmail && solAfiliado !== decodedToken.uid && !isAdminEmail(userEmail)) {
       return NextResponse.json({ error: "Operación no asignada a este vendedor" }, { status: 403 });
     }
 
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       montoPrometidoCentavos: montoPrometidoCentavos ? Number(montoPrometidoCentavos) : null,
       nota: observacion || null,
       creadaPor: userEmail,
-      creadaPorRol: userEmail === ADMIN_EMAIL ? "ADMIN" : "VENDEDOR_AFILIADO"
+      creadaPorRol: isAdminEmail(userEmail) ? "ADMIN" : "VENDEDOR_AFILIADO"
     });
 
     // Registrar notificación operativa

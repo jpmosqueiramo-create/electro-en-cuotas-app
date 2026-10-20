@@ -1,3 +1,4 @@
+import { isAdminEmail } from "@/lib/adminIdentity";
 import { NextRequest, NextResponse } from "next/server";
 import { admin } from "@/lib/firebaseAdmin";
 
@@ -12,7 +13,7 @@ export async function POST(req: NextRequest) {
     const decodedToken = await admin.auth().verifyIdToken(token);
     const userEmail = (decodedToken.email || "").toLowerCase().trim();
 
-    if (userEmail !== "jpmosqueiramo@gmail.com" && decodedToken.admin !== true) {
+    if (!isAdminEmail(userEmail)) {
       return NextResponse.json({ error: "Acceso denegado: Se requieren permisos administrativos" }, { status: 403 });
     }
 

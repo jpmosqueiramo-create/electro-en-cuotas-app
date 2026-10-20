@@ -1,29 +1,20 @@
-// Firebase Admin setup con resguardo seguro para Firebase App Hosting (Cloud Run)
+// Explicit project selection; missing/mixed configuration must never select production.
 import admin from "firebase-admin";
+import { resolveServerProject } from "./firebaseEnvironment";
 
-if (!admin.apps.length) {
-  try {
-    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-    const projectId = process.env.GCLOUD_PROJECT || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "negocio-facil-page";
-
-    if (clientEmail && privateKey) {
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId,
-          clientEmail,
-          privateKey: privateKey.replace(/\\n/g, "\n"),
-        })
-      });
-    } else {
-      // En Firebase App Hosting (Cloud Run), usar Application Default Credentials automáticas de GCP
-      admin.initializeApp({
-        projectId
-      });
-    }
-  } catch (err) {
-    console.error("Error al inicializar Firebase Admin en App Hosting:", err);
-  }
+const projectId = resolveServerProject(process.env);
+const existing = admin.apps.find(app => app?.name === "[DEFAULT]");
+if (existing && existing.options.projectId !== projectId) {
+  throw new Error("FIREBASE_ADMIN_EXISTING_APP_PROJECT_MISMATCH");
 }
-
+if (!existing) {
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+  admin.initializeApp({
+    projectId,
+    ...(clientEmail && privateKey ? {
+      credential: admin.credential.cert({ projectId, clientEmail, privateKey: privateKey.replace(/\\n/g, "\n") })
+    } : {}) // Runtime ADC in App Hosting. No credentials or errors are logged.
+  });
+}
 export { admin };

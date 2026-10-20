@@ -1,3 +1,4 @@
+import { isAdminEmail } from "@/lib/adminIdentity";
 import { NextResponse } from "next/server";
 import { admin } from "@/lib/firebaseAdmin";
 
@@ -43,7 +44,7 @@ export async function GET(req: Request) {
       }
     }
 
-    if (!esActivo && userEmail === "jpmosqueiramo@gmail.com") {
+    if (!esActivo && isAdminEmail(userEmail)) {
       esActivo = true;
     }
 
