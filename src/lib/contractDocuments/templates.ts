@@ -1,6 +1,6 @@
 // Reference wording transcribed from user-confirmed PDFs; NOT legal approval.
 export const REVIEW_WARNING = 'BORRADOR — NO VÁLIDO PARA FIRMA — PENDIENTE DE REVISIÓN LEGAL.';
-export const REVIEW_VERSION = 'REFERENCE_FORMAT_REVIEW_V3';
+export const REVIEW_VERSION = 'REFERENCE_FORMAT_REVIEW_V4';
 export const referencePdfHashes = {
   "mandate": "0ff092023c4c1a9cf120c8a9fedbd77016e9000d22301897911562ff8bca64c4",
   "promissoryNote": "d295df5dd78c43d18db4eb74cc17d1f9595d8aa65cfcf77d823ba0fb69e82b25"
