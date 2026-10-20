@@ -1,0 +1,14 @@
+import { createServer } from 'node:http';
+import type { generateContractReviewPair } from '../../src/lib/contractDocuments/pdf';
+type Pair=ReturnType<typeof generateContractReviewPair>;
+export function reviewPreviewHtml(){return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cuenta Hogar - Revisión documental sintética</title><style>body{font:16px system-ui;background:#f7f5f0;color:#173e3b;margin:0;padding:24px}main{max-width:1200px;margin:auto}.notice{padding:16px;border:1px solid #b47737;border-radius:10px;background:#fff3dd}section{background:white;border:1px solid #ddd;border-radius:12px;padding:20px;margin:20px 0}a{display:inline-flex;min-height:44px;align-items:center;color:#173e3b}iframe{width:100%;height:760px;border:1px solid #ddd}h1{font-size:28px}@media(max-width:500px){body{padding:12px}iframe{height:560px}}</style><main><h1>Revisión administrativa de documentos V2</h1><p class="notice">BORRADOR — NO VÁLIDO PARA FIRMA — PENDIENTE DE REVISIÓN LEGAL.</p><p>Datos exclusivamente sintéticos. Sin conexión a clientes, bases productivas o emisión definitiva. La identidad de LOOP GESTIÓN INTEGRAL S.R.L. sigue pendiente de validación documental.</p><section><h2>Contrato de mandato</h2><a href="./mandato.pdf" target="_blank" rel="noreferrer">Abrir PDF de revisión</a><iframe title="Borrador de mandato" src="./mandato.pdf"></iframe></section><section><h2>Pagaré</h2><p>El importe del título y sus condiciones legales permanecen pendientes. El total contractual sólo se muestra como referencia.</p><a href="./pagare.pdf" target="_blank" rel="noreferrer">Abrir PDF de revisión</a><iframe title="Borrador de pagaré" src="./pagare.pdf"></iframe></section><a href="./manifest.json">Ver manifiesto de integridad</a></main></html>`;}
+export function createSyntheticReviewServer(pair:Pair){
+ if(process.env.NODE_ENV==='production')throw Error('PRODUCTION_DOCUMENT_ISSUANCE_DISABLED');
+ const content:Record<string,{type:string;data:string|Uint8Array}>={'/':{type:'text/html; charset=utf-8',data:reviewPreviewHtml()},'/mandato.pdf':{type:'application/pdf',data:pair.mandate.bytes},'/pagare.pdf':{type:'application/pdf',data:pair.promissoryNote.bytes},'/manifest.json':{type:'application/json',data:JSON.stringify(pair.manifest,null,2)}};
+ return createServer((req,res)=>{
+  res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('Content-Security-Policy',"default-src 'none'; frame-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'none'");
+  if(!['GET','HEAD'].includes(req.method??'')){res.writeHead(405,{Allow:'GET, HEAD'});res.end();return;}
+  const item=content[req.url??''];if(!item){res.writeHead(404);res.end();return;}
+  res.writeHead(200,{'Content-Type':item.type});res.end(req.method==='HEAD'?undefined:item.data);
+ });
+}
