@@ -1,3 +1,4 @@
+import { operationFromAcceptance, operationRef, verifyOperation, type OperationViewV2 } from './operationV2';
 import { buildReadyEvidence, verifyReadyEvidence, type ContractReadyEvidenceV1 } from './contractReadyV2';
 import type { BudgetV2 } from './budgetV2';
 import { PERSONAL_ADDRESS_VERSION } from './contractAddress';
@@ -18,7 +19,22 @@ export function contractRefs(db:Firestore,budgetId:string,version:number) {
 export async function getContract(db:Firestore,id:string,v:number){
   const r=contractRefs(db,id,v);
   return db.runTransaction(async tx=>{
-    const snapshot=await tx.get(r.draft);if(!snapshot.exists)return {draft:null,requests:[],submissions:[],readiness:null};
+    const [snapshot, bs, as, os, docs] = await Promise.all([tx.get(r.draft), tx.get(r.budget), tx.get(r.acceptance), tx.get(operationRef(db,id,v)), tx.get(r.family.collection('documentation').doc(String(v)))]);
+    let operation: OperationViewV2 | null = null;
+    if (as.exists) {
+      if (!bs.exists) reject('Origen operativo inexistente.');
+      const budget=bs.data();validateBudgetV2(budget,privateBudgetReferenceId);
+      const acceptance=as.data() as BudgetAcceptanceV2;
+      // Reuse the existing full origin validation without persisting a draft.
+      newContractDraft(budget,acceptance,'read-only',acceptance.acceptedAt);
+      const expected=operationFromAcceptance(acceptance);
+      if (os.exists) verifyOperation(os.data(),expected);
+      if (snapshot.exists && (snapshot.data()!.budgetId!==id || snapshot.data()!.budgetVersion!==v || snapshot.data()!.acceptedOptionId!==acceptance.acceptedOptionId)) reject('Borrador de otra operación.');
+      operation={identity:expected,registered:os.exists,budgetState:budget.estado,
+        contractState:snapshot.exists?snapshot.data()!.status:'NOT_CREATED',documentationStage:docs.data()?.workflowStage==='DOCUMENTACION'?'DOCUMENTACION':'NOT_AVAILABLE',
+        pendingProcesses:['PROVEEDOR','LOGISTICA','AFILIADO','CLIENTE','COBRANZA']};
+    } else if (os.exists || snapshot.exists) reject('Falta aceptación de origen.');
+    if(!snapshot.exists)return {draft:null,requests:[],submissions:[],readiness:null,operation};
     const draft=snapshot.data() as ContractDraftV2;
     let readiness:ContractReadyEvidenceV1|null=null;
     if(draft.status==='READY_TO_FORMALIZE'){
@@ -28,7 +44,7 @@ export async function getContract(db:Firestore,id:string,v:number){
       readiness=e.data() as ContractReadyEvidenceV1;verifyReadyEvidence(b.data() as BudgetV2,a.data() as BudgetAcceptanceV2,draft,readiness);
     }
     const [requests,submissions]=await Promise.all([tx.get(r.draft.collection('requests')),tx.get(r.draft.collection('submissions'))]);
-    return {draft,readiness,requests:requests.docs.map(x=>{const {tokenHash:_hash,submissionDigest:_digest,...safe}=x.data();void _hash;void _digest;return safe;}),submissions:submissions.docs.map(x=>x.data() as ClientDataSubmissionV2)};
+    return {draft,readiness,operation,requests:requests.docs.map(x=>{const {tokenHash:_hash,submissionDigest:_digest,...safe}=x.data();void _hash;void _digest;return safe;}),submissions:submissions.docs.map(x=>x.data() as ClientDataSubmissionV2)};
   });
 }
 const actionKeys:Record<string,string[]>={OPEN_OR_CREATE:[],MARK_READY_TO_FORMALIZE:[],RETURN_TO_DRAFT:['reason'],UPDATE_PERSONAL_DATA:['personalData'],UPDATE_EMPLOYMENT_DATA:['employmentData'],SET_CONTRACT_PLAN:['contractPlanCuotas'],SET_PAYMENT_DATES:['firstInstallmentDueDate','preferredMonthlyDueDay'],CREATE_CLIENT_DATA_REQUEST:[],REVOKE_CLIENT_DATA_REQUEST:[],APPLY_CLIENT_SUBMISSION:['submissionId']};

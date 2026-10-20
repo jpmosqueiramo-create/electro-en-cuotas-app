@@ -54,7 +54,7 @@ async function main() {
     `${root}/${run}`, `${root}/${run}/children/existing`, `${root}/${run}/children/existing/deep/existing`,
   ]);
   const draft = `presupuestos_v2/${run}/contracts/v1`;
-  protectedPaths.push(draft, ...['commands', 'events', 'requests', 'submissions'].map(part => `${draft}/${part}/existing`), `${draft}/requests/existing/deep/existing`);
+  protectedPaths.push(`${draft}/operation/identity`, draft, ...['commands', 'events', 'requests', 'submissions', 'operation'].map(part => `${draft}/${part}/existing`), `${draft}/requests/existing/deep/existing`);
   // Admin SDK is used only to seed synthetic Emulator records, never to assert Rules.
   for (const path of protectedPaths) await db.doc(path).set(seed);
   for (const [role, bearer] of Object.entries(roles)) {
@@ -124,7 +124,10 @@ async function main() {
       assert.equal(response.status, status, `API ${label} ${method}`);
     }
   }
-  assert.equal((await api.GET(new NextRequest('http://localhost:3000/api/admin/test', { headers: { Authorization: `Bearer ${adminToken}` } }), ctx)).status, 200);
+  const adminRequest = () => new NextRequest('http://localhost:3000/api/admin/test', { headers: { Authorization: `Bearer ${adminToken}` } });
+  // Seeded marker drafts intentionally have no valid Acceptance: do not expose corrupt origins.
+  assert.equal((await api.GET(adminRequest(), ctx)).status, 409);
+  assert.equal((await api.GET(adminRequest(), { params: Promise.resolve({ budgetId: run + '-empty', version: '1' }) })).status, 200);
   console.log(`RULES_DENIAL_ASSERTIONS = ${denies}; LEGITIMATE_ACCESS_ASSERTIONS = ${allows}`);
   console.log('CONTRACT_FIRESTORE_SECURITY = PASS; OVERLAPPING_MATCH_BYPASSES = 0');
   console.log('BUDGET_ACCEPTANCE_P4_AND_OTHER_MODULE_PERMISSIONS = PASS; ADMIN_API_AUTHORIZATION = PASS');

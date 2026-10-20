@@ -19,6 +19,7 @@ export async function testContractV2Browser(){
  try{
   await browser.command('Page.handleJavaScriptDialog',{accept:true}).catch(()=>{});
   await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:800,deviceScaleFactor:1,mobile:false});await browser.navigate('/login');await browser.until("typeof window.__FIREBASE_SIGN_IN__==='function'",'auth');await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(adminEmail)},${JSON.stringify(adminPassword)}).then(()=>true)`);await open();
+  assert.equal(await browser.evaluate("document.querySelector('[data-testid=operation-v2]')?.textContent.includes('op_')"),true);
   assert.equal((await r.draft.get()).data()!.economicTerms,null);assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"Plan contractual definitivo\"]').value"),'');await capture('01-contract-composer.png','[data-testid=contract-composer]');
   await browser.change('[data-testid=contract-personal] input[name=address]','Domicilio Admin');await browser.change('[data-testid=contract-personal] input[name=email]','admin-demo@example.test');await browser.clickText('Guardar datos personales');await idle();
   await select('[aria-label="Plan contractual definitivo"]','8');await browser.until("document.querySelector('[data-testid=contract-economics]').textContent.includes('167.490')",'eight economics');await idle();assert.equal((await r.draft.get()).data()!.economicTerms.contractPlanCuotas,8);await capture('02-contract-economics-8-installments.png','[data-testid=contract-economics]');
