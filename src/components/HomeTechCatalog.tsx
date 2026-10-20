@@ -5,7 +5,8 @@ import Footer from "@/components/Footer";
 import InstagramSection from "@/components/InstagramSection";
 
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { createPublicSolicitudSender } from "@/lib/publicSolicitudClient";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
@@ -51,12 +52,15 @@ export default function HomeTechCatalog() {
 
   // Quick Form State
   const [qfNombre, setQfNombre] = useState("");
-  const [qfDni, setQfDni] = useState("");
+  const qfDni = "";
   const [qfWhatsapp, setQfWhatsapp] = useState("");
   const [qfLocalidad, setQfLocalidad] = useState("");
   const [qfNecesidad, setQfNecesidad] = useState("");
   const [qfReferente, setQfReferente] = useState("");
   const [qfSubmitting, setQfSubmitting] = useState(false);
+
+  const [qfError,setQfError]=useState("");
+  const qfSender=useRef<ReturnType<typeof createPublicSolicitudSender>|null>(null);
 
   // Modal Solicitud de Nueva Localidad
   const [modalLocalidadOpen, setModalLocalidadOpen] = useState(false);
@@ -125,91 +129,17 @@ export default function HomeTechCatalog() {
     if (qfSubmitting) return;
     setQfSubmitting(true);
     
+    setQfError("");
     try {
-const payloadBuscás = {
-        tipo: "contacto_rapido",
-        nombreCompleto: qfNombre,
-        numeroDni: qfDni || "",
-        whatsapp: qfWhatsapp || "",
-        direccion: qfLocalidad || "",
-        localidad: qfLocalidad || "",
-        productoNombre: qfNecesidad || "",
-        referidoPor: qfReferente || null,
-        fecha: serverTimestamp(),
-        fechaIso: new Date().toISOString(),
-        fechaCreacion: serverTimestamp(),
-        estado: "Pendiente"
-      };
-
-      let solId = "";
-      try {
-        const solRef = await addDoc(collection(db, "solicitudes_cuenta"), payloadBuscás);
-        solId = solRef.id;
-      } catch (errDb) {
-        console.warn("Aviso Firestore solicitudes_cuenta:", errDb);
-      }
-
-      try {
-        await addDoc(collection(db, "solicitudes"), {
-          clienteEmail: qfWhatsapp || "contacto_rapido",
-          datosPersonales: {
-            nombreCompleto: qfNombre,
-            numeroDni: qfDni,
-            telefono: qfWhatsapp,
-            direccion: qfLocalidad,
-            localidad: qfLocalidad
-          },
-          productoDeseado: qfNecesidad,
-          necesidad: qfNecesidad,
-          estado: "PENDIENTE",
-          estadoEntrega: "PENDIENTE_ENTREGA",
-          tipo: "contacto_rapido",
-          referidoPor: qfReferente || null,
-          fechaCreacion: serverTimestamp(),
-          fechaIso: new Date().toISOString()
-        });
-      } catch (errSol) {
-        console.warn("Aviso Firestore solicitudes:", errSol);
-      }
-
-      try {
-        await addDoc(collection(db, "alertas_admin"), {
-          tipo: "NUEVO_PRESUPUESTO",
-          clienteEmail: qfWhatsapp || qfNombre,
-          mensaje: `📥 Solicitud de Opciones${solId ? ` [ID: ${solId}]` : ""}: ${qfNombre} (DNI: ${qfDni}, Tel: ${qfWhatsapp}, Loc: ${qfLocalidad}) - Busca: ${qfNecesidad}`,
-          fechaCreacion: serverTimestamp(),
-          leida: false
-        });
-      } catch (errAlt) {
-        console.warn("Aviso Firestore alertas_admin:", errAlt);
-      }
-
-      try {
-        await fetch("/api/notificar-presupuesto", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            nombre: qfNombre,
-            dni: qfDni,
-            whatsapp: qfWhatsapp,
-            localidad: qfLocalidad,
-            necesidad: qfNecesidad,
-            referente: qfReferente,
-            tipo: "contacto_rapido"
-          })
-        });
-      } catch (e) {
-        console.error("Error al enviar email:", e);
-      }
-
-    } catch (err) {
-      console.error("Error al guardar solicitud:", err);
-    } finally {
-      const refText = qfReferente ? ` Me recomendó el vendedor afiliado / cliente: ${qfReferente}.` : "";
-      const mensaje = `Hola, quiero consultar opciones de producto y financiación. Soy ${qfNombre}  de ${qfLocalidad}. Necesito: ${qfNecesidad}. Mi WhatsApp es ${qfWhatsapp}.${refText}`;
-      const wame = `https://wa.me/5491125659686?text=${encodeURIComponent(mensaje)}`;
-      window.location.href = wame;
-    }
+      qfSender.current ??= createPublicSolicitudSender('quick');
+      await qfSender.current({tipo:'contacto_rapido',nombreCompleto:qfNombre,numeroDni:qfDni,
+        whatsapp:qfWhatsapp,localidad:qfLocalidad,productoNombre:qfNecesidad,referidoPor:qfReferente});
+      const refText=qfReferente?` Me recomendó: ${qfReferente}.`:'';
+      const mensaje=`Hola, quiero consultar opciones para gestionar una compra. Soy ${qfNombre} de ${qfLocalidad}. Necesito: ${qfNecesidad}. Mi WhatsApp es ${qfWhatsapp}.${refText}`;
+      window.location.href=`https://wa.me/5491125659686?text=${encodeURIComponent(mensaje)}`;
+    } catch(error) {
+      setQfError(error instanceof Error?error.message:'No pudimos confirmar el registro. Reintentá.');
+    } finally {setQfSubmitting(false);}
   };
 
   const handleSolicitarLocalidad = async (e: React.FormEvent) => {
@@ -794,6 +724,7 @@ const payloadBuscás = {
               </div>
 
               <div className="pt-2 space-y-3">
+                {qfError && <p role="alert" className="text-sm text-white">{qfError}</p>}
                 <button 
                   type="submit" 
                   disabled={qfSubmitting}
