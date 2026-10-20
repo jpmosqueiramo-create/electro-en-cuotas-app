@@ -1,9 +1,13 @@
+import { assertStagingConfig } from "./firebaseEnvironment";
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, connectFirestoreEmulator, Firestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAuth, connectAuthEmulator, Auth } from "firebase/auth";
 
 export function validateFirebaseConfig(env: Record<string, string | undefined>): { ok: boolean; error?: string } {
+  try { assertStagingConfig(env); } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "STAGING_CONFIG_INVALID" };
+  }
   const isProd = env.NODE_ENV === "production";
   const apiKey = env.NEXT_PUBLIC_FIREBASE_API_KEY;
   const projectId = env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
@@ -33,7 +37,19 @@ export function validateFirebaseConfig(env: Record<string, string | undefined>):
   return { ok: true };
 }
 
-const validation = validateFirebaseConfig(process.env);
+const validation = validateFirebaseConfig({
+  NODE_ENV: process.env.NODE_ENV,
+  NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
+  NEXT_PUBLIC_ADMIN_EMAIL: process.env.NEXT_PUBLIC_ADMIN_EMAIL,
+  NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  NEXT_PUBLIC_E2E_TEST_MODE: process.env.NEXT_PUBLIC_E2E_TEST_MODE,
+  NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST: process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST
+});
 if (!validation.ok) {
   throw new Error(validation.error);
 }
@@ -70,6 +86,9 @@ const firebaseConfig = {
   ...(measurementId ? { measurementId } : {})
 };
 
+if (getApps().length && getApp().options.projectId !== firebaseConfig.projectId) {
+  throw new Error("FIREBASE_CLIENT_EXISTING_APP_PROJECT_MISMATCH");
+}
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const db: Firestore = getFirestore(app);
 export const storage = getStorage(app);

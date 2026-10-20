@@ -1,5 +1,7 @@
 "use client";
 
+import { isAdminEmail } from "@/lib/adminIdentity";
+
 import { useAuth } from "@/components/AuthProvider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -17,7 +19,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user && !loading) {
-      if (user.email === "jpmosqueiramo@gmail.com") {
+      if (isAdminEmail(user.email)) {
         router.push("/admin");
       } else {
         try {

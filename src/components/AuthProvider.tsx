@@ -1,5 +1,7 @@
 "use client";
 
+import { isAdminEmail } from "@/lib/adminIdentity";
+
 import { createContext, useContext, useEffect, useState } from "react";
 import { 
   onAuthStateChanged, 
@@ -23,7 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
 });
 
-export const ADMIN_EMAIL = "jpmosqueiramo@gmail.com";
+export { ADMIN_EMAIL } from "@/lib/adminIdentity";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -40,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  const isAdmin = isAdminEmail(user?.email);
 
   const logout = async () => {
     if (typeof window !== "undefined") {

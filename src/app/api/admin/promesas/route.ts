@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       fechaPrometida,
       montoPrometidoCentavos: montoPrometidoCentavos ? Number(montoPrometidoCentavos) : null,
       nota,
-      creadaPor: authResult.email || "jpmosqueiramo@gmail.com",
+      creadaPor: authResult.email!,
       creadaPorRol: "ADMIN"
     });
 

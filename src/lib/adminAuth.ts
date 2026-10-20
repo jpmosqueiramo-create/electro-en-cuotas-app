@@ -1,7 +1,8 @@
 import { admin } from "./firebaseAdmin";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export const ADMIN_EMAIL = "jpmosqueiramo@gmail.com";
+import { isAdminEmail } from "./adminIdentity";
+export { ADMIN_EMAIL } from "./adminIdentity";
 
 export interface AdminAuthResult {
   authorized: boolean;
@@ -15,7 +16,7 @@ export interface AdminAuthResult {
  * Valida el token Bearer y verifica estricta pertenencia a ADMIN_EMAIL.
  * Elimina permisos genéricos por claim decodedToken.admin.
  */
-export async function verifyAdminAuth(req: NextRequest): Promise<AdminAuthResult> {
+export async function verifyAdminAuth(req: Request): Promise<AdminAuthResult> {
   try {
     const authHeader = req.headers.get("authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -32,11 +33,11 @@ export async function verifyAdminAuth(req: NextRequest): Promise<AdminAuthResult
     const decodedToken = await admin.auth().verifyIdToken(token);
     const userEmail = (decodedToken.email || "").toLowerCase().trim();
 
-    if (userEmail !== ADMIN_EMAIL.toLowerCase()) {
+    if (!isAdminEmail(userEmail)) {
       return {
         authorized: false,
         errorResponse: NextResponse.json(
-          { error: `Acceso denegado: Se requieren permisos del Administrador Único (${ADMIN_EMAIL})` },
+          { error: "Acceso denegado: Se requieren permisos de administración" },
           { status: 403 }
         )
       };
@@ -47,12 +48,11 @@ export async function verifyAdminAuth(req: NextRequest): Promise<AdminAuthResult
       email: userEmail,
       uid: decodedToken.uid
     };
-  } catch (error: any) {
-    console.error("Error en verifyAdminAuth:", error);
+  } catch {
     return {
       authorized: false,
       errorResponse: NextResponse.json(
-        { error: "Token de autenticación expirado o inválido: " + (error.message || "") },
+        { error: "Token de autenticación expirado o inválido" },
         { status: 401 }
       )
     };
@@ -60,6 +60,6 @@ export async function verifyAdminAuth(req: NextRequest): Promise<AdminAuthResult
 }
 
 export async function validarAdminToken(req: Request): Promise<{ valid: boolean; adminUid?: string; uid?: string; email?: string }> {
-  const res = await verifyAdminAuth(req as any);
+  const res = await verifyAdminAuth(req);
   return { valid: res.authorized, adminUid: res.uid, uid: res.uid, email: res.email };
 }

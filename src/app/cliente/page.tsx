@@ -1,5 +1,7 @@
 "use client";
 
+import { isAdminEmail } from "@/lib/adminIdentity";
+
 import { useAuth } from "@/components/AuthProvider";
 import { db, storage } from "@/lib/firebase";
 import { addDoc, collection, getDocs, query, where, Timestamp, updateDoc, doc } from "firebase/firestore";
@@ -130,7 +132,7 @@ export default function ClientePage() {
     if (!loading) {
       if (!user) {
         router.push("/login");
-      } else if (user.email !== "jpmosqueiramo@gmail.com") {
+      } else if (!isAdminEmail(user.email)) {
         try {
           const role = localStorage.getItem("userRole");
           if (role === "afiliado") {
@@ -484,7 +486,7 @@ export default function ClientePage() {
 
   if (!user) return null;
 
-  if (!user.emailVerified && user.email !== "jpmosqueiramo@gmail.com") {
+  if (!user.emailVerified && !isAdminEmail(user.email)) {
     return (
       <div className="min-h-screen bg-[#111318] text-white p-6 md:p-8 flex flex-col items-center justify-center font-sans">
         <div className="bg-[#1B2027] border border-[#252A32] p-8 md:p-10 rounded-3xl text-center max-w-lg shadow-2xl space-y-6">

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
+  if (process.env.NEXT_PUBLIC_APP_ENV === "staging" ||
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === "cuenta-hogar-staging") {
+    return NextResponse.json({ success: false, error: "Notificaciones externas deshabilitadas en staging" }, { status: 503 });
+  }
   try {
     const body = await req.json();
     const { nombre, dni, whatsapp, localidad, necesidad, referente, tipo } = body;
