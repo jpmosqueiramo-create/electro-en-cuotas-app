@@ -73,7 +73,7 @@ export function contractSchedule(e:ContractEconomicTermsV2, first:string, day:nu
   });
 }
 export interface ContractDraftV2 {
-  schemaVersion:'CONTRACT_DRAFT_V2'; contractDraftId:string;budgetId:string;budgetVersion:number;acceptedOptionId:string;revision:number;status:'DRAFT';
+  schemaVersion:'CONTRACT_DRAFT_V2'; contractDraftId:string;budgetId:string;budgetVersion:number;acceptedOptionId:string;revision:number;status:'DRAFT'|'READY_TO_FORMALIZE';readyEvidenceId?:string|null;
   acceptedReferenceSnapshot:Omit<BudgetReferenceSnapshotV2,'imagenUrls'>; acceptedAt:string;preferredPlanCuotas:number|null;
   personalDataVersion?:PersonalDataVersion;personalData:ContractPersonalDataV2;employmentData:ContractEmploymentDataV2;economicTerms:ContractEconomicTermsV2|null;
   firstInstallmentDueDate:string|null;preferredMonthlyDueDay:number|null;paymentScheduleDraft:ContractPaymentScheduleV2;
