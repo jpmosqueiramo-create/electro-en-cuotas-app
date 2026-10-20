@@ -1,0 +1,76 @@
+import './helpers/requireSafeEmulatorEnvironment';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { NextRequest } from 'next/server';
+import { admin } from '../src/lib/firebaseAdmin';
+import { fixture } from './testContractV2';
+import { contractRefs } from '../src/lib/contractV2Server';
+import { acceptBudgetV2 } from '../src/lib/budgetAcceptanceV2Server';
+import { fulfillmentCommand,fulfillmentRef,readFulfillment } from '../src/lib/operationFulfillmentV2Server';
+import { operationRef } from '../src/lib/operationV2';
+import type { FulfillmentAction } from '../src/lib/operationFulfillmentV2';
+import * as api from '../src/app/api/admin/presupuestos-v2/[budgetId]/versions/[version]/fulfillment/route';
+import { ADMIN_EMAIL } from '../src/lib/adminAuth';
+async function main() {
+ const db=admin.firestore(),id=`fulfillment-${randomUUID()}`,r=contractRefs(db,id,1),{b}=fixture(id);
+ await r.budget.set(b);
+ await assert.rejects(readFulfillment(db,id,1),/Acceptance/);
+ await assert.rejects(fulfillmentCommand(db,id,1,{commandId:'no-accept',operationId:'op_'+'0'.repeat(64),expectedRevision:0,action:'PLACE_ORDER',data:{orderDate:'2026-01-01'}},'admin'),/Acceptance/);
+ await acceptBudgetV2(db,{budgetId:id,version:1,acceptedOptionId:'option-1',preferredPlanCuotas:12,commandId:'accept'},'admin');
+ const original=JSON.stringify({b:(await r.budget.get()).data(),a:(await r.acceptance.get()).data()});
+ const legacy=db.collection('solicitudes').doc(b.solicitudId);await legacy.set({marker:'HISTORICAL_UNCHANGED'});
+ const initial=await readFulfillment(db,id,1);assert.equal(initial.state.budgetedCost,580000);assert.equal((await fulfillmentRef(db,id,1).get()).exists,false);
+ let state=initial.state;
+ const command=(action:FulfillmentAction,data:Record<string,unknown>)=>({commandId:randomUUID(),operationId:initial.identity.operationId,expectedRevision:state.revision,action,data});
+ const exec=async(action:FulfillmentAction,data:Record<string,unknown>={})=>{const c=command(action,data),result=await fulfillmentCommand(db,id,1,c,'admin');state=result.state;return {c,result};};
+ const update={providerName:'Proveedor sintético',providerReference:'DEMO-123',estimatedAvailabilityDate:'2026-01-02',notes:'No real'};
+ const same=command('UPDATE_ORDER',update),retries=await Promise.all(Array.from({length:6},()=>fulfillmentCommand(db,id,1,same,'admin')));
+ assert.equal(retries.filter(x=>!x.replay).length,1);assert(retries.every(x=>x.state.revision===1));state=retries[0].state;
+ const revision=state.revision,concurrent=await Promise.allSettled([1,2].map(n=>fulfillmentCommand(db,id,1,{...same,commandId:randomUUID(),expectedRevision:revision,data:{...update,notes:`actor-${n}`}},'admin')));
+ assert.equal(concurrent.filter(x=>x.status==='fulfilled').length,1);state=(await readFulfillment(db,id,1)).state;
+ await assert.rejects(fulfillmentCommand(db,id,1,command('READY_FOR_PICKUP',{}),'admin'),/Transición/);
+ await exec('PLAN_PICKUP',{plannedPickupDate:'2026-01-03',pickupResponsible:'Retirante demo'});assert.equal(state.actualPickupDate,null);assert.equal(state.providerState,'PENDIENTE_PEDIDO');
+ await exec('CANCEL_ORDER',{reason:'Cancelación de prueba'});await assert.rejects(fulfillmentCommand(db,id,1,command('PLACE_ORDER',{orderDate:'2026-01-01'}),'admin'));
+ await exec('REOPEN_ORDER',{reason:'Reapertura explícita'});assert.equal(state.providerState,'PENDIENTE_PEDIDO');
+ await exec('PLACE_ORDER',{orderDate:'2026-01-01'});assert.equal((await r.draft.get()).exists,false,'No formalized contract or draft required');
+ await exec('CONFIRM_ORDER',{actualCost:600000,confirmedAvailabilityDate:'2026-01-02'});
+ assert.equal((await readFulfillment(db,id,1)).costDifference,20000);
+ await exec('READY_FOR_PICKUP');await exec('UPDATE_AVAILABILITY',{confirmedAvailabilityDate:'2026-01-02',reason:'Corrección explícita'});assert.equal(state.providerState,'CONFIRMADO');await exec('READY_FOR_PICKUP');await exec('RECORD_PICKUP',{actualPickupDate:'2026-01-03',pickupResponsible:'Retirante demo'});
+ assert.equal(state.providerState,'RETIRADO');assert.equal(state.logisticsState,'RETIRADO');
+ await exec('RECEIVE',{actualReceiptDate:'2026-01-04',custodyLocation:'Depósito demo',custodian:'Custodio demo',visualCondition:'DANOS_VISIBLES',notes:'Caja dañada'});
+ assert.equal(state.incidents.length,1);const trip={tripReference:'VIAJE-DEMO',plannedTripDate:'2026-12-10',carrier:'Transportista demo'};
+ await assert.rejects(fulfillmentCommand(db,id,1,command('PLAN_TRIP',trip),'admin'),/incidencias/);
+ await exec('RESOLVE_INCIDENT',{incidentId:state.incidents[0].id,resolution:'Inspección administrativa ficticia'});await exec('PLAN_TRIP',trip);
+ assert.equal(state.logisticsState,'VIAJE_PROGRAMADO');assert.equal(state.actualReceiptDate,'2026-01-04');
+ await exec('PLAN_DELIVERY',{destinationLocality:'Localidad demo',estimatedDeliveryDate:'2026-12-11',deliveryResponsible:'Responsable demo'});
+ assert.equal(state.logisticsState,'ENTREGA_PROGRAMADA');assert.equal(state.deliveryClosure,'BLOCKED_PHYSICAL_SIGNATURES_REQUIRED');
+ await assert.rejects(fulfillmentCommand(db,id,1,{...command('PLAN_DELIVERY',{}),action:'COMPLETE_DELIVERY',data:{mandateSigned:true,noteSigned:true,deliverySigned:true}},'admin'));
+ await exec('REJECT_DAMAGED',{actualDate:'2026-01-05',custodyLocation:'Custodia de rechazados demo',custodian:'Custodio demo',description:'Rechazo por daño visible'});
+ assert.equal(state.logisticsState,'EN_CUSTODIA_POR_RECHAZO');await assert.rejects(fulfillmentCommand(db,id,1,command('RESUME_FROM_CUSTODY',{reason:'intento'}),'admin'),/incidencias/);
+ await exec('RESOLVE_INCIDENT',{incidentId:state.incidents.at(-1)!.id,resolution:'Resuelto por Administración'});await exec('RESUME_FROM_CUSTODY',{reason:'Reprogramar con custodia verificada'});
+ assert.equal(state.logisticsState,'RECIBIDO');assert.equal(state.estimatedDeliveryDate,null);
+ for(const invalid of [{actualCost:-1,reason:'x'},{actualCost:1.234,reason:'x'},{actualCost:1,reason:''}])await assert.rejects(fulfillmentCommand(db,id,1,command('UPDATE_COST',invalid),'admin'));
+ await assert.rejects(fulfillmentCommand(db,id,1,command('RECORD_PICKUP',{actualPickupDate:'2099-01-01',pickupResponsible:'x'}),'admin'));
+ // Aborting a transaction must not consume a revision or create a command/event.
+ const aborted=command('UPDATE_COST',{actualCost:610000,reason:'Simulated abort'}),before=state.revision,originalTx=db.runTransaction.bind(db);
+ db.runTransaction=((fn:Parameters<typeof db.runTransaction>[0])=>originalTx(async tx=>{await fn(tx);throw Error('INJECTED_ABORT');})) as typeof db.runTransaction;
+ try{await assert.rejects(fulfillmentCommand(db,id,1,aborted,'admin'),/INJECTED_ABORT/);}finally{db.runTransaction=originalTx;}
+ assert.equal((await readFulfillment(db,id,1)).state.revision,before);assert.equal((await fulfillmentRef(db,id,1).collection('commands').doc(aborted.commandId).get()).exists,false);
+ for(let i=0;i<31;i++)await exec('UPDATE_COST',{actualCost:600000+i,reason:'Corrección operativa demo'});
+ const page=await readFulfillment(db,id,1);assert.equal(page.events.length,30);assert(page.before);const older=await readFulfillment(db,id,1,page.before!);assert(older.events.every(e=>e.revision<page.before!));
+ assert.equal((await fulfillmentRef(db,id,1).collection('events').get()).size,state.revision);
+ assert.equal(JSON.stringify({b:(await r.budget.get()).data(),a:(await r.acceptance.get()).data()}),original);assert.deepEqual((await legacy.get()).data(),{marker:'HISTORICAL_UNCHANGED'});
+ const otherId=`historical-${randomUUID()}`,other=fixture(otherId),or=contractRefs(db,otherId,1);await or.budget.set(other.b);await or.acceptance.set(other.a);
+ const historical=await readFulfillment(db,otherId,1);assert.equal(historical.available,false);assert.equal((await operationRef(db,otherId,1).get()).exists,false);
+ await assert.rejects(fulfillmentCommand(db,otherId,1,{...same,operationId:historical.identity.operationId},'admin'),/histórica/);
+ await acceptBudgetV2(db,{budgetId:otherId,version:1,acceptedOptionId:'option-1',preferredPlanCuotas:12,commandId:'forbidden-second'},'admin').then(()=>assert.fail('existing acceptance cannot be replaced'),()=>{});
+ const otherRegisteredId=`other-${randomUUID()}`,ob=fixture(otherRegisteredId),obr=contractRefs(db,otherRegisteredId,1);await obr.budget.set(ob.b);await acceptBudgetV2(db,{budgetId:otherRegisteredId,version:1,acceptedOptionId:'option-1',preferredPlanCuotas:12,commandId:'accept'},'admin');
+ await assert.rejects(fulfillmentCommand(db,otherRegisteredId,1,same,'admin'),/otro expediente/);
+ const ctx={params:Promise.resolve({budgetId:id,version:'1'})};assert.equal((await api.GET(new NextRequest('http://localhost/test'),ctx)).status,401);
+ async function token(email:string){const password='Demo-fulfillment-only-123!';let uid:string;try{uid=(await admin.auth().getUserByEmail(email)).uid;await admin.auth().updateUser(uid,{password});}catch{uid=(await admin.auth().createUser({email,password})).uid;}void uid;
+  const response=await fetch('http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,returnSecureToken:true})});assert(response.ok);return (await response.json()).idToken as string;}
+ for(const [email,status]of [[`${id}-client@example.test`,403],[`${id}-affiliate@example.test`,403],[ADMIN_EMAIL,200]] as const){const bearer=await token(email);const req=(method:string)=>new NextRequest('http://localhost/test',{method,headers:{Authorization:`Bearer ${bearer}`,'Content-Type':'application/json'},...(method==='POST'?{body:JSON.stringify(command('UPDATE_COST',{actualCost:600000,reason:'Authorized API'}))}:{})});
+  assert.equal((await api.GET(req('GET'),ctx)).status,status);assert.equal((await api.POST(req('POST'),ctx)).status,status);}
+ console.log('FULFILLMENT_V2_EMULATOR=PASS; CONCURRENCY=PASS; ATOMIC_ABORT=PASS; HISTORY=PASS; COST_SNAPSHOT_UNCHANGED=PASS; DATES=PASS; INCIDENT_CUSTODY=PASS; ROLE_AUTH=PASS; DELIVERY_CLOSURE=BLOCKED; HISTORICAL_WRITES=0; PRODUCTION_WRITES=0');
+}
+main().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{await Promise.all(admin.apps.map(app=>app?.delete()));});

@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import { initialFulfillment,nextFulfillment,parseFulfillmentCommand,costDifference,type FulfillmentAction } from '../src/lib/operationFulfillmentV2';
+let s=initialFulfillment('op_'+'a'.repeat(64),'Referencia demo',null,580000),seq=0;
+const now='2026-10-20T12:00:00.000Z';
+function apply(action:FulfillmentAction,data:Record<string,unknown>={}){s=nextFulfillment(s,{commandId:`cmd-${++seq}`,operationId:s.operationId,expectedRevision:s.revision,action,data},'admin',now);}
+apply('UPDATE_ORDER',{providerName:'Proveedor demo',providerReference:'DEMO',estimatedAvailabilityDate:'2026-10-22',notes:''});
+assert.equal(s.providerState,'PENDIENTE_PEDIDO');assert.equal(s.actualPickupDate,null);assert.equal(s.actualReceiptDate,null);
+apply('PLACE_ORDER',{orderDate:'2026-10-01'});apply('CONFIRM_ORDER',{actualCost:580000.01,confirmedAvailabilityDate:'2026-10-02'});assert.equal(costDifference(s),0.01);
+apply('READY_FOR_PICKUP');apply('UPDATE_AVAILABILITY',{confirmedAvailabilityDate:'2026-10-21',reason:'Reprogramación explícita'});assert.equal(s.providerState,'CONFIRMADO');assert.throws(()=>apply('READY_FOR_PICKUP'));apply('UPDATE_AVAILABILITY',{confirmedAvailabilityDate:'2026-10-02',reason:'Disponibilidad verificada'});apply('READY_FOR_PICKUP');const before=JSON.stringify(s);
+for(const actualPickupDate of ['2099-01-01','2026-09-30'])assert.throws(()=>apply('RECORD_PICKUP',{actualPickupDate,pickupResponsible:'Demo'}));
+assert.equal(JSON.stringify(s),before);
+assert.throws(()=>apply('UPDATE_ORDER',{providerName:'Otro proveedor',providerReference:'',estimatedAvailabilityDate:null,notes:''}));
+apply('RECORD_PICKUP',{actualPickupDate:'2026-10-03',pickupResponsible:'Demo'});
+assert.throws(()=>apply('RECEIVE',{actualReceiptDate:'2026-10-02',custodyLocation:'Demo',custodian:'Demo',visualCondition:'SIN_DANOS_VISIBLES',notes:''}));
+apply('RECEIVE',{actualReceiptDate:'2026-10-04',custodyLocation:'Demo',custodian:'Demo',visualCondition:'SIN_DANOS_VISIBLES',notes:''});
+assert.throws(()=>apply('PLAN_DELIVERY',{destinationLocality:'Demo',estimatedDeliveryDate:'2026-10-10',deliveryResponsible:'Demo'}));
+apply('PLAN_TRIP',{tripReference:'Viaje demo',plannedTripDate:'2026-10-05',carrier:'Demo'});
+assert.throws(()=>apply('PLAN_DELIVERY',{destinationLocality:'Demo',estimatedDeliveryDate:'2026-10-04',deliveryResponsible:'Demo'}));
+apply('PLAN_DELIVERY',{destinationLocality:'Demo',estimatedDeliveryDate:'2026-10-06',deliveryResponsible:'Demo'});
+assert.equal(s.deliveryClosure,'BLOCKED_PHYSICAL_SIGNATURES_REQUIRED');
+assert.throws(()=>parseFulfillmentCommand({commandId:'bad',operationId:s.operationId,expectedRevision:s.revision,action:'COMPLETE_DELIVERY',data:{signed:true}}));
+assert.throws(()=>parseFulfillmentCommand({commandId:'bad',operationId:s.operationId,expectedRevision:s.revision,action:'PLAN_DELIVERY',data:{},delivered:true}));
+console.log('FULFILLMENT_V2_MODEL=PASS; FUTURE_REAL_DATES=DENIED; CHRONOLOGY=PASS; ESTIMATES_DO_NOT_ADVANCE=PASS; DELIVERY_CLOSURE=BLOCKED');
