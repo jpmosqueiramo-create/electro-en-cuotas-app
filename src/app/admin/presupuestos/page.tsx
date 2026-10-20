@@ -1,5 +1,6 @@
 "use client";
 
+import { publicSolicitudOrigin } from "@/lib/publicSolicitud";
 import { BudgetV2Workspace } from "@/components/admin/budgets/BudgetV2Workspace";
 import { AdminNav } from "@/components/AdminNav";
 import { useState, useEffect, useRef, Suspense } from "react";
@@ -304,7 +305,7 @@ function PresupuestosContent({ onNew }: { onNew: (source?: {sourceCollection: "s
         const nombreCliente = String(rawData.nombreCompleto || rawData.nombre || "Cliente Sin Nombre");
         const dniCliente = String(rawData.numeroDni || rawData.dni || "-");
         const telCliente = String(rawData.whatsapp || rawData.telefono || "-");
-        const locCliente = String(rawData.direccion || rawData.localidad || "-");
+        const locCliente = String(rawData.localidad || "-");
 
         pool.push({
           id: d.id,
@@ -363,7 +364,7 @@ function PresupuestosContent({ onNew }: { onNew: (source?: {sourceCollection: "s
             producto: prodName,
             items: [],
             estado: "Pendiente",
-            notas: "Solicitud recibida desde portada ('Buscás algo especial'). Pendiente de armar cotización por el administrador.",
+            notas: `${publicSolicitudOrigin(rawData)}. ${rawData.planElegido ? `Preferencia informada: ${String(rawData.planElegido)} cuotas${typeof rawData.montoCuota === "number" ? ` de $ ${rawData.montoCuota.toLocaleString("es-AR")}` : ""}. ` : ""}Pendiente de confeccionar presupuesto V2.`,
             fechaObjeto: parseAnyDate(rawData.fechaIso || rawData.fecha || rawData.fechaCreacion)
           });
         }
@@ -378,7 +379,7 @@ function PresupuestosContent({ onNew }: { onNew: (source?: {sourceCollection: "s
         const nombreCliente = String(rawData.nombreCompleto || rawData.nombre || datosPersonales.nombreCompleto || "Cliente Sin Nombre");
         const dniCliente = String(rawData.numeroDni || rawData.dni || datosPersonales.numeroDni || "-");
         const telCliente = String(rawData.whatsapp || rawData.telefono || "-");
-        const locCliente = String(rawData.direccion || rawData.localidad || "-");
+        const locCliente = String(datosPersonales.localidad || rawData.localidad || "-");
 
         pool.push({
           id: d.id,

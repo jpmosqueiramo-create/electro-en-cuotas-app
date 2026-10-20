@@ -1,21 +1,20 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronRight, ArrowLeft, Upload } from "lucide-react";
-import { db, storage } from "@/lib/firebase";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { useAuth } from "@/components/AuthProvider";
+import { ChevronRight, ArrowLeft } from "lucide-react";
 import { fetchPublicCatalogReference } from "@/lib/publicCatalogClient";
 import { selectPublishedPlan, publicCatalogSelection } from "@/lib/publicCatalogContract";
+import { createPublicSolicitudSender } from "@/lib/publicSolicitudClient";
 import type { CatalogReferencePublic } from "@/lib/catalogReference";
 
 function SolicitarForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const productoId = searchParams.get("id");
-  const { user } = useAuth();
+  const sender=useRef<ReturnType<typeof createPublicSolicitudSender>|null>(null);
+  const [submitting,setSubmitting]=useState(false);
+  const [submitError,setSubmitError]=useState("");
 
   const [productoData, setProductoData] = useState<CatalogReferencePublic | null>(null);
   const [activeSolImage, setActiveSolImage] = useState<string>("");
@@ -35,8 +34,6 @@ function SolicitarForm() {
   const [nombreAfiliado, setNombreAfiliado] = useState("");
   const [referidoPor, setReferidoPor] = useState("");
 
-  const [dniFrente, setDniFrente] = useState<File | null>(null);
-  const [dniDorso, setDniDorso] = useState<File | null>(null);
   const cuotasParam = searchParams.get("cuotas");
   const [planElegido, setPlanElegido] = useState("");
   const [referenceState, setReferenceState] = useState("loading");
@@ -82,97 +79,18 @@ function SolicitarForm() {
       return;
     }
 
-    const btn = e.currentTarget.querySelector('button[type="submit"]') as HTMLButtonElement;
-    const oldText = btn.innerText;
-    btn.innerText = "Registrando solicitud...";
-    btn.disabled = true;
-
+    if(submitting)return;
+    setSubmitting(true);setSubmitError("");
     try {
-      const dniFrenteUrlReal = "No requerido en solicitud inicial";
-      const dniDorsoUrlReal = "No requerido en solicitud inicial";
-
-      const selection = productoData ? publicCatalogSelection(productoData, planElegido) : null;
-
-      const datos = {
-        productoId: selection?.productoId || "A definir",
-        productoNombre: selection?.productoNombre || "A definir",
-        planElegido: selection?.planElegido || "",
-        ...(selection ? { montoCuota: selection.montoCuota } : {}),
-        nombreCompleto, 
-        numeroDni, 
-        cuil,
-        fechaNacimiento,
-        whatsapp, 
-        direccion, 
-        localidad,
-        codigoPostal,
-        ocupacion,
-        nombreAfiliado,
-        referidoPor,
-        email,
-        antiguedadLaboral
-      };
-      
-      if (typeof window !== "undefined") {
-        localStorage.setItem("datosPreliminares", JSON.stringify(datos));
-      }
-      
-      
-      // 1. Guardar en solicitudes_cuenta (Colección de recepción de solicitudes de apertura)
-      try {
-        await addDoc(collection(db, "solicitudes_cuenta"), {
-          tipo: "apertura_cuenta",
-          ...datos,
-          fecha: serverTimestamp(),
-        fechaIso: new Date().toISOString(),
-          estado: "Pendiente",
-          comprobanteURL: dniFrenteUrlReal,
-          dniFrenteURL: dniFrenteUrlReal,
-          dniDorsoURL: dniDorsoUrlReal
-        });
-      } catch (errDb) {
-        console.warn("Aviso Firestore solicitudes_cuenta:", errDb);
-      }
-
-      // Crear alerta para el panel de administración
-      try {
-        await addDoc(collection(db, "alertas_admin"), {
-          tipo: "APERTURA_CUENTA",
-          clienteEmail: email || whatsapp || nombreCompleto,
-          mensaje: `📋 Solicitud de Apertura de Cuenta: ${nombreCompleto} (DNI: ${numeroDni}, Tel: ${whatsapp}, Loc: ${direccion}) - Producto: ${productoData?.nombre || "A definir"}`,
-          fechaCreacion: serverTimestamp(),
-          leida: false
-        });
-      } catch (errAlt) {
-        console.warn("Aviso Firestore alertas_admin:", errAlt);
-      }
-
-      // Enviar notificación por correo electrónico al administrador
-      try {
-        await fetch("/api/notificar-presupuesto", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            nombre: nombreCompleto,
-            dni: numeroDni,
-            whatsapp: whatsapp,
-            localidad: direccion,
-            necesidad: productoData?.nombre || "Apertura de Cuenta",
-            referente: nombreAfiliado || referidoPor,
-            tipo: "apertura_cuenta"
-          })
-        });
-      } catch (e) {
-        console.error("Error al enviar email de solicitud:", e);
-      }
-
-      const textMsg = `Hola, acabo de llenar el formulario de Apertura de Cuenta. Elegí el plan de ${planElegido} cuotas para el producto ${productoData?.nombre || 'A definir'}. Mi DNI es ${numeroDni}`;
-      window.location.href = `https://wa.me/5491125659686?text=${encodeURIComponent(textMsg)}`;
-    } catch (err: unknown) {
-      console.error("Error al procesar solicitud:", err);
-      const textMsg = `Hola, acabo de llenar el formulario de Apertura de Cuenta. Elegí el plan de ${planElegido} cuotas para el producto ${productoData?.nombre || 'A definir'}. Mi DNI es ${numeroDni}`;
-      window.location.href = `https://wa.me/5491125659686?text=${encodeURIComponent(textMsg)}`;
-    }
+      sender.current ??= createPublicSolicitudSender('catalog');
+      const selection=productoData?publicCatalogSelection(productoData,planElegido):null;
+      await sender.current({tipo:'apertura_cuenta',productoNombre:selection?.productoNombre||'A definir',
+        ...(selection||{}),nombreCompleto,numeroDni,cuil,fechaNacimiento,whatsapp,direccion,localidad,
+        codigoPostal,ocupacion,email,antiguedadLaboral,nombreAfiliado,referidoPor});
+      const mensaje=`Hola, registré una solicitud de gestión de compra. Soy ${nombreCompleto}. Referencia: ${productoData?.nombre||'A definir'}. Plan preferido: ${planElegido} cuotas; cuota estimada: ${selection?.montoCuota??'a definir'}. Mi DNI es ${numeroDni}. La preferencia no constituye aceptación contractual.`;
+      window.location.href=`https://wa.me/5491125659686?text=${encodeURIComponent(mensaje)}`;
+    }catch(error){setSubmitError(error instanceof Error?error.message:'No pudimos confirmar el registro. Reintentá.');}
+    finally{setSubmitting(false);}
   };
 
   return (
@@ -347,8 +265,9 @@ function SolicitarForm() {
             </div>
           </div>
 
-          <button disabled={!!productoId && (referenceState !== "ready" || !planElegido)} type="submit" className="w-full group flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#123230] text-white font-bold text-base sm:text-lg py-4.5 sm:py-5 rounded-2xl hover:scale-[1.01] active:scale-95 transition-all duration-300 shadow-md shadow-[#173E3B]/20">
-            Enviar Solicitud y Hablar con un Asesor <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          {submitError && <p role="alert" className="text-sm text-white">{submitError}</p>}
+          <button disabled={submitting || (!!productoId && (referenceState !== "ready" || !planElegido))} type="submit" className="w-full group flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#123230] text-white font-bold text-base sm:text-lg py-4.5 sm:py-5 rounded-2xl hover:scale-[1.01] active:scale-95 transition-all duration-300 shadow-md shadow-[#173E3B]/20">
+            {submitting?"Registrando solicitud…":"Enviar Solicitud y Hablar con un Asesor"} <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
         </form>
       </div>

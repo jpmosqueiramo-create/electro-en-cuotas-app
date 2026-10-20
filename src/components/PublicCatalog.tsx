@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { createPublicSolicitudSender } from "@/lib/publicSolicitudClient";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
@@ -63,6 +64,9 @@ export default function PublicCatalog() {
   const [qfReferente, setQfReferente] = useState("");
   const [qfSubmitting, setQfSubmitting] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const [qfError,setQfError]=useState("");
+  const qfSender=useRef<ReturnType<typeof createPublicSolicitudSender>|null>(null);
 
   // Modal Solicitud de Nueva Localidad
   const [modalLocalidadOpen, setModalLocalidadOpen] = useState(false);
@@ -128,66 +132,15 @@ export default function PublicCatalog() {
     if (qfSubmitting) return;
     setQfSubmitting(true);
     
+    setQfError("");
     try {
-const payload = {
-        tipo: "solicitud_compra",
-        nombreCompleto: qfNombre,
-        whatsapp: qfWhatsapp || "",
-        direccion: qfLocalidad || "",
-        localidad: qfLocalidad || "",
-        productoNombre: qfNecesidad || "",
-        referidoPor: qfReferente || null,
-        fecha: serverTimestamp(),
-        fechaIso: new Date().toISOString(),
-        fechaCreacion: serverTimestamp(),
-        estado: "Pendiente"
-      };
-
-      let solId = "";
-      try {
-        const solRef = await addDoc(collection(db, "solicitudes_cuenta"), payload);
-        solId = solRef.id;
-      } catch (errDb) {
-        console.warn("Aviso Firestore solicitudes_cuenta:", errDb);
-      }
-
-      try {
-        await addDoc(collection(db, "alertas_admin"), {
-          tipo: "NUEVA_SOLICITUD_COMPRA",
-          clienteEmail: qfWhatsapp || qfNombre,
-          mensaje: `📥 Solicitud de Servicio de Compra${solId ? ` [ID: ${solId}]` : ""}: ${qfNombre} (Tel: ${qfWhatsapp}, Loc: ${qfLocalidad}) - Busca: ${qfNecesidad}`,
-          fechaCreacion: serverTimestamp(),
-          leida: false
-        });
-      } catch (errAlt) {
-        console.warn("Aviso Firestore alertas_admin:", errAlt);
-      }
-
-      try {
-        await fetch("/api/notificar-presupuesto", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            nombre: qfNombre,
-            whatsapp: qfWhatsapp,
-            localidad: qfLocalidad,
-            necesidad: qfNecesidad,
-            referente: qfReferente,
-            tipo: "solicitud_compra"
-          })
-        });
-      } catch (e) {
-        console.error("Error al enviar email:", e);
-      }
-
-    } catch (err) {
-      console.error("Error al guardar solicitud:", err);
-    } finally {
-      const refText = qfReferente ? ` Me recomendó el vendedor afiliado / cliente: ${qfReferente}.` : "";
-      const mensaje = `Hola, quiero consultar por el Servicio de Compra de Cuenta Hogar. Soy ${qfNombre} de ${qfLocalidad}. Necesito el producto: ${qfNecesidad}. Mi WhatsApp es ${qfWhatsapp}.${refText} ¿Me cuentan la propuesta y condiciones del plan de cuotas?`;
-      const wame = `https://wa.me/5491125659686?text=${encodeURIComponent(mensaje)}`;
-      window.location.href = wame;
-    }
+      qfSender.current ??= createPublicSolicitudSender('service-quick');
+      await qfSender.current({tipo:'contacto_rapido',nombreCompleto:qfNombre,
+        whatsapp:qfWhatsapp,localidad:qfLocalidad,productoNombre:qfNecesidad,referidoPor:qfReferente});
+      const mensaje=`Hola, quiero consultar por el Servicio de Compra de Cuenta Hogar. Soy ${qfNombre} de ${qfLocalidad}. Necesito: ${qfNecesidad}. Mi WhatsApp es ${qfWhatsapp}.`;
+      window.location.href=`https://wa.me/5491125659686?text=${encodeURIComponent(mensaje)}`;
+    } catch(error){setQfError(error instanceof Error?error.message:'No pudimos confirmar el registro. Reintentá.');}
+    finally{setQfSubmitting(false);}
   };
 
   const handleSolicitarLocalidad = async (e: React.FormEvent) => {
@@ -940,6 +893,7 @@ const payload = {
               </div>
 
               <div className="pt-2 space-y-3">
+                {qfError && <p role="alert" className="text-sm text-white">{qfError}</p>}
                 <button 
                   type="submit" 
                   disabled={qfSubmitting}

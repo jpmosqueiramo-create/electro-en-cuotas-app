@@ -1,3 +1,4 @@
+import { publicSolicitudOrigin } from "./publicSolicitud";
 /** Proyección explícita de lectura. No importa Firebase ni ejecuta efectos. */
 export const ADMIN_SOLICITUD_SOURCES = ["solicitudes", "solicitudes_cuenta"] as const;
 export type AdminSolicitudSource = typeof ADMIN_SOLICITUD_SOURCES[number];
@@ -13,6 +14,7 @@ export type AdminSolicitudListItem = {
   tipoPresentacion: AdminSolicitudType; origenPresentacion: string;
   nombreCliente: string | null; dni: string | null; cuil: string | null; email: string | null; telefono: string | null;
   domicilio: string | null; localidad: string | null; productoONecesidad: string | null;
+  referenciaCatalogo: string | null; planPreferido: string | null; cuotaCapturada: number | null;
   estadoOriginal: string | null; fechaCreacion: StoredDate | null; fechaSort: number | null;
   mensajeAdmin: string | null; clienteId: string | null; tipoOriginal: string | null;
   estadoEntrega: string | null; propuestas: AdminProposal[]; documentos: AdminDocument[];
@@ -92,7 +94,10 @@ function mapRecord(sourceCollection: AdminSolicitudSource, documentId: string, i
   return {
     sourceCollection, documentId, recordKey: `${sourceCollection}:${documentId}`,
     tipoPresentacion: isRequest ? "Solicitud" : tipoOriginal === "contacto_rapido" ? "Contacto rápido" : "Consulta inicial",
-    origenPresentacion: isRequest ? "Registro de solicitud" : "Registro de consulta",
+    origenPresentacion: publicSolicitudOrigin(data),
+    referenciaCatalogo: text(data.productoId) === "A definir" ? null : text(data.productoId),
+    planPreferido: text(data.planElegido) ?? (numeric(data.planElegido) !== null ? String(data.planElegido) : null),
+    cuotaCapturada: numeric(data.montoCuota),
     nombreCliente: isRequest ? text(personal.nombreCompleto, data.nombreCompleto, data.nombre) : text(data.nombreCompleto, data.nombre),
     dni: isRequest ? text(personal.numeroDni, data.numeroDni, data.dni) : text(data.numeroDni, data.dni),
     cuil: text(personal.cuil, data.cuil), email: text(data.clienteEmail, data.email, personal.email),
