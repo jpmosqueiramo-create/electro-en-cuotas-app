@@ -22,7 +22,7 @@ async function run(){
  const bid=randomUUID();await persistPublicSolicitud(db,bid,b);await db.collection('catalogo_publico').doc(dto.referenciaId).update({planesPublicados:[]});await persistPublicSolicitud(db,bid,b);
  const saved=(await db.collection('solicitudes_cuenta').doc(`web_${bid}`).get()).data()!;assert.equal(saved.montoCuota,plan.cuotaEstimada);assert.equal(saved.planElegido,String(plan.cuotas));assert.equal(saved.localidad,'Ciudad ficticia');assert.equal(saved.direccion,'Calle ficticia');
  await assert.rejects(persistPublicSolicitud(db,randomUUID(),b),/CATALOG_SELECTION_CHANGED/);
- const request=(payload:unknown)=>new Request('http://localhost/api/public/solicitudes',{method:'POST',headers:{origin:'http://localhost'},body:JSON.stringify({submissionId:randomUUID(),payload})});
+ const request=(payload:unknown)=>new Request('http://localhost/api/public/solicitudes',{method:'POST',headers:{origin:'https://www.cuentahogar.com.ar'},body:JSON.stringify({submissionId:randomUUID(),payload})});
  assert.equal((await POST(request({...a,costoProveedor:1}))).status,400);
  const denied=await POST(new Request('http://localhost/api/public/solicitudes',{method:'POST',headers:{origin:'https://other.invalid'},body:'{}'}));assert.equal(denied.status,403);
  // Inject a persistence failure at the database boundary; never connect to another host.
