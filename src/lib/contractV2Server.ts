@@ -32,7 +32,7 @@ export async function getContract(db:Firestore,id:string,v:number){
       if (snapshot.exists && (snapshot.data()!.budgetId!==id || snapshot.data()!.budgetVersion!==v || snapshot.data()!.acceptedOptionId!==acceptance.acceptedOptionId)) reject('Borrador de otra operación.');
       operation={identity:expected,registered:os.exists,budgetState:budget.estado,
         contractState:snapshot.exists?snapshot.data()!.status:'NOT_CREATED',documentationStage:docs.data()?.workflowStage==='DOCUMENTACION'?'DOCUMENTACION':'NOT_AVAILABLE',
-        pendingProcesses:['AFILIADO','CLIENTE','COBRANZA']};
+        pendingProcesses:['CLIENTE','COBRANZA']};
     } else if (os.exists || snapshot.exists) reject('Falta aceptación de origen.');
     if(!snapshot.exists)return {draft:null,requests:[],submissions:[],readiness:null,operation};
     const draft=snapshot.data() as ContractDraftV2;
