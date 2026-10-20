@@ -22,7 +22,7 @@ export function projectContractReview(s:ContractSnapshotV2){
  const p=s.personalData;dataFields(p,personalFields,true);
  const result={schemaVersion:'CONTRACT_REVIEW_PROJECTION_V1',technicalFrozenAt:s.freeze.termsFrozenAt,contractNumber:s.contractNumber,snapshotHash:s.integrity.payloadHash,
   customer:{fullName:p.fullName,dni:p.dni,address:p.address,locality:p.locality,province:s.addressInterpretation.provinceDisplayName,postalCode:p.postalCode,email:p.email,whatsapp:p.whatsapp},
-  reference:{name:s.acceptedReference.nombre,description:s.acceptedReference.descripcion},
+  reference:{name:s.acceptedReference.nombre,description:s.acceptedReference.descripcion,condition:s.documentContext.parameters.goodsConditionVersion==='GOODS_CONDITION_V1'&&['NUEVO','USADO'].includes(String(s.documentContext.parameters.goodsCondition))?String(s.documentContext.parameters.goodsCondition):'Pendiente'},
   economics:{capital:e.capitalAmount,service:e.serviceAmount,total:e.contractTotal,installment:e.contractInstallmentAmount,count:e.contractPlanCuotas},
   schedule:rows.map(row=>({number:row.installmentNumber,date:row.dueDate,amount:row.amount})),
   testIssue:{mandate:{date:s.documentContext.contractIssueDate,place:s.documentContext.contractIssuePlace},promissoryNote:{date:s.documentContext.promissoryNoteIssueDate,place:s.documentContext.promissoryNoteIssuePlace}},

@@ -105,6 +105,7 @@ export function createContractFreezeIntegrationEmulator(){
     const dep=record(deps.data(),['schemaVersion','executionMode','legalApproval','legalContext']);
     if(dep.schemaVersion!=='CONTRACT_FREEZE_SYNTHETIC_DEPENDENCIES_V1'||dep.executionMode!=='EMULATOR_ONLY'||dep.legalApproval!=='NOT_APPROVED_SYNTHETIC_ONLY')fail('SYNTHETIC_DEPENDENCIES_REQUIRED');
     const legal=dep.legalContext;validateContractLegalContext(legal);
+    if(d.goodsCondition&&(legal.documentContext.parameters.goodsConditionVersion!==d.goodsCondition.version||legal.documentContext.parameters.goodsCondition!==d.goodsCondition.value))fail('GOODS_CONDITION_FREEZE_DEPENDENCY_MISMATCH');
     if(!legal.issuer.profileId.startsWith('synthetic-')||legal.issuer.taxId!=='SYNTHETIC_NOT_A_TAX_ID'||Object.values(legal.documentDefinitions).some(def=>!def.templateId.startsWith('synthetic-')||def.legalApprovalId!=='SYNTHETIC_NOT_A_LEGAL_APPROVAL'))fail('SYNTHETIC_DEPENDENCIES_REQUIRED');
     const identity={budgetId:c.budgetId,budgetVersion:c.budgetVersion,contractDraftId:d.contractDraftId,acceptedOptionId:d.acceptedOptionId};
     const id=contractIdentity(identity),sid=contractSnapshotId(identity),sequence=(BigInt(ct.lastAllocatedSequence)+BigInt(1)).toString(),number=contractNumber(sequence);

@@ -9,6 +9,7 @@ import { createSyntheticReviewServer } from './helpers/contractDocumentPreview';
 import { generateContractReviewPair,formatSnapshotAmount } from '../src/lib/contractDocuments/pdf';
 import { projectContractReview } from '../src/lib/contractDocuments/projection';
 import { sealContractSnapshot } from '../src/lib/contractSnapshotV2';
+import {amountInWords} from '../src/lib/contractDocuments/businessPolicy';
 import { REVIEW_WARNING } from '../src/lib/contractDocuments/templates';
 async function main(){
  const s=documentReviewFixture(),before=JSON.stringify(s),p=projectContractReview(s),pair=generateContractReviewPair(s);
@@ -33,7 +34,7 @@ async function main(){
  for(const snapshot of [s,sensitive,secondNumber,documentReviewFixture(18,'Descripción sintética extensa. '.repeat(3))]){
   const docs=generateContractReviewPair(snapshot),dir=mkdtempSync(join(tmpdir(),'contract-document-test-'));
   writeFileSync(join(dir,'mandato.pdf'),docs.mandate.bytes);writeFileSync(join(dir,'pagare.pdf'),docs.promissoryNote.bytes);
-  writeFileSync(join(dir,'expected.json'),JSON.stringify({contractNumber:snapshot.contractNumber,required:[REVIEW_WARNING,'LOOP GESTIÓN INTEGRAL S.R.L.','pendiente de validación documental',formatSnapshotAmount(snapshot.economicTerms.contractTotal),snapshot.personalData.fullName,'NO VÁLIDO PARA FIRMA'],forbidden:['SECRET_INTERNAL_VENDOR','SECRET_WORKPLACE','SECRET_WORK_ADDRESS','factorSnapshot','costoProveedorSnapshot','P4_PRIVATE'],economics:{capital:formatSnapshotAmount(snapshot.economicTerms.capitalAmount),service:formatSnapshotAmount(snapshot.economicTerms.serviceAmount),total:formatSnapshotAmount(snapshot.economicTerms.contractTotal)},rows:snapshot.paymentSchedule.installments.map(row=>({number:row.installmentNumber,date:row.dueDate.split('-').reverse().join('/'),amount:formatSnapshotAmount(row.amount)}))}));
+  writeFileSync(join(dir,'expected.json'),JSON.stringify({contractNumber:snapshot.contractNumber,noteWords:amountInWords(snapshot.economicTerms.contractTotal),required:[REVIEW_WARNING,'LOOP GESTIÓN INTEGRAL S.R.L.','pendiente de validación documental',formatSnapshotAmount(snapshot.economicTerms.contractTotal),snapshot.personalData.fullName,'NO VÁLIDO PARA FIRMA'],forbidden:['SECRET_INTERNAL_VENDOR','SECRET_WORKPLACE','SECRET_WORK_ADDRESS','factorSnapshot','costoProveedorSnapshot','P4_PRIVATE'],economics:{capital:formatSnapshotAmount(snapshot.economicTerms.capitalAmount),service:formatSnapshotAmount(snapshot.economicTerms.serviceAmount),total:formatSnapshotAmount(snapshot.economicTerms.contractTotal)},rows:snapshot.paymentSchedule.installments.map(row=>({number:row.installmentNumber,date:row.dueDate.split('-').reverse().join('/'),amount:formatSnapshotAmount(row.amount)}))}));
   process.stdout.write(execFileSync(process.env.PDF_REVIEW_PYTHON??'python3',['scripts/verifyContractDocumentPdfs.py',dir],{encoding:'utf8'}));
  }
  // A fixed reference format must reject excess text, never clip it or silently add pages.

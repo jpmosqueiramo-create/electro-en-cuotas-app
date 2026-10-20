@@ -152,7 +152,7 @@ export function validateContractSnapshot(value: unknown): asserts value is Contr
   if (s.origin.preferredPlanCuotas === null) { if (s.origin.preferredPlanAmountSnapshot !== null) fail(); }
   else { const offered = fullRef.planesOfrecidos.find(p => p.cuotas === s.origin.preferredPlanCuotas); if (!offered || offered.cuotaEstimada !== s.origin.preferredPlanAmountSnapshot) fail(); }
   if (s.freeze.readinessPolicyVersion === 'CONTRACT_TECHNICAL_REVIEW_V1') {
-    const terms = { contractDraftId, budgetId, budgetVersion, acceptedOptionId, acceptedReferenceSnapshot:s.acceptedReference, acceptedAt:s.origin.acceptedAt, preferredPlanCuotas:s.origin.preferredPlanCuotas, personalDataVersion:s.personalDataVersion, personalData:s.personalData, employmentData:s.employmentData, economicTerms:s.economicTerms, firstInstallmentDueDate:s.paymentSchedule.firstInstallmentDueDate, preferredMonthlyDueDay:s.paymentSchedule.preferredMonthlyDueDay, paymentScheduleDraft:s.paymentSchedule.installments, preparedAt:s.freeze.preparedAt };
+    const terms = { contractDraftId, budgetId, budgetVersion, acceptedOptionId, acceptedReferenceSnapshot:s.acceptedReference, acceptedAt:s.origin.acceptedAt, preferredPlanCuotas:s.origin.preferredPlanCuotas, personalDataVersion:s.personalDataVersion, personalData:s.personalData, employmentData:s.employmentData, economicTerms:s.economicTerms, firstInstallmentDueDate:s.paymentSchedule.firstInstallmentDueDate, preferredMonthlyDueDay:s.paymentSchedule.preferredMonthlyDueDay, paymentScheduleDraft:s.paymentSchedule.installments, preparedAt:s.freeze.preparedAt,...(s.documentContext.parameters.goodsConditionVersion==='GOODS_CONDITION_V1'?{goodsCondition:{version:'GOODS_CONDITION_V1',value:s.documentContext.parameters.goodsCondition}}:{}) };
     if (contractValueHash(terms) !== s.sourceDraft.readyDigest) fail('CONTRACT_READY_TERMS_MISMATCH');
   }
   if (s.integrity.payloadHash !== snapshotPayloadHash(s)) fail('CONTRACT_INTEGRITY_MISMATCH');
@@ -169,7 +169,8 @@ export function validateContractSnapshotSource(source: ContractSnapshotSourceV2)
   const { budget: b, acceptance: a, draft: d } = source;
   const initial = newContractDraft(b, a, d.createdBy, d.createdAt);
   if (d.personalDataVersion !== PERSONAL_ADDRESS_VERSION) fail('CONTRACT_PERSONAL_VERSION_INCOMPLETE');
-  if (Object.keys(d).sort().join(',') !== Object.keys(initial).sort().join(',')) fail('CONTRACT_DRAFT_SCHEMA_MISMATCH');
+  if (Object.keys(d).filter(k=>k!=='goodsCondition').sort().join(',') !== Object.keys(initial).sort().join(',')) fail('CONTRACT_DRAFT_SCHEMA_MISMATCH');
+  if(Object.hasOwn(d,'goodsCondition'))shape({version:literal('GOODS_CONDITION_V1'),value:literal('NUEVO','USADO')})(d.goodsCondition);
   for (const at of [d.preparedAt,d.createdAt,d.updatedAt]) instant(at);
   for (const actor of [d.createdBy,d.updatedBy]) text()(actor);
   for (const request of [d.activeClientDataRequestId,d.lastClientSubmissionId]) nullable(opaque)(request);

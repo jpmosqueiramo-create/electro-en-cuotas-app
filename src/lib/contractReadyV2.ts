@@ -20,7 +20,7 @@ export function reviewedTerms(d: ContractDraftV2) {
     acceptedReferenceSnapshot:d.acceptedReferenceSnapshot,acceptedAt:d.acceptedAt,preferredPlanCuotas:d.preferredPlanCuotas,
     personalDataVersion:d.personalDataVersion ?? 'LEGACY_SIX',personalData:d.personalData,employmentData:d.employmentData,
     economicTerms:d.economicTerms,firstInstallmentDueDate:d.firstInstallmentDueDate,preferredMonthlyDueDay:d.preferredMonthlyDueDay,
-    paymentScheduleDraft:d.paymentScheduleDraft,preparedAt:d.preparedAt,
+    paymentScheduleDraft:d.paymentScheduleDraft,preparedAt:d.preparedAt,...(d.goodsCondition?{goodsCondition:d.goodsCondition}:{}),
   };
 }
 export function validateReadySource(budget: BudgetV2, acceptance: BudgetAcceptanceV2, draft: ContractDraftV2): void {
