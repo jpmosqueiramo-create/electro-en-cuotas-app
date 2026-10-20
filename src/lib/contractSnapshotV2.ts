@@ -50,8 +50,13 @@ export interface ContractSnapshotV2 extends ContractLegalContextV2 {
   freeze: {
     state: 'TERMS_FROZEN'; preparedAt: string; readyAt: string; readyBy: string;
     termsFrozenAt: string; termsFrozenBy: string; commandId: string;
-    readinessPolicyVersion: 'EMULATOR_FIXTURE_ONLY_V1'; provenanceManifestHash: string;
-  };
+    provenanceManifestHash: string;
+  } & ({ readinessPolicyVersion: 'EMULATOR_FIXTURE_ONLY_V1' } | {
+    readinessPolicyVersion: 'CONTRACT_TECHNICAL_REVIEW_V1';
+    integrationPolicyVersion: 'READY_FREEZE_EMULATOR_V1'; executionMode: 'EMULATOR_ONLY';
+    readyEvidenceId: string; readyEvidenceHash: string; dependenciesHash: string;
+    legalTemplateReviewRequired: true;
+  });
   integrity: { canonicalizationVersion: typeof CONTRACT_CANONICALIZATION; hashAlgorithm: 'SHA-256'; payloadHash: string };
 }
 
@@ -126,7 +131,12 @@ export function validateContractSnapshot(value: unknown): asserts value is Contr
     economicTerms: economicCheck, calculationPolicyVersion: literal('P5C_SHARED_C1_V1'), roundingPolicy: literal('NEXT_90_V1'),
     paymentSchedule: shape({ calendarPolicyVersion: literal('P5C_EXPLICIT_MONTH_CLAMP_V1'), firstInstallmentDueDate: calendarDate, preferredMonthlyDueDay: integer, installments: rows(shape({ installmentNumber: integer, dueDate: calendarDate, amount: integer }),18) }),
     issuer, documentContext: legalContext, documentDefinitions: shape({ contract: documentDefinition, promissoryNote: documentDefinition }),
-    freeze: shape({ state: literal('TERMS_FROZEN'), preparedAt: instant, readyAt: instant, readyBy: text(), termsFrozenAt: instant, termsFrozenBy: text(), commandId: opaque, readinessPolicyVersion: literal('EMULATOR_FIXTURE_ONLY_V1'), provenanceManifestHash: hash }),
+    freeze: v => {
+      const common = { state: literal('TERMS_FROZEN'), preparedAt: instant, readyAt: instant, readyBy: text(), termsFrozenAt: instant, termsFrozenBy: text(), commandId: opaque, provenanceManifestHash: hash };
+      if (v && typeof v === 'object' && (v as Record<string,unknown>).readinessPolicyVersion === 'CONTRACT_TECHNICAL_REVIEW_V1') {
+        shape({ ...common, readinessPolicyVersion: literal('CONTRACT_TECHNICAL_REVIEW_V1'), integrationPolicyVersion: literal('READY_FREEZE_EMULATOR_V1'), executionMode: literal('EMULATOR_ONLY'), readyEvidenceId: opaque, readyEvidenceHash: hash, dependenciesHash: hash, legalTemplateReviewRequired: literal(true) })(v);
+      } else shape({ ...common, readinessPolicyVersion: literal('EMULATOR_FIXTURE_ONLY_V1') })(v);
+    },
     integrity: shape({ canonicalizationVersion: literal(CONTRACT_CANONICALIZATION), hashAlgorithm: literal('SHA-256'), payloadHash: hash }),
   })(value);
   const s = value as ContractSnapshotV2, { budgetId, budgetVersion, contractDraftId, acceptedOptionId } = s.sourceDraft;
@@ -141,6 +151,10 @@ export function validateContractSnapshot(value: unknown): asserts value is Contr
   if (s.addressInterpretation.provinceDisplayName !== provinceLabel(s.personalData.province)) fail();
   if (s.origin.preferredPlanCuotas === null) { if (s.origin.preferredPlanAmountSnapshot !== null) fail(); }
   else { const offered = fullRef.planesOfrecidos.find(p => p.cuotas === s.origin.preferredPlanCuotas); if (!offered || offered.cuotaEstimada !== s.origin.preferredPlanAmountSnapshot) fail(); }
+  if (s.freeze.readinessPolicyVersion === 'CONTRACT_TECHNICAL_REVIEW_V1') {
+    const terms = { contractDraftId, budgetId, budgetVersion, acceptedOptionId, acceptedReferenceSnapshot:s.acceptedReference, acceptedAt:s.origin.acceptedAt, preferredPlanCuotas:s.origin.preferredPlanCuotas, personalDataVersion:s.personalDataVersion, personalData:s.personalData, employmentData:s.employmentData, economicTerms:s.economicTerms, firstInstallmentDueDate:s.paymentSchedule.firstInstallmentDueDate, preferredMonthlyDueDay:s.paymentSchedule.preferredMonthlyDueDay, paymentScheduleDraft:s.paymentSchedule.installments, preparedAt:s.freeze.preparedAt };
+    if (contractValueHash(terms) !== s.sourceDraft.readyDigest) fail('CONTRACT_READY_TERMS_MISMATCH');
+  }
   if (s.integrity.payloadHash !== snapshotPayloadHash(s)) fail('CONTRACT_INTEGRITY_MISMATCH');
 }
 export function sealContractSnapshot(input: Omit<ContractSnapshotV2, 'integrity'>): ContractSnapshotV2 {
