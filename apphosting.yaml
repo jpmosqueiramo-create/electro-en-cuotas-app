@@ -12,4 +12,9 @@ env:
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
     value: negocio-facil-page.firebaseapp.com
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: negocio-facil-page.appspot.com
+    value: negocio-facil-page.firebasestorage.app
+  - variable: NEXT_PUBLIC_ADMIN_EMAIL
+    value: jpmosqueiramo@gmail.com
+    availability:
+      - BUILD
+      - RUNTIME
