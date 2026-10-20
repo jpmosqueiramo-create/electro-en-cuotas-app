@@ -1,0 +1,22 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == "jpmosqueiramo@gmail.com";
+    }
+    // Public catalog images, never private documentation.
+    match /productos/{imageId} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.size <= 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+      allow delete: if isAdmin();
+    }
+    // Legacy download URLs must not be created by browser uploads.
+    match /comprobantes/{path=**} { allow read, write: if false; }
+    // Private documents are served through authorized server handlers.
+    match /budget-documentation-v2/{path=**} { allow read, write: if false; }
+    match /contract-documents-v2/{path=**} { allow read, write: if false; }
+    match /{path=**} { allow read, write: if false; }
+  }
+}
