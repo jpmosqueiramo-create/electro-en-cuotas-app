@@ -10,6 +10,8 @@ import { generateContractReviewPair,formatSnapshotAmount } from '../src/lib/cont
 import { projectContractReview } from '../src/lib/contractDocuments/projection';
 import { sealContractSnapshot } from '../src/lib/contractSnapshotV2';
 import { REVIEW_WARNING } from '../src/lib/contractDocuments/templates';
+// Pagaré content-stream baseline: origin/main 829cd2987823782f1419bed075b7489d9a7333f5.
+const PROMISSORY_NOTE_STREAM_BASELINE_SHA256='f2edc86c674fc2d2301091c69d528b7bb3c67fd1ff1c77498a76a31cce449db9';
 async function main(){
  const s=documentReviewFixture(),before=JSON.stringify(s),p=projectContractReview(s),pair=generateContractReviewPair(s);
  assert.equal(JSON.stringify(s),before);assert.equal(p.contractNumber,s.contractNumber);assert.deepEqual(p.schedule,s.paymentSchedule.installments.map(row=>({number:row.installmentNumber,date:row.dueDate,amount:row.amount})));
@@ -30,10 +32,10 @@ async function main(){
  }
  const secondNumber=sealContractSnapshot({...plain,contractNumber:'CH-000002',numbering:{...s.numbering,sequence:'2'}});
  assert.equal(generateContractReviewPair(secondNumber).manifest.contractNumber,'CH-000002');
- for(const snapshot of [s,sensitive,secondNumber,documentReviewFixture(18,'Descripción sintética extensa. '.repeat(3))]){
+ for(const snapshot of [s,sensitive,secondNumber,documentReviewFixture(18,'Descripción sintética extensa. '.repeat(3)),...[1,2,3,6,12].map(plan=>documentReviewFixture(plan))]){
   const docs=generateContractReviewPair(snapshot),dir=mkdtempSync(join(tmpdir(),'contract-document-test-'));
   writeFileSync(join(dir,'mandato.pdf'),docs.mandate.bytes);writeFileSync(join(dir,'pagare.pdf'),docs.promissoryNote.bytes);
-  writeFileSync(join(dir,'expected.json'),JSON.stringify({contractNumber:snapshot.contractNumber,required:[REVIEW_WARNING,'LOOP GESTIÓN INTEGRAL S.R.L.','pendiente de validación documental',formatSnapshotAmount(snapshot.economicTerms.contractTotal),snapshot.personalData.fullName,'NO VÁLIDO PARA FIRMA'],forbidden:['SECRET_INTERNAL_VENDOR','SECRET_WORKPLACE','SECRET_WORK_ADDRESS','factorSnapshot','costoProveedorSnapshot','P4_PRIVATE'],economics:{capital:formatSnapshotAmount(snapshot.economicTerms.capitalAmount),service:formatSnapshotAmount(snapshot.economicTerms.serviceAmount),total:formatSnapshotAmount(snapshot.economicTerms.contractTotal)},rows:snapshot.paymentSchedule.installments.map(row=>({number:row.installmentNumber,date:row.dueDate.split('-').reverse().join('/'),amount:formatSnapshotAmount(row.amount)}))}));
+  writeFileSync(join(dir,'expected.json'),JSON.stringify({contractNumber:snapshot.contractNumber,...(snapshot===s?{unchangedNoteStreamHash:PROMISSORY_NOTE_STREAM_BASELINE_SHA256}:{}),required:[REVIEW_WARNING,'LOOP GESTIÓN INTEGRAL S.R.L.','pendiente de validación documental',formatSnapshotAmount(snapshot.economicTerms.contractTotal),snapshot.personalData.fullName,'NO VÁLIDO PARA FIRMA'],forbidden:['SECRET_INTERNAL_VENDOR','SECRET_WORKPLACE','SECRET_WORK_ADDRESS','factorSnapshot','costoProveedorSnapshot','P4_PRIVATE'],economics:{capital:formatSnapshotAmount(snapshot.economicTerms.capitalAmount),service:formatSnapshotAmount(snapshot.economicTerms.serviceAmount),total:formatSnapshotAmount(snapshot.economicTerms.contractTotal)},rows:snapshot.paymentSchedule.installments.map(row=>({number:row.installmentNumber,date:row.dueDate.split('-').reverse().join('/'),amount:formatSnapshotAmount(row.amount)}))}));
   process.stdout.write(execFileSync(process.env.PDF_REVIEW_PYTHON??'python3',['scripts/verifyContractDocumentPdfs.py',dir],{encoding:'utf8'}));
  }
  // A fixed reference format must reject excess text, never clip it or silently add pages.
