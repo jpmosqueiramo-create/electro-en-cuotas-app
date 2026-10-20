@@ -2,15 +2,14 @@
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { contractValueHash } from '../contractIntegrityV2';
 import type { ContractSnapshotV2,ContractDocumentDefinitionV2 } from '../contractSnapshotV2';
 import { projectContractReview,PROJECTION_SOURCE_SHA256,type ContractReviewProjection } from './projection';
-import { templates,REVIEW_WARNING,type ReviewDocumentKind } from './templates';
-const layout=Object.freeze({format:'a4',margin:17,font:'Helvetica',fontSize:10,bodyBottom:274,renderer:'CONTRACT_REVIEW_PDF_V1'});
+import { templates,referenceCopy,referencePdfHashes,REVIEW_WARNING,type ReviewDocumentKind } from './templates';
+const layout=Object.freeze({format:'a4',margin:15,font:'Helvetica',fontSize:8,bodyBottom:278,renderer:'CONTRACT_REFERENCE_REVIEW_PDF_V2'});
 const rendererHash=contractValueHash({pdfSource:createHash('sha256').update(readFileSync(new URL(import.meta.url))).digest('hex'),projectionSource:PROJECTION_SOURCE_SHA256,jsPDF:jsPDF.version,layout});
 export function reviewDocumentDefinitions():ContractSnapshotV2['documentDefinitions']{
- const definition=(kind:ReviewDocumentKind):ContractDocumentDefinitionV2=>({templateId:templates[kind].id,templateVersion:templates[kind].version,templateHash:contractValueHash({warning:REVIEW_WARNING,...templates[kind]}),rendererBundleId:layout.renderer,rendererBundleHash:rendererHash,resourcesManifestHash:contractValueHash(layout),legalApprovalId:'SYNTHETIC_NOT_A_LEGAL_APPROVAL'});
+ const definition=(kind:ReviewDocumentKind):ContractDocumentDefinitionV2=>({templateId:templates[kind].id,templateVersion:templates[kind].version,templateHash:contractValueHash({warning:REVIEW_WARNING,referenceCopy,referencePdfHashes,...templates[kind]}),rendererBundleId:layout.renderer,rendererBundleHash:rendererHash,resourcesManifestHash:contractValueHash(layout),legalApprovalId:'SYNTHETIC_NOT_A_LEGAL_APPROVAL'});
  return {contract:definition('mandate'),promissoryNote:definition('promissoryNote')};
 }
 export function formatSnapshotAmount(n:number){
@@ -23,38 +22,72 @@ const money=formatSnapshotAmount;
 const date=(s:string)=>s.split('-').reverse().join('/');
 function render(kind:ReviewDocumentKind,p:ContractReviewProjection){
  const template=templates[kind],doc=new jsPDF({unit:'mm',format:'a4',compress:false,putOnlyUsedFonts:true});
- // Technical metadata comes from the snapshot, never an issuance/signature date or local clock.
- doc.setCreationDate("D:"+p.technicalFrozenAt.slice(0,19).replace(/\D/g,'')+"+00'00'");doc.setFileId(contractValueHash({kind,p,template,rendererHash}).slice(0,32));
- doc.setProperties({title:`${template.title} - ${p.contractNumber} - BORRADOR`,subject:'Revisión jurídica pendiente; datos sintéticos',author:'Cuenta Hogar - revisión técnica',creator:layout.renderer});
- let y=40;
- function page(){doc.addPage();y=40;}
- function space(height:number){if(y+height>layout.bodyBottom)page();}
- function text(value:string,size=10,bold=false){
-  doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);
-  const lines=doc.splitTextToSize(value,176) as string[];
-  for(const line of lines){space(size*0.42+1);doc.setTextColor(35,48,45);doc.text(line,17,y);y+=size*0.42+1;}y+=2;
+ doc.setCreationDate("D:"+p.technicalFrozenAt.slice(0,19).replace(/\D/g,'')+"+00'00'");
+ doc.setFileId(contractValueHash({kind,p,template,rendererHash}).slice(0,32));
+ doc.setProperties({title:`${template.title} - ${p.contractNumber} - BORRADOR`,subject:'Formato de referencia; revisión jurídica pendiente; datos sintéticos',author:'Cuenta Hogar - revisión técnica',creator:layout.renderer});
+ const ink=[15,23,42] as const,body=[51,65,85] as const,border=[203,213,225] as const;
+ let y=30;
+ function text(value:string,x:number,at:number,size=8,color:readonly number[]=body,width=180){
+  doc.setFont('helvetica','normal');doc.setFontSize(size);doc.setTextColor(color[0],color[1],color[2]);
+  const lines=doc.splitTextToSize(value,width) as string[];
+  doc.text(lines,x,at,{lineHeightFactor:1.15});return lines.length*size*0.352778*1.15;
  }
- function heading(value:string){space(15);y+=3;text(value,12,true);}
- function table(head:string[],rows:(string|number)[][]){
-  autoTable(doc,{startY:y,head:[head],body:rows,margin:{top:40,bottom:24,left:17,right:17},styles:{font:'helvetica',fontSize:9,cellPadding:1.6,overflow:'linebreak',textColor:[35,48,45]},headStyles:{fillColor:[23,62,59],textColor:[255,255,255]},alternateRowStyles:{fillColor:[245,247,245]},rowPageBreak:'avoid',showHead:'everyPage',didDrawPage:data=>{y=data.cursor?.y??40;}});
-  y=(doc as jsPDF & {lastAutoTable:{finalY:number}}).lastAutoTable.finalY+5;
+ function paragraph(value:string,size=8,gap=4){y+=text(value,15,y,size);y+=gap;}
+ function heading(key:keyof typeof referenceCopy.clauses){paragraph(referenceCopy.clauses[key].heading,9,2);}
+ function clause(key:keyof typeof referenceCopy.clauses){heading(key);paragraph(referenceCopy.clauses[key].text);}
+ function box(x:number,at:number,w:number,h:number,fill:readonly number[]){doc.setFillColor(fill[0],fill[1],fill[2]);doc.setDrawColor(...border);doc.setLineWidth(0.25);doc.rect(x,at,w,h,'FD');}
+ function requireFits(bottom:number){if(y>bottom)throw Error('REFERENCE_FORMAT_CONTENT_OVERFLOW');}
+ if(kind==='mandate'){
+  box(130,12,65,12,[219,234,254]);text('N° de Contrato / Legajo:',132,15.5,7.5,[100,116,139],61);text(p.contractNumber,132,20.5,9,ink,61);
+  text('CONTRATO DE MANDATO COMERCIAL Y',15,17,13,ink,113);text('GESTIÓN DE COMPRA',15,23,13,ink);
+  paragraph(`Entre LOOP GESTIÓN INTEGRAL S.R.L. (operando comercialmente bajo su nombre de fantasía "Cuenta Hogar"), CUIT N° [PENDIENTE], con domicilio legal [PENDIENTE], representada en este acto por [REPRESENTACIÓN PENDIENTE], en adelante denominado el "MANDATARIO" o la "EMPRESA", por una parte; y por la otra el/la Sr./Sra. ${p.customer.fullName}, D.N.I. N° ${p.customer.dni}, CUIT/CUIL N° [NO CONSTA EN SNAPSHOT], con domicilio en la calle ${p.customer.address}, de la localidad de ${p.customer.locality} (CP ${p.customer.postalCode}), provincia de ${p.customer.province}, correo electrónico ${p.customer.email}, teléfono ${p.customer.whatsapp}, en adelante denominado el "MANDANTE" o el "CLIENTE", convienen en celebrar el presente Contrato de Mandato Comercial, sujeto a las disposiciones del Código Civil y Comercial de la Nación y a las siguientes cláusulas y condiciones:`,8.5,5);
+  y+=text('CLÁUSULAS Y CONDICIONES',15,y,11,[30,58,138]);y+=3;
+  clause('1');
+  const productLines=doc.splitTextToSize(`${p.reference.name}. ${p.reference.description}`,105) as string[],rh=Math.max(8,productLines.length*3.25+3);
+  box(15,y,180,6,[241,245,249]);text('Cantidad',18,y+4.5,8,ink,25);text('Descripción del Bien (Marca, Modelo, Color)',45,y+4.5,8,ink,105);text('Estado (Nuevo/Usado)',155,y+4.5,8,ink,38);y+=6;
+  box(15,y,180,rh,[255,255,255]);text('Pendiente',18,y+5,7.5,body,25);text(productLines.join('\n'),45,y+5,8,ink,105);text('Pendiente',157,y+5,8,body,35);y+=rh+4;
+  paragraph(referenceCopy.intermediary,7.5,1);paragraph(referenceCopy.billing,7.5,6);
+  clause('2');
+  // Labels retained; V2 does not define the legacy 60/40 split or its equivalence.
+  for(const line of ['• Valor Neto del Bien: PENDIENTE DE MAPEO JURÍDICO','• Gastos de logística + Servicio de Soporte técnico: PENDIENTE','• Costo Financiero Total (CFT): PENDIENTE','• VALOR TOTAL A FINANCIAR: PENDIENTE DE MAPEO JURÍDICO']){y+=text(line,20,y,8);y+=1;}
+  paragraph(`Datos V2 del snapshot — capital: ${money(p.economics.capital)}; servicio: ${money(p.economics.service)}; total contractual: ${money(p.economics.total)}.`,7.5,5);
+  clause('3');
+  box(15,y,180,6,[241,245,249]);text('Anticipo / Cuota N°',20,y+4.5,8,ink,60);text('Monto ($)',90,y+4.5,8,ink,45);text('Fecha de Vencimiento',145,y+4.5,8,ink,48);y+=6;
+  // Each row contains exact materialized dates. No inferred monthly window.
+  const groups=[p.schedule.slice(0,1),p.schedule.slice(1)].filter(rows=>rows.length);
+  for(const rows of groups){
+   const dates=rows.map(row=>`${row.number}: ${date(row.date)}`).join('; '),lines=doc.splitTextToSize(dates,48) as string[],height=Math.max(6,lines.length*3.1+2);
+   box(15,y,180,height,[255,255,255]);text(rows.length===1?`Cuota ${rows[0].number}`:`Cuota ${rows[0].number} a ${rows.at(-1)!.number}`,20,y+4,8,ink,60);text(money(rows[0].amount),90,y+4,8,ink,48);text(dates,145,y+4,7.5,ink,48);y+=height;
+  }
+  y+=4;paragraph(referenceCopy.guarantee,8,5);clause('4');clause('5');requireFits(278);
+  doc.addPage();y=20;
+  // Preserve the reference's explicit page break before clause SIXTH.
+  heading('6');const sixth=referenceCopy.clauses['6'].text,split=sixth.indexOf('Se deja expresa constancia');paragraph(sixth.slice(0,split).trim(),8,6);paragraph(sixth.slice(split),8,6);
+  for(const [key,at] of [['7',74.8],['8',100],['9',129],['10',154.2]] as const){requireFits(at-2);y=at;clause(key);}
+  paragraph(`En prueba de plena conformidad, se firman dos (2) ejemplares de un mismo tenor y a un solo efecto en la ciudad/provincia de ${p.testIssue.mandate.place}, ${date(p.testIssue.mandate.date)}.`,8,14);
+  requireFits(197.2);y=197.2;doc.setDrawColor(148,163,184);doc.line(15,y,90,y);doc.line(115,y,190,y);y+=5;text('Firma y Aclaración MANDANTE',15,y,8.5,ink,78);text('Por LOOP GESTIÓN INTEGRAL S.R.L.',115,y,8.5,ink,80);y+=5;text(`D.N.I. N°: ${p.customer.dni}`,15,y,7.5,[100,116,139],78);text('Representación pendiente de validación',115,y,7.5,[100,116,139],80);
+ }else{
+  doc.setFillColor(...ink);doc.rect(15,12,180,22,'F');
+  doc.setFont('helvetica','normal');doc.setFontSize(14);doc.setTextColor(234,179,8);doc.text(template.title,105,22,{align:'center'});
+  text('Garantía Ejecutiva de Cumplimiento de Obligaciones de Mandato Comercial',54.5,28,8,[226,232,240],140);
+  text(`Contrato N° ${p.contractNumber}`,15,38,8,ink,105);
+  box(130,38,65,12,[241,245,249]);doc.setDrawColor(...ink);doc.setLineWidth(0.4);doc.rect(130,38,65,12,'S');text('POR $ [PENDIENTE]',135,45.5,11,ink,57);
+  y=45;paragraph(`Lugar y fecha de emisión: ${p.testIssue.promissoryNote.place}, ${date(p.testIssue.promissoryNote.date)}`,9,8);
+  paragraph(referenceCopy.notePromise,9,2);paragraph('LOOP GESTIÓN INTEGRAL S.R.L. (CUIT PENDIENTE)',10,2);
+  paragraph('o a su orden, la cantidad de PESOS: [IMPORTE PENDIENTE] (Son PESOS: [PENDIENTE]).',9,5);
+  paragraph(referenceCopy.noteReason,9,5);paragraph(referenceCopy.noteArrears,8.5,6);
+  const start=y;box(15,y,180,36,[248,250,252]);text('DATOS DEL LIBRADOR / DEUDOR PRINCIPAL:',20,y+6,9,ink,170);
+  const customerRows=[['Nombre y Apellido: '+p.customer.fullName,'DNI: '+p.customer.dni],['Domicilio: '+p.customer.address,'Localidad: '+p.customer.locality],['Código Postal: '+p.customer.postalCode,'Teléfono / WhatsApp: '+p.customer.whatsapp]];
+  let offset=13;for(const row of customerRows){const height=Math.max(text(row[0],20,start+offset,8.5,body,90),text(row[1],115,start+offset,8.5,body,75));offset+=Math.max(7,height+1);}
+  offset+=text('Email: '+p.customer.email,20,start+offset,8.5,body,170);if(offset>38)throw Error('REFERENCE_FORMAT_CONTENT_OVERFLOW');
+  y=start+44;doc.setDrawColor(148,163,184);doc.line(60,y,150,y);y+=5;text('Firma del Librador / Deudor Principal',78.5,y,8.5,ink,112);y+=5;y+=text(`Aclaración Manuscrita y DNI: ${p.customer.fullName} (DNI: ${p.customer.dni})`,61,y,7.5,[100,116,139],133);
+  y+=12;paragraph(`Referencia V2, no importe del pagaré: total contractual ${money(p.economics.total)}.`,8,3);paragraph('Importe, vencimiento/exigibilidad, lugar y fecha de emisión del título: PENDIENTES de confirmación jurídica. No se presume el total contractual como importe del pagaré.',8,3);requireFits(264);
  }
- text(template.title.toUpperCase(),20,true);text('Documento de trabajo para revisión jurídica. Datos completamente sintéticos.',10);
- heading('1. Identificación de la operación');table(['Dato','Contenido derivado del snapshot'],[['Número contractual compartido',p.contractNumber],['Referencia de compra',p.reference.name],['Descripción',p.reference.description]]);
- heading('2. Datos personales del ejemplo');table(['Campo','Dato sintético'],Object.entries({Nombre:p.customer.fullName,DNI:p.customer.dni,Domicilio:p.customer.address,Localidad:p.customer.locality,Provincia:p.customer.province,'Código postal':p.customer.postalCode,Email:p.customer.email,WhatsApp:p.customer.whatsapp}));
- heading('3. Identidad empresarial pendiente');text('LOOP GESTIÓN INTEGRAL S.R.L. - identidad propuesta pendiente de validación documental.',10,true);text('CUIT, domicilio legal, representación y facultades: pendientes de validación. No se trasladan datos jurídicos legacy ni el identificador fiscal sintético como identidad válida.');
- space(76);heading('4. Datos económicos del snapshot');table(['Concepto','Valor de referencia'],[['Capital aplicado a la compra',money(p.economics.capital)],['Servicio Cuenta Hogar',money(p.economics.service)],['Total contractual',money(p.economics.total)],['Cantidad de cuotas',p.economics.count],['Importe de cada cuota',money(p.economics.installment)]]);
- if(kind==='promissoryNote')text('El importe del pagaré no está definido jurídicamente. No se presume que sea el total contractual, el capital o una cuota.',10,true);
- space(26+(p.schedule.length+1)*7.2);heading('5. Cronograma materializado - referencia contractual');text('Transcripción de las cuotas del snapshot. No determina por sí sola el vencimiento o exigibilidad del pagaré.');table(['Cuota','Vencimiento','Importe'],p.schedule.map(row=>[row.number,date(row.date),money(row.amount)]));
- space(52);heading(`6. ${template.legalHeading}`);text(template.legalText);text(template.pending);
- heading('7. Lugar, fechas y parámetros pendientes');const issue=p.testIssue[kind];text(`Lugar y fecha de prueba del snapshot (no aprobados): ${issue.place}, ${date(issue.date)}.`);text('Lugar y fecha de emisión jurídicamente válidos, lugar de pago y demás parámetros legales: pendientes. La fecha de revisión o congelamiento no acredita firma física.');
- space(55);heading('8. Espacios de firma reservados - NO FIRMAR');text('La ubicación, cantidad, calidad de los firmantes y requisitos de firma deberán aprobarse jurídicamente. Estos espacios no acreditan consentimiento.');
- y+=12;doc.setDrawColor(120);doc.line(17,y,93,y);doc.line(117,y,193,y);y+=6;text('Espacio reservado                               Espacio reservado',9);text('NO VÁLIDO PARA FIRMA',10,true);
- heading('Trazabilidad del borrador');text(`Plantilla: ${template.id} / ${template.version}`,8);text(`Snapshot SHA-256: ${p.snapshotHash}`,8);text(`Renderer: ${layout.renderer}. Aprobación legal: PENDIENTE.`,8);
  const pages=doc.getNumberOfPages();for(let pageNo=1;pageNo<=pages;pageNo++){
-  doc.setPage(pageNo);doc.setFillColor(248,235,213);doc.rect(0,0,210,28,'F');doc.setTextColor(112,55,23);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text(doc.splitTextToSize(REVIEW_WARNING,176),17,11);
-  doc.setFontSize(9);doc.setTextColor(23,62,59);doc.text(`${p.contractNumber} | DATOS SINTÉTICOS`,17,33);
-  doc.setDrawColor(210);doc.line(17,277,193,277);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text('BORRADOR - NO FIRMAR - REVISIÓN LEGAL PENDIENTE',17,283);doc.text(`${pageNo} / ${pages}`,193,283,{align:'right'});
+  doc.setPage(pageNo);text(REVIEW_WARNING,15,6,7,[153,27,27],180);
+  text('DATOS SINTÉTICOS — CLÁUSULAS DE REFERENCIA, NO APROBADAS — NO FIRMAR',15,282,7,[153,27,27],180);
+  text('Identidad de LOOP pendiente de validación documental. Parámetros legales pendientes.',15,286,7,body,180);
+  text(`${p.contractNumber} | ${pageNo} / ${pages} | ${template.version}`,15,290,6.5,[100,116,139],180);
  }
  return {bytes:new Uint8Array(doc.output('arraybuffer')),pages};
 }

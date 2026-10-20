@@ -24,4 +24,4 @@ async function main(){
   console.log('DOCUMENTS_REAL_READY_C1_SNAPSHOT_INTEGRATION = PASS; GENERATOR_FIREBASE_WRITES = 0');
  }finally{await service.close();await db.terminate();}
 }
-main().catch(()=>{console.error('DOCUMENTS_EMULATOR = FAIL');process.exitCode=1;});
+main().catch(error=>{console.error('DOCUMENTS_EMULATOR = FAIL',error instanceof Error?error.stack?.split('\n').filter(line=>line.trim().startsWith('at ')).slice(0,4).join('\n'):'unexpected');process.exitCode=1;});

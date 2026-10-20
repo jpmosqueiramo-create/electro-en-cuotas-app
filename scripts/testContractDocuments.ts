@@ -13,6 +13,7 @@ import { REVIEW_WARNING } from '../src/lib/contractDocuments/templates';
 async function main(){
  const s=documentReviewFixture(),before=JSON.stringify(s),p=projectContractReview(s),pair=generateContractReviewPair(s);
  assert.equal(JSON.stringify(s),before);assert.equal(p.contractNumber,s.contractNumber);assert.deepEqual(p.schedule,s.paymentSchedule.installments.map(row=>({number:row.installmentNumber,date:row.dueDate,amount:row.amount})));
+ for(const definition of Object.values(pair.manifest.definitions))assert.ok(definition.templateId.startsWith('synthetic-'));
  assert.deepEqual(generateContractReviewPair(s).mandate.bytes,pair.mandate.bytes);
  assert.equal(pair.manifest.artifacts.mandate.sha256,createHash('sha256').update(pair.mandate.bytes).digest('hex'));
  assert.equal(Buffer.from(pair.mandate.bytes.slice(0,5)).toString(),'%PDF-');
@@ -25,14 +26,18 @@ async function main(){
  const projected=JSON.stringify(projectContractReview(sensitive));for(const value of ['SECRET_INTERNAL_VENDOR','SECRET_WORKPLACE','SECRET_WORK_ADDRESS','factorSnapshot','proveedorSnapshot','costoProveedorSnapshot'])assert.ok(!projected.includes(value));
  for(const [value,expected] of [[580000.5,'$ 580.000,50'],[580000.505,'$ 580.000,505'],[0.0000001,'$ 0,0000001'],[1e21,'$ 1.000.000.000.000.000.000.000,00']] as const)assert.equal(formatSnapshotAmount(value),expected);
  for(let plan=1;plan<=18;plan++){
-  const snapshot=documentReviewFixture(plan),pair=generateContractReviewPair(snapshot);assert.equal(projectContractReview(snapshot).schedule.length,plan);assert.ok(pair.mandate.pages>0);assert.ok(pair.promissoryNote.pages>0);
+  const snapshot=documentReviewFixture(plan),pair=generateContractReviewPair(snapshot);assert.equal(projectContractReview(snapshot).schedule.length,plan);assert.equal(pair.mandate.pages,2);assert.equal(pair.promissoryNote.pages,1);
  }
- for(const snapshot of [s,sensitive,documentReviewFixture(18,'Descripción sintética extensa. '.repeat(120))]){
+ const secondNumber=sealContractSnapshot({...plain,contractNumber:'CH-000002',numbering:{...s.numbering,sequence:'2'}});
+ assert.equal(generateContractReviewPair(secondNumber).manifest.contractNumber,'CH-000002');
+ for(const snapshot of [s,sensitive,secondNumber,documentReviewFixture(18,'Descripción sintética extensa. '.repeat(3))]){
   const docs=generateContractReviewPair(snapshot),dir=mkdtempSync(join(tmpdir(),'contract-document-test-'));
   writeFileSync(join(dir,'mandato.pdf'),docs.mandate.bytes);writeFileSync(join(dir,'pagare.pdf'),docs.promissoryNote.bytes);
   writeFileSync(join(dir,'expected.json'),JSON.stringify({contractNumber:snapshot.contractNumber,required:[REVIEW_WARNING,'LOOP GESTIÓN INTEGRAL S.R.L.','pendiente de validación documental',formatSnapshotAmount(snapshot.economicTerms.contractTotal),snapshot.personalData.fullName,'NO VÁLIDO PARA FIRMA'],forbidden:['SECRET_INTERNAL_VENDOR','SECRET_WORKPLACE','SECRET_WORK_ADDRESS','factorSnapshot','costoProveedorSnapshot','P4_PRIVATE'],rows:snapshot.paymentSchedule.installments.map(row=>({number:row.installmentNumber,date:row.dueDate.split('-').reverse().join('/'),amount:formatSnapshotAmount(row.amount)}))}));
   process.stdout.write(execFileSync(process.env.PDF_REVIEW_PYTHON??'python3',['scripts/verifyContractDocumentPdfs.py',dir],{encoding:'utf8'}));
  }
+ // A fixed reference format must reject excess text, never clip it or silently add pages.
+ assert.throws(()=>generateContractReviewPair(documentReviewFixture(18,'Descripción sintética extensa. '.repeat(120))),/REFERENCE_FORMAT_CONTENT_OVERFLOW/);
  const server=createSyntheticReviewServer(pair);await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
  try{const address=server.address();assert.ok(address&&typeof address!=='string');const base=`http://127.0.0.1:${address.port}`;
   const html=await fetch(base);assert.equal(html.status,200);assert.ok((await html.text()).includes('Revisión administrativa'));assert.equal(html.headers.get('cache-control'),'no-store');
