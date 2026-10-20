@@ -55,13 +55,31 @@ function render(kind:ReviewDocumentKind,p:ContractReviewProjection){
   }
   y+=5;
   clause('3');
+  const scheduleTop=y;
   box(15,y,180,6,[241,245,249]);text('Anticipo / Cuota N°',20,y+4.5,8,ink,60);text('Monto ($)',90,y+4.5,8,ink,45);text('Fecha de Vencimiento',145,y+4.5,8,ink,48);y+=6;
-  // Each row contains exact materialized dates. No inferred monthly window.
+  // Column-major order preserves the materialized chronology: left, then right.
   const groups=[p.schedule.slice(0,1),p.schedule.slice(1)].filter(rows=>rows.length);
-  for(const rows of groups){
-   const dates=rows.map(row=>`${row.number}: ${date(row.date)}`).join('; '),lines=doc.splitTextToSize(dates,48) as string[],height=Math.max(6,lines.length*3.1+2);
-   box(15,y,180,height,[255,255,255]);text(rows.length===1?`Cuota ${rows[0].number}`:`Cuota ${rows[0].number} a ${rows.at(-1)!.number}`,20,y+4,8,ink,60);text(money(rows[0].amount),90,y+4,8,ink,48);text(dates,145,y+4,7.5,ink,48);y+=height;
+  for(const [groupIndex,rows] of groups.entries()){
+   const split=Math.ceil(rows.length/2),gridRows=groupIndex===0?1:split;
+   const height=groupIndex===0?6:Math.max(6,gridRows*3.5),rowHeight=height/gridRows;
+   box(15,y,180,height,[255,255,255]);text(rows.length===1?`Cuota ${rows[0].number}`:`Cuota ${rows[0].number} a ${rows.at(-1)!.number}`,20,y+4,8,ink,60);text(money(rows[0].amount),90,y+4,8,ink,48);
+   if(groupIndex===0){text(`${rows[0].number}: ${date(rows[0].date)}`,145,y+4,7.5,ink,48);}
+   else{
+    const columnWidth=27.5;
+    doc.setDrawColor(...border);doc.setLineWidth(0.15);doc.line(167.5,y,167.5,y+height);
+    for(let row=1;row<gridRows;row++)doc.line(140,y+row*rowHeight,195,y+row*rowHeight);
+    for(const [column,entries] of [rows.slice(0,split),rows.slice(split)].entries()){
+     for(const [index,row] of entries.entries()){
+      const x=142+column*columnWidth,baseline=y+index*rowHeight+Math.min(4,rowHeight-0.9);
+      text(`${row.number}:`,x,baseline,7.5,ink,5);
+      text(date(row.date),x+6,baseline,7.5,ink,columnWidth-10);
+     }
+    }
+   }
+   y+=height;
   }
+  doc.setDrawColor(...border);doc.setLineWidth(0.25);
+  for(const x of [85,140])doc.line(x,scheduleTop,x,y);
   y+=4;paragraph(referenceCopy.guarantee,8,5);clause('4');clause('5');requireFits(278);
   doc.addPage();y=20;
   // Preserve the reference's explicit page break before clause SIXTH.

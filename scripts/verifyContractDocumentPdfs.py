@@ -42,6 +42,60 @@ for name, page_count in [('mandato', 2), ('pagare', 1)]:
             cursor += found.end()
             assert row['amount'] in full, 'Materialized amount changed'
         assert len(re.findall(r'\d+: \d{2}/\d{2}/\d{4}', full)) == len(expected['rows']), 'Extra/missing schedule dates'
+        # Verify actual PDF coordinates, not just equivalent extracted text.
+        labels, dates, segments = {}, {}, []
+        # Read the literal operators: extraction can report a synthetic (0,0)
+        # position for the first text run after vector borders.
+        state = {'x':0, 'y':0, 'size':0}
+        def line_operator(op, args, cm, tm):
+            if op == b'm':
+                line_operator.pen = tuple(float(n)*25.4/72 for n in args)
+            elif op == b'l' and hasattr(line_operator, 'pen'):
+                segments.append((line_operator.pen, tuple(float(n)*25.4/72 for n in args)))
+            elif op == b'BT':
+                state.update(x=0, y=0)
+            elif op == b'Tf':
+                state['size'] = float(args[1])
+            elif op == b'Td':
+                state['x'] += float(args[0])
+                state['y'] += float(args[1])
+            elif op == b'Tm':
+                state.update(x=float(args[4]), y=float(args[5]))
+            elif op == b'Tj':
+                value = (args[0].decode('latin1') if isinstance(args[0], bytes) else str(args[0])).strip()
+                point = (state['x']*25.4/72, (841.89-state['y'])*25.4/72, state['size'])
+                if re.fullmatch(r'\d+:', value):
+                    assert value not in labels, 'Duplicate installment label'
+                    labels[value] = point
+                if re.fullmatch(r'\d{2}/\d{2}/\d{4}', value):
+                    assert value not in dates, 'Duplicate grid date'
+                    dates[value] = point
+        reader.pages[0].extract_text(visitor_operand_before=line_operator)
+        remaining = expected['rows'][1:]
+        assert len(labels) == len(dates) == len(remaining), 'Grid lost or duplicated installments'
+        if remaining:
+            split = (len(remaining)+1)//2
+            height = max(6, split*3.5)
+            step = height/split
+            baseline_offset = min(4, step-0.9)
+            top = labels[f"{remaining[0]['number']}:"][1]-baseline_offset
+            for index, row in enumerate(remaining):
+                column, line = divmod(index, split)
+                x, y, size = labels[f"{row['number']}:"]
+                dx, dy, date_size = dates[row['date']]
+                assert abs(x-(142+column*27.5)) < 0.01, 'Misaligned installment column'
+                assert abs(dx-(x+6)) < 0.01 and abs(dy-y) < 0.01, 'Number/date misalignment'
+                assert size == date_size == 7.5, 'Grid font changed'
+                assert abs(y-(top+line*step+baseline_offset)) < 0.01, 'Uneven grid row height'
+                assert step >= 3.5, 'Insufficient line separation'
+            def has_line(x1, y1, x2, y2):
+                target = (x1,y1,x2,y2)
+                return any(all(abs(actual-wanted)<0.02 for actual,wanted in zip((a[0],841.89*25.4/72-a[1],b[0],841.89*25.4/72-b[1]),target)) for a,b in segments)
+            assert has_line(167.5,top,167.5,top+height), 'Missing internal column divider'
+            for x in [85,140]:
+                assert has_line(x,top-12,x,top+height), 'Main table column border changed'
+            for row in range(1,split):
+                assert has_line(140,top+row*step,195,top+row*step), 'Missing grid row border'
         assert 'N° de Contrato / Legajo:' in pages[0]
         assert copy['clauses']['5']['heading'] in pages[0] and copy['clauses']['6']['heading'] in pages[1], 'Clause page break changed'
         for clause in copy['clauses'].values():
@@ -54,6 +108,8 @@ for name, page_count in [('mandato', 2), ('pagare', 1)]:
         assert 'Importe propuesto del pagaré' in full and 'referencia técnica pendiente de aprobación jurídica' in full, 'Missing proposed, non-enforceable amount warning'
         assert 'POR $ [PENDIENTE]' in full and '[IMPORTE PENDIENTE]' in full, 'Unapproved note amount assigned'
         assert f"Contrato N° {expected['contractNumber']}" in full
+        if 'unchangedNoteStreamHash' in expected:
+            assert hashlib.sha256(reader.pages[0].get_contents().get_data()).hexdigest() == expected['unchangedNoteStreamHash'], 'Promissory note presentation/content changed'
     # Physical anchors from the confirmed original, in PDF points (bottom origin).
     anchors = {}
     def visit(text, cm, tm, font, size):
