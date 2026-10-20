@@ -1,5 +1,6 @@
 "use client";
 
+import { AffiliateOperationsV2 } from '@/components/operations/AffiliateOperationsV2';
 import { isAdminEmail } from "@/lib/adminIdentity";
 
 import { useAuth } from "@/components/AuthProvider";
@@ -400,6 +401,7 @@ export default function AfiliadoPage() {
            </div>
         )}
 
+        <AffiliateOperationsV2 key={user.uid}/>
         {/* MENÚ DE SECCIONES (TABS) */}
         <div className="flex flex-col sm:flex-row gap-2 mb-8 bg-[#121316]/80 p-2 rounded-xl border border-zinc-800 shadow-2xl shadow-black/60">
            <button onClick={() => setActiveTab("carga")} className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all text-center ${activeTab === 'carga' ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-zinc-500 hover:text-white hover:bg-zinc-800/80'}`}>
