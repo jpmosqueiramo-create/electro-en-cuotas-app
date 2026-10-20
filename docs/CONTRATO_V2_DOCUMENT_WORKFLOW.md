@@ -62,12 +62,23 @@ Se mantienen mandato de dos páginas y pagaré de una, formatos y cláusulas de
 referencia. No hay anticipos o garantes. REFERENCE_FORMAT_REVIEW_V4 identifica
 el cambio de copy del importe propuesto.
 
-contractTotal es únicamente el importe propuesto del pagaré como referencia
+En la implementación vigente, contractTotal es únicamente el importe propuesto del pagaré como referencia
 técnica PENDING_LEGAL_APPROVAL. enforceableAmount sigue null y el recuadro/importe
 en letras del título permanecen PENDIENTES. No se presume exigibilidad. Identidad
 LOOP, cláusulas, lugar/fecha y condiciones jurídicas siguen pendientes según
 CONTRATO_V2_DOCUMENTS_REVIEW.md. Todos los PDF llevan advertencia de borrador y
 NO FIRMAR.
+
+La decisión comercial del 2026-10-19 define para la próxima actualización jurídica
+y operativa conjunta el importe del pagaré como exactamente contractTotal,
+mostrado en números y letras, conservando el diseño original y el título
+PAGARÉ A LA VISTA Y SIN PROTESTO. El pagaré no mostrará cantidad de cuotas,
+importe individual ni cronograma; ese detalle queda exclusivamente en el mandato.
+Ambos conservarán contractNumber del mismo snapshot. Esta especificación no
+modifica el renderer vigente, las cláusulas ni el contrato de mandato. La validez,
+exigibilidad y relación con obligaciones en cuotas siguen pendientes de revisión
+profesional; emisión productiva deshabilitada. Ver la decisión completa en
+CONTRATO_V2_DOCUMENTS_REVIEW.md.
 
 La UI obtiene PDFs mediante Bearer en headers, comprueba sus SHA-256 contra el
 manifest y crea blobs de vida limitada. No pone tokens en URLs, localStorage o
@@ -176,3 +187,41 @@ formalización, merge o deploy. Las decisiones jurídicas siguen pendientes.
   polling y timeout, sin modificar assertions ni convertir errores en PASS.
 - git diff --check: PASS. Cláusulas jurídicas, Rules, configuración, pricing,
   Budget/Acceptance y servicios READY/C1 originales: sin cambios.
+
+## Evolución comercial y operativa V5 (2026-10-19)
+
+La revisión V5 aplica la decisión de importe del pagaré; la descripción V4 de
+importe sólo propuesto queda como antecedente de implementación. Ver perfil,
+plantillas, condición del bien y política económica en
+CONTRATO_V2_DOCUMENTS_REVIEW.md, sección «Actualización integral comercial V2».
+
+El expediente incluye un panel de seguimiento con estados independientes de
+firma cliente/mandato, cliente/pagaré, representante, remito, entrega, custodia y
+formalización. Las firmas registran fecha efectiva, localidad efectiva, referencia
+opaca del original/evidencia y canal SYSTEM/WHATSAPP, con actor y timestamp técnico
+separados. Las fotografías no sustituyen originales. No se suben fotografías a
+Storage ni se generan URLs permanentes desde este panel; la referencia permite
+trazabilidad del canal vigente sin duplicar imágenes ni datos personales.
+
+Endpoint Admin privado `contract/operations`, GET sin escrituras. POST sólo admite
+RECORD_SIGNATURE, RECORD_DELIVERY y RECEIVE_ORIGINALS con commandId, revisión
+esperada y esquema exacto. Persiste en subcolecciones server-mediated existentes
+del Draft: operationalEvidence/current, operationalCommands y operationalEvents.
+No cambia el snapshot ni su digest. Reintentos idénticos devuelven el resultado
+original; conflictos de revisión/commandId se rechazan. Evidencia existente nunca
+se sobrescribe. No hay comando FORMALIZED ni aprobación jurídica inferida.
+
+Entrega requiere firmas físicas registradas del cliente en contrato, pagaré y
+remito. No espera validación fotográfica administrativa ni firma del representante;
+esta última permanece PENDIENTE y puede registrarse luego. Recibir originales
+requiere las firmas incluidas del representante; no equivale a formalización.
+La entrega efectivamente registrada no se revierte por documentación pendiente.
+
+Durante revisión jurídica, POST operativo exige Emulator demo con guardas locales,
+sin flags de habilitación productiva. La UI productiva permite consultar pero no
+registrar firmas/entregas nuevas. No se debe registrar firma de PDFs de muestra.
+La activación operativa real requiere aprobación jurídica y autorización expresa;
+las muestras, el almacenamiento de pruebas y el congelamiento continúan aislados.
+El rol conductor/vendedor afiliado no obtiene permisos nuevos: la evidencia se
+registra administrativamente desde el sistema o canal WhatsApp vigente. No se
+expone un endpoint público ni se modifican Rules, IAM o datos productivos.

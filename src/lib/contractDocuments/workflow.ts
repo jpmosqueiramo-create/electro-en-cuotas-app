@@ -23,7 +23,7 @@ export interface PrivateDocumentArchive<S> {
 export const pendingLegalRequirements = [
   'Identidad documental y representación de LOOP GESTIÓN INTEGRAL S.R.L.',
   'Texto jurídico: armonizar SEGUNDA, TERCERA y referencias a gestión/financiación.',
-  'Importe exigible, vencimiento, lugar y restantes condiciones del pagaré.',
+  'Validez y exigibilidad del pagaré por contractTotal; relación con obligaciones en cuotas, lugar y fecha efectivos.',
   'Firmas físicas verificadas del contrato de mandato y del pagaré.',
 ] as const;
 /** No command in this module can authorize issuance or physical formalization.

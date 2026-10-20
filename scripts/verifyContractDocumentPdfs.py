@@ -44,16 +44,25 @@ for name, page_count in [('mandato', 2), ('pagare', 1)]:
         assert len(re.findall(r'\d+: \d{2}/\d{2}/\d{4}', full)) == len(expected['rows']), 'Extra/missing schedule dates'
         assert 'N° de Contrato / Legajo:' in pages[0]
         assert copy['clauses']['5']['heading'] in pages[0] and copy['clauses']['6']['heading'] in pages[1], 'Clause page break changed'
-        for clause in copy['clauses'].values():
+        for key, clause in copy['clauses'].items():
+            if key == '4':
+                assert normalize(clause['text']) not in full, 'Removed arrears clause remains'
+                continue
             assert normalize(clause['heading']) in full and normalize(clause['text']) in full, 'Reference clause changed'
         for key in ['billing', 'intermediary', 'guarantee']:
             assert normalize(copy[key]) in full, 'Reference wording changed'
     else:
-        for key in ['notePromise', 'noteReason', 'noteArrears']:
+        for key in ['notePromise', 'noteReason']:
             assert normalize(copy[key]) in full, 'Promissory note wording changed'
-        assert 'Importe propuesto del pagaré' in full and 'referencia técnica pendiente de aprobación jurídica' in full, 'Missing proposed, non-enforceable amount warning'
-        assert 'POR $ [PENDIENTE]' in full and '[IMPORTE PENDIENTE]' in full, 'Unapproved note amount assigned'
+        assert 'aprobación jurídica pendiente' in full and 'NO FIRMAR' in full
+        assert f"POR {expected['economics']['total']}" in full, 'Note total differs from snapshot'
+        if 'noteWords' in expected:
+            assert expected['noteWords'] in full, 'Amount in words differs from snapshot total'
+        for forbidden in ['0.5%', '0,5%', 'Cantidad de cuotas', 'Cuota 1', 'Fecha de Vencimiento', '[IMPORTE PENDIENTE]']:
+            assert forbidden not in full, 'Prohibited note content'
+        assert not re.search(r'\d+: \d{2}/\d{2}/\d{4}', full), 'Note schedule leaked'
         assert f"Contrato N° {expected['contractNumber']}" in full
+    assert '0.5%' not in full and '0,5%' not in full and '30-71829384-9' not in full
     # Physical anchors from the confirmed original, in PDF points (bottom origin).
     anchors = {}
     def visit(text, cm, tm, font, size):

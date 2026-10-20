@@ -58,8 +58,8 @@ FIRMAR. Estas marcas y los campos pendientes son diferencias intencionales.
 | Capital aplicado a la compra | capitalAmount del snapshot, sin recalcular. |
 | Servicios de Cuenta Hogar | serviceAmount del snapshot, sin distribución porcentual. |
 | Total contractual | contractTotal del snapshot. |
-| Cuotas e importes | Mismos valores y orden del cronograma materializado. Sin anticipo inventado ni ventana de fechas inferida. |
-| Importe del pagaré en cifras y letras | PENDIENTE. No se presume capital, total o cuota como importe del título. El total V2 aparece sólo como referencia separada. |
+| Cuotas e importes del contrato de mandato | Mismos valores y orden del cronograma materializado. Sin anticipo inventado ni ventana de fechas inferida. El detalle de cuotas corresponde exclusivamente al contrato de mandato. |
+| Importe del pagaré en cifras y letras | Decisión comercial aprobada: exactamente contractTotal del ContractSnapshotV2, sin recálculo. Aplicación pendiente en la próxima actualización jurídica y operativa conjunta; el generador vigente aún lo muestra como referencia separada y mantiene el importe del título pendiente. Validez y exigibilidad sujetas a revisión profesional. |
 | Lugar y fecha | Valores sintéticos del contexto congelado, con advertencia de parámetros legales pendientes. No acreditan emisión o firma. |
 | Identidad LOOP, CUIT, domicilio legal y representación | LOOP se conserva como identidad propuesta; los parámetros no validados quedan pendientes. No se importa CUIT, domicilio o representante del modelo. |
 
@@ -67,7 +67,7 @@ Las referencias a financiación, la tasa de mora 0.5%, el pagaré por suma total
 financiada, la jurisdicción BUENOS AIRES, las autorizaciones crediticias, cesiones,
 soporte y demás cláusulas permanecen literales como texto de referencia aportado.
 No son reglas económicas V2 ni decisiones jurídicas aprobadas. Su compatibilidad,
-importe/exigibilidad del pagaré y eventual redacción definitiva requieren revisión
+validez/exigibilidad del pagaré y eventual redacción definitiva requieren revisión
 jurídica. No se efectúa cálculo alguno con esa tasa ni con el desglose legacy.
 Las sustituciones de datos y parámetros pendientes no reescriben las cláusulas.
 
@@ -143,5 +143,77 @@ Referencias textuales que requieren adaptación y aprobación legal posterior:
 - CUARTA y cláusula de mora del pagaré: tasa 0.5%, mora/exigibilidad; permanecen
   texto de referencia, nunca parámetros económicos V2 aplicados por el renderer.
 
-El importe, vencimiento/exigibilidad y restantes condiciones del pagaré siguen
-pendientes; no hay emisión válida para firma ni cambio de seguridad productiva.
+El importe queda definido comercialmente por la decisión siguiente. La validez,
+vencimiento/exigibilidad y restantes condiciones jurídicas siguen pendientes; no
+hay emisión válida para firma ni cambio de seguridad productiva.
+
+## Decisión comercial aprobada: pagaré V2 (2026-10-19)
+
+Criterios para incorporar conjuntamente en la próxima actualización jurídica y
+operativa, sin implementación aislada en esta revisión documental:
+
+- Conservar el diseño original de una página A4 y la denominación exacta
+  **PAGARÉ A LA VISTA Y SIN PROTESTO**, junto con sus cláusulas de referencia.
+- El importe será exactamente contractTotal del ContractSnapshotV2, expresado
+  en números y letras. No recalcular importes, distribuir porcentajes ni consultar
+  catálogo vivo; la conversión a letras representa el mismo valor congelado.
+- El pagaré no mostrará cantidad de cuotas, importe individual de las cuotas ni
+  cronograma de vencimientos. Ese detalle pertenece exclusivamente al contrato
+  de mandato, que no se modifica por esta decisión.
+- Ambos documentos utilizarán el mismo contractNumber del snapshot, con formato
+  correlativo CH-000001 y siguientes. El renderer no asigna numeración.
+
+Esta decisión reemplaza la indefinición comercial del importe; no constituye
+aprobación jurídica. La validez y exigibilidad del pagaré a la vista, su relación
+con las obligaciones en cuotas y las demás condiciones siguen sujetas a revisión
+profesional. Las referencias originales a financiación, suma total financiada y
+mora requieren esa revisión; no se reescriben unilateralmente.
+
+El generador, sus muestras, sus pruebas y las cláusulas permanecen sin cambios
+en esta actualización de especificación. El importe exigible actualmente vacío
+no se completa aquí. La futura adaptación deberá actualizar y verificar las
+pruebas de contenido del pagaré conforme a estos criterios, conservando las del
+cronograma del mandato. Continúan LEGAL_APPROVAL = PENDING y
+PRODUCTION_DOCUMENT_ISSUANCE = DISABLED, con las marcas de borrador y NO FIRMAR.
+
+## Actualización integral comercial V2 — revisión V5 (2026-10-19)
+
+Esta implementación reemplaza los criterios pendientes de aplicación de la sección
+anterior. Las descripciones V3/V4 anteriores registran el estado histórico; no se
+reescriben ni reseallan snapshots, plantillas congeladas o PDFs existentes.
+
+- `REFERENCE_FORMAT_REVIEW_V5`: mismos formatos 2/1 A4, encabezados, fuentes,
+  colores y firmas. Se retira únicamente CUARTA y el párrafo punitorio del pagaré,
+  conservando la numeración y el texto de las restantes cláusulas. No hay cláusula
+  sustitutiva ni afirmación sobre eliminación de la mora jurídica.
+- Perfil único `LOOP_COMMERCIAL_PROFILE_V1`: LOOP GESTIÓN INTEGRAL S.R.L., CUIT
+  30-71962686-2, Caracas 1101, Ciudad Autónoma de Buenos Aires; Juan Pablo Mosqueira
+  Morales, socio gerente; marca Cuenta Hogar. El perfil forma parte del hash del
+  renderer. Identidad, documentos societarios y facultades siguen pendientes de
+  validación jurídica; los datos de clientes de las muestras son sintéticos.
+- El pagaré muestra exactamente `contractTotal`, en números y letras con centavos
+  en pesos argentinos, sin cantidad/importe individual de cuotas ni cronograma.
+  No reserva numeración. Validez, exigibilidad y relación con cuotas pendientes;
+  no es un documento habilitado para firma.
+- SEGUNDA conserva únicamente capital, servicios y total del snapshot. Los
+  párrafos restantes que aluden a financiación y suma financiada requieren revisión
+  profesional; no se armonizan automáticamente.
+- Nuevos borradores admiten `goodsCondition` opcional, versión
+  `GOODS_CONDITION_V1`, con valor explícito NUEVO/USADO; comando administrativo
+  `SET_GOODS_CONDITION`, con CAS, idempotencia y evento. No se presume NUEVO.
+  El campo entra en el digest READY sólo cuando existe. C1 exige coincidencia con
+  `documentContext.parameters.goodsConditionVersion/goodsCondition`, ya soportados
+  por el contexto versionado. Ausencia histórica conserva digests y muestra
+  Pendiente. No se habilita emisión definitiva con información faltante.
+- Las muestras no usan congelamiento ni fecha de generación como fecha de firma.
+  El mandato identifica la residencia y deja pendiente lugar/fecha efectivos;
+  el registro operativo conserva ambos por firma, incluyendo excepciones de lugar.
+- Se mantiene el rechazo explícito de overflow: nunca se trunca para forzar páginas.
+
+`OVERDUE_SURCHARGE_POLICY_V1 = NONE`: proyección pura de saldo contractual menos
+pagos imputados; recargo cero, sin dependencia del paso del tiempo. No se encontró
+consumo de ContractSnapshotV2 en los módulos ledger existentes. Por eso no se
+modifican caja, ledger, recibos ni estadísticas legacy, ni se crea una cobranza
+paralela. La política queda disponible y probada para la futura integración V2.
+
+Ninguna actualización implica aprobación legal, freeze productivo o emisión real.
