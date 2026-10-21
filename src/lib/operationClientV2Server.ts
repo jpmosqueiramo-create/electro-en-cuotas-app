@@ -112,8 +112,9 @@ export async function readClientService(db:Firestore,id:string,v:number,uid:stri
   const {origin,state}=await context(db,tx,id,v);if(state.state!=='ACTIVE'||state.uid!==uid)portalFail('Servicio no disponible.');
   await requirePrerequisites(db,tx,id,v);
   const budget=(await tx.get(contractRefs(db,id,v).budget)).data()!;
-  // Only frozen accepted product identity and a general state. No economics, schedule or document metadata.
-  return {operationId:origin.identity.operationId,service:'Gestión de compra por mandato',product:origin.initial.productName,status:'Servicio vinculado',activatedAt:state.activatedAt,locality:budget.clienteSnapshot.localidad as string,financialInformationAvailable:false};
+  const financial=(await tx.get(operationRef(db,id,v).parent.doc('financial'))).data();
+  // Explicit localizers and availability only; financial data uses its separately authorized endpoint.
+  return {budgetId:id,version:v,operationId:origin.identity.operationId,service:'Gestión de compra por mandato',product:origin.initial.productName,status:'Servicio vinculado',activatedAt:state.activatedAt,locality:budget.clienteSnapshot.localidad as string,financialInformationAvailable:financial?.schemaVersion==='OPERATION_FINANCIAL_V2'&&financial?.operationId===state.operationId};
  });
 }
 export async function listClientServices(db:Firestore,uid:string) {

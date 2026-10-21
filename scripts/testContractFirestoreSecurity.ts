@@ -59,6 +59,7 @@ async function main() {
   protectedPaths.push(`${draft}/operation/client`, `${draft}/operation/clientActivationFixture`, ...['commands','events','redemptions'].map(c=>`${draft}/operation/client/${c}/existing`), 'presupuestos_v2/_operation_client_index_v2/contracts/uid-hash/services/operation-id', 'presupuestos_v2/_operation_client_index_v2/contracts/invitations/requests/invitation-id');
   protectedPaths.push(`${draft}/operation/delivery`, ...['commands','events','photos'].map(c=>`${draft}/operation/delivery/${c}/existing`));
   // Admin SDK is used only to seed synthetic Emulator records, never to assert Rules.
+  protectedPaths.push(`${draft}/operation/financial`, `${draft}/operation/financialApprovalFixture`, ...['commands','events','payments','receipts'].map(c=>`${draft}/operation/financial/${c}/existing`));
   for (const path of protectedPaths) await db.doc(path).set(seed);
   for (const [role, bearer] of Object.entries(roles)) {
     for (const path of protectedPaths) {
