@@ -19,8 +19,16 @@ async function affiliate(db: Firestore, tx: Transaction, uid: string, id?: strin
  return { affiliateId: docs.docs[0].id, uid };
 }
 export async function listActiveAffiliates(db: Firestore) {
- const docs = await db.collection('vendedores').where('activo', '==', true).get();
- return docs.docs.filter(d => typeof d.data().authUid === 'string').map(d => ({ id: d.id, uid: d.data().authUid as string, name: String(d.data().nombre || 'Vendedor afiliado') }));
+ const {admin}=await import('./firebaseAdmin');
+ const docs=await db.collection('vendedores').where('activo','==',true).get();
+ const candidates=await Promise.all(docs.docs.map(async d=>{
+  const uid=d.data().authUid;if(typeof uid!=='string'||!uid.trim())return null;
+  const matches=await db.collection('vendedores').where('authUid','==',uid).limit(2).get();if(matches.size!==1)return null;
+  try{const user=await admin.auth().getUser(uid);if(user.disabled)return null;}
+  catch(error){if((error as {code?:string}).code==='auth/user-not-found')return null;throw error;}
+  return {id:d.id,uid,name:String(d.data().nombre||'Vendedor afiliado')};
+ }));
+ return candidates.filter((candidate):candidate is NonNullable<typeof candidate>=>candidate!==null);
 }
 export async function custodyLoad(db: Firestore, tx: Transaction, id: string, v: number, actor: CustodyActor, participantAccess = false) {
  const source = await fulfillmentOrigin(db, tx, id, v);

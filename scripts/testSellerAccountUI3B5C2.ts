@@ -13,7 +13,7 @@ import {
   registrarAjusteAdministrativoComisiones
 } from "../src/lib/settlementsEngine";
 import { GET as handlerCuentaCorriente } from "../src/app/api/afiliado/cuenta-corriente/route";
-import { formatMoney } from "../src/app/admin/comisiones/page";
+import { formatMoney } from "../src/lib/sellerAccountHelpers";
 
 async function exchangeCustomTokenForIdToken(customToken: string): Promise<string> {
   const url = "http://127.0.0.1:9099/www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken?key=fake-key";
