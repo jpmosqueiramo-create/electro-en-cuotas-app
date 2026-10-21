@@ -3,7 +3,7 @@ import { admin } from './firebaseAdmin';
 import { custodyAuth,custodyParams } from './operationCustodyV2Http';
 import { deliveryCommand,readDelivery } from './operationDeliveryV2Server';
 import { deliveryFail,DeliveryError,type DeliverySlot } from './operationDeliveryV2';
-import { saveDeliveryPhoto,readDeliveryPhoto } from './operationDeliveryV2Photos';
+import { saveDeliveryPhoto,readDeliveryPhoto,recoverDeliveryPhoto } from './operationDeliveryV2Photos';
 import { getBudgetDocumentationBucket } from './budgetDocumentationStorage';
 import { contractHeaders,contractJson } from './contractV2Http';
 export async function deliveryHandler(req:Request,id:string,version:string,isAdmin:boolean,photos=false){
@@ -12,6 +12,7 @@ export async function deliveryHandler(req:Request,id:string,version:string,isAdm
   if(!photos){if(url.search)deliveryFail();return NextResponse.json(req.method==='GET'?await readDelivery(db,id,v,actor):await deliveryCommand(db,id,v,await contractJson(req),actor),{headers:contractHeaders});}
   const bucket=await getBudgetDocumentationBucket();
   if(req.method==='GET'){if([...url.searchParams.keys()].some(k=>k!=='photoId'))deliveryFail();const p=await readDeliveryPhoto(db,bucket,id,v,url.searchParams.get('photoId')||'',actor);return new NextResponse(new Uint8Array(p.bytes),{headers:{...contractHeaders,'Content-Type':p.mime,'Content-Disposition':'inline'}});}
+  if(req.headers.get('content-type')?.startsWith('application/json')){if(url.search)deliveryFail();const body=await contractJson(req);if(!body||typeof body!=='object'||Object.keys(body).length!==1||!('photoId' in body))deliveryFail();return NextResponse.json(await recoverDeliveryPhoto(db,bucket,id,v,String(body.photoId),actor),{headers:contractHeaders});}
   if(url.search||!req.headers.get('content-type')?.startsWith('multipart/form-data;'))deliveryFail();
   const reader=req.body?.getReader();if(!reader)deliveryFail();let size=0;const chunks:Uint8Array[]=[];
   try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>11*1024*1024){await reader.cancel();deliveryFail();}chunks.push(value);}}finally{reader.releaseLock();}

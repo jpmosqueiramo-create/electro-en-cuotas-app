@@ -1,10 +1,11 @@
 import './helpers/requireSafeEmulatorEnvironment';
 import { openOperationSection } from './helpers/openOperationSection';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { mkdirSync,writeFileSync } from 'node:fs';
 import { admin } from '../src/lib/firebaseAdmin';
 import { financialFixture,activateFinancialFixture } from './testOperationFinancialV2Emulator';
-import { readFinancial } from '../src/lib/operationFinancialV2Server';
+import { readFinancial,financialCommand,financialRef } from '../src/lib/operationFinancialV2Server';
 import { CatalogBrowser } from './helpers/catalogBrowser';
 import { adminEmail,adminPassword } from './helpers/adminSolicitudesFixtures';
 export async function testOperationFinancialV2Browser(){
@@ -22,7 +23,10 @@ export async function testOperationFinancialV2Browser(){
   await browser.navigate('/cliente');await browser.until(`${scope}?.textContent.includes('PARCIAL')`,'persist reload');
   const forbidden=await browser.evaluate<number>(`window.__FIREBASE_AUTH__.currentUser.getIdToken().then(token=>fetch('/api/admin/presupuestos-v2/${f.id}/versions/1/financial',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:'{}'})).then(r=>r.status)`);assert.equal(forbidden,403);
   await browser.evaluate('window.__FIREBASE_SIGN_OUT__().then(()=>true)');await login(`${f.uid2}@example.test`,'Emulator-only-123');const cross=await browser.evaluate<number>(`window.__FIREBASE_AUTH__.currentUser.getIdToken().then(token=>fetch('/api/afiliado/operaciones-v2/${f.id}/1/financial',{headers:{Authorization:'Bearer '+token}})).then(r=>r.status)`);assert.equal(cross,403);
+  // Exercise the real pagination control without weakening any role/payment assertions above.
+  for(let i=0;i<50;i++){const state=(await financialRef(db,f.id,1).get()).data()!;await financialCommand(db,f.id,1,{action:'CREDIT_PAYMENT',operationId:f.identity.operationId,expectedRevision:state.revision,commandId:randomUUID(),data:{paymentId:randomUUID(),amountCents:1,effectiveDate:new Date().toISOString().slice(0,10),method:'TRANSFERENCIA',reference:'BROWSER-SYNTHETIC-PAGINATION'}},f.root);}
+  await browser.evaluate('window.__FIREBASE_SIGN_OUT__().then(()=>true)');await login(adminEmail,adminPassword);await browser.navigate('/admin/operaciones/'+f.id+'/1');await browser.until("!!document.querySelector('[data-testid=operation-unified-workspace]')",'unified after login');await browser.clickText('Cuotas y pagos');await browser.until("document.querySelectorAll('[data-testid=financial-receipt]').length===50",'bounded first page');await browser.clickText('Ver más pagos y recibos',scope);await browser.until("document.querySelectorAll('[data-testid=financial-receipt]').length===51",'second page merged');assert.equal(await browser.evaluate("[...document.querySelectorAll('button')].some(b=>b.textContent==='Ver más pagos y recibos')"),false);await capture('admin-financial-pagination-mobile');
   assert.deepEqual({b:(await f.r.budget.get()).data(),a:(await f.r.acceptance.get()).data(),draft:(await f.r.draft.get()).data()},original);assert.deepEqual(browser.externalFirebase,[]);
-  console.log('FINANCIAL_BROWSER_DESKTOP_MOBILE=PASS; ADMIN_PAYMENT_RECEIPT=PASS; AFFILIATE_CLIENT_READ_ONLY=PASS; CROSS_UID=DENIED; RELOAD=PASS; OVERFLOW=0; PRODUCTION_REQUESTS=0');
+  console.log('FINANCIAL_BROWSER_DESKTOP_MOBILE=PASS; PAGINATION_51_RECEIPTS=PASS; ADMIN_PAYMENT_RECEIPT=PASS; AFFILIATE_CLIENT_READ_ONLY=PASS; CROSS_UID=DENIED; RELOAD=PASS; OVERFLOW=0; PRODUCTION_REQUESTS=0');
  }finally{await browser.close();}
 }

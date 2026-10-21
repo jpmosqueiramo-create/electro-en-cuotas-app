@@ -22,14 +22,14 @@ export function CreditReviewWorkspace({budget,onUpdated}:{budget:BudgetV2;onUpda
  const statuses:Record<string,string>={MISSING:'Pendiente de carga',VERIFIED:'Verificado y vigente',OBSERVED:'Observado: solicitar actualización',EXPIRED:'Vencido: solicitar actualización'};
  return <section data-testid="credit-review" className="min-w-0 space-y-4 rounded-xl border border-border-color p-4">
  <h3 className="font-heading text-xl font-bold">Documentación y evaluación crediticia</h3>
- <p>Datos del cliente → revisión documental → evaluación manual → preparación contractual. Cada operación tiene su propia resolución.</p>
+ <p className="text-sm">Cada operación requiere una resolución administrativa propia.</p>
  {error&&<p role="alert" className="break-words text-red-700">{error}</p>}
  <button className={btn} disabled={busy} onClick={()=>void act(load)}>Actualizar evaluación</button>
  {!view?<p role="status">Consultando evaluación…</p>:<>
  <p role="status" className="font-semibold">{creditLabels[view.state]}</p><p>Próxima acción: {creditNextAction[view.state]} · Responsable: Administración</p>
  {view.identityMismatch&&<p role="alert">Los datos de identidad no coinciden con la carpeta. Solicitá aclaración o actualización del formulario; no se reutiliza documentación ni se fusionan personas.</p>}
  {view.requiresFreshReview&&<p role="alert">Los datos o documentos cambiaron. Revisá nuevamente antes de preparar el contrato.</p>}
- <p>Resolución: {view.review?.resolution||'Sin resolución registrada'}</p>
+ <p>Documentos pendientes: {view.documents.filter(d=>d.required&&d.status!=='VERIFIED').length}</p><p>Resolución: {view.review?.resolution||'Sin resolución registrada'}</p>
  {view.review?.notes&&<p className="whitespace-pre-wrap text-sm">Observaciones internas: {view.review.notes}</p>}
  {view.review&&<p className="text-sm">Revisado: {new Date(view.review.reviewedAt).toLocaleString('es-AR')} · Administración</p>}
  <fieldset disabled={busy} className="min-w-0 space-y-3"><legend className="font-semibold">Identidad y carpeta del cliente</legend>
@@ -53,12 +53,12 @@ export function CreditReviewWorkspace({budget,onUpdated}:{budget:BudgetV2;onUpda
  <button className={btn} disabled={!form.attachmentId||(form.status==='VERIFIED'&&!form.validUntil)||!form.note.trim()} onClick={()=>void act(()=>command('REVIEW_DOCUMENT',{type:d.type,...form,validUntil:form.validUntil||null}))}>Guardar revisión documental</button></fieldset></details>
  </article>;})}</div>
  <details><summary className="min-h-11 cursor-pointer">Cargar o consultar archivos de esta operación</summary><BudgetAcceptanceDocumentation budget={budget} documentationOnly/><p>Después de cargar, actualizá la evaluación y revisá el archivo.</p></details>
- <fieldset disabled={busy} className="min-w-0 space-y-3"><legend className="font-semibold">Resolución crediticia manual</legend>
+ <details open={!view.approved}><summary className="min-h-11 cursor-pointer font-semibold">Registrar o revisar resolución crediticia</summary><fieldset disabled={busy} className="min-w-0 space-y-3"><legend className="font-semibold">Resolución crediticia manual</legend>
  <label className="block">Estado<select className={control} value={decision} onChange={e=>setDecision(e.target.value as CreditState)}>{creditStates.map(s=><option key={s} value={s}>{creditLabels[s]}</option>)}</select></label>
  <label className="block">Resolución<textarea className={control} maxLength={1000} value={resolution} onChange={e=>setResolution(e.target.value)}/></label>
  <label className="block">Observaciones internas<textarea className={control} maxLength={1000} value={notes} onChange={e=>setNotes(e.target.value)}/></label>
  <button className={btn} disabled={!resolution.trim()||!notes.trim()} onClick={()=>void act(()=>command('DECIDE',{state:decision,resolution,notes}))}>Registrar resolución crediticia</button>
- </fieldset><p>No se aprueba automáticamente. La aprobación crediticia no habilita numeración, firma ni formalización productiva.</p>
+ </fieldset></details><p>No se aprueba automáticamente. La aprobación crediticia no habilita numeración, firma ni formalización productiva.</p>
  </>}
  </section>;
 }

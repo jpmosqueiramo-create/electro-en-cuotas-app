@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 import { admin } from './firebaseAdmin';
 import { custodyAuth, custodyParams } from './operationCustodyV2Http';
 import { custodyFail } from './operationCustodyV2';
-import { contractHeaders } from './contractV2Http';
+import { contractHeaders,contractJson } from './contractV2Http';
 import { getBudgetDocumentationBucket } from './budgetDocumentationStorage';
-import { saveCustodyPhoto, readCustodyPhoto } from './operationCustodyV2Photos';
+import { saveCustodyPhoto, readCustodyPhoto,recoverCustodyPhoto } from './operationCustodyV2Photos';
 export async function custodyPhotoHandler(req:Request,id:string,version:string,isAdmin:boolean) {
  try {
   const actor=await custodyAuth(req,isAdmin),v=custodyParams(id,version),url=new URL(req.url);
@@ -14,6 +14,7 @@ export async function custodyPhotoHandler(req:Request,id:string,version:string,i
    const p=await readCustodyPhoto(admin.firestore(),bucket,id,v,url.searchParams.get('photoId')||'',actor);
    return new NextResponse(new Uint8Array(p.bytes),{headers:{...contractHeaders,'Content-Type':p.mime,'Content-Disposition':'inline'}});
   }
+  if(req.headers.get('content-type')?.startsWith('application/json')){if(url.search)custodyFail();const body=await contractJson(req);if(!body||typeof body!=='object'||Object.keys(body).length!==1||!('photoId' in body))custodyFail();return NextResponse.json(await recoverCustodyPhoto(admin.firestore(),bucket,id,v,String(body.photoId),actor),{headers:contractHeaders});}
   if(url.search||!req.headers.get('content-type')?.startsWith('multipart/form-data;'))custodyFail();
   const reader=req.body?.getReader();if(!reader)custodyFail();const chunks:Uint8Array[]=[];let size=0;
   try {while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>11*1024*1024){await reader.cancel();custodyFail();}chunks.push(value);}}finally{reader.releaseLock();}
