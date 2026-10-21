@@ -31,7 +31,7 @@ export async function issueClientInvitation(f:Awaited<ReturnType<typeof clientFi
 }
 async function main() {
  assert.equal(invitationsEnabled(),true);
- for(const env of [{},{GCLOUD_PROJECT:'negocio-facil-page',NEXT_PUBLIC_FIREBASE_PROJECT_ID:'negocio-facil-page',FIRESTORE_EMULATOR_HOST:'127.0.0.1:8080',FIREBASE_AUTH_EMULATOR_HOST:'127.0.0.1:9099'},{...process.env,FIREBASE_AUTH_EMULATOR_HOST:undefined},{...process.env,GOOGLE_CLOUD_PROJECT:'negocio-facil-page'}])assert.equal(invitationsEnabled(env),false);
+ for(const env of [{...process.env,NODE_ENV:'production'},{...process.env,K_SERVICE:'synthetic-cloud-runtime'},{...process.env,GAE_ENV:'standard'},{},{GCLOUD_PROJECT:'negocio-facil-page',NEXT_PUBLIC_FIREBASE_PROJECT_ID:'negocio-facil-page',FIRESTORE_EMULATOR_HOST:'127.0.0.1:8080',FIREBASE_AUTH_EMULATOR_HOST:'127.0.0.1:9099'},{...process.env,FIREBASE_AUTH_EMULATOR_HOST:undefined},{...process.env,GOOGLE_CLOUD_PROJECT:'negocio-facil-page'}])assert.equal(invitationsEnabled(env),false);
  const f=await clientFixture(),email=`client-${randomUUID()}@example.test`,other=await admin.auth().createUser({email:`other-${randomUUID()}@example.test`,emailVerified:true});
  const original=JSON.stringify({budget:(await f.r.budget.get()).data(),acceptance:(await f.r.acceptance.get()).data()});
  const legacy=db.collection(f.b.sourceCollection).doc(f.b.solicitudId);await legacy.set({marker:'HISTORICAL_NO_MIGRATION',clienteEmail:email,clienteId:'legacy-unchanged'});const old=JSON.stringify((await legacy.get()).data());

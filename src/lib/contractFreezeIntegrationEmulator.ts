@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { Firestore, type Transaction } from 'firebase-admin/firestore';
 import { assertContractInfrastructureEmulator, CONTRACT_INFRASTRUCTURE_PATHS as p, type ContractInfrastructureReceipt } from './contractInfrastructureEmulator';
 import { contractRefs } from './contractV2Server';
+import { assertCreditPreparation } from './creditReviewV2Server';
 import { opaque, stable, type ContractDraftV2 } from './contractV2';
 import type { BudgetV2 } from './budgetV2';
 import type { BudgetAcceptanceV2 } from './budgetAcceptanceV2';
@@ -92,6 +93,9 @@ export function createContractFreezeIntegrationEmulator(){
      tx.create(cmd,{schemaVersion:'READY_FREEZE_RECEIPT_V1',digest:dg,receipt,actor,action:c.action,replayOfExistingSnapshot:true});return receipt;
     }
     const d=raw as ContractDraftV2;
+    // READY is technical evidence, not a permanent credit approval. Read the
+    // current shared documents inside this transaction before allocating a number.
+    await assertCreditPreparation(db,tx,c.budgetId,c.budgetVersion);
     if(d.status!=='READY_TO_FORMALIZE'||d.revision!==c.expectedRevision||!d.readyEvidenceId||d.activeClientDataRequestId!==null)fail('CONTRACT_READY_REVISION_REQUIRED');
     const [review,counter,deps]=await Promise.all([tx.get(refs.draft.collection('readyReviews').doc(opaque(d.readyEvidenceId))),tx.get(db.doc(p.counter)),tx.get(db.collection(FREEZE_DEPENDENCIES_COLLECTION).doc(c.dependenciesId))]);
     if(!review.exists)fail('CONTRACT_READY_EVIDENCE_REQUIRED');

@@ -7,11 +7,12 @@ import { deliveryFixture,prepareDeliveryDocuments } from './testOperationDeliver
 import { deliveryCommand,readDelivery,deliveryRef } from '../src/lib/operationDeliveryV2Server';
 import { financialCommand,readFinancial,financialRef,financialApprovalRef } from '../src/lib/operationFinancialV2Server';
 import { cents,financialEnabled,financialSummary,type FinancialState } from '../src/lib/operationFinancialV2';
-import { contractCommand } from '../src/lib/contractV2Server';
+import { contractCommand,publicContractData } from '../src/lib/contractV2Server';
 import { createContractFreezeIntegrationEmulator,FREEZE_DEPENDENCIES_COLLECTION } from '../src/lib/contractFreezeIntegrationEmulator';
 import { CONTRACT_INFRASTRUCTURE_PATHS } from '../src/lib/contractInfrastructureEmulator';
 import { infrastructureFixture } from './helpers/contractInfrastructureFixtures';
 import { addressPayload } from './testContractV2';
+import { reviewCommand,addDocuments } from './testCreditReviewV2Emulator';
 import { clientBindingRef,clientIndex } from '../src/lib/operationClientV2Server';
 import { contractValueHash } from '../src/lib/contractIntegrityV2';
 import { financialHandler } from '../src/lib/operationFinancialV2Http';
@@ -19,6 +20,16 @@ const db=admin.firestore();
 export async function financialFixture(){
  const f=await deliveryFixture(),actor='synthetic-admin-a',dependenciesId='finance-'+randomUUID();
  let d=(await f.r.draft.get()).data()!;
+ // New acceptances require the same reviewed intake and manual credit decision
+ // as the real workspace; do not bypass the new prerequisite in financial tests.
+ const intake=await contractCommand(db,f.id,1,{action:'CREATE_CLIENT_DATA_REQUEST',commandId:randomUUID(),expectedRevision:d.revision},actor);
+ await publicContractData(db,intake.requestId!,intake.secret!,{personalData:addressPayload.personalData,employmentData:addressPayload.employmentData});
+ d=(await contractCommand(db,f.id,1,{action:'APPLY_CLIENT_SUBMISSION',submissionId:intake.requestId,commandId:randomUUID(),expectedRevision:intake.draft.revision},actor)).draft;
+ await reviewCommand(f.id,'VERIFY_IDENTITY',{evidence:'Identidad documental sintética verificada'});
+ await addDocuments(f.id);
+ await reviewCommand(f.id,'DECIDE',{state:'IN_REVIEW',resolution:'Revisión previa financiera',notes:'Sólo Emulator'});
+ await reviewCommand(f.id,'DECIDE',{state:'APPROVED',resolution:'Decisión manual sintética',notes:'No equivale a aprobación jurídica'});
+
  for(const [action,extra]of [['UPDATE_PERSONAL_DATA',{personalData:addressPayload.personalData}],['SET_CONTRACT_PLAN',{contractPlanCuotas:12}],['SET_PAYMENT_DATES',{firstInstallmentDueDate:'2026-12-15',preferredMonthlyDueDay:30}],['RECORD_CLIENT_CONFORMITY',{evidence:'Synthetic client confirmation fixture'}],['MARK_READY_TO_FORMALIZE',{}]] as const)d=(await contractCommand(db,f.id,1,{action,commandId:randomUUID(),expectedRevision:d.revision,...extra},actor)).draft;
  await db.collection(FREEZE_DEPENDENCIES_COLLECTION).doc(dependenciesId).set({schemaVersion:'CONTRACT_FREEZE_SYNTHETIC_DEPENDENCIES_V1',executionMode:'EMULATOR_ONLY',legalApproval:'NOT_APPROVED_SYNTHETIC_ONLY',legalContext:infrastructureFixture(f.id).legalContext});
  const counter=db.doc(CONTRACT_INFRASTRUCTURE_PATHS.counter);if(!(await counter.get()).exists)await counter.create({schemaVersion:'CONTRACT_NUMBER_COUNTER_V1',policyId:'CONTRACT_NUMBERING_V1',executionMode:'EMULATOR_ONLY',active:true,lastAllocatedSequence:'0'});

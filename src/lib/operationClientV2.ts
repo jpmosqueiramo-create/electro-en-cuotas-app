@@ -2,7 +2,7 @@ import { exact, opaque } from './contractV2';
 export class ClientPortalError extends Error {}
 export function portalFail(message='No se pudo validar el acceso al servicio.'):never {throw new ClientPortalError(message);}
 export function invitationsEnabled(env:Record<string,string|undefined>=process.env) {
- return env.GCLOUD_PROJECT==='demo-cuenta-hogar' && env.NEXT_PUBLIC_FIREBASE_PROJECT_ID==='demo-cuenta-hogar' &&
+ return env.NODE_ENV!=='production' && !env.K_SERVICE && !env.GAE_ENV && env.GCLOUD_PROJECT==='demo-cuenta-hogar' && env.NEXT_PUBLIC_FIREBASE_PROJECT_ID==='demo-cuenta-hogar' &&
   (!env.GOOGLE_CLOUD_PROJECT||env.GOOGLE_CLOUD_PROJECT==='demo-cuenta-hogar') &&
   env.FIRESTORE_EMULATOR_HOST==='127.0.0.1:8080' && env.FIREBASE_AUTH_EMULATOR_HOST==='127.0.0.1:9099' &&
   !env.FIREBASE_CLIENT_EMAIL&&!env.FIREBASE_PRIVATE_KEY&&!env.GOOGLE_APPLICATION_CREDENTIALS&&!env.FIREBASE_SERVICE_ACCOUNT_KEY&&!env.FIREBASE_SERVICE_ACCOUNT_JSON;
