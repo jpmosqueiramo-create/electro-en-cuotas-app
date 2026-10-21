@@ -17,10 +17,13 @@ export interface VendedorAdminSummary {
   saldoCuentaCorrienteCentavos: number;
   saldoDisponibleLiquidacionCentavos: number;
   efectivoPendienteRendicionCentavos: number;
-  porcentajeVigenteBasisPoints: number;
+  porcentajeVigenteBasisPoints: number|null;
   porcentajeVigenteDisplay: string;
   mostrarCuentaCorrienteEnPanel: boolean;
   authUid?: string;
+  revision:number;
+  porcentajeComision:number|null;
+  telefono:string;
 }
 
 export async function GET(req: Request) {
@@ -67,8 +70,8 @@ export async function GET(req: Request) {
       }
 
       // 4. Current commission percentage
-      let porcentajeVigenteBasisPoints = 1000; // Default 10%
-      let porcentajeVigenteDisplay = "10%";
+      let porcentajeVigenteBasisPoints:number|null = null;
+      let porcentajeVigenteDisplay = "Sin configurar";
       try {
         const cfg: ConfiguracionComisionVendedor = await obtenerConfiguracionComisionVigente(db, vendorId, nowIso);
         porcentajeVigenteBasisPoints = cfg.porcentajeComisionBasisPoints;
@@ -92,6 +95,9 @@ export async function GET(req: Request) {
         porcentajeVigenteBasisPoints,
         porcentajeVigenteDisplay,
         mostrarCuentaCorrienteEnPanel: Boolean(data.mostrarCuentaCorrienteEnPanel),
+        revision:data.revision??0,
+        porcentajeComision:porcentajeVigenteBasisPoints===null?null:porcentajeVigenteBasisPoints/100,
+        telefono:data.telefono??'',
         authUid: data.authUid || undefined
       });
     }
@@ -104,52 +110,4 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
-  try {
-    const authRes = await validarAdminToken(req);
-    if (!authRes.valid) {
-      return NextResponse.json({ error: "403:FORBIDDEN: Acceso restringido al Administrador." }, { status: 403 });
-    }
-
-    const body = await req.json();
-    if (!body || !body.nombre || !body.email) {
-      return NextResponse.json({ error: "400:DATOS_INCOMPLETOS: Nombre y email son requeridos." }, { status: 400 });
-    }
-
-    const db = admin.firestore();
-    const vendorId = `vendedor_${Date.now()}`;
-    const pct = typeof body.porcentajeComision === "number" ? body.porcentajeComision : 10;
-    const basisPoints = Math.round(pct * 100);
-
-    const vendorDoc = {
-      nombre: body.nombre.trim(),
-      email: body.email.trim().toLowerCase(),
-      localidad: (body.localidad || "").trim(),
-      porcentajeComision: pct,
-      activo: true,
-      mostrarCuentaCorrienteEnPanel: false,
-      createdAt: new Date().toISOString()
-    };
-
-    await db.collection("vendedores").doc(vendorId).set(vendorDoc);
-
-    // Initial commission config
-    const nowIso = new Date().toISOString();
-    const cfgId = `cfg_com_${vendorId}_${Date.now()}`;
-    await db.collection("vendedores_configuraciones_comision").doc(cfgId).set({
-      id: cfgId,
-      vendedorAfiliadoId: vendorId,
-      vendedorAfiliadoEmail: vendorDoc.email,
-      porcentajeComisionBasisPoints: basisPoints,
-      vigenteDesde: nowIso,
-      motivoCambio: "Configuración inicial al crear vendedor",
-      actualizadoPorAdminUid: authRes.uid || "admin",
-      referenciaConfiguracionAnteriorId: null,
-      createdAt: nowIso
-    });
-
-    return NextResponse.json({ ok: true, id: vendorId, ...vendorDoc });
-  } catch (err: unknown) {
-    return NextResponse.json({ error: (err as Error).message || "500:INTERNAL_ERROR" }, { status: 500 });
-  }
-}
+export async function POST(){return NextResponse.json({error:'Utilizá el registro administrativo unificado.'},{status:409});}

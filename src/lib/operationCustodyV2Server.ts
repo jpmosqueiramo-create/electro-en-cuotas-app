@@ -98,7 +98,7 @@ export async function custodyCommand(db:Firestore,id:string,v:number,input:unkno
   if(c.operationId!==source.identity.operationId)custodyFail('Identidad operativa incorrecta.');
   const prior=await tx.get(receipt);
   if(prior.exists){if(prior.data()!.digest!==digest)custodyFail('Conflicto de commandId.');return {revision:prior.data()!.revision,replay:true};}
-  if(current.deliveryClosure==='DELIVERED_EMULATOR')custodyFail('Producto entregado en Emulator: no se transfiere otra vez.');
+  if(current.deliveryClosure==='DELIVERED_EMULATOR'&&c.action!=='ASSIGN')custodyFail('Producto entregado en Emulator: no se transfiere otra vez.');
   if(c.expectedRevision!==current.revision)custodyFail('Conflicto de revisión. Recargá la operación.');
   const s=structuredClone(current),d=c.data,now=new Date().toISOString();
   const admin=()=>{if(!actor.admin)custodyFail('Acción exclusivamente administrativa.');};
@@ -152,7 +152,7 @@ export async function custodyCommand(db:Firestore,id:string,v:number,input:unkno
    if(fi&&!fi.resolvedAt)mirror=nextFulfillment(fulfillment,{commandId:c.commandId,operationId:c.operationId,expectedRevision:fulfillment.revision,action:'RESOLVE_INCIDENT',data:{incidentId:i.id,resolution:i.resolution}},actor.uid,now);
   }
   s.revision++;
-  const event={commandId:c.commandId,operationId:c.operationId,revision:s.revision,expectedRevision:c.expectedRevision,action:c.action,actor:actor.uid,at:now,product:{name:fulfillment.productName,referenceId:fulfillment.referenceId},data:d,transfer:completedTransfer||s.pending||current.pending};
+  const event={commandId:c.commandId,operationId:c.operationId,revision:s.revision,expectedRevision:c.expectedRevision,action:c.action,actor:actor.uid,at:now,previousAssignment:current.assignment,nextAssignment:s.assignment,product:{name:fulfillment.productName,referenceId:fulfillment.referenceId},data:d,transfer:completedTransfer||s.pending||current.pending};
   tx.set(ref,s);tx.create(receipt,{digest,revision:s.revision,actor:actor.uid,at:now});tx.create(ref.collection('events').doc(c.commandId),event);
   if(c.action==='ASSIGN'){
    const record={schemaVersion:'OPERATION_AFFILIATE_ASSIGNMENT_V2',budgetId:id,version:v,operationId:c.operationId,...s.assignment};

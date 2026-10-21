@@ -1,4 +1,5 @@
 "use client";
+import { AffiliateCommissionPanel } from '@/components/operations/AffiliateCommissionPanel';
 import {LegacyPortalAction} from "@/components/LegacyPortalAction";
 
 import {createAffiliateSolicitudSender} from "@/lib/affiliateSolicitudClient";
@@ -228,7 +229,7 @@ function AfiliadoPortal() {
            </div>
         )}
 
-        <AffiliateOperationsV2 key={user.uid}/>
+        <AffiliateCommissionPanel/><AffiliateOperationsV2 key={user.uid}/>
         <p data-testid="legacy-read-only" className="text-sm text-zinc-400">{legacyBlockedMessage}</p>{historyError&&<p role="alert">{historyError}</p>}
         {/* MENÚ DE SECCIONES (TABS) */}
         <div className="flex flex-col sm:flex-row gap-2 mb-8 bg-[#121316]/80 p-2 rounded-xl border border-zinc-800 shadow-2xl shadow-black/60">

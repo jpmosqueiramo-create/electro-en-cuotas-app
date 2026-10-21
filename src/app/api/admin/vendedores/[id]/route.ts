@@ -1,3 +1,4 @@
+import { financialEnabled } from '@/lib/operationFinancialV2';
 import { NextResponse } from "next/server";
 import { admin } from "@/lib/firebaseAdmin";
 import { validarAdminToken } from "@/lib/adminAuth";
@@ -82,8 +83,11 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
 
     return NextResponse.json({
       ok: true,
+      mutationEnabled:financialEnabled(),
       vendedor: vendorData,
       cuentaCorriente,
+      importePendienteCentavos:Math.max(0,cuentaCorriente.saldoCuentaCorrienteCentavos),
+      importeARecuperarCentavos:Math.max(0,-cuentaCorriente.saldoCuentaCorrienteCentavos),
       saldoDisponibleLiquidacionCentavos,
       custodiaEfectivo,
       liquidaciones,

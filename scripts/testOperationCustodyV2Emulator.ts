@@ -27,6 +27,7 @@ export async function custodyFixture() {
  const affiliateId=`seller-${randomUUID()}`,affiliateId2=`seller-${randomUUID()}`;
  await db.collection('vendedores').doc(affiliateId).set({authUid:uid,activo:true,nombre:'Afiliado sintético A'});
  await db.collection('vendedores').doc(affiliateId2).set({authUid:uid2,activo:true,nombre:'Afiliado sintético B'});
+ for(const seller of [affiliateId,affiliateId2])await db.collection('vendedores_configuraciones_comision').doc('cfg-'+seller).set({id:'cfg-'+seller,vendedorAfiliadoId:seller,vendedorAfiliadoEmail:'synthetic@example.test',porcentajeComisionBasisPoints:1000,vigenteDesde:'2020-01-01T00:00:00.000Z',createdAt:'2020-01-01T00:00:00.000Z'});
  const identity=(await readFulfillment(db,id,1)).identity;
  return {id,r,b,identity,uid,uid2,driver,adminUid,affiliateId,affiliateId2};
 }
