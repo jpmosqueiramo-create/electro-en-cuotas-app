@@ -23,6 +23,8 @@ export async function acceptBudgetV2(db: Firestore, input: unknown, actor: strin
   const commandRef = refs.family.collection('acceptanceCommands').doc(c.commandId);
   const digest = createHash('sha256').update(JSON.stringify(c)).digest('hex');
   return db.runTransaction(async tx => {
+    if ((await tx.get(db.collection('budgetDeletionAuditV2').doc(c.budgetId))).exists) fail('El presupuesto fue eliminado.');
+    await tx.get(refs.family); // Serialize acceptance against whole-family deletion, including historical parentless fixtures.
     const [budgetSnap, old, command, doc] = await Promise.all([tx.get(refs.family.collection('versions').doc(String(c.version))), tx.get(refs.acceptance), tx.get(commandRef), tx.get(refs.documentation)]);
     if (!budgetSnap.exists) fail('La versión no existe.');
     const budget = budgetSnap.data(); validateBudgetV2(budget, privateBudgetReferenceId);

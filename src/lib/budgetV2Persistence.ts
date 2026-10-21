@@ -29,6 +29,7 @@ export async function persistBudgetV2(db:Firestore,input:unknown,actor:string):P
   const commandRef=family.collection("commands").doc(cmd.commandId);
   const digest=hash(cmd);
   return db.runTransaction(async tx=>{
+    if ((await tx.get(db.collection("budgetDeletionAuditV2").doc(cmd.budget.id))).exists) throw new BudgetV2DomainError("El presupuesto fue eliminado; no puede volver a guardarse.");
     const [familySnap,current,command,source]=await Promise.all([tx.get(family),tx.get(versionRef),tx.get(commandRef),tx.get(db.collection(cmd.budget.sourceCollection).doc(cmd.budget.solicitudId))]);
     if(command.exists){if(command.data()!.digest!==digest)throw new BudgetV2DomainError("Conflicto: commandId ya usado.");const result = command.data()!.result; validateBudgetV2(result, privateBudgetReferenceId); return result;}
     if(cmd.createManualSource && (source.exists || familySnap.exists)) throw new BudgetV2DomainError("El origen manual ya existe; reabrí el presupuesto.");

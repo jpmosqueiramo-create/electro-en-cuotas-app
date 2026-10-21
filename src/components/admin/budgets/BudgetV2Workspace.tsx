@@ -13,6 +13,7 @@ import { uploadCatalogReferenceImage } from "@/lib/catalogReferenceImages";
 import { budgetClientLines, duplicateBudgetOption, referenceSnapshotToDraft, replaceBudgetOption, toClientBudgetV2, type BudgetV2 } from "@/lib/budgetV2";
 import { downloadBudgetPdfV2 } from "@/lib/budgetV2Pdf";
 
+import { BudgetV2Deletion } from "./BudgetV2Deletion";
 import { BudgetAcceptanceDocumentation } from "./BudgetAcceptanceDocumentation";
 
 type Source={sourceCollection:BudgetV2["sourceCollection"];id:string;nombre:string;dni:string;cuil:string;whatsapp:string;localidad:string;necesidad:string};
@@ -27,6 +28,7 @@ export function BudgetV2Workspace(){
   const [privateIds,setPrivateIds]=useState<string[]>([]),[savePrivate,setSavePrivate]=useState(false);
   const [files,setFiles]=useState<File[]>([]),[url,setUrl]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState(""),[message,setMessage]=useState(""),[q,setQ]=useState(""),[stateFilter,setStateFilter]=useState("TODOS"),[whatsapp,setWhatsapp]=useState("");
   const [confirmManualSource,setConfirmManualSource]=useState(false);
+  const [deleting,setDeleting]=useState<BudgetV2|null>(null);
   const [loading,setLoading]=useState(true);
   const flight=useRef(false);const pending=useRef<{key:string;body:string}|null>(null);
   const request=useCallback(async(body?:string)=>{
@@ -74,6 +76,7 @@ export function BudgetV2Workspace(){
   const emitted=budget?.estado==="EMITIDO";
   const visible=budgets.filter(b=>(stateFilter==="TODOS"||b.estado===stateFilter)&&`${b.id} ${b.clienteSnapshot.nombre} ${b.clienteSnapshot.dni} ${b.options.map(o=>o.referenceSnapshot.nombre).join(" ")}`.toLocaleLowerCase().includes(q.toLocaleLowerCase()));
   return <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-7">
+    {deleting&&<BudgetV2Deletion budget={deleting} onClose={()=>setDeleting(null)} onDeleted={async()=>{if(budget?.id===deleting.id){setBudget(null);setDraft(null);pending.current=null;}setDeleting(null);setMessage("Familia de presupuesto eliminada. La solicitud de origen se conservó.");await refresh();}}/>}
     <PageHeader title="Presupuestos" subtitle="Propuestas de gestión de compra · Opciones alternativas y cuotas estimadas" actions={<button data-new-budget-v2 className={button} disabled={busy||loading} onClick={()=>newBudget()}>Nuevo presupuesto V2</button>}/>
     {error&&<p role="alert" className="rounded-xl bg-red-50 p-4 text-red-800">{error}</p>}{message&&<p role="status" className="rounded-xl border border-border-color p-4">{message}</p>}
     {budget&&<section data-testid="budget-v2-editor" className="min-w-0 space-y-4 rounded-2xl border border-border-color bg-surface p-4 sm:p-6">
@@ -98,6 +101,6 @@ export function BudgetV2Workspace(){
       {emitted&&<BudgetAcceptanceDocumentation key={`${budget.id}:${budget.version}`} budget={budget}/>}
       {whatsapp&&emitted&&<div className="space-y-3"><pre data-testid="budget-whatsapp" className="whitespace-pre-wrap break-words rounded-xl bg-background-main p-4 text-sm">{whatsapp}</pre><a className={button} target="_blank" rel="noopener noreferrer" href={`https://wa.me/${budget.clienteSnapshot.whatsapp.replace(/\D/g,"")}?text=${encodeURIComponent(whatsapp)}`}>Abrir WhatsApp con esta propuesta</a></div>}
     </section>}
-    <section className="space-y-3"><h2 className="font-heading text-xl font-bold">Historial V2</h2><div className="grid gap-3 sm:grid-cols-2"><Field label="Buscar presupuesto V2"><input className={input} value={q} onChange={e=>setQ(e.target.value)}/></Field><Field label="Estado V2"><select className={input} value={stateFilter} onChange={e=>setStateFilter(e.target.value)}><option>TODOS</option><option>GENERADO</option><option>EMITIDO</option></select></Field></div>{visible.map(b=><article className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-border-color bg-surface p-4" key={`${b.id}:${b.version}`}><div><h3 className="font-semibold">{b.clienteSnapshot.nombre} · V2 · Versión {b.version}</h3><p>{b.estado} · {b.options.length} opciones alternativas</p></div><button className={button} disabled={busy} onClick={()=>{setBudget(structuredClone(b));setDraft(null);setPrivateIds([]);setWhatsapp("");setMessage("");setError("");pending.current=null;}}>Abrir versión {b.version}</button></article>)}</section>
+    <section className="space-y-3"><h2 className="font-heading text-xl font-bold">Historial V2</h2><div className="grid gap-3 sm:grid-cols-2"><Field label="Buscar presupuesto V2"><input className={input} value={q} onChange={e=>setQ(e.target.value)}/></Field><Field label="Estado V2"><select className={input} value={stateFilter} onChange={e=>setStateFilter(e.target.value)}><option>TODOS</option><option>GENERADO</option><option>EMITIDO</option></select></Field></div>{visible.map(b=><article className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-border-color bg-surface p-4" key={`${b.id}:${b.version}`}><div><h3 className="font-semibold">{b.clienteSnapshot.nombre} · V2 · Versión {b.version}</h3><p>{b.estado} · {b.options.length} opciones alternativas</p></div><button className={button} disabled={busy} onClick={()=>{setBudget(structuredClone(b));setDraft(null);setPrivateIds([]);setWhatsapp("");setMessage("");setError("");pending.current=null;}}>Abrir versión {b.version}</button><button className={button} disabled={busy} onClick={()=>setDeleting(b)}>Eliminar presupuesto</button></article>)}</section>
   </div>;
 }
