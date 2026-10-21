@@ -4,17 +4,14 @@ import { ClientServicesV2 } from '@/components/operations/ClientServicesV2';
 import { isAdminEmail } from "@/lib/adminIdentity";
 
 import { useAuth } from "@/components/AuthProvider";
-import { db, storage } from "@/lib/firebase";
-import { addDoc, collection, getDocs, query, where, Timestamp, updateDoc, doc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import {legacyBlockedMessage,restoreLegacyDates} from "@/lib/legacyPortalClient";
 import { getAuth, sendEmailVerification } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { fetchPublicCatalogReference } from "@/lib/publicCatalogClient";
-import { publicCatalogSelection, selectPublishedPlan } from "@/lib/publicCatalogContract";
+import { selectPublishedPlan } from "@/lib/publicCatalogContract";
 import type { CatalogReferencePublic } from "@/lib/catalogReference";
 import { useEffect, useState, useMemo } from "react";
-import { generarComprobantePago, generarEstadoCuenta } from "@/lib/pdfGenerator";
 import { 
   Package, CreditCard, Calendar, CheckCircle2, Clock, AlertTriangle, 
   UserCheck, ShieldCheck, LogOut, ShoppingBag, Edit3, Link2, Upload, 
@@ -23,6 +20,7 @@ import {
 
 type Solicitud = {
   id: string;
+  recordKey?:string;
   estado: "PENDIENTE" | "APROBADO" | "RECHAZADO" | "REQUIERE_INFO";
   mensajeAdmin?: string;
   fechaCreacion: any;
@@ -41,7 +39,7 @@ type Solicitud = {
   numeroContrato?: string;
 };
 
-export default function ClientePage() {
+function ClientePortal() {
   const formatFechaVencimiento = (str: string | undefined | null) => {
     if (!str) return "-";
     try {
@@ -55,12 +53,13 @@ export default function ClientePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  const [historyError,setHistoryError]=useState("");
   const [solicitudes, setSolicitudes] = useState<Solicitud[]>([]);
   const [tieneUnlinked, setTieneUnlinked] = useState(false);
   const [dniVincular, setDniVincular] = useState("");
   const [vinculando, setVinculando] = useState(false);
   const [cargandoDatos, setCargandoDatos] = useState(true);
-  const [subiendo, setSubiendo] = useState(false);
+  const [subiendo] = useState(false);
   const [correoEnviado, setCorreoEnviado] = useState(false);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [mostrarFormDatos, setMostrarFormDatos] = useState(false);
@@ -73,7 +72,6 @@ export default function ClientePage() {
   const [direccion, setDireccion] = useState("");
   const [localidad, setLocalidad] = useState("");
   const [email, setEmail] = useState("");
-  const [antiguedadLaboral, setAntiguedadLaboral] = useState("");
   
   // Archivos Formulario Nueva Solicitud
   const [producto, setProducto] = useState("");
@@ -84,10 +82,10 @@ export default function ClientePage() {
   const [referenceState, setReferenceState] = useState("empty");
   const [referenceError, setReferenceError] = useState("");
 
-  const [dniFrente, setDniFrente] = useState<File | null>(null);
-  const [dniDorso, setDniDorso] = useState<File | null>(null);
-  const [reciboSueldo, setReciboSueldo] = useState<File | null>(null);
-  const [servicio, setServicio] = useState<File | null>(null);
+  const [, setDniFrente] = useState<File | null>(null);
+  const [, setDniDorso] = useState<File | null>(null);
+  const [, setReciboSueldo] = useState<File | null>(null);
+  const [, setServicio] = useState<File | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -148,126 +146,7 @@ export default function ClientePage() {
     }
   }, [user, loading, router]);
 
-  const fetchSolicitudes = async () => {
-    if (!user) return;
-    try {
-      const processedIds = new Set<string>();
-      const allMatching: Solicitud[] = [];
-      const knownDnis = new Set<string>();
-      const knownCuils = new Set<string>();
-
-      const emailLower = (user.email || "").trim().toLowerCase();
-      const emailRaw = (user.email || "").trim();
-
-      // 1. Query by clienteId
-      const qUid = query(collection(db, "solicitudes"), where("clienteId", "==", user.uid));
-      const snapUid = await getDocs(qUid);
-      snapUid.forEach(docSnap => {
-        processedIds.add(docSnap.id);
-        const data = docSnap.data();
-        allMatching.push({ id: docSnap.id, ...data } as Solicitud);
-        
-        const dni = (data.datosPersonales?.numeroDni || data.numeroDni || data.dni || "").toString().replace(/\D/g, "");
-        if (dni) knownDnis.add(dni);
-        
-        const cuil = (data.datosPersonales?.cuil || data.cuil || "").toString().replace(/\D/g, "");
-        if (cuil) knownCuils.add(cuil);
-      });
-
-      // 2. Query by Email
-      const emailQueries = [
-        query(collection(db, "solicitudes"), where("clienteEmail", "==", emailRaw)),
-        query(collection(db, "solicitudes"), where("clienteEmail", "==", emailLower)),
-        query(collection(db, "solicitudes"), where("datosPersonales.email", "==", emailRaw)),
-        query(collection(db, "solicitudes"), where("datosPersonales.email", "==", emailLower))
-      ];
-
-      for (const qObj of emailQueries) {
-        try {
-          const snapEmail = await getDocs(qObj);
-          snapEmail.forEach(docSnap => {
-            const data = docSnap.data();
-            const dni = (data.datosPersonales?.numeroDni || data.numeroDni || data.dni || "").toString().replace(/\D/g, "");
-            if (dni) knownDnis.add(dni);
-            const cuil = (data.datosPersonales?.cuil || data.cuil || "").toString().replace(/\D/g, "");
-            if (cuil) knownCuils.add(cuil);
-
-            if (!processedIds.has(docSnap.id)) {
-              processedIds.add(docSnap.id);
-              allMatching.push({ id: docSnap.id, ...data } as Solicitud);
-            }
-          });
-        } catch (e) {}
-      }
-
-      if (numeroDni) {
-        const cleanStateDni = numeroDni.replace(/\D/g, "");
-        if (cleanStateDni) knownDnis.add(cleanStateDni);
-      }
-
-      // 3. Query by DNI & CUIL
-      const dniArray = Array.from(knownDnis);
-      const cuilArray = Array.from(knownCuils);
-
-      for (const dniClean of dniArray) {
-        if (!dniClean) continue;
-        const dniQueries = [
-          query(collection(db, "solicitudes"), where("datosPersonales.numeroDni", "==", dniClean)),
-          query(collection(db, "solicitudes"), where("numeroDni", "==", dniClean)),
-          query(collection(db, "solicitudes"), where("dni", "==", dniClean))
-        ];
-        for (const qDni of dniQueries) {
-          try {
-            const snapDni = await getDocs(qDni);
-            snapDni.forEach(docSnap => {
-              const data = docSnap.data();
-              if (!processedIds.has(docSnap.id)) {
-                processedIds.add(docSnap.id);
-                allMatching.push({ id: docSnap.id, ...data } as Solicitud);
-              }
-            });
-          } catch (e) {}
-        }
-      }
-
-      for (const cuilClean of cuilArray) {
-        if (!cuilClean) continue;
-        const cuilQueries = [
-          query(collection(db, "solicitudes"), where("datosPersonales.cuil", "==", cuilClean)),
-          query(collection(db, "solicitudes"), where("cuil", "==", cuilClean))
-        ];
-        for (const qCuil of cuilQueries) {
-          try {
-            const snapCuil = await getDocs(qCuil);
-            snapCuil.forEach(docSnap => {
-              const data = docSnap.data();
-              if (!processedIds.has(docSnap.id)) {
-                processedIds.add(docSnap.id);
-                allMatching.push({ id: docSnap.id, ...data } as Solicitud);
-              }
-            });
-          } catch (e) {}
-        }
-      }
-
-      // Historical reads never migrate ownership. V2 links are explicit and server-mediated.
-      allMatching.sort((a, b) => {
-        const dateA = a.fechaCreacion?.toDate ? a.fechaCreacion.toDate().getTime() : 0;
-        const dateB = b.fechaCreacion?.toDate ? b.fechaCreacion.toDate().getTime() : 0;
-        return dateB - dateA;
-      });
-
-      setSolicitudes(allMatching);
-      setTieneUnlinked(false);
-      if (allMatching.length > 0) {
-        setMostrarFormulario(false);
-      }
-    } catch (e) {
-      console.error("Error in fetchSolicitudes:", e);
-    } finally {
-      setCargandoDatos(false);
-    }
-  };
+  const fetchSolicitudes = async () => {if(!user)return;try{const r=await fetch('/api/cliente/historial',{cache:'no-store',headers:{Authorization:'Bearer '+await user.getIdToken()}});const data=await r.json();if(!r.ok)throw Error(data.error);setSolicitudes(restoreLegacyDates(data.solicitudes));setHistoryError(data.warnings.join(' '));setTieneUnlinked(false);if(data.solicitudes.length)setMostrarFormulario(false);}catch(e){setHistoryError(e instanceof Error?e.message:'No se pudo consultar el historial.');}finally{setCargandoDatos(false);}};
 
   useEffect(() => {
     if (user) {
@@ -360,105 +239,13 @@ export default function ClientePage() {
     }
   };
 
-  const handleSubirArchivo = async (archivo: File, tipo: string) => {
-    if (!user) return "";
-    const storageRef = ref(storage, `comprobantes/${user.uid}/${Date.now()}_${tipo}_${archivo.name}`);
-    await uploadBytes(storageRef, archivo);
-    return await getDownloadURL(storageRef);
-  };
-
-  const abrirFormDatos = () => {
-    if (solicitudes.length > 0 && (solicitudes[0] as any).datosPersonales) {
-      const d = (solicitudes[0] as any).datosPersonales;
-      if (d.telefono) setTelefono(d.telefono);
-      if (d.direccion) setDireccion(d.direccion);
-      if (d.localidad) setLocalidad(d.localidad);
-      if (d.nombreCompleto) setNombreCompleto(d.nombreCompleto);
-    }
-    setMostrarFormDatos(true);
-  };
-
-  const handleActualizarDatos = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    setSubiendo(true);
-    try {
-      for (const sol of solicitudes) {
-        const d = (sol as any).datosPersonales || {};
-        const nuevosDatos = { ...d, telefono, direccion, localidad };
-        await updateDoc(doc(db, "solicitudes", sol.id), { datosPersonales: nuevosDatos });
-      }
-      
-      await addDoc(collection(db, "alertas_admin"), {
-        tipo: "MODIFICACION_DATOS",
-        clienteEmail: user.email,
-        mensaje: `El cliente ${nombreCompleto || user.email} actualizó sus datos: Tel ${telefono}, Dir ${direccion}, Loc ${localidad}`,
-        fechaCreacion: Timestamp.now(),
-        leida: false
-      });
-
-      alert("¡Tus datos han sido actualizados exitosamente!");
-      setMostrarFormDatos(false);
-      await fetchSolicitudes();
-    } catch(err) {
-      console.error(err);
-      alert("Hubo un error al actualizar tus datos.");
-    } finally {
-      setSubiendo(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !dniFrente || !dniDorso || !reciboSueldo || !servicio) {
-      return alert("Por favor selecciona todos los documentos obligatorios.");
-    }
-    setSubiendo(true);
-
-    try {
-      const reference = productoId && productoId !== "sin-id" ? await fetchPublicCatalogReference(productoId) : null;
-      if (productoId && productoId !== "sin-id" && !reference) throw new Error("Esta referencia ya no está disponible.");
-      const selection = reference ? publicCatalogSelection(reference, planElegido) : null;
-      const [urlFrente, urlDorso, urlSueldo, urlServicio] = await Promise.all([
-        handleSubirArchivo(dniFrente, "dniFrente"),
-        handleSubirArchivo(dniDorso, "dniDorso"),
-        handleSubirArchivo(reciboSueldo, "sueldo"),
-        handleSubirArchivo(servicio, "servicio")
-      ]);
 
 
-      await addDoc(collection(db, "solicitudes"), {
-        clienteId: user.uid,
-        clienteEmail: user.email,
-        datosPersonales: { nombreCompleto, numeroDni, telefono, direccion, localidad, email, antiguedadLaboral },
-        productoDeseado: selection?.productoNombre ?? producto,
-        productoId: selection?.productoId ?? "sin-id",
-        planElegido: selection?.planElegido ?? "no-indicado",
-        ...(selection ? { montoCuota: selection.montoCuota } : {}),
-        documentos: {
-          dniFrente: urlFrente,
-          dniDorso: urlDorso,
-          reciboSueldo: urlSueldo,
-          servicio: urlServicio
-        },
-        estado: "PENDIENTE",
-        mensajeAdmin: "",
-        fechaCreacion: Timestamp.now()
-      });
 
-      localStorage.removeItem("datosPreliminares");
-      alert("¡Tu solicitud de compra ha sido enviada con éxito! Prepararemos tu propuesta a la brevedad.");
-      setProducto(""); setNombreCompleto(""); setNumeroDni(""); setTelefono(""); setDireccion(""); setLocalidad("");
-      setDniFrente(null); setDniDorso(null); setReciboSueldo(null); setServicio(null);
-      setMostrarFormulario(false);
-      await fetchSolicitudes();
-    } catch (error) {
-      console.error(error);
-      alert("Ocurrió un error al enviar la solicitud.");
-    } finally {
-      setSubiendo(false);
-    }
-  };
+
+  const handleActualizarDatos = async (e: React.FormEvent) => {e.preventDefault();alert(legacyBlockedMessage);};
+
+  const handleSubmit = async (e: React.FormEvent) => {e.preventDefault();alert(legacyBlockedMessage);};
 
   if (loading || cargandoDatos) {
     return (
@@ -535,7 +322,7 @@ export default function ClientePage() {
               <ShoppingBag className="w-3.5 h-3.5 text-[#FFD21A]" /> Ver opciones
             </Link>
 
-            <button onClick={abrirFormDatos} className="flex-1 md:flex-initial text-center bg-[#111318] hover:bg-[#252A32] border border-[#252A32] text-zinc-200 px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md">
+            <button onClick={()=>alert(legacyBlockedMessage)} className="flex-1 md:flex-initial text-center bg-[#111318] hover:bg-[#252A32] border border-[#252A32] text-zinc-200 px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md" disabled aria-disabled="true" style={{opacity:0.5,cursor:"not-allowed"}} title={legacyBlockedMessage}>
               <Edit3 className="w-3.5 h-3.5 text-blue-400" /> Mis datos
             </button>
 
@@ -631,7 +418,7 @@ export default function ClientePage() {
             <h3 className="text-base font-black text-white flex items-center gap-2">
               <Edit3 className="w-4 h-4 text-blue-400" /> Actualizar Mis Datos Personales
             </h3>
-            <form onSubmit={handleActualizarDatos} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <form onSubmit={handleActualizarDatos} className="grid grid-cols-1 md:grid-cols-3 gap-4"><p role="status">{legacyBlockedMessage} <Link href="/solicitar" className="underline">Ir a solicitud pública</Link></p><fieldset disabled className="contents">
               <div>
                 <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Teléfono / WhatsApp</label>
                 <input required value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" className="w-full bg-[#111318] border border-[#252A32] p-2.5 rounded-xl text-xs text-white outline-none focus:border-blue-500 font-bold" />
@@ -649,7 +436,7 @@ export default function ClientePage() {
                   {subiendo ? "Guardando..." : "✓ Guardar Cambios de Contacto"}
                 </button>
               </div>
-            </form>
+            </fieldset></form>
           </div>
         )}
 
@@ -665,7 +452,7 @@ export default function ClientePage() {
               <p className="text-xs text-zinc-400 mt-1">Completá tus datos y la información del bien para preparar tu propuesta.</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6"><p role="status">{legacyBlockedMessage} <Link href="/solicitar" className="underline">Ir a solicitud pública</Link></p><fieldset disabled className="contents">
               {referenceState === "loading" && <p role="status">Cargando referencia…</p>}
               {referenceState === "error" && <p role="alert">{referenceError}</p>}
               {referenceState === "not_found" && <p role="alert">Esta referencia ya no está disponible.</p>}
@@ -729,10 +516,11 @@ export default function ClientePage() {
               <button disabled={subiendo} type="submit" className="w-full bg-[#FFD21A] hover:bg-[#E8B900] text-[#111318] font-black text-xs py-3.5 rounded-xl uppercase tracking-wider shadow-lg transition-all">
                 {subiendo ? "Enviando Solicitud..." : "Enviar Solicitud de Compra"}
               </button>
-            </form>
+            </fieldset></form>
           </div>
         )}
 
+        <p data-testid="legacy-read-only" className="text-sm text-zinc-400">{legacyBlockedMessage}</p>{historyError&&<p role="alert">{historyError}</p>}
         {/* Barra de Filtros y CTA Principal */}
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 bg-[#1B2027] p-4 rounded-2xl border border-[#252A32] shadow-md">
           <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 custom-scrollbar">
@@ -828,10 +616,10 @@ export default function ClientePage() {
             {solicitudesVisibles.map((sol) => {
               const est = sol.estado;
               const estEntrega = sol.estadoEntrega;
-              const fechaCreacionStr = sol.fechaCreacion?.toDate ? sol.fechaCreacion.toDate().toLocaleDateString("es-AR") : "Reciente";
+              const fechaCreacionStr = sol.fechaCreacion?.toDate ? sol.fechaCreacion.toDate().toLocaleDateString("es-AR") : "Sin fecha registrada";
 
               return (
-                <div key={sol.id} className="bg-[#1B2027] border border-[#252A32] rounded-3xl p-5 md:p-7 shadow-xl space-y-5 transition-all hover:border-zinc-700">
+                <div key={sol.recordKey || sol.id} className="bg-[#1B2027] border border-[#252A32] rounded-3xl p-5 md:p-7 shadow-xl space-y-5 transition-all hover:border-zinc-700">
                   
                   {/* Encabezado de la Operación */}
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-[#252A32] pb-4">
@@ -906,24 +694,8 @@ export default function ClientePage() {
                         </h4>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => {
-                              const totalPlanVal = sol.planPagos?.reduce((sum: number, c: any) => sum + Number(c.montoOriginal || 0), 0) || 0;
-                              const totalAbonadoVal = sol.planPagos?.filter((c: any) => c.estado === "PAGADO").reduce((sum: number, c: any) => sum + Number(c.montoAbonado || c.montoOriginal || 0), 0) || 0;
-                              const totalPendienteVal = Math.max(0, totalPlanVal - totalAbonadoVal);
-
-                              generarEstadoCuenta({
-                                nroLegajo: sol.nroContrato || sol.numeroContrato || `CH-${sol.id.substring(0, 8).toUpperCase()}`,
-                                fechaEmision: new Date().toLocaleDateString("es-AR"),
-                                clienteNombre: datosClienteGlobal.nombre,
-                                clienteDni: datosClienteGlobal.dni,
-                                productoNombre: sol.productoDeseado,
-                                totalPlan: totalPlanVal,
-                                totalAbonado: totalAbonadoVal,
-                                totalPendiente: totalPendienteVal,
-                                planPagos: sol.planPagos || []
-                              });
-                            }}
-                            className="bg-amber-500/10 hover:bg-amber-500/20 text-[#FFD21A] border border-amber-500/30 px-3 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shadow-sm"
+                            onClick={()=>alert(legacyBlockedMessage)}
+                            className="bg-amber-500/10 hover:bg-amber-500/20 text-[#FFD21A] border border-amber-500/30 px-3 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shadow-sm" disabled aria-disabled="true" style={{opacity:0.5,cursor:"not-allowed"}} title={legacyBlockedMessage}
                           >
                             📊 Estado de Cuenta PDF
                           </button>
@@ -965,31 +737,8 @@ export default function ClientePage() {
                                       </a>
                                     )}
                                     <button
-                                      onClick={() => {
-                                        const numCuotasTotal = sol.planPagos?.length || 12;
-                                        const cProdVal = Number((sol as any).precioContado || (sol as any).costoProducto || (sol as any).costoBien) || 0;
-                                        const totalFinVal = Number((sol as any).totalFinanciado) || ((cuota.montoAbonado || cuota.montoOriginal) * numCuotasTotal);
-                                        const baseGravVal = Math.max(0, totalFinVal - cProdVal);
-                                        const receiptId = `REC-${sol.id.substring(0, 5).toUpperCase()}-${cuota.numero}`;
-
-                                        generarComprobantePago({
-                                          nroContrato: sol.nroContrato || sol.numeroContrato || `CH-${sol.id.substring(0, 8).toUpperCase()}`,
-                                          nroRecibo: receiptId,
-                                          fecha: cuota.fechaPago ? formatFechaVencimiento(cuota.fechaPago) : new Date().toLocaleDateString("es-AR"),
-                                          clienteNombre: datosClienteGlobal.nombre,
-                                          clienteDni: datosClienteGlobal.dni,
-                                          cuotaNumero: cuota.numero,
-                                          cuotasTotal: numCuotasTotal,
-                                          montoAbonado: cuota.montoAbonado || cuota.montoOriginal,
-                                          montoExento: numCuotasTotal > 0 ? Math.round(cProdVal / numCuotasTotal) : 0,
-                                          montoGravado: numCuotasTotal > 0 ? Math.round(baseGravVal / numCuotasTotal) : 0,
-                                          metodoPago: cuota.cuentaDestino || cuota.metodoPagoManual || cuota.metodoPago || "Acreditado por Central",
-                                          nroComprobante: cuota.nroComprobante,
-                                          cuentaDestino: cuota.cuentaDestino,
-                                          esPagoParcial: cuota.montoAbonado !== undefined && cuota.montoAbonado !== cuota.montoOriginal
-                                        });
-                                      }}
-                                      className="bg-green-600 hover:bg-green-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-md transition flex items-center gap-1"
+                                      onClick={()=>alert(legacyBlockedMessage)}
+                                      className="bg-green-600 hover:bg-green-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-md transition flex items-center gap-1" disabled aria-disabled="true" style={{opacity:0.5,cursor:"not-allowed"}} title={legacyBlockedMessage}
                                     >
                                       📥 Recibo PDF
                                     </button>
@@ -1025,49 +774,8 @@ export default function ClientePage() {
                                         />
                                         <button 
                                           id={`btn_${sol.id}_${idx}`}
-                                          onClick={async () => {
-                                            const el = document.getElementById(`comprobante_${sol.id}_${idx}`) as HTMLInputElement;
-                                            if(!el.files || el.files.length === 0) return alert("Selecciona el comprobante o foto del recibo primero.");
-                                            const montoInput = document.getElementById(`monto_${sol.id}_${idx}`) as HTMLInputElement;
-                                            const montoReportado = Number(montoInput.value) || 0;
-                                            if (montoReportado <= 0) return alert("Ingresa el monto abonado.");
-
-                                            const btn = document.getElementById(`btn_${sol.id}_${idx}`) as HTMLButtonElement;
-                                            btn.innerText = "Subiendo...";
-                                            btn.disabled = true;
-
-                                            try {
-                                              const url = await handleSubirArchivo(el.files[0], `cuota_${cuota.numero}_${sol.id}`);
-                                              const newPlan = [...(sol as any).planPagos];
-                                              
-                                              newPlan[idx] = {
-                                                ...newPlan[idx],
-                                                estado: "EN_REVISION",
-                                                comprobanteUrl: url,
-                                                montoAbonadoReportado: montoReportado,
-                                                fechaReporte: new Date().toISOString()
-                                              };
-
-                                              await updateDoc(doc(db, "solicitudes", sol.id), { planPagos: newPlan });
-                                              
-                                              await addDoc(collection(db, "alertas_admin"), {
-                                                tipo: "PAGO_CUOTA",
-                                                clienteEmail: user.email,
-                                                mensaje: `El cliente ${datosClienteGlobal.nombre} subió recibo para la Cuota ${cuota.numero} ($${montoReportado}) de ${sol.productoDeseado}.`,
-                                                fechaCreacion: Timestamp.now(),
-                                                leida: false
-                                              });
-
-                                              alert("¡Recibo subido con éxito! La central verificará el importe.");
-                                              fetchSolicitudes();
-                                            } catch(err) {
-                                              console.error(err);
-                                              alert("Error al subir el comprobante.");
-                                              btn.innerText = "Subir Recibo";
-                                              btn.disabled = false;
-                                            }
-                                          }}
-                                          className="bg-green-600 hover:bg-green-500 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg shadow-md transition-all"
+                                          onClick={()=>alert(legacyBlockedMessage)}
+                                          className="bg-green-600 hover:bg-green-500 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg shadow-md transition-all" disabled aria-disabled="true" style={{opacity:0.5,cursor:"not-allowed"}} title={legacyBlockedMessage}
                                         >
                                           Subir Recibo
                                         </button>
@@ -1104,3 +812,5 @@ export default function ClientePage() {
     </div>
   );
 }
+
+export default function ClientePage(){const {user}=useAuth();return <ClientePortal key={user?.uid||'anonymous'}/>;}

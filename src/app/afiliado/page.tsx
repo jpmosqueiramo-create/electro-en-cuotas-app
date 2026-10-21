@@ -1,26 +1,28 @@
 "use client";
 
+import {createAffiliateSolicitudSender} from "@/lib/affiliateSolicitudClient";
 import { AffiliateOperationsV2 } from '@/components/operations/AffiliateOperationsV2';
 import { isAdminEmail } from "@/lib/adminIdentity";
 
 import { useAuth } from "@/components/AuthProvider";
-import { db, storage } from "@/lib/firebase";
-import { addDoc, collection, updateDoc, doc, getDocs, query, where, Timestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import {legacyBlockedMessage,restoreLegacyDates} from "@/lib/legacyPortalClient";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { fetchPublicCatalog, fetchPublicCatalogReference } from "@/lib/publicCatalogClient";
+import { fetchPublicCatalog } from "@/lib/publicCatalogClient";
 import { publicCatalogSelection } from "@/lib/publicCatalogContract";
 import type { CatalogReferencePublic } from "@/lib/catalogReference";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 
-export default function AfiliadoPage() {
+function AfiliadoPortal() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const sender=useRef(createAffiliateSolicitudSender()),flight=useRef(false);
+  const [requestError,setRequestError]=useState(""),[requestSuccess,setRequestSuccess]=useState("");
 
   const [activeTab, setActiveTab] = useState<"carga" | "seguimiento" | "clientes" | "comisiones">("seguimiento");
   const [notificaciones, setNotificaciones] = useState<any[]>([]);
+  const [historyError,setHistoryError]=useState("");
   const [solicitudes, setSolicitudes] = useState<any[]>([]);
   const [productos, setProductos] = useState<CatalogReferencePublic[]>([]);
   const [catalogState, setCatalogState] = useState("loading");
@@ -54,10 +56,10 @@ export default function AfiliadoPage() {
   const [planElegido, setPlanElegido] = useState<string | null>(null);
 
   // Archivos
-  const [dniFrente, setDniFrente] = useState<File | null>(null);
-  const [dniDorso, setDniDorso] = useState<File | null>(null);
-  const [reciboSueldo, setReciboSueldo] = useState<File | null>(null);
-  const [servicio, setServicio] = useState<File | null>(null);
+
+
+
+
 
   const [correoEnviado, setCorreoEnviado] = useState(false);
 
@@ -112,28 +114,7 @@ export default function AfiliadoPage() {
     return () => controller.abort();
   }, [user]);
 
-  const fetchData = async () => {
-    if (!user) return;
-    try {
-      // 1. Traer historial del afiliado
-      const q = query(collection(db, "solicitudes"), where("afiliadoEmail", "==", user.email));
-      const snapSols = await getDocs(q);
-      const results: any[] = [];
-      snapSols.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
-      setSolicitudes(results.sort((a,b) => b.fechaCreacion.toMillis() - a.fechaCreacion.toMillis()));
-
-      const qNotif = query(collection(db, "notificaciones"), where("afiliadoEmail", "==", user.email));
-      const snapNotif = await getDocs(qNotif);
-      const notifs: any[] = [];
-      snapNotif.forEach(doc => notifs.push({ id: doc.id, ...doc.data() }));
-      setNotificaciones(notifs.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()));
-
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setCargandoDatos(false);
-    }
-  };
+  const fetchData = async () => {if(!user)return;try{const r=await fetch('/api/afiliado/historial',{cache:'no-store',headers:{Authorization:'Bearer '+await user.getIdToken()}});const data=await r.json();if(!r.ok)throw Error(data.error);setSolicitudes(restoreLegacyDates(data.solicitudes));setNotificaciones(data.notificaciones);setHistoryError(data.warnings.join(' '));}catch(e){setHistoryError(e instanceof Error?e.message:'No se pudo consultar el historial.');}finally{setCargandoDatos(false);}};
 
   useEffect(() => {
     fetchData();
@@ -158,166 +139,13 @@ export default function AfiliadoPage() {
     return { pagadas, restantes, atrasadas, montcAtrasado };
   };
 
-  const handleAgregarNotaCartera = async (sol: any) => {
-    if (!nuevaNota.trim()) return alert("Debes escribir una nota de gestión.");
-    try {
-      const historial = sol.historialContactos || [];
-      const nuevoRegistro = {
-        id: Date.now().toString(),
-        fecha: new Date().toISOString(),
-        usuario: user?.email || "Afiliado",
-        nota: nuevaNota.trim(),
-        promesaPago: fechaPromesa || null
-      };
 
-      await updateDoc(doc(db, "solicitudes", sol.id), {
-        historialContactos: [nuevoRegistro, ...historial]
-      });
 
-      alert("¡Nota de cobranza guardada exitosamente!");
-      setNuevaNota("");
-      setFechaPromesa("");
-      fetchData();
-    } catch (e) {
-      alert("Error al guardar la nota.");
-    }
-  };
 
-  const handleConfirmarEntrega = async (id: string, nuevoEstado: string, skipPrompt?: boolean) => {
-    try {
-      const dataToUpdate: any = { estadoEntrega: nuevoEstado };
-      
-      if (nuevoEstado === "ENTREGADO") {
-        if (!nserie || nserie.trim().length < 3) {
-          return alert("Debes ingresar un número de serie válido.");
-        }
-        dataToUpdate.numeroSerie = nserie.trim();
-        dataToUpdate.montoAbonado = Number(montoAbonado);
-        dataToUpdate.metodoPago = metodoPago;
-        dataToUpdate.comentarioEntrega = comentarioEntrega;
-        dataToUpdate.estadoRendicion = "PENDIENTE";
 
-        const solObj = solicitudes.find((s: any) => s.id === id);
-        if (solObj && solObj.planElegido) {
-           const cant = parseInt(solObj.planElegido);
-           const vc = solObj.montoCuota || 0;
-           const planArr = [];
-           const bDate = new Date();
-           
-           const hasAbonado = Number(montoAbonado) > 0;
-           
-           for (let i = 1; i <= cant; i++) {
-              const nd = new Date(bDate);
-              nd.setMonth(nd.getMonth() + i);
-              
-              if (i === 1 && hasAbonado) {
-                 planArr.push({
-                    numero: 1,
-                    montoOriginal: Number(montoAbonado),
-                    montoAbonado: Number(montoAbonado),
-                    estado: "PAGADO",
-                    vencimiento: new Date().toISOString(),
-                    fechaPago: new Date().toISOString(),
-                    metodoPago: metodoPago,
-                    comprobanteUrl: null,
-                    notaAcumulacion: "Cobrada en Entrega"
-                 });
-              } else {
-                 planArr.push({
-                    numero: i,
-                    montoOriginal: vc,
-                    montoAbonado: 0,
-                    estado: "PENDIENTE",
-                    vencimiento: nd.toISOString(),
-                    fechaPago: null,
-                    metodoPago: null,
-                    comprobanteUrl: null
-                 });
-              }
-           }
-           dataToUpdate.planPagos = planArr;
-        }
-      } else if (!skipPrompt) {
-        const coment = prompt("Agregar un comentario adicional (Opcional):");
-        if (coment) dataToUpdate.comentarioEntrega = coment;
-      }
 
-      await updateDoc(doc(db, "solicitudes", id), dataToUpdate);
-      alert("Estado actualizado exitosamente");
-      setEntregaActiva(null);
-      fetchData();
-    } catch (error) {
-      console.error(error);
-      alert("Error al actualizar la entrega.");
-    }
-  };
 
-  const handleSubirArchivo = async (archivo: File, tipo: string) => {
-    if (!user) return "";
-    const storageRef = ref(storage, "comprobantes/afiliados/" + user.uid + "/" + Date.now() + "_" + tipo + "_" + archivo.name);
-    await uploadBytes(storageRef, archivo);
-    return await getDownloadURL(storageRef);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !dniFrente || !dniDorso || !reciboSueldo || !servicio) {
-      return alert("Por favor selecciona todos los documentos obligatorios.");
-    }
-    if (!productoId || !planElegido) {
-      return alert("Debes seleccionar el producto y el esquema de cuotas.");
-    }
-
-    setSubiendo(true);
-
-    try {
-      const prodSeleccionado = await fetchPublicCatalogReference(productoId);
-      if (!prodSeleccionado) throw new Error("Esta referencia ya no está disponible.");
-      const selection = publicCatalogSelection(prodSeleccionado, planElegido);
-
-      const [urlFrente, urlDorso, urlSueldo, urlServicio] = await Promise.all([
-        handleSubirArchivo(dniFrente, "dniFrente"),
-        handleSubirArchivo(dniDorso, "dniDorso"),
-        handleSubirArchivo(reciboSueldo, "sueldo"),
-        handleSubirArchivo(servicio, "servicio")
-      ]);
-
-      await addDoc(collection(db, "solicitudes"), {
-        cargadoPorAfiliado: true,
-        afiliadoEmail: user.email,
-        clienteId: "CargaManual", // El cliente no tiene UID propio al cargarlo el afiliado a menos que luego se registre
-        clienteEmail: clienteEmail,
-        datosPersonales: { nombreCompleto, numeroDni, telefono, direccion, localidad },
-        
-        productoId: selection.productoId,
-        productoDeseado: selection.productoNombre,
-        planElegido: selection.planElegido,
-        montoCuota: selection.montoCuota,
-
-        documentos: {
-          dniFrente: urlFrente,
-          dniDorso: urlDorso,
-          reciboSueldo: urlSueldo,
-          servicio: urlServicio
-        },
-        estado: "PENDIENTE",
-        mensajeAdmin: "",
-        fechaCreacion: Timestamp.now()
-      });
-
-      alert("¡La solicitud de gestión de compra ha sido ingresada al sistema con éxito!");
-      setClienteEmail(""); setNombreCompleto(""); setNumeroDni(""); setTelefono(""); setDireccion(""); setLocalidad("");
-      setProductoId(""); setPlanElegido(null);
-      setDniFrente(null); setDniDorso(null); setReciboSueldo(null); setServicio(null);
-      setActiveTab("seguimiento"); // Auto return to tracking so they see it
-      await fetchData();
-    } catch (error) {
-      console.error(error);
-      alert("Ocurrió un error al cargar la solicitud.");
-    } finally {
-      setSubiendo(false);
-    }
-  };
+  const handleSubmit = async (e: React.FormEvent) => {e.preventDefault();if(!user||flight.current)return;flight.current=true;setSubiendo(true);setRequestError('');setRequestSuccess('');try{const reference=productos.find(p=>p.referenciaId===productoId);if(!reference)throw Error('La referencia ya no está disponible.');const selection=publicCatalogSelection(reference,planElegido||'');const result=await sender.current({nombreCompleto,numeroDni,whatsapp:telefono,direccion,localidad,email:clienteEmail,...selection},()=>user.getIdToken(),user.uid);setRequestSuccess('Solicitud registrada. No se creó presupuesto, aceptación ni contrato.');await fetchData();if(result.notificationPending)setRequestSuccess('Solicitud registrada; aviso administrativo pendiente.');}catch(error){setRequestError(error instanceof Error?error.message:'No se confirmó el registro. Reintentá el mismo envío.');}finally{flight.current=false;setSubiendo(false);}};
 
   const prodElegidoObj = productos.find(p => p.referenciaId === productoId);
 
@@ -391,7 +219,7 @@ export default function AfiliadoPage() {
                  {promesasExigibles.map(sol => {
                     const lProm = sol.historialContactos.find((c:any) => c.promesaPago);
                     return (
-                       <div key={sol.id} onClick={() => { setActiveTab("clientes"); setExpandedCarteraId(sol.id); }} className="cursor-pointer bg-red-500/5 hover:bg-red-500/20 text-white px-4 py-2 rounded-lg border border-red-500/10 transition shadow-sm">
+                       <div key={sol.recordKey || sol.id} onClick={() => { setActiveTab("clientes"); setExpandedCarteraId(sol.id); }} className="cursor-pointer bg-red-500/5 hover:bg-red-500/20 text-white px-4 py-2 rounded-lg border border-red-500/10 transition shadow-sm">
                           <p className="text-sm font-bold text-white">{sol.datosPersonales?.nombreCompleto}</p>
                           <p className="text-[10px] text-red-400 font-black uppercase tracking-widest mt-1">Acuerdo: {new Date(lProm.promesaPago + "T12:00:00").toLocaleDateString()}</p>
                        </div>
@@ -402,6 +230,7 @@ export default function AfiliadoPage() {
         )}
 
         <AffiliateOperationsV2 key={user.uid}/>
+        <p data-testid="legacy-read-only" className="text-sm text-zinc-400">{legacyBlockedMessage}</p>{historyError&&<p role="alert">{historyError}</p>}
         {/* MENÚ DE SECCIONES (TABS) */}
         <div className="flex flex-col sm:flex-row gap-2 mb-8 bg-[#121316]/80 p-2 rounded-xl border border-zinc-800 shadow-2xl shadow-black/60">
            <button onClick={() => setActiveTab("carga")} className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all text-center ${activeTab === 'carga' ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-zinc-500 hover:text-white hover:bg-zinc-800/80'}`}>
@@ -426,7 +255,7 @@ export default function AfiliadoPage() {
             <h2 className="text-2xl font-bold text-white mb-2">Cargar nueva solicitud</h2>
             <p className="text-zinc-600 mb-8">Seleccioná una referencia publicada y un plan estimado para preparar la solicitud de gestión de compra del cliente.</p>
             
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form data-testid="affiliate-request-p1" onSubmit={handleSubmit} className="space-y-8">
               
               {catalogState === "loading" && <p role="status">Cargando referencias…</p>}
               {catalogState === "error" && <p role="alert">{catalogError}</p>}
@@ -459,52 +288,34 @@ export default function AfiliadoPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#181920] p-5 rounded-xl border border-zinc-800">
                 <div>
                   <label className="block text-sm mb-2 text-zinc-400 font-bold">Email de Contacto (del Cliente)</label>
-                  <input required value={clienteEmail} onChange={e=>setClienteEmail(e.target.value)} type="email" placeholder="cliente@correo.com" className="w-full bg-zinc-800/80 border border-gray-700 rounded-lg p-3 text-white focus:border-[#fe5000] focus:outline-none" />
+                  <input required aria-label="Email del cliente" value={clienteEmail} onChange={e=>setClienteEmail(e.target.value)} type="email" placeholder="cliente@correo.com" className="w-full bg-zinc-800/80 border border-gray-700 rounded-lg p-3 text-white focus:border-[#fe5000] focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm mb-2 text-[#fe5000] font-bold">Nombre Completo del Cliente</label>
-                  <input required value={nombreCompleto} onChange={e=>setNombreCompleto(e.target.value)} type="text" placeholder="Juan Perez" className="w-full bg-zinc-800/80 border border-gray-700 rounded-lg p-3 text-white focus:border-[#fe5000] focus:outline-none" />
+                  <input required aria-label="Nombre del cliente" value={nombreCompleto} onChange={e=>setNombreCompleto(e.target.value)} type="text" placeholder="Juan Perez" className="w-full bg-zinc-800/80 border border-gray-700 rounded-lg p-3 text-white focus:border-[#fe5000] focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm mb-2 text-[#fe5000] font-bold">Número de DNI</label>
-                  <input required value={numeroDni} onChange={e=>setNumeroDni(e.target.value)} type="number" placeholder="Ej: 32444555" className="w-full bg-zinc-800/80 border border-gray-700 rounded-lg p-3 text-white focus:border-[#fe5000] focus:outline-none" />
+                  <input required aria-label="DNI del cliente" value={numeroDni} onChange={e=>setNumeroDni(e.target.value)} type="number" placeholder="Ej: 32444555" className="w-full bg-zinc-800/80 border border-gray-700 rounded-lg p-3 text-white focus:border-[#fe5000] focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm mb-2 text-[#fe5000] font-bold">Teléfono / Celular</label>
-                  <input required value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" placeholder="Ej: +54 9 11 1234-5678" className="w-full bg-zinc-800/80 border border-gray-700 rounded-lg p-3 text-white focus:border-[#fe5000] focus:outline-none" />
+                  <input required aria-label="Teléfono del cliente" value={telefono} onChange={e=>setTelefono(e.target.value)} type="tel" placeholder="Ej: +54 9 11 1234-5678" className="w-full bg-zinc-800/80 border border-gray-700 rounded-lg p-3 text-white focus:border-[#fe5000] focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm mb-2 text-[#fe5000] font-bold">Dirección</label>
-                  <input required value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" placeholder="Ej: Av. San Martin 123" className="w-full bg-zinc-800/80 border border-gray-700 rounded-lg p-3 text-white focus:border-[#fe5000] focus:outline-none" />
+                  <input required aria-label="Domicilio del cliente" value={direccion} onChange={e=>setDireccion(e.target.value)} type="text" placeholder="Ej: Av. San Martin 123" className="w-full bg-zinc-800/80 border border-gray-700 rounded-lg p-3 text-white focus:border-[#fe5000] focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm mb-2 text-[#fe5000] font-bold">Localidad</label>
-                  <input required value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" placeholder="Ej: Córdoba" className="w-full bg-zinc-800/80 border border-gray-700 rounded-lg p-3 text-white focus:border-[#fe5000] focus:outline-none" />
+                  <input required aria-label="Localidad del cliente" value={localidad} onChange={e=>setLocalidad(e.target.value)} type="text" placeholder="Ej: Córdoba" className="w-full bg-zinc-800/80 border border-gray-700 rounded-lg p-3 text-white focus:border-[#fe5000] focus:outline-none" />
                 </div>
               </div>
 
-              {/* ARCHIVOS */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#181920] p-5 rounded-xl border border-zinc-800">
-                <div>
-                  <label className="block text-sm mb-2 text-zinc-400">Foto DNI - Frente (Cámara)</label>
-                  <input required type="file" accept="image/*" onChange={e => {if (e.target.files) setDniFrente(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-[#fe5000]/20 file:font-semibold file:text-[#fe5000] hover:file:bg-yellow-500/30" />
-                </div>
-                <div>
-                  <label className="block text-sm mb-2 text-zinc-400">Foto DNI - Dorso</label>
-                  <input required type="file" accept="image/*" onChange={e => {if (e.target.files) setDniDorso(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-[#fe5000]/20 file:font-semibold file:text-[#fe5000] hover:file:bg-yellow-500/30" />
-                </div>
-                <div>
-                  <label className="block text-sm mb-2 text-zinc-400">Último Recibo de Sueldo</label>
-                  <input required type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setReciboSueldo(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-[#fe5000]/20 file:font-semibold file:text-[#fe5000] hover:file:bg-yellow-500/30" />
-                </div>
-                <div>
-                  <label className="block text-sm mb-2 text-zinc-400">Impuesto / Servicio Telefónico</label>
-                  <input required type="file" accept="image/*,application/pdf" onChange={e => {if (e.target.files) setServicio(e.target.files[0])}} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-[#fe5000]/20 file:font-semibold file:text-[#fe5000] hover:file:bg-yellow-500/30" />
-                </div>
-              </div>
-
+              <p className="text-sm text-zinc-400">La documentación se gestiona con Administración mediante el circuito privado. No se suben archivos ni se crean enlaces públicos desde este formulario.</p>
+              {requestError&&<p role="alert">{requestError}</p>}{requestSuccess&&<p role="status">{requestSuccess}</p>}
               <button disabled={subiendo || !planElegido || !productoId} type="submit" className="w-full bg-yellow-500 text-black py-4 rounded-xl font-black text-lg hover:bg-yellow-400 transition-colors shadow-[0_0_20px_rgba(234,179,8,0.4)] disabled:opacity-50 disabled:shadow-none mt-8 tracking-wide">
-                {subiendo ? "Subiendo legajo pesado, no cierres..." : "Ingresar solicitud"}
+                {subiendo ? "Registrando solicitud…" : "Ingresar solicitud"}
               </button>
             </form>
           </div>
@@ -522,7 +333,7 @@ export default function AfiliadoPage() {
               ) : (
                 <div className="space-y-4">
                   {solicitudes.filter(s => s.estado === "APROBADO" && s.estadoEntrega !== "ENTREGADO" && s.estadoEntrega !== "ANULADO").map((sol: any) => (
-                     <div key={sol.id} className="bg-[#181920] border border-zinc-800 shadow-[0_0_30px_rgba(0,0,0,0.5)] p-4 rounded-lg flex flex-col gap-2 relative">
+                     <div key={sol.recordKey || sol.id} className="bg-[#181920] border border-zinc-800 shadow-[0_0_30px_rgba(0,0,0,0.5)] p-4 rounded-lg flex flex-col gap-2 relative">
                         <span className="absolute top-2 right-2 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span>
                         
                         <p className="text-sm font-bold text-[#fe5000]">{sol.productoDeseado}</p>
@@ -556,7 +367,7 @@ export default function AfiliadoPage() {
                              </div>
                              <div className="flex gap-2 mt-2">
                                <button onClick={() => setEntregaActiva(null)} className="flex-1 bg-zinc-800/80 text-zinc-400 py-2 rounded text-xs font-bold hover:bg-gray-200">Cancelar</button>
-                               <button onClick={() => handleConfirmarEntrega(sol.id, "ENTREGADO")} className="flex-1 bg-yellow-500 text-black py-2 rounded text-xs font-bold hover:bg-yellow-400 shadow-md">✓ GUARDAR</button>
+                               <button onClick={()=>alert(legacyBlockedMessage)} className="flex-1 bg-yellow-500 text-black py-2 rounded text-xs font-bold hover:bg-yellow-400 shadow-md" disabled aria-disabled="true" style={{opacity:0.5,cursor:"not-allowed"}} title={legacyBlockedMessage}>✓ GUARDAR</button>
                              </div>
                           </div>
                         ) : (
@@ -566,14 +377,8 @@ export default function AfiliadoPage() {
                                  <label className="text-[10px] text-zinc-500 font-bold uppercase mt-1">Marcar Estado de Logística:</label>
                                  <select 
                                     value={sol.estadoEntrega || "PENDIENTE_ENTREGA"} 
-                                    onChange={e => {
-                                       const val = e.target.value;
-                                       if (val === "ENTREGADO") {
-                                          setNserie(""); setMontoAbonado(sol.montoCuota?.toString() || ""); setMetodoPago("Efectivo"); setComentarioEntrega("");
-                                          setEntregaActiva(sol.id);
-                                       } else { handleConfirmarEntrega(sol.id, val, true); }
-                                    }}
-                                    className="bg-zinc-800/80 border border-gray-600 text-xs p-2 rounded text-white focus:border-[#fe5000] outline-none w-full font-bold"
+                                    onChange={()=>alert(legacyBlockedMessage)}
+                                    className="bg-zinc-800/80 border border-gray-600 text-xs p-2 rounded text-white focus:border-[#fe5000] outline-none w-full font-bold" disabled aria-disabled="true" style={{opacity:0.5,cursor:"not-allowed"}} title={legacyBlockedMessage}
                                  >
                                     <option value="PENDIENTE_ENTREGA">📦 Equipo pendiente de entrega</option>
                                     <option value="ENTREGADO">✅ Equipo Entregado al Cliente</option>
@@ -603,22 +408,7 @@ export default function AfiliadoPage() {
                               </div>
                               <div className="flex gap-2 mt-2">
                                 <button onClick={() => setRecepcionActiva(null)} className="flex-1 bg-zinc-800/80 text-zinc-400 py-2 rounded text-xs font-bold hover:bg-gray-200">Cancelar</button>
-                                <button onClick={async () => {
-                                   try {
-                                      const { doc, updateDoc } = await import("firebase/firestore");
-                                      const fd = fechaRecepcion ? new Date(fechaRecepcion + "T12:00:00").toLocaleDateString() : new Date().toLocaleDateString();
-                                      const histo = `Recibido flete el ${fd} | Costo Comisionista: $${costoComisionista || 0} (Recepcionado por ${user?.email})`;
-                                      await updateDoc(doc(db, "solicitudes", sol.id), { 
-                                        estadoProducto: "En stock (Afiliado)",
-                                        costoFleteAfiliado: Number(costoComisionista || 0),
-                                        fechaLlegadaLocal: fechaRecepcion || new Date().toISOString(),
-                                        historialRecepcion: histo
-                                      });
-                                      alert("¡Acuse de recibo y costos financieros registrados!");
-                                      setRecepcionActiva(null);
-                                      fetchData();
-                                   } catch(e) { alert("Error al confirmar"); }
-                                }} className="flex-1 bg-blue-600 text-white py-2 rounded text-xs font-bold hover:bg-blue-500 shadow-md">✓ CONFIRMAR</button>
+                                <button onClick={()=>alert(legacyBlockedMessage)} className="flex-1 bg-blue-600 text-white py-2 rounded text-xs font-bold hover:bg-blue-500 shadow-md" disabled aria-disabled="true" style={{opacity:0.5,cursor:"not-allowed"}} title={legacyBlockedMessage}>✓ CONFIRMAR</button>
                               </div>
                            </div>
                         ) : sol.estadoProducto === "En viaje" && (
@@ -653,29 +443,13 @@ export default function AfiliadoPage() {
             ) : (
               <div className="space-y-4">
                 {solicitudes.slice(0, 10).map((sol) => (
-                  <div key={sol.id} className="bg-[#121316] border border-zinc-800 p-4 rounded-xl flex flex-col gap-2">
+                  <div key={sol.recordKey || sol.id} className="bg-[#121316] border border-zinc-800 p-4 rounded-xl flex flex-col gap-2">
                      <p className="text-sm font-bold text-white leading-tight">{sol.productoDeseado}</p>
 
                         {sol.estadoProducto === "En viaje" && (
                           <button 
-                            onClick={async () => {
-                              const fecha = window.prompt("Ingresa la fecha de recepción (ej. DD/MM/AAAA) o déjalo en blanco para usar la fecha de hoy:");
-                              if (fecha === null) return; // User cancelled
-                              const flete = window.prompt("Ingresa el costo del flete/comisionista en $: (Ingresa solo números)", "0");
-                              if (flete === null) return;
-                              try {
-                                const { doc, updateDoc } = await import("firebase/firestore");
-                                const fd = fecha?.trim() ? fecha : new Date().toLocaleDateString();
-                                await updateDoc(doc(db, "solicitudes", sol.id), { 
-                                  estadoProducto: "En stock (Afiliado)",
-                                  costoFleteAfiliado: Number(flete || 0),
-                                  historialRecepcion: `Recibido el ${fd} | Flete: $${flete || 0}`
-                                });
-                                alert("¡Acuse de recibo guardado exitosamente!");
-                                fetchData();
-                              } catch(e) { alert("Error al confirmar"); }
-                            }}
-                            className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-4 rounded w-full mt-2 text-xs shadow-[0_0_15px_rgba(37,99,235,0.5)]  border border-blue-400"
+                            onClick={()=>alert(legacyBlockedMessage)}
+                            className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-4 rounded w-full mt-2 text-xs shadow-[0_0_15px_rgba(37,99,235,0.5)]  border border-blue-400" disabled aria-disabled="true" style={{opacity:0.5,cursor:"not-allowed"}} title={legacyBlockedMessage}
                           >
                             📦 ACUSAR RECIBO (FLETE)
                           </button>
@@ -753,12 +527,7 @@ export default function AfiliadoPage() {
                                    </div>
                                    <p className={'text-sm ' + (!n.leida ? 'text-white font-bold' : 'text-zinc-400')}>{n.mensaje}</p>
                                    {!n.leida && (
-                                       <button onClick={async () => {
-                                           try {
-                                              await updateDoc(doc(db, "notificaciones", n.id), { leida: true });
-                                              setNotificaciones(prev => prev.map(p => p.id === n.id ? {...p, leida:true} : p));
-                                           }catch(e){}
-                                       }} className="text-[10px] text-[#fe5000] hover:text-[#fe5000] underline mt-2 w-fit">Marcar como leída</button>
+                                       <button onClick={()=>alert(legacyBlockedMessage)} className="text-[10px] text-[#fe5000] hover:text-[#fe5000] underline mt-2 w-fit" disabled aria-disabled="true" style={{opacity:0.5,cursor:"not-allowed"}} title={legacyBlockedMessage}>Marcar como leída</button>
                                    )}
                                </div>
                            ))
@@ -915,7 +684,7 @@ export default function AfiliadoPage() {
                                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Agendar Promesa P.:</label>
                                        <input type="date" value={fechaPromesa} onChange={e=>setFechaPromesa(e.target.value)} className="bg-[#121316] border border-zinc-800 rounded-lg p-2 text-xs text-white flex-1 outline-none focus:border-[#fe5000] transition-colors" />
                                     </div>
-                                    <button onClick={() => handleAgregarNotaCartera(sol)} className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs py-3 rounded-lg uppercase tracking-wider shadow-md opacity-90 hover:opacity-100 transition-all">
+                                    <button onClick={()=>alert(legacyBlockedMessage)} className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs py-3 rounded-lg uppercase tracking-wider shadow-md opacity-90 hover:opacity-100 transition-all" disabled aria-disabled="true" style={{opacity:0.5,cursor:"not-allowed"}} title={legacyBlockedMessage}>
                                        + Registrar Voluntad
                                     </button>
                                  </div>
@@ -936,3 +705,5 @@ export default function AfiliadoPage() {
     </div>
   );
 }
+
+export default function AfiliadoPage(){const {user}=useAuth();return <AfiliadoPortal key={user?.uid||'anonymous'}/>;}
