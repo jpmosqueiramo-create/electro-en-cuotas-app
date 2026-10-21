@@ -1,7 +1,7 @@
 import { calendarDate, exact, opaque } from './contractV2';
 export const providerStates = ['PENDIENTE_PEDIDO','PEDIDO_REALIZADO','CONFIRMADO','LISTO_PARA_RETIRAR','RETIRADO','CANCELADO'] as const;
 export type ProviderState = typeof providerStates[number];
-export type LogisticsState = 'PENDIENTE_RETIRO'|'RETIRADO'|'RECIBIDO'|'VIAJE_PROGRAMADO'|'ENTREGA_PROGRAMADA'|'EN_CUSTODIA_POR_RECHAZO';
+export type LogisticsState = 'PENDIENTE_RETIRO'|'RETIRADO'|'RECIBIDO'|'VIAJE_PROGRAMADO'|'ENTREGA_PROGRAMADA'|'EN_CUSTODIA_POR_RECHAZO'|'DELIVERED_EMULATOR';
 export interface IncidentV2 { id:string; openedAt:string; openedBy:string; description:string; resolvedAt:string|null; resolvedBy:string|null; resolution:string|null }
 export interface FulfillmentV2 {
  schemaVersion:'OPERATION_FULFILLMENT_V2'; operationId:string; revision:number;
@@ -13,7 +13,7 @@ export interface FulfillmentV2 {
  logisticsState:LogisticsState; tripReference:string; plannedTripDate:string|null; carrier:string;
  destinationLocality:string; estimatedDeliveryDate:string|null; deliveryResponsible:string;
  notes:string; incidents:IncidentV2[]; updatedAt:string|null; updatedBy:string|null;
- deliveryClosure:'BLOCKED_PHYSICAL_SIGNATURES_REQUIRED';
+ deliveryClosure:'BLOCKED_PHYSICAL_SIGNATURES_REQUIRED'|'DELIVERED_EMULATOR';
 }
 export const fulfillmentActions = ['UPDATE_ORDER','PLACE_ORDER','CONFIRM_ORDER','READY_FOR_PICKUP','UPDATE_COST','UPDATE_AVAILABILITY','CANCEL_ORDER','REOPEN_ORDER','PLAN_PICKUP','RECORD_PICKUP','RECEIVE','PLAN_TRIP','PLAN_DELIVERY','REPORT_INCIDENT','RESOLVE_INCIDENT','REJECT_DAMAGED','RESUME_FROM_CUSTODY'] as const;
 export type FulfillmentAction = typeof fulfillmentActions[number];
@@ -61,6 +61,7 @@ export function nextFulfillment(current:FulfillmentV2,c:FulfillmentCommand,actor
  return {...s,revision:s.revision+1,updatedAt:now,updatedBy:actor};
 }
 export function fulfillmentNextStep(s:FulfillmentV2):string {
+ if(s.logisticsState==='DELIVERED_EMULATOR')return 'Entrega física registrada sólo en Emulator. Sin activación financiera ni formalización.';
  if(s.incidents.some(i=>!i.resolvedAt))return 'Resolver incidencias y conservar la custodia';
  if(s.providerState==='CANCELADO')return 'Pedido cancelado; reapertura sólo mediante comando con motivo';
  if(s.logisticsState==='ENTREGA_PROGRAMADA')return 'Entrega bloqueada hasta verificar firmas físicas de mandato, pagaré y remito';

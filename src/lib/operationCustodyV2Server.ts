@@ -1,3 +1,4 @@
+import { deliveryEnabled } from './operationDeliveryV2';
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
 import { exact, opaque, stable } from './contractV2';
@@ -26,7 +27,8 @@ export async function custodyLoad(db: Firestore, tx: Transaction, id: string, v:
  if (!source.registered) custodyFail('Operación histórica sin identidad registrada: sólo lectura, sin migración.');
  const [snap, assigned, f] = await Promise.all([tx.get(custodyRef(db,id,v)), tx.get(assignmentRef(db,id,v)), tx.get(fulfillmentRef(db,id,v))]);
  const state = snap.exists ? snap.data() as OperationCustodyV2 : initialCustody(source.identity.operationId);
- if (state.schemaVersion !== 'OPERATION_CUSTODY_V2' || state.operationId !== source.identity.operationId || !Number.isSafeInteger(state.revision) || state.deliveryClosure !== 'BLOCKED_PHYSICAL_SIGNATURES_REQUIRED') custodyFail();
+ if (state.schemaVersion !== 'OPERATION_CUSTODY_V2' || state.operationId !== source.identity.operationId || !Number.isSafeInteger(state.revision) || !['BLOCKED_PHYSICAL_SIGNATURES_REQUIRED','DELIVERED_EMULATOR'].includes(state.deliveryClosure)) custodyFail();
+ if(state.deliveryClosure==='DELIVERED_EMULATOR'){const d=(await tx.get(custodyRef(db,id,v).parent.doc('delivery'))).data();if(!deliveryEnabled()||d?.status!=='DELIVERED_EMULATOR'||d.event?.operationId!==state.operationId||state.current||state.pending)custodyFail('Cierre de entrega inconsistente.');}
  if (stable(state.assignment) !== stable(assigned.exists ? { affiliateId: assigned.data()!.affiliateId, uid: assigned.data()!.uid } : null)) custodyFail('Asignación inconsistente.');
  if (!actor.admin) {
   const permittedParticipant = participantAccess && state.pending && [state.pending.from,state.pending.to].some(p=>p.uid===actor.uid && p.role!=='AFFILIATE');
@@ -95,6 +97,7 @@ export async function custodyCommand(db:Firestore,id:string,v:number,input:unkno
   if(c.operationId!==source.identity.operationId)custodyFail('Identidad operativa incorrecta.');
   const prior=await tx.get(receipt);
   if(prior.exists){if(prior.data()!.digest!==digest)custodyFail('Conflicto de commandId.');return {revision:prior.data()!.revision,replay:true};}
+  if(current.deliveryClosure==='DELIVERED_EMULATOR')custodyFail('Producto entregado en Emulator: no se transfiere otra vez.');
   if(c.expectedRevision!==current.revision)custodyFail('Conflicto de revisión. Recargá la operación.');
   const s=structuredClone(current),d=c.data,now=new Date().toISOString();
   const admin=()=>{if(!actor.admin)custodyFail('Acción exclusivamente administrativa.');};

@@ -1,3 +1,4 @@
+import { deliveryEnabled } from './operationDeliveryV2';
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
 import { contractRefs } from './contractV2Server';
@@ -21,7 +22,7 @@ export async function fulfillmentOrigin(db:Firestore,tx:Transaction,id:string,v:
 export function storedFulfillment(raw:unknown,initial:FulfillmentV2):FulfillmentV2 {
  if(!raw||typeof raw!=='object')throw new FulfillmentError('Seguimiento inconsistente.');
  const s=raw as FulfillmentV2;
- if(Object.keys(s).length!==Object.keys(initial).length||s.schemaVersion!==initial.schemaVersion||s.operationId!==initial.operationId||s.productName!==initial.productName||s.referenceId!==initial.referenceId||s.budgetedCost!==initial.budgetedCost||!Number.isSafeInteger(s.revision)||s.revision<1||s.deliveryClosure!==initial.deliveryClosure||!providerStates.includes(s.providerState)||!['PENDIENTE_RETIRO','RETIRADO','RECIBIDO','VIAJE_PROGRAMADO','ENTREGA_PROGRAMADA','EN_CUSTODIA_POR_RECHAZO'].includes(s.logisticsState)||!Array.isArray(s.incidents))throw new FulfillmentError('Seguimiento inconsistente.');
+ if(Object.keys(s).length!==Object.keys(initial).length||s.schemaVersion!==initial.schemaVersion||s.operationId!==initial.operationId||s.productName!==initial.productName||s.referenceId!==initial.referenceId||s.budgetedCost!==initial.budgetedCost||!Number.isSafeInteger(s.revision)||s.revision<1||(s.deliveryClosure!==initial.deliveryClosure&&!(s.deliveryClosure==='DELIVERED_EMULATOR'&&s.logisticsState==='DELIVERED_EMULATOR'&&deliveryEnabled()))||!providerStates.includes(s.providerState)||!['PENDIENTE_RETIRO','RETIRADO','RECIBIDO','VIAJE_PROGRAMADO','ENTREGA_PROGRAMADA','EN_CUSTODIA_POR_RECHAZO','DELIVERED_EMULATOR'].includes(s.logisticsState)||!Array.isArray(s.incidents))throw new FulfillmentError('Seguimiento inconsistente.');
  costDifference(s);return s;
 }
 export async function readFulfillment(db:Firestore,id:string,v:number,before?:number) {
@@ -50,6 +51,7 @@ export async function fulfillmentCommand(db:Firestore,id:string,v:number,input:u
    if(prior.data()!.digest!==digest)throw new FulfillmentError('Conflicto de commandId.');
    return {state:storedFulfillment(prior.data()!.result,source.initial),replay:true};
   }
+  if(current.deliveryClosure==='DELIVERED_EMULATOR')throw new FulfillmentError('Entrega cerrada en Emulator. No se modifica el producto entregado.');
   const now=new Date().toISOString(),next=nextFulfillment(current,c,actor,now);
   tx.set(ref,next);tx.create(command,{digest,result:next,actor,createdAt:now});
   tx.create(ref.collection('events').doc(c.commandId),{commandId:c.commandId,operationId:c.operationId,action:c.action,actor,at:now,expectedRevision:c.expectedRevision,revision:next.revision,data:c.data,

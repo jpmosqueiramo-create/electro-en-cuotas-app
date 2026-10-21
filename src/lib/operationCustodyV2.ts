@@ -16,7 +16,7 @@ export interface OperationCustodyV2 {
  assignment: { affiliateId: string; uid: string } | null;
  current: CustodyParticipant | null; location: string; lastTransferAt: string | null;
  pending: CustodyTransfer | null; incidents: CustodyIncident[];
- deliveryClosure: 'BLOCKED_PHYSICAL_SIGNATURES_REQUIRED';
+ deliveryClosure: 'BLOCKED_PHYSICAL_SIGNATURES_REQUIRED' | 'DELIVERED_EMULATOR';
 }
 export interface CustodyCommand { commandId: string; operationId: string; expectedRevision: number; action: string; data: Record<string, unknown> }
 export class CustodyError extends Error {}
