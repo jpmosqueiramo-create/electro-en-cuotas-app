@@ -4,7 +4,7 @@ import type { BudgetV2 } from '@/lib/budgetV2';
 import { useAuth } from '@/components/AuthProvider';
 import { BudgetAcceptanceDocumentation } from '@/components/admin/budgets/BudgetAcceptanceDocumentation';
 import { DOCUMENT_LABELS,type DocumentType } from '@/lib/budgetAcceptanceV2';
-import { creditLabels,creditStates,type CreditState } from '@/lib/creditReviewV2';
+import { creditLabels,creditNextAction,creditStates,type CreditState } from '@/lib/creditReviewV2';
 import type { readCreditReview } from '@/lib/creditReviewV2Server';
 import { btn,control } from './ContractDataFields';
 type View=Awaited<ReturnType<typeof readCreditReview>>;
@@ -26,7 +26,7 @@ export function CreditReviewWorkspace({budget,onUpdated}:{budget:BudgetV2;onUpda
  {error&&<p role="alert" className="break-words text-red-700">{error}</p>}
  <button className={btn} disabled={busy} onClick={()=>void act(load)}>Actualizar evaluación</button>
  {!view?<p role="status">Consultando evaluación…</p>:<>
- <p role="status" className="font-semibold">{creditLabels[view.state]}</p><p>Próxima acción: {view.prerequisite==='PENDING_DATA'?'Recibir, revisar y aplicar el formulario de datos':view.prerequisite==='PENDING_DOCUMENTS'?'Completar la documentación vigente':'Registrar la evaluación administrativa'} · Responsable: Administración</p>
+ <p role="status" className="font-semibold">{creditLabels[view.state]}</p><p>Próxima acción: {creditNextAction[view.state]} · Responsable: Administración</p>
  {view.identityMismatch&&<p role="alert">Los datos de identidad no coinciden con la carpeta. Solicitá aclaración o actualización del formulario; no se reutiliza documentación ni se fusionan personas.</p>}
  {view.requiresFreshReview&&<p role="alert">Los datos o documentos cambiaron. Revisá nuevamente antes de preparar el contrato.</p>}
  <p>Resolución: {view.review?.resolution||'Sin resolución registrada'}</p>

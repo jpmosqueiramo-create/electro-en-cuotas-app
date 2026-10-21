@@ -9,6 +9,7 @@ export function operationNextAction({ draft, tracking, pendingSubmissions, confo
   if(creditState&&creditState!=='APPROVED')return administrative(({PENDING_DATA:'Pendiente de datos',PENDING_DOCUMENTS:'Pendiente de documentación',IN_REVIEW:'En evaluación',MORE_INFORMATION:'Información adicional requerida',REJECTED:'Rechazado'} as const)[creditState],creditState==='PENDING_DATA'?'Revisar datos del cliente':creditState==='PENDING_DOCUMENTS'?'Revisar documentación del cliente':'Revisar evaluación crediticia');
   if (pendingSubmissions) return administrative('Datos recibidos del cliente', 'Revisar datos recibidos');
   if (conformityPending) return administrative('Condiciones pendientes de conformidad', 'Registrar conformidad del cliente');
+  if (tracking?.logisticsState==='DELIVERED_EMULATOR') return administrative('Entrega registrada en entorno de prueba', 'Consultar cuotas y pagos', 'payments');
   if (String(draft.status) === 'TERMS_FROZEN') return administrative('Términos congelados en entorno de prueba', 'Revisar documentación contractual');
   if (draft.status !== 'READY_TO_FORMALIZE') return administrative('Documentación en preparación', 'Completar revisión contractual');
   if (!tracking) return administrative('Preparación técnica revisada', 'Consultar seguimiento del producto', 'logistics');
