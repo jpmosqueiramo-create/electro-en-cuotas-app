@@ -121,7 +121,7 @@ export function adminSolicitudNextAction(item: AdminSolicitudListItem): string {
     if (item.estadoOriginal === "REQUIERE_INFO") return "Consultar información solicitada";
     if (item.estadoOriginal === "PENDIENTE_FIRMA") return "Consultar autorización";
   }
-  if (item.tipoPresentacion === "Contacto rápido" && item.propuestas.length && isAdminSolicitudPending(item)) return "Consultar propuestas";
+  if (item.tipoPresentacion === "Contacto rápido" && item.propuestas.length && isAdminSolicitudPending(item)) return "Consultar presupuestos V2";
   if (isAdminSolicitudPending(item)) return "Revisar solicitud";
   if (["APROBADO", "Aprobado"].includes(item.estadoOriginal ?? "") && item.estadoEntrega === "PENDIENTE_ENTREGA") return "Consultar seguimiento";
   return "Ver detalle";

@@ -40,7 +40,6 @@ export default function ClientesPage() {
             nombreAfiliado: data.nombreAfiliado || data.referidoPor || "Directo",
             estado: data.estado || "Aperturado",
             solicitudesCount: 1,
-            presupuestosCount: (data.presupuestos || []).length,
             fechaAlta: data.fechaIso || new Date().toISOString()
           });
         }
@@ -58,7 +57,6 @@ export default function ClientesPage() {
           const existing = mapClientes.get(key);
           if (existing) {
             existing.solicitudesCount += 1;
-            existing.presupuestosCount += (data.presupuestos || []).length;
             if (data.estadoEntrega === "ENTREGADO" || data.nroContrato) {
               existing.estado = "Con Contrato Activo";
             }
@@ -76,7 +74,6 @@ export default function ClientesPage() {
               nombreAfiliado: data.nombreAfiliado || data.referidoPor || "Directo",
               estado: data.estadoEntrega === "ENTREGADO" ? "Con Contrato Activo" : (data.estado || "Solicitante"),
               solicitudesCount: 1,
-              presupuestosCount: (data.presupuestos || []).length,
               fechaAlta: data.fechaCreacion || new Date().toISOString()
             });
           }
@@ -227,7 +224,6 @@ export default function ClientesPage() {
                     <div className="flex justify-between items-center pt-3 border-t border-[#DED8CF] text-xs mt-3">
                       <div className="flex gap-4 text-[#68706E] text-xs">
                         <span>Solicitudes: <strong className="text-[#173E3B] font-mono font-bold">{c.solicitudesCount}</strong></span>
-                        <span>Presupuestos: <strong className="text-[#B44E2A] font-mono font-bold">{c.presupuestosCount}</strong></span>
                       </div>
 
                       <Link
