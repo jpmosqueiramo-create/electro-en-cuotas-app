@@ -1,3 +1,4 @@
+import {legacyAffiliateAction} from '@/lib/legacyAffiliateActions';
 import { isAdminEmail } from "@/lib/adminIdentity";
 import { NextRequest, NextResponse } from "next/server";
 import { admin } from "@/lib/firebaseAdmin";
@@ -64,42 +65,4 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function PATCH(req: NextRequest) {
-  try {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
-
-    const token = authHeader.split("Bearer ")[1];
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    const userEmail = (decodedToken.email || "").toLowerCase().trim();
-
-    const body = await req.json();
-    const { notificationId } = body;
-
-    if (!notificationId) {
-      return NextResponse.json({ error: "notificationId es requerido" }, { status: 400 });
-    }
-
-    const docRef = admin.firestore().collection("notificaciones").doc(notificationId);
-    const docSnap = await docRef.get();
-
-    if (!docSnap.exists) {
-      return NextResponse.json({ error: "Notificación no encontrada" }, { status: 404 });
-    }
-
-    const data = docSnap.data() || {};
-    if ((data.afiliadoEmail || "").toLowerCase().trim() !== userEmail && !isAdminEmail(userEmail)) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-    }
-
-    await docRef.update({ leida: true });
-
-    return NextResponse.json({ success: true });
-
-  } catch (error: any) {
-    console.error("Error en PATCH /api/afiliado/notificaciones:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
+export async function PATCH(req:Request){return legacyAffiliateAction(req,'READ');}

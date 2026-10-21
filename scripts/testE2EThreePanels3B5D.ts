@@ -471,10 +471,11 @@ async function runE2ETests() {
   // --- 15. OBSERVACIÓN CON PERSISTENCIA REAL ---
   const reqObsA = new Request("http://localhost/api/afiliado/observaciones", {
     method: "POST",
-    headers: { Authorization: `Bearer ${idTokenSellerA}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${idTokenSellerA}`, "Content-Type": "application/json", Origin:"https://www.cuentahogar.com.ar" },
     body: JSON.stringify({
       operacionId: solIdE2E,
       solicitudId: solIdE2E,
+      commandId: "11111111-1111-4111-8111-111111111111",
       texto: "Cliente confirmó cambio de domicilio"
     })
   });
@@ -492,10 +493,11 @@ async function runE2ETests() {
   // --- 16. AISLAMIENTO EN OBSERVACIONES (VENDEDOR B RECHAZADO) ---
   const reqObsB = new Request("http://localhost/api/afiliado/observaciones", {
     method: "POST",
-    headers: { Authorization: `Bearer ${idTokenSellerB}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${idTokenSellerB}`, "Content-Type": "application/json", Origin:"https://www.cuentahogar.com.ar" },
     body: JSON.stringify({
       operacionId: solIdE2E,
       solicitudId: solIdE2E,
+      commandId: "22222222-2222-4222-8222-222222222222",
       texto: "Intento no autorizado B"
     })
   });

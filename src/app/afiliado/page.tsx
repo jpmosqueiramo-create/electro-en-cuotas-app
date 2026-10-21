@@ -1,4 +1,5 @@
 "use client";
+import {LegacyPortalAction} from "@/components/LegacyPortalAction";
 
 import {createAffiliateSolicitudSender} from "@/lib/affiliateSolicitudClient";
 import { AffiliateOperationsV2 } from '@/components/operations/AffiliateOperationsV2';
@@ -43,8 +44,6 @@ function AfiliadoPortal() {
   const [recepcionActiva, setRecepcionActiva] = useState<string | null>(null);
   const [expandedCarteraId, setExpandedCarteraId] = useState<string | null>(null);
   const [activeProductSolId, setActiveProductSolId] = useState<Record<string, string>>({});
-  const [nuevaNota, setNuevaNota] = useState("");
-  const [fechaPromesa, setFechaPromesa] = useState("");
   const [fechaRecepcion, setFechaRecepcion] = useState("");
   const [costoComisionista, setCostoComisionista] = useState("");
   const [nserie, setNserie] = useState("");
@@ -341,6 +340,7 @@ function AfiliadoPortal() {
                         <p className="text-xs text-zinc-400 mb-2">DNI: {sol.datosPersonales?.numeroDni}</p>
                         <p className="text-xs text-zinc-500 italic bg-[#121316] p-2 rounded border border-zinc-800 break-words mb-2">Notas Admin: {sol.mensajeAdmin || 'Sin observaciones'}</p>
                         
+                        <LegacyPortalAction kind="NOTE" id={sol.id} source={sol.sourceCollection} onSaved={()=>void fetchData()}/>
                         {entregaActiva === sol.id ? (
                           <div className="bg-[#121316] border border-[#fe5000]/50 p-4 rounded-lg mt-2 flex flex-col gap-3 shadow-md w-full relative z-10">
                              <h4 className="text-[#fe5000] font-bold text-xs uppercase text-center border-b border-zinc-800 pb-2">Confirmar Entrega</h4>
@@ -527,7 +527,7 @@ function AfiliadoPortal() {
                                    </div>
                                    <p className={'text-sm ' + (!n.leida ? 'text-white font-bold' : 'text-zinc-400')}>{n.mensaje}</p>
                                    {!n.leida && (
-                                       <button onClick={()=>alert(legacyBlockedMessage)} className="text-[10px] text-[#fe5000] hover:text-[#fe5000] underline mt-2 w-fit" disabled aria-disabled="true" style={{opacity:0.5,cursor:"not-allowed"}} title={legacyBlockedMessage}>Marcar como leída</button>
+                                       <LegacyPortalAction kind="READ" id={n.id} onSaved={()=>void fetchData()}/>
                                    )}
                                </div>
                            ))
@@ -678,16 +678,8 @@ function AfiliadoPortal() {
                                      </div>
                                  )}
 
-                                 <div className="mt-2 text-sm border-t border-zinc-800 pt-3">
-                                    <textarea value={nuevaNota} onChange={e=>setNuevaNota(e.target.value)} placeholder="Ej: Me comuniqué para un plan de pago... prometió ir mañana." className="w-full bg-[#121316]/80 text-white p-3 rounded-lg border border-zinc-800 outline-none focus:border-[#fe5000] mb-3 h-20 min-h-[5rem] transition-colors resize-none" />
-                                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-                                       <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Agendar Promesa P.:</label>
-                                       <input type="date" value={fechaPromesa} onChange={e=>setFechaPromesa(e.target.value)} className="bg-[#121316] border border-zinc-800 rounded-lg p-2 text-xs text-white flex-1 outline-none focus:border-[#fe5000] transition-colors" />
-                                    </div>
-                                    <button onClick={()=>alert(legacyBlockedMessage)} className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xs py-3 rounded-lg uppercase tracking-wider shadow-md opacity-90 hover:opacity-100 transition-all" disabled aria-disabled="true" style={{opacity:0.5,cursor:"not-allowed"}} title={legacyBlockedMessage}>
-                                       + Registrar Voluntad
-                                    </button>
-                                 </div>
+                                 <LegacyPortalAction kind="NOTE" id={sol.id} source={sol.sourceCollection} onSaved={()=>void fetchData()}/>
+                                 <p className="text-xs text-zinc-400">La gestión no registra una promesa financiera. Para agendarla, contactá a Administración.</p>
                               </div>
                            </div>
                          )}

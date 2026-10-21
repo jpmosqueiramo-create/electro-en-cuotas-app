@@ -1,5 +1,6 @@
 "use client";
 
+import {LegacyPortalAction} from "@/components/LegacyPortalAction";
 import { ClientServicesV2 } from '@/components/operations/ClientServicesV2';
 import { isAdminEmail } from "@/lib/adminIdentity";
 
@@ -21,6 +22,8 @@ import {
 type Solicitud = {
   id: string;
   recordKey?:string;
+  sourceCollection?:string;
+  canReportPayment?:boolean;
   estado: "PENDIENTE" | "APROBADO" | "RECHAZADO" | "REQUIERE_INFO";
   mensajeAdmin?: string;
   fechaCreacion: any;
@@ -685,6 +688,7 @@ function ClientePortal() {
                     </div>
                   )}
 
+                  <LegacyPortalAction kind="PAYMENT" id={sol.id} source={sol.sourceCollection} enabled={sol.canReportPayment===true}/>
                   {/* Planilla de Cuotas */}
                   {sol.planPagos && sol.planPagos.length > 0 && (
                     <div className="bg-[#111318] rounded-2xl border border-[#252A32] p-4 md:p-5 space-y-4">
@@ -758,28 +762,7 @@ function ClientePortal() {
                                     </span>
 
                                     {isEligibleToPay ? (
-                                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                                        <input 
-                                          type="number" 
-                                          id={`monto_${sol.id}_${idx}`} 
-                                          defaultValue={cuota.montoOriginal} 
-                                          min="1" 
-                                          className="w-24 bg-[#111318] border border-zinc-700 text-white p-1.5 rounded-lg text-xs font-mono font-bold outline-none focus:border-[#FFD21A]" 
-                                        />
-                                        <input 
-                                          type="file" 
-                                          id={`comprobante_${sol.id}_${idx}`} 
-                                          accept="image/*,application/pdf" 
-                                          className="text-[9px] text-zinc-300 file:bg-[#FFD21A] file:text-[#111318] file:border-0 file:rounded file:px-2 file:py-1 file:font-bold hover:file:bg-[#E8B900]" 
-                                        />
-                                        <button 
-                                          id={`btn_${sol.id}_${idx}`}
-                                          onClick={()=>alert(legacyBlockedMessage)}
-                                          className="bg-green-600 hover:bg-green-500 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg shadow-md transition-all" disabled aria-disabled="true" style={{opacity:0.5,cursor:"not-allowed"}} title={legacyBlockedMessage}
-                                        >
-                                          Subir Recibo
-                                        </button>
-                                      </div>
+                                      <p className="text-xs text-zinc-400">Usá “Informar pago” para esta operación. Los adjuntos y la acreditación se gestionan con Administración.</p>
                                     ) : (
                                       <p className="text-[10px] text-zinc-500 italic">Debes abonar la cuota anterior primero.</p>
                                     )}
