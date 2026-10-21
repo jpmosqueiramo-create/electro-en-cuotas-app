@@ -36,7 +36,7 @@ async function run() {
   const request=(method:string,origin:string|null='https://www.cuentahogar.com.ar',token=link.secret!)=>new NextRequest(
     `http://0.0.0.0:8080/api/public/contract-data/${link.requestId}`,{method,
       headers:{'X-Client-Data-Token':token,'Content-Type':'application/json',...(origin?{Origin:origin}:{})},
-      ...(method==='POST'?{body:JSON.stringify(addressPayload)}:{})});
+      ...(method==='POST'?{body:JSON.stringify({personalData:addressPayload.personalData,employmentData:addressPayload.employmentData})}:{})});
   assert.equal((await publicRoute.GET(request('GET',null),ctx)).status,200);
   assert.equal((await publicRoute.POST(request('POST','https://evil.invalid'),ctx)).status,400);
   assert.equal((await publicRoute.POST(request('POST',null),ctx)).status,400);

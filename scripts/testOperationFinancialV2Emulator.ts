@@ -19,7 +19,7 @@ const db=admin.firestore();
 export async function financialFixture(){
  const f=await deliveryFixture(),actor='synthetic-admin-a',dependenciesId='finance-'+randomUUID();
  let d=(await f.r.draft.get()).data()!;
- for(const [action,extra]of [['UPDATE_PERSONAL_DATA',{personalData:addressPayload.personalData}],['SET_CONTRACT_PLAN',{contractPlanCuotas:12}],['SET_PAYMENT_DATES',{firstInstallmentDueDate:'2026-12-15',preferredMonthlyDueDay:30}],['MARK_READY_TO_FORMALIZE',{}]] as const)d=(await contractCommand(db,f.id,1,{action,commandId:randomUUID(),expectedRevision:d.revision,...extra},actor)).draft;
+ for(const [action,extra]of [['UPDATE_PERSONAL_DATA',{personalData:addressPayload.personalData}],['SET_CONTRACT_PLAN',{contractPlanCuotas:12}],['SET_PAYMENT_DATES',{firstInstallmentDueDate:'2026-12-15',preferredMonthlyDueDay:30}],['RECORD_CLIENT_CONFORMITY',{evidence:'Synthetic client confirmation fixture'}],['MARK_READY_TO_FORMALIZE',{}]] as const)d=(await contractCommand(db,f.id,1,{action,commandId:randomUUID(),expectedRevision:d.revision,...extra},actor)).draft;
  await db.collection(FREEZE_DEPENDENCIES_COLLECTION).doc(dependenciesId).set({schemaVersion:'CONTRACT_FREEZE_SYNTHETIC_DEPENDENCIES_V1',executionMode:'EMULATOR_ONLY',legalApproval:'NOT_APPROVED_SYNTHETIC_ONLY',legalContext:infrastructureFixture(f.id).legalContext});
  const counter=db.doc(CONTRACT_INFRASTRUCTURE_PATHS.counter);if(!(await counter.get()).exists)await counter.create({schemaVersion:'CONTRACT_NUMBER_COUNTER_V1',policyId:'CONTRACT_NUMBERING_V1',executionMode:'EMULATOR_ONLY',active:true,lastAllocatedSequence:'0'});
  const service=createContractFreezeIntegrationEmulator();let snapshot;

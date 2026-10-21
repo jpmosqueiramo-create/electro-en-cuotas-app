@@ -40,14 +40,15 @@ async function main(){
  await assert.rejects(()=>publicContractData(db,reqId,'x'.repeat(43)),{message:unavailable});await assert.rejects(()=>publicContractData(db,firstId,first.secret!),{message:unavailable});
  const before=(await r.draft.get()).data();
  const wrong=[{...clientPayload,extra:true},{...clientPayload,personalData:{...clientPayload.personalData,dni:''}},{...clientPayload,preferredMonthlyDueDay:0},{...clientPayload,preferredMonthlyDueDay:32}];for(const p of wrong)await assert.rejects(()=>publicContractData(db,reqId,token,p));
- const racePayloads=[clientPayload,{...clientPayload,preferredMonthlyDueDay:29}];
+ const dataOnly={personalData:clientPayload.personalData,employmentData:clientPayload.employmentData};
+ const racePayloads=[dataOnly,{...dataOnly,personalData:{...dataOnly.personalData,address:'Otra dirección sintética'}}];
  const submitRace=await Promise.allSettled(racePayloads.map(p=>publicContractData(db,reqId,token,p)));
  assert.equal(submitRace.filter(x=>x.status==='fulfilled').length,1);assert.equal(submitRace.filter(x=>x.status==='rejected').length,1);
  const winner=submitRace.findIndex(x=>x.status==='fulfilled');await publicContractData(db,reqId,token,racePayloads[winner]);
  await assert.rejects(()=>publicContractData(db,reqId,token,racePayloads[1-winner]));
  assert.equal((await r.draft.collection('submissions').get()).size,1);assert.deepEqual((await r.draft.get()).data(),before);
  console.log('P5C_CONCURRENT_PUBLIC_SUBMISSION = PASS; CONCURRENT_SUBMISSIONS_CREATED = 1');
- const frozen=(await r.draft.collection('submissions').doc(reqId).get()).data();await update('APPLY_CLIENT_SUBMISSION',{submissionId:reqId});assert.equal(d.lastClientSubmissionId,reqId);assert.deepEqual(d.personalData,clientPayload.personalData);
+ const frozen=(await r.draft.collection('submissions').doc(reqId).get()).data();await update('APPLY_CLIENT_SUBMISSION',{submissionId:reqId});assert.equal(d.lastClientSubmissionId,reqId);assert.deepEqual(d.personalData,racePayloads[winner].personalData);
  await update('UPDATE_PERSONAL_DATA',{personalData:{...clientPayload.personalData,address:'Corregido por Admin'}});assert.deepEqual((await r.draft.collection('submissions').doc(reqId).get()).data(),frozen);
  const otherId=`${id}-cross`,other=contractRefs(db,otherId,1),of=fixture(otherId);
  await other.budget.set(of.b);await other.acceptance.set(of.a);
@@ -77,7 +78,7 @@ async function main(){
  assert.equal((await pub.GET(req('GET',undefined,'x'.repeat(43)),ctx)).status,400);assert.equal((await pub.GET(req('GET',undefined,active.secret!,'?token=bad'),ctx)).status,400);
  for(const payload of [...wrong,{...clientPayload,personalData:{...clientPayload.personalData,address:'x'.repeat(20000)}}])assert.equal((await pub.POST(req('POST',payload),ctx)).status,400);
  assert.equal((await pub.POST(new NextRequest(`http://localhost:3000/api/public/contract-data/${activeId}`,{method:'POST',headers:{Origin:'https://evil.test','Content-Type':'application/json','X-Client-Data-Token':active.secret!},body:JSON.stringify(clientPayload)}),ctx)).status,400);
- assert.equal((await pub.POST(req('POST',clientPayload),ctx)).status,200);
+ assert.equal((await pub.POST(req('POST',dataOnly),ctx)).status,200);
  const adminCtx={params:Promise.resolve({budgetId:id,version:'1'})};assert.equal((await api.GET(new NextRequest('http://localhost:3000/api/admin/test'),adminCtx)).status,401);
  let u;try{u=await admin.auth().getUserByEmail(ADMIN_EMAIL);}catch{u=await admin.auth().createUser({email:ADMIN_EMAIL,password:'Demo-only-1234!'});}await admin.auth().updateUser(u.uid,{password:'Demo-only-1234!'});
  const login=await(await fetch('http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:ADMIN_EMAIL,password:'Demo-only-1234!',returnSecureToken:true})})).json() as {idToken:string};assert.ok(login.idToken);

@@ -1,6 +1,7 @@
 'use client';
 import { useCallback,useEffect,useRef,useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
+import { operationStatusLabel } from '@/lib/operationWorkspaceV2';
 import { btn,control } from './ContractDataFields';
 import { fulfillmentActions,type FulfillmentAction,type FulfillmentV2 } from '@/lib/operationFulfillmentV2';
 import type { FulfillmentViewV2 } from '@/lib/operationFulfillmentV2Server';
@@ -46,8 +47,8 @@ export function OperationFulfillmentWorkspace({budgetId,version}:{budgetId:strin
  if(!view)return <section className="rounded-xl border border-border-color p-4" data-testid="fulfillment"><h3 className="font-bold">Proveedor y logística</h3><p>{error||'Consultando seguimiento…'}</p><button className={btn} onClick={()=>void reload()}>Reintentar consulta</button></section>;
  const s=view.state;
  return <section className="min-w-0 space-y-4 rounded-xl border border-border-color bg-surface p-4" data-testid="fulfillment"><h3 className="font-heading text-xl font-bold">Proveedor y logística</h3>
- <p>{s.productName} {s.referenceId&&<span className="break-all">· Referencia: {s.referenceId}</span>}</p>
- <p data-testid="fulfillment-status">Pedido: {s.providerState} · Logística: {s.logisticsState} · Revisión {s.revision}</p>
+ <p>{s.productName}</p>
+ <p data-testid="fulfillment-status">Pedido: {operationStatusLabel(s.providerState)} · Logística: {operationStatusLabel(s.logisticsState)} · Revisión {s.revision}</p>
  <p>Próximo paso: {view.nextStep}</p><p className="text-sm">Costos internos · Sólo Administración. El costo real no modifica el presupuesto ni las cuotas del cliente.</p>
  <dl className="grid gap-3 sm:grid-cols-3">{[['Costo presupuestado',money(s.budgetedCost)],['Costo real confirmado',money(s.actualCost)],['Diferencia',money(view.costDifference)],['Proveedor',s.providerName||'Sin seleccionar'],['Referencia proveedor',s.providerReference||'Sin registrar'],['Pedido realizado',date(s.orderDate)],['Disponibilidad estimada',date(s.estimatedAvailabilityDate)],['Disponibilidad confirmada',date(s.confirmedAvailabilityDate)],['Retiro previsto',date(s.plannedPickupDate)],['Retiro real',date(s.actualPickupDate)],['Responsable retiro',s.pickupResponsible||'Sin asignar'],['Recepción real',date(s.actualReceiptDate)],['Custodia',`${s.custodyLocation||'Sin ubicación'} · ${s.custodian||'Sin responsable'}`],['Estado visual',s.visualCondition||'Sin inspección'],['Viaje',`${s.tripReference||'Sin programar'} · ${date(s.plannedTripDate)} · ${s.carrier}`],['Entrega estimada',date(s.estimatedDeliveryDate)],['Destino',s.destinationLocality||'Sin programar'],['Responsable entrega',s.deliveryResponsible||'Sin asignar']].map(([k,v])=><div className="min-w-0 break-words" key={k}><dt>{k}</dt><dd className="font-semibold">{v}</dd></div>)}</dl>
  {s.notes&&<p className="break-words">Observaciones: {s.notes}</p>}
@@ -59,6 +60,6 @@ export function OperationFulfillmentWorkspace({budgetId,version}:{budgetId:strin
  {fields[action].map(f=><label className="block min-w-0" key={f.key}>{f.label}{f.optional?' (opcional)':''}{f.type==='condition'?<select aria-label={f.label} className={control} required value={form[f.key]||''} onChange={e=>setForm({...form,[f.key]:e.target.value})}><option value="">Seleccionar</option><option value="SIN_DANOS_VISIBLES">Sin daños visibles</option><option value="DANOS_VISIBLES">Daños visibles</option><option value="PENDIENTE_REVISION">Pendiente de revisión</option></select>:f.type==='incident'?<select aria-label={f.label} className={control} required value={form[f.key]||''} onChange={e=>setForm({...form,[f.key]:e.target.value})}><option value="">Seleccionar incidencia</option>{s.incidents.filter(i=>!i.resolvedAt).map(i=><option key={i.id} value={i.id}>{i.description}</option>)}</select>:<input aria-label={f.label} className={control} required={!f.optional} maxLength={500} type={f.type||'text'} {...(f.type==='number'?{min:0,step:'0.01'}:{})} value={form[f.key]||''} onChange={e=>setForm({...form,[f.key]:e.target.value})}/>}</label>)}
  <button className={btn} type="submit">{busy?'Guardando…':'Confirmar acción operativa'}</button></fieldset></form>
  <h4 className="font-bold">Incidencias</h4>{!s.incidents.length?<p>Sin incidencias registradas.</p>:s.incidents.map(i=><article className="break-words border-b border-border-color py-2" key={i.id}><p>{i.resolvedAt?'Resuelta':'Pendiente'} · {i.description}</p><p>{i.resolution}</p></article>)}
- <h4 className="font-bold">Historial de comandos</h4>{!view.events.length?<p>Sin cambios operativos guardados.</p>:view.events.map(e=><p className="break-words text-sm" key={e.commandId}>{e.at} · {e.actor} · {e.action} · Revisión {e.revision} · {e.from.provider}/{e.from.logistics} → {e.to.provider}/{e.to.logistics}</p>)}{view.before&&<button disabled={busy} className={btn} onClick={()=>void more()}>Ver historial anterior</button>}
- </section>;
+ <details><summary className="min-h-11 cursor-pointer font-bold">Historial y auditoría</summary>{!view.events.length?<p>Sin cambios operativos guardados.</p>:view.events.map(e=><p className="break-words text-sm" key={e.commandId}>{e.at} · {e.actor} · {e.action} · Revisión {e.revision} · {e.from.provider}/{e.from.logistics} → {e.to.provider}/{e.to.logistics}</p>)}{view.before&&<button disabled={busy} className={btn} onClick={()=>void more()}>Ver historial anterior</button>}
+ </details></section>;
 }

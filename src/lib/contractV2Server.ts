@@ -8,7 +8,8 @@ import { validateBudgetV2 } from './budgetV2';
 import { privateBudgetReferenceId } from './budgetV2Persistence';
 import type { BudgetAcceptanceV2 } from './budgetAcceptanceV2';
 import { personalVersion,calendarDate,contractEconomics,contractSchedule,dataFields,dueDay,employmentFields,exact,newContractDraft,opaque,personalFields,reject,submissionPayload,type ClientDataSubmissionV2,type ContractClientDataRequestV2,type ContractDraftV2,stable } from './contractV2';
-function submissionBody(s:ClientDataSubmissionV2){return {personalData:s.personalData,employmentData:s.employmentData,preferredMonthlyDueDay:s.preferredMonthlyDueDay};}
+export function clientTermsDigest(d:ContractDraftV2){return digest({economicTerms:d.economicTerms,firstInstallmentDueDate:d.firstInstallmentDueDate,preferredMonthlyDueDay:d.preferredMonthlyDueDay,paymentScheduleDraft:d.paymentScheduleDraft});}
+function submissionBody(s:ClientDataSubmissionV2){return {personalData:s.personalData,employmentData:s.employmentData,...(s.preferredMonthlyDueDay===undefined?{}:{preferredMonthlyDueDay:s.preferredMonthlyDueDay})};}
 const digest=(o:unknown)=>createHash('sha256').update(stable(o)).digest('hex');
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 export function contractRefs(db:Firestore,budgetId:string,version:number) {
@@ -34,8 +35,10 @@ export async function getContract(db:Firestore,id:string,v:number){
         contractState:snapshot.exists?snapshot.data()!.status:'NOT_CREATED',documentationStage:docs.data()?.workflowStage==='DOCUMENTACION'?'DOCUMENTACION':'NOT_AVAILABLE',
         pendingProcesses:['COBRANZA']};
     } else if (os.exists || snapshot.exists) reject('Falta aceptación de origen.');
-    if(!snapshot.exists)return {draft:null,requests:[],submissions:[],readiness:null,operation};
+    if(!snapshot.exists)return {draft:null,budget:bs.data() as BudgetV2,requests:[],submissions:[],readiness:null,operation};
     const draft=snapshot.data() as ContractDraftV2;
+    const consent=await tx.get(r.draft.collection('conformity').doc('current'));
+    const clientConformity=consent.exists?{required:true,confirmed:consent.data()!.confirmedDigest===clientTermsDigest(draft),confirmedAt:consent.data()!.confirmedAt??null}:null;
     let readiness:ContractReadyEvidenceV1|null=null;
     if(draft.status==='READY_TO_FORMALIZE'){
       if(!draft.readyEvidenceId)reject('Falta evidencia de revisión.');
@@ -44,10 +47,10 @@ export async function getContract(db:Firestore,id:string,v:number){
       readiness=e.data() as ContractReadyEvidenceV1;verifyReadyEvidence(b.data() as BudgetV2,a.data() as BudgetAcceptanceV2,draft,readiness);
     }
     const [requests,submissions]=await Promise.all([tx.get(r.draft.collection('requests')),tx.get(r.draft.collection('submissions'))]);
-    return {draft,readiness,operation,requests:requests.docs.map(x=>{const {tokenHash:_hash,submissionDigest:_digest,...safe}=x.data();void _hash;void _digest;return safe;}),submissions:submissions.docs.map(x=>x.data() as ClientDataSubmissionV2)};
+    return {draft,budget:bs.data() as BudgetV2,readiness,operation,clientConformity,requests:requests.docs.map(x=>{const {tokenHash:_hash,submissionDigest:_digest,...safe}=x.data();void _hash;void _digest;return safe;}),submissions:submissions.docs.map(x=>x.data() as ClientDataSubmissionV2)};
   });
 }
-const actionKeys:Record<string,string[]>={OPEN_OR_CREATE:[],MARK_READY_TO_FORMALIZE:[],RETURN_TO_DRAFT:['reason'],UPDATE_PERSONAL_DATA:['personalData'],UPDATE_EMPLOYMENT_DATA:['employmentData'],SET_CONTRACT_PLAN:['contractPlanCuotas'],SET_PAYMENT_DATES:['firstInstallmentDueDate','preferredMonthlyDueDay'],CREATE_CLIENT_DATA_REQUEST:[],REVOKE_CLIENT_DATA_REQUEST:[],APPLY_CLIENT_SUBMISSION:['submissionId']};
+const actionKeys:Record<string,string[]>={OPEN_OR_CREATE:[],RECORD_CLIENT_CONFORMITY:['evidence'],MARK_READY_TO_FORMALIZE:[],RETURN_TO_DRAFT:['reason'],UPDATE_PERSONAL_DATA:['personalData'],UPDATE_EMPLOYMENT_DATA:['employmentData'],SET_CONTRACT_PLAN:['contractPlanCuotas'],SET_PAYMENT_DATES:['firstInstallmentDueDate','preferredMonthlyDueDay'],CREATE_CLIENT_DATA_REQUEST:[],REVOKE_CLIENT_DATA_REQUEST:[],APPLY_CLIENT_SUBMISSION:['submissionId']};
 export async function contractCommand(db:Firestore,id:string,v:number,input:unknown,actor:string) {
   const raw=input as Record<string,unknown>,action=raw?.action;
   if(typeof action!=='string'||!Object.hasOwn(actionKeys,action))reject('NEW_PROPOSAL_REQUIRED: operación no permitida.');
@@ -79,6 +82,13 @@ export async function contractCommand(db:Firestore,id:string,v:number,input:unkn
       verifyReadyEvidence(budget,a.data() as BudgetAcceptanceV2,d,readyEvidence);
     }
     const before=structuredClone(d);
+    const conformityRef=r.draft.collection('conformity').doc('current');
+    const conformity=await tx.get(conformityRef);
+    if(action==='MARK_READY_TO_FORMALIZE'&&conformity.exists&&conformity.data()!.confirmedDigest!==clientTermsDigest(d))reject('Registrá la nueva conformidad del cliente sobre las condiciones vigentes.');
+    if(action==='RECORD_CLIENT_CONFORMITY'){
+      if(!conformity.exists||!d.economicTerms||!d.paymentScheduleDraft.length)reject('Primero completá las condiciones y el cronograma.');
+      if(typeof o.evidence!=='string'||!o.evidence.trim()||o.evidence.trim().length>500||/[<>\x00-\x1f\x7f]/.test(o.evidence))reject('Indicá una referencia de evidencia válida.');
+    }
     const activeRef=d.activeClientDataRequestId?r.draft.collection('requests').doc(opaque(d.activeClientDataRequestId)):null;
     const active=activeRef?await tx.get(activeRef):null;
     let sub:ClientDataSubmissionV2|null=null;
@@ -111,10 +121,10 @@ export async function contractCommand(db:Firestore,id:string,v:number,input:unkn
       d={...d,economicTerms:contractEconomics({...d.acceptedReferenceSnapshot,imagenUrls:[]},o.contractPlanCuotas)};
     }
     if(action==='SET_PAYMENT_DATES') d={...d,firstInstallmentDueDate:o.firstInstallmentDueDate===null?null:calendarDate(o.firstInstallmentDueDate),preferredMonthlyDueDay:o.preferredMonthlyDueDay===null?null:dueDay(o.preferredMonthlyDueDay)};
-    if(sub)d={...d,...(subVersion==='LEGACY_SIX'?{}:{personalDataVersion:PERSONAL_ADDRESS_VERSION}),personalData:subVersion==='LEGACY_SIX'?{...d.personalData,...submissionPayload(submissionBody(sub),subVersion).personalData}:dataFields(sub.personalData,personalFields,true),employmentData:dataFields(sub.employmentData,employmentFields),preferredMonthlyDueDay:dueDay(sub.preferredMonthlyDueDay),lastClientSubmissionId:sub.submissionId,lastClientSubmissionAppliedAt:now,lastClientSubmissionAppliedBy:actor};
+    if(sub)d={...d,...(subVersion==='LEGACY_SIX'?{}:{personalDataVersion:PERSONAL_ADDRESS_VERSION}),personalData:subVersion==='LEGACY_SIX'?{...d.personalData,...submissionPayload(submissionBody(sub),subVersion).personalData}:dataFields(sub.personalData,personalFields,true),employmentData:dataFields(sub.employmentData,employmentFields),...(sub.preferredMonthlyDueDay===undefined?{}:{preferredMonthlyDueDay:dueDay(sub.preferredMonthlyDueDay)}),lastClientSubmissionId:sub.submissionId,lastClientSubmissionAppliedAt:now,lastClientSubmissionAppliedBy:actor};
     if(action==='CREATE_CLIENT_DATA_REQUEST') {
       if(active?.exists&&active.data()!.status==='ACTIVE')tx.update(activeRef!,{status:'REVOKED',revokedAt:now});
-      const request:ContractClientDataRequestV2={schemaVersion:'CONTRACT_CLIENT_DATA_REQUEST_V2',personalDataVersion:PERSONAL_ADDRESS_VERSION,requestId,contractDraftId:d.contractDraftId,budgetId:id,budgetVersion:v,tokenHash:hash(secret!),status:'ACTIVE',createdAt:now,createdBy:actor,expiresAt:new Date(Date.parse(now)+7*86400000).toISOString(),submittedAt:null,revokedAt:null,submissionDigest:null};
+      const request:ContractClientDataRequestV2={schemaVersion:'CONTRACT_CLIENT_DATA_REQUEST_V2',dataScope:'PERSONAL_EMPLOYMENT_ONLY',personalDataVersion:PERSONAL_ADDRESS_VERSION,requestId,contractDraftId:d.contractDraftId,budgetId:id,budgetVersion:v,tokenHash:hash(secret!),status:'ACTIVE',createdAt:now,createdBy:actor,expiresAt:new Date(Date.parse(now)+7*86400000).toISOString(),submittedAt:null,revokedAt:null,submissionDigest:null};
       tx.create(r.draft.collection('requests').doc(requestId),request);
       tx.create(db.collection('contractClientDataRequests').doc(requestId),{budgetId:id,version:v});
       d={...d,activeClientDataRequestId:requestId};
@@ -124,11 +134,13 @@ export async function contractCommand(db:Firestore,id:string,v:number,input:unkn
       d={...d,activeClientDataRequestId:null};
     }
     if(action!=='OPEN_OR_CREATE')d={...d,revision:d.revision+1,updatedAt:now,updatedBy:actor,...(['SET_CONTRACT_PLAN','SET_PAYMENT_DATES','APPLY_CLIENT_SUBMISSION'].includes(action)?{paymentScheduleDraft:d.economicTerms&&d.firstInstallmentDueDate&&d.preferredMonthlyDueDay?contractSchedule(d.economicTerms,d.firstInstallmentDueDate,d.preferredMonthlyDueDay):[]}:{} )};
+    if(['SET_CONTRACT_PLAN','SET_PAYMENT_DATES','APPLY_CLIENT_SUBMISSION'].includes(action)&&clientTermsDigest(before)!==clientTermsDigest(d))tx.set(conformityRef,{termsDigest:clientTermsDigest(d),confirmedDigest:null,changedAt:now,changedBy:actor});
+    if(action==='RECORD_CLIENT_CONFORMITY')tx.set(conformityRef,{...conformity.data(),confirmedDigest:clientTermsDigest(d),confirmedAt:now,confirmedBy:actor,evidence:(o.evidence as string).trim()});
     if(!old.exists||action!=='OPEN_OR_CREATE')tx.set(r.draft,d);
     tx.create(command,{digest:dg,result:d,createdAt:now,by:actor,action});
     if(action!=='OPEN_OR_CREATE')tx.create(r.draft.collection('events').doc(cid),['MARK_READY_TO_FORMALIZE','RETURN_TO_DRAFT'].includes(action)
       ?{action,by:actor,at:now,from:before.status,to:d.status,beforeRevision:before.revision,afterRevision:d.revision,readyEvidenceId:readyEvidence?.commandId??null,...(action==='RETURN_TO_DRAFT'?{reason:(o.reason as string).trim()}: {})}
-      :{action,by:actor,at:now,before,after:d,clientSubmissionId:sub?.submissionId??null});
+      :{action,by:actor,at:now,before,after:d,clientSubmissionId:sub?.submissionId??null,...(action==='RECORD_CLIENT_CONFORMITY'?{evidence:(o.evidence as string).trim(),termsDigest:clientTermsDigest(d)}:{})});
     return {draft:d,...(secret?{requestId,secret}:{}),replayed:false};
   });
 }
@@ -156,7 +168,7 @@ export async function publicContractData(db:Firestore,requestId:string,token:str
     if(actual.length!==expected.length||!timingSafeEqual(actual,expected)||d.status!=='DRAFT'||Date.parse(r.expiresAt)<=Date.now()||r.status==='REVOKED'||r.status==='EXPIRED')reject(unavailable);
     if(input===undefined){if(r.status!=='ACTIVE')reject(unavailable);return {available:true,personalDataVersion:personalVersion(r.personalDataVersion)};}
     const version=personalVersion(r.personalDataVersion);
-    const p=submissionPayload(input,version),dg=digest(p);
+    const p=submissionPayload(input,version,r.dataScope==='PERSONAL_EMPLOYMENT_ONLY'),dg=digest(p);
     if(r.status==='SUBMITTED'){if(r.submissionDigest===dg)return {received:true};reject(unavailable);}
     if(r.status!=='ACTIVE'||d.activeClientDataRequestId!==requestId)reject(unavailable);
     const s:ClientDataSubmissionV2={schemaVersion:'CLIENT_DATA_SUBMISSION_V2',...(version==='LEGACY_SIX'?{}:{personalDataVersion:version}),submissionId:requestId,requestId,contractDraftId:d.contractDraftId,submittedAt:new Date().toISOString(),...p};

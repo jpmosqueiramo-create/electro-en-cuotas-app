@@ -101,7 +101,7 @@ async function main(){
   // Active link was revoked by real READY; original received submissions remain preserved.
   const links=await fixture('links');let temp=await regular(links,'RETURN_TO_DRAFT','links-return',{reason:'client data'});
   temp=await regular(links,'CREATE_CLIENT_DATA_REQUEST','links-request',{},temp.draft.revision);const link=temp.secret!,requestId=temp.draft.activeClientDataRequestId!;
-  await publicContractData(db,requestId,link,{personalData:temp.draft.personalData,employmentData:temp.draft.employmentData,preferredMonthlyDueDay:30});const sub=(await links.r.draft.collection('submissions').doc(requestId).get()).data();
+  await publicContractData(db,requestId,link,{personalData:temp.draft.personalData,employmentData:temp.draft.employmentData});const sub=(await links.r.draft.collection('submissions').doc(requestId).get()).data();
   temp=await regular(links,'MARK_READY_TO_FORMALIZE','links-ready',{},temp.draft.revision);
   await service.execute(command(links,'links-freeze',temp.draft.revision),actor);assert.deepEqual((await links.r.draft.collection('submissions').doc(requestId).get()).data(),sub);await assert.rejects(()=>publicContractData(db,requestId,link));
   // MARK retry returns its historical receipt only; it cannot overwrite frozen state.
