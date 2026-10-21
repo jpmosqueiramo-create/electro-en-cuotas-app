@@ -10,7 +10,7 @@ interface AffiliateOperation {
  pending:{id:string;fromRole:string;toRole:string;canDeliver:boolean;canReceive:boolean;delivered:boolean;received:boolean}|null;
  incidents:{id:string;reason:string;damage:boolean;rejection:boolean;decision:string|null;resolved:boolean}[];
  canReportIncident:boolean;
- photos:{id:string;incidentId:string}[];
+ photos:{id:string;incidentId:string;state?:string}[];
 }
 const control='min-h-11 w-full min-w-0 rounded border border-zinc-600 bg-zinc-900 px-3 text-white';
 export function AffiliateOperationsV2() {

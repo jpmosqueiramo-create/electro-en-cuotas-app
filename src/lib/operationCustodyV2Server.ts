@@ -46,14 +46,14 @@ export async function readCustody(db: Firestore, id: string, v: number, actor: C
   if (actor.admin) {
    const events = await tx.get(custodyRef(db,id,v).collection('events').orderBy('revision','desc').limit(100));
    const photos = await tx.get(custodyRef(db,id,v).collection('photos').limit(100));
-   return { identity: source.identity, state, events: events.docs.map(d=>d.data()), photos: photos.docs.map(d=>({ id:d.id, incidentId:d.data().incidentId })) };
+   return { identity: source.identity, state, events: events.docs.map(d=>d.data()), photos: photos.docs.map(d=>({ id:d.id, incidentId:d.data().incidentId,state:d.data().state as string })) };
   }
   // Strict allowlist: never return acceptance, cost, supplier, draft, notes or other participants' UIDs.
   // Budget path is obtained from the existing contract family, not reconstructed from client identifiers.
   const { contractRefs } = await import('./contractV2Server');
   const budget = (await tx.get(contractRefs(db,id,v).budget)).data()!;
   const pending = state.pending;
-  const photos = await tx.get(custodyRef(db,id,v).collection('photos').where('state','==','COMMITTED').limit(100));
+  const photos = await tx.get(custodyRef(db,id,v).collection('photos').limit(100));
   return { budgetId:id, version:v, operationId:source.identity.operationId, revision:state.revision,
    client:budget.clienteSnapshot.nombre as string, locality:budget.clienteSnapshot.localidad as string,
    product:fulfillment.productName, providerState:fulfillment.providerState,
@@ -66,7 +66,7 @@ export async function readCustody(db: Firestore, id: string, v: number, actor: C
     canDeliver:pending.from.uid===actor.uid && !pending.deliveredAt, canReceive:pending.to.uid===actor.uid && !pending.receivedAt,
     delivered:!!pending.deliveredAt, received:!!pending.receivedAt } : null,
    incidents:state.incidents.map(i=>({id:i.id, reason:i.reason, damage:i.damage, rejection:i.rejection, decision:i.decision, resolved:!!i.resolvedAt})),
-   photos:photos.docs.map(d=>({id:d.id,incidentId:d.data().incidentId as string})),
+   photos:photos.docs.filter(d=>d.data().state==='COMMITTED'||d.data().actor===actor.uid).map(d=>({id:d.id,incidentId:d.data().incidentId as string,state:d.data().state as string})),
    deliveryClosure:state.deliveryClosure };
  });
 }

@@ -7,6 +7,7 @@ import { participant,sameParticipant,custodyTimestamp,custodyText,type CustodyPa
 import { fulfillmentRef } from './operationFulfillmentV2Server';
 import { nextFulfillment } from './operationFulfillmentV2';
 import { deliveryDocumentKinds,deliveryEnabled,deliveryFail,deliveryKind,initialDelivery,deliveryCommandInput,requireDeliveryEmulator,type DeliveryV2,type DeliverySlot } from './operationDeliveryV2';
+import { verifyEvidenceObject,assertVerifiedEvidence,type VerifiedEvidence,type EvidenceMetadata } from './operationEvidenceV2';
 export const deliveryRef=(db:Firestore,id:string,v:number)=>custodyRef(db,id,v).parent.doc('delivery');
 export async function deliveryPerson(db:Firestore,tx:Transaction,p:CustodyParticipant){
  const u=await admin.auth().getUser(p.uid).catch(()=>deliveryFail('Participante sin cuenta Auth.'));if(u.disabled)deliveryFail('Participante inactivo.');
@@ -34,11 +35,11 @@ export function deliveryChecklist(view:Awaited<ReturnType<typeof deliveryLoad>>)
  return missing;
 }
 export async function readDelivery(db:Firestore,id:string,v:number,actor:CustodyActor){return db.runTransaction(async tx=>{
- const view=await deliveryLoad(db,tx,id,v,actor),d=view.delivery,photos=await tx.get(deliveryRef(db,id,v).collection('photos').where('state','==','COMMITTED').limit(100));
+ const view=await deliveryLoad(db,tx,id,v,actor),d=view.delivery,photos=await tx.get(deliveryRef(db,id,v).collection('photos').limit(100));
  const canDocuments=actor.admin||view.state.current?.uid===actor.uid||d.originals?.holder.uid===actor.uid||d.originalsTransfer?.from.uid===actor.uid||d.originalsTransfer?.to.uid===actor.uid;
  const events=actor.admin?await tx.get(deliveryRef(db,id,v).collection('events').orderBy('revision','desc').limit(100)):null;
  return {state:d,product:view.fulfillment.productName,logistics:view.fulfillment.logisticsState,physicalCustodian:actor.admin?view.state.current?.uid||null:undefined,
-  mutationEnabled:deliveryEnabled(),canDocuments,canAdmin:actor.admin,missing:deliveryChecklist(view),photos:canDocuments?photos.docs.map(p=>({id:p.id,slot:p.data().slot as DeliverySlot,relatedId:p.data().relatedId as string})):[],
+  mutationEnabled:deliveryEnabled(),canDocuments,canAdmin:actor.admin,missing:deliveryChecklist(view),pendingPhotos:canDocuments?photos.docs.filter(p=>p.data().state==='PENDING'&&(actor.admin||p.data().actor===actor.uid)).map(p=>({id:p.id,slot:p.data().slot as DeliverySlot,relatedId:p.data().relatedId as string})):[],photos:canDocuments?photos.docs.filter(p=>p.data().state==='COMMITTED').map(p=>({id:p.id,slot:p.data().slot as DeliverySlot,relatedId:p.data().relatedId as string})):[],
   events:events?events.docs.map(e=>({commandId:e.id,action:e.data().action as string,actor:e.data().actor as string,at:e.data().at as string,revision:e.data().revision as number})):[],legalApproval:'PENDING',productiveClosure:'DISABLED'};
 });}
 async function evidence(db:Firestore,tx:Transaction,id:string,v:number,photoId:unknown,slot:DeliverySlot,relatedId:string){
@@ -47,6 +48,14 @@ async function evidence(db:Firestore,tx:Transaction,id:string,v:number,photoId:u
 }
 export async function deliveryCommand(db:Firestore,id:string,v:number,input:unknown,actor:CustodyActor){
  requireDeliveryEmulator();const c=deliveryCommandInput(input),ref=deliveryRef(db,id,v),receipt=ref.collection('commands').doc(c.commandId),digest=createHash('sha256').update(stable({c,actor})).digest('hex');
+ const verified=new Map<string,VerifiedEvidence>();
+ if(['CONFIRM_DELIVERY','REGULARIZE_DELIVERY'].includes(c.action)){
+  const files=await db.runTransaction(async tx=>{const view=await deliveryLoad(db,tx,id,v,actor),prior=await tx.get(receipt);if(prior.exists){if(prior.data()!.digest!==digest)deliveryFail('Conflicto de commandId.');return [];}
+   if(view.delivery.revision!==c.expectedRevision||c.operationId!==view.delivery.operationId)deliveryFail('Conflicto de revisión.');
+   const ids=deliveryDocumentKinds.flatMap(k=>[view.delivery.documents[k].prepared?.photoId,view.delivery.documents[k].signature?.photoId]).concat(view.delivery.holds.flatMap(h=>h.photoIds)).filter((p):p is string=>!!p);
+   const files:EvidenceMetadata[]=[];for(const pid of new Set(ids)){const p=(await tx.get(ref.collection('photos').doc(pid))).data();if(!p||p.path!==`operation-delivery-v2/${id}/v${v}/${pid}`)deliveryFail('Archivo faltante.');const expected=deliveryDocumentKinds.flatMap(k=>[view.delivery.documents[k].prepared,view.delivery.documents[k].signature]).find(x=>x?.photoId===pid);if(expected&&expected.sha256!==p.sha256)deliveryFail('Hash documental diferente.');files.push(p as EvidenceMetadata);}return files;});
+  if(files.length){const {getBudgetDocumentationBucket}=await import('./budgetDocumentationStorage');const bucket=await getBudgetDocumentationBucket();for(const p of files)verified.set(p.path,await verifyEvidenceObject(bucket,p));}
+ }
  return db.runTransaction(async tx=>{
   const view=await deliveryLoad(db,tx,id,v,actor),prior=await tx.get(receipt);if(c.operationId!==view.delivery.operationId)deliveryFail('Operación incorrecta.');
   if(prior.exists){if(prior.data()!.digest!==digest)deliveryFail('Conflicto de commandId.');return {revision:prior.data()!.revision as number,replay:true};}
@@ -103,16 +112,15 @@ export async function deliveryCommand(db:Firestore,id:string,v:number,input:unkn
    const responsible=s.responsible!;if(c.action==='REGULARIZE_DELIVERY'){administrator();custodyText(d.reason);custodyText(d.alternativeEvidence);}else if(responsible.uid!==actor.uid)deliveryFail('Sólo el responsable puede confirmar. Usá regularización administrativa explícita si hubo falta de conectividad.');
    const occurredAt=custodyTimestamp(d.occurredAt,now);if(view.state.lastTransferAt&&occurredAt<view.state.lastTransferAt||s.originals!.receivedAt>occurredAt||deliveryDocumentKinds.some(k=>s.documents[k].signature!.signedAt>occurredAt)||view.fulfillment.actualReceiptDate&&occurredAt.slice(0,10)<view.fulfillment.actualReceiptDate)deliveryFail('Fecha real de entrega incompatible.');
    // Storage objects are immutable through this module; re-read bytes before committing a closure.
-   const {getBudgetDocumentationBucket}=await import('./budgetDocumentationStorage');const bucket=await getBudgetDocumentationBucket();
    const ids=deliveryDocumentKinds.flatMap(k=>[s.documents[k].prepared!.photoId,s.documents[k].signature!.photoId]).concat(s.holds.flatMap(h=>h.photoIds));
-   for(const photoId of new Set(ids)){const p=(await tx.get(ref.collection('photos').doc(photoId))).data();if(!p||p.state!=='COMMITTED'||p.path!==`operation-delivery-v2/${id}/v${v}/${photoId}`)deliveryFail('Archivo faltante.');const expected=deliveryDocumentKinds.flatMap(k=>[s.documents[k].prepared!,s.documents[k].signature!]).find(x=>x.photoId===photoId);if(expected&&expected.sha256!==p.sha256)deliveryFail('Hash documental diferente.');const bytes=(await bucket.file(p.path).download())[0];if(createHash('sha256').update(bytes).digest('hex')!==p.sha256||bytes.length!==p.size)deliveryFail('Integridad de archivo inválida.');}
+   for(const photoId of new Set(ids)){const p=(await tx.get(ref.collection('photos').doc(photoId))).data();if(!p||p.state!=='COMMITTED'||p.path!==`operation-delivery-v2/${id}/v${v}/${photoId}`)deliveryFail('Archivo faltante.');const expected=deliveryDocumentKinds.flatMap(k=>[s.documents[k].prepared!,s.documents[k].signature!]).find(x=>x.photoId===photoId);if(expected&&expected.sha256!==p.sha256)deliveryFail('Hash documental diferente.');assertVerifiedEvidence(p as EvidenceMetadata,verified.get(p.path));}
    if(deliveryDocumentKinds.some(k=>s.originals!.documentHashes[k]!==s.documents[k].prepared!.sha256))deliveryFail('Originales de otra versión.');
    s.status='DELIVERED_EMULATOR';s.event={schemaVersion:'DELIVERY_CONFIRMED_V2',executionMode:'EMULATOR_ONLY',operationId:c.operationId,commandId:c.commandId,occurredAt,recordedAt:now,recordedBy:actor.uid,responsible,product:{name:view.fulfillment.productName,referenceId:view.fulfillment.referenceId},documents:s.documents,originals:s.originals!,identity:view.source.identity,alternativeEvidence:c.action==='REGULARIZE_DELIVERY'?String(d.alternativeEvidence):null,legalApproval:'PENDING'};
    updateCustody={...updateCustody,current:null,location:'',revision:updateCustody.revision+1,deliveryClosure:'DELIVERED_EMULATOR'};
    updateFulfillment={...updateFulfillment,revision:updateFulfillment.revision+1,logisticsState:'DELIVERED_EMULATOR',deliveryClosure:'DELIVERED_EMULATOR',updatedAt:now,updatedBy:actor.uid};mirror=true;
   }
   s.revision++;tx.set(ref,s);tx.create(receipt,{digest,revision:s.revision,at:now,actor:actor.uid});
-  const event={commandId:c.commandId,operationId:c.operationId,action:c.action,actor:actor.uid,at:now,revision:s.revision,expectedRevision:c.expectedRevision,data:d,transfer:transferEvent||s.originalsTransfer,delivery:s.event};tx.create(ref.collection('events').doc(c.commandId),event);
+  const event={commandId:c.commandId,operationId:c.operationId,action:c.action,actor:actor.uid,at:now,revision:s.revision,expectedRevision:c.expectedRevision,data:d,evidenceGenerations:Object.fromEntries([...verified].map(([path,p])=>[path,p.generation])),transfer:transferEvent||s.originalsTransfer,delivery:s.event};tx.create(ref.collection('events').doc(c.commandId),event);
   if(mirror){tx.set(custodyRef(db,id,v),updateCustody);tx.set(fulfillmentRef(db,id,v),updateFulfillment);tx.create(custodyRef(db,id,v).collection('events').doc(c.commandId),{...event,revision:updateCustody.revision});tx.create(fulfillmentRef(db,id,v).collection('events').doc(c.commandId),{...event,revision:updateFulfillment.revision,from:{provider:view.fulfillment.providerState,logistics:view.fulfillment.logisticsState},to:{provider:updateFulfillment.providerState,logistics:updateFulfillment.logisticsState}});}
   if(c.action.startsWith('REPORT_'))tx.create(db.collection('alertas_admin').doc('delivery_'+createHash('sha256').update(c.operationId+c.commandId).digest('hex')),{tipo:'ENTREGA_V2_RETENIDA',mensaje:`Entrega V2 retenida. Presupuesto ${id} versión ${v}: ${custodyText(d.reason)}`,fechaCreacion:FieldValue.serverTimestamp(),leida:false});
   return {revision:s.revision,replay:false};

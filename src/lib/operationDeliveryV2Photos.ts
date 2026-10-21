@@ -6,6 +6,8 @@ import { validateDocumentBytes } from './budgetDocumentationStorage';
 import type { CustodyActor } from './operationCustodyV2Server';
 import { deliveryLoad,deliveryRef } from './operationDeliveryV2Server';
 import { deliverySlots,deliveryFail,requireDeliveryEmulator,type DeliverySlot,type DeliveryDocumentKind } from './operationDeliveryV2';
+import { readVerifiedEvidenceObject,type EvidenceMetadata } from './operationEvidenceV2';
+import { recoverPhotoReservation,withPhotoUploadLease } from './operationPhotoRecoveryV2';
 const sha=(bytes:Uint8Array)=>createHash('sha256').update(bytes).digest('hex');
 function privateDocuments(view:Awaited<ReturnType<typeof deliveryLoad>>,actor:CustodyActor){const d=view.delivery;if(!actor.admin&&view.state.current?.uid!==actor.uid&&d.originals?.holder.uid!==actor.uid&&d.originalsTransfer?.from.uid!==actor.uid&&d.originalsTransfer?.to.uid!==actor.uid)deliveryFail('Documentos no disponibles para este participante.');}
 export async function saveDeliveryPhoto(db:Firestore,bucket:Bucket,id:string,v:number,photoId:string,slot:DeliverySlot,relatedId:string,bytes:Buffer,mime:string,actor:CustodyActor){
@@ -17,12 +19,19 @@ export async function saveDeliveryPhoto(db:Firestore,bucket:Bucket,id:string,v:n
   else if(slot.endsWith('_SIGNED')){const kind=slot.replace('_SIGNED','') as DeliveryDocumentKind;if(!view.delivery.documents[kind].prepared||view.delivery.documents[kind].prepared!.photoId!==relatedId)deliveryFail('Firma de otra versión preparada.');}
   else if(!view.state.incidents.some(i=>i.id===relatedId&&i.damage))deliveryFail('Incidencia de daños no disponible.');return view;
  }
- await db.runTransaction(async tx=>{await allowed(tx);const old=await tx.get(ref),all=await tx.get(ref.parent.limit(100));if(old.exists&&(old.data()!.sha256!==hash||old.data()!.slot!==slot||old.data()!.relatedId!==relatedId||old.data()!.actor!==actor.uid))deliveryFail('Conflicto de fotografía.');if(!old.exists&&all.size>=100)deliveryFail('Límite de archivos alcanzado.');if(!old.exists)tx.create(ref,{photoId,slot,relatedId,path,sha256:hash,size:bytes.length,mime,state:'PENDING',actor:actor.uid,createdAt:new Date().toISOString()});});
- const file=bucket.file(path);try{await file.save(bytes,{resumable:false,preconditionOpts:{ifGenerationMatch:0},metadata:{contentType:mime,cacheControl:'private, no-store'}});}catch(e){if((e as {code?:number}).code!==412)throw e;}
- if(sha((await file.download())[0])!==hash)deliveryFail('Archivo diferente.');
- await db.runTransaction(async tx=>{await allowed(tx);const old=await tx.get(ref);if(old.data()?.sha256!==hash)deliveryFail();tx.update(ref,{state:'COMMITTED'});});return {photoId,slot,relatedId};
+ await db.runTransaction(async tx=>{await allowed(tx);const old=await tx.get(ref),all=await tx.get(ref.parent.limit(100));if(old.exists&&(old.data()!.sha256!==hash||old.data()!.path!==path||old.data()!.mime!==mime||old.data()!.size!==bytes.length||old.data()!.slot!==slot||old.data()!.relatedId!==relatedId||old.data()!.actor!==actor.uid))deliveryFail('Conflicto de fotografía.');if(!old.exists&&all.size>=100)deliveryFail('Límite de archivos alcanzado.');if(!old.exists)tx.create(ref,{photoId,slot,relatedId,path,sha256:hash,size:bytes.length,mime,state:'PENDING',actor:actor.uid,createdAt:new Date().toISOString()});});
+ await withPhotoUploadLease(db,ref,allowed,async mayCreate=>{const file=bucket.file(path);let exists=false;try{await file.getMetadata();exists=true;}catch(e){if((e as {code?:number}).code!==404)throw e;}if(!exists&&!mayCreate)deliveryFail('El archivo confirmado ya no está disponible; no se recrea.');try{if(!exists)await file.save(bytes,{resumable:false,preconditionOpts:{ifGenerationMatch:0},metadata:{contentType:mime,cacheControl:'private, no-store'}});}catch(e){if((e as {code?:number}).code!==412)throw e;}
+ await recoverPhotoReservation(db,bucket,ref,actor.uid,allowed);});return {photoId,slot,relatedId};
 }
 export async function readDeliveryPhoto(db:Firestore,bucket:Bucket,id:string,v:number,photoId:string,actor:CustodyActor){
  opaque(photoId);await db.runTransaction(async tx=>privateDocuments(await deliveryLoad(db,tx,id,v,actor),actor));
- const p=(await deliveryRef(db,id,v).collection('photos').doc(photoId).get()).data();if(!p||p.state!=='COMMITTED'||p.path!==`operation-delivery-v2/${id}/v${v}/${photoId}`)deliveryFail('Archivo no disponible.');const bytes=(await bucket.file(p.path).download())[0];if(bytes.length!==p.size||sha(bytes)!==p.sha256)deliveryFail('Integridad inválida.');return {bytes,mime:p.mime as string};
+ const p=(await deliveryRef(db,id,v).collection('photos').doc(photoId).get()).data();if(!p||p.state!=='COMMITTED'||p.path!==`operation-delivery-v2/${id}/v${v}/${photoId}`)deliveryFail('Archivo no disponible.');const {bytes}=await readVerifiedEvidenceObject(bucket,p as EvidenceMetadata);if(bytes.length!==p.size||sha(bytes)!==p.sha256)deliveryFail('Integridad inválida.');return {bytes,mime:p.mime as string};
+}
+
+export async function recoverDeliveryPhoto(db:Firestore,bucket:Bucket,id:string,v:number,photoId:string,actor:CustodyActor){
+ requireDeliveryEmulator();opaque(photoId);const ref=deliveryRef(db,id,v).collection('photos').doc(photoId);
+ return recoverPhotoReservation(db,bucket,ref,actor.uid,async tx=>{const view=await deliveryLoad(db,tx,id,v,actor);privateDocuments(view,actor);const p=(await tx.get(ref)).data();if(!p||p.path!==`operation-delivery-v2/${id}/v${v}/${photoId}`||!actor.admin&&p.actor!==actor.uid)deliveryFail();if(p.state==='PENDING'&&view.delivery.status!=='PREPARING')deliveryFail('Entrega cerrada.');
+ if(p.slot.endsWith('_PREPARED')){if(!actor.admin||p.relatedId!=='')deliveryFail('Preparación exclusivamente administrativa.');}
+ else if(p.slot.endsWith('_SIGNED')){if(view.delivery.documents[p.slot.replace('_SIGNED','') as DeliveryDocumentKind]?.prepared?.photoId!==p.relatedId)deliveryFail('La versión preparada cambió.');}
+ else if(!view.state.incidents.some(i=>i.id===p.relatedId&&i.damage))deliveryFail('Incidencia de daños no disponible.');});
 }

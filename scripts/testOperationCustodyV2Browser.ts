@@ -2,11 +2,13 @@ import './helpers/requireSafeEmulatorEnvironment';
 import { openOperationSection } from './helpers/openOperationSection';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { randomUUID } from 'node:crypto';
+import { randomUUID,createHash } from 'node:crypto';
 import { admin } from '../src/lib/firebaseAdmin';
 import { custodyFixture } from './testOperationCustodyV2Emulator';
-import { custodyCommand, authorizeCustody } from '../src/lib/operationCustodyV2Server';
+import { custodyCommand, authorizeCustody,custodyRef } from '../src/lib/operationCustodyV2Server';
 import { fulfillmentCommand, readFulfillment } from '../src/lib/operationFulfillmentV2Server';
+import { getBudgetDocumentationBucket } from '../src/lib/budgetDocumentationStorage';
+import { syntheticPng } from './testOperationDeliveryV2Emulator';
 import { CatalogBrowser } from './helpers/catalogBrowser';
 import { adminEmail, adminPassword } from './helpers/adminSolicitudesFixtures';
 export async function testOperationCustodyV2Browser() {
@@ -36,8 +38,14 @@ export async function testOperationCustodyV2Browser() {
   await browser.change('[data-testid=affiliate-v2] input[name=reason]','Daño visible de prueba');await browser.change('[data-testid=affiliate-v2] input[name=location]','Depósito sintético');await browser.change('[data-testid=affiliate-v2] input[name=occurredAt]','2026-01-06T12:00');
   await browser.evaluate("(()=>{document.querySelector('[data-testid=affiliate-v2] input[name=damage]').click();document.querySelector('[data-testid=affiliate-v2] input[name=rejection]').click();return true;})()");await browser.clickText('Registrar incidencia sin cerrar entrega');await browser.until("document.querySelector('[data-testid=affiliate-v2]')?.textContent.includes('Pendiente de Administración; conservar custodia')",'incident');await capture('affiliate-rejection-mobile','[data-testid=affiliate-v2-operation]');
   s=(await authorizeCustody(db,f.id,1,{uid:f.adminUid,admin:true})).state;assert.equal(s.incidents.length,1);assert.equal(s.deliveryClosure,'BLOCKED_PHYSICAL_SIGNATURES_REQUIRED');
+  const photoRef=custodyRef(db,f.id,1).collection('photos'),incidentId=s.incidents[0].id,bucket=await getBudgetDocumentationBucket();
+  async function reserve(uploaded:boolean){const photoId=randomUUID(),path=`operation-custody-v2/${f.id}/v1/${incidentId}/${photoId}`;await photoRef.doc(photoId).create({photoId,incidentId,path,state:'PENDING',actor:f.uid,createdAt:new Date().toISOString(),mime:'image/png',size:syntheticPng.length,sha256:createHash('sha256').update(syntheticPng).digest('hex')});if(uploaded)await bucket.file(path).save(syntheticPng,{resumable:false,preconditionOpts:{ifGenerationMatch:0},metadata:{contentType:'image/png'}});return photoId;}
+  const interrupted=await reserve(true);await browser.navigate('/afiliado');await browser.until("document.body.innerText.includes('Recuperar carga pendiente')",'durable pending visible after reload');await capture('photo-pending-mobile','[data-testid=custody-photos]');await browser.clickText('Recuperar carga pendiente · '+s.incidents[0].reason);await browser.until("!document.body.innerText.includes('Recuperar carga pendiente')",'uploaded evidence recovered');assert.equal((await photoRef.doc(interrupted).get()).data()!.state,'COMMITTED');
+  const missing=await reserve(false);await browser.navigate('/afiliado');await browser.until("document.body.innerText.includes('Reenviar el archivo original')",'missing pending visible');await browser.clickText('Reenviar el archivo original');
+  await browser.evaluate(`(()=>{const input=document.querySelector('[data-testid=custody-photos] input[type=file]');const data=new DataTransfer();data.items.add(new File([Uint8Array.from(atob('${syntheticPng.toString('base64')}'),c=>c.charCodeAt(0))],'synthetic.png',{type:'image/png'}));input.files=data.files;input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+  await browser.until("!!document.querySelector('[data-testid=custody-photos] input[type=file]')?.files?.length&&!document.querySelector('[data-testid=custody-photos] button[type=submit]')?.disabled",'original selected');await browser.clickText('Conservar fotografía privada');await browser.until("!document.body.innerText.includes('Recuperar carga pendiente')",'missing upload resumed');assert.equal((await photoRef.doc(missing).get()).data()!.state,'COMMITTED');assert.equal((await photoRef.get()).size,2);await capture('photo-recovery-mobile','[data-testid=custody-photos]');
   await browser.evaluate('window.__FIREBASE_SIGN_OUT__().then(()=>true)');await login(`${f.uid2}@example.test`,'Emulator-only-123');await browser.navigate('/afiliado');await browser.until("document.querySelector('[data-testid=affiliate-v2]')?.textContent.includes('Sin operaciones V2 asignadas.')",'other affiliate isolated');
   assert.equal(JSON.stringify({b:(await f.r.budget.get()).data(),a:(await f.r.acceptance.get()).data()}),unchanged);assert.deepEqual(browser.externalFirebase,[]);
-  console.log('CUSTODY_BROWSER_DESKTOP_MOBILE=PASS; ASSIGNMENT=PASS; PHYSICAL_RECEIPT_PENDING_OTHER_CONFIRMATION=PASS; REJECTION=PASS; AFFILIATE_ISOLATION=PASS; EXTERNAL_FIREBASE_REQUESTS=0');
+  console.log('CUSTODY_BROWSER_DESKTOP_MOBILE=PASS; PHOTO_RECOVERY_RELOAD_RESEND=PASS; ASSIGNMENT=PASS; PHYSICAL_RECEIPT_PENDING_OTHER_CONFIRMATION=PASS; REJECTION=PASS; AFFILIATE_ISOLATION=PASS; EXTERNAL_FIREBASE_REQUESTS=0');
  } finally {await browser.close();}
 }
