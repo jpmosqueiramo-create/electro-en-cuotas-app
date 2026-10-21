@@ -5,23 +5,28 @@ import { porcentajeAPuntosBasicos } from './commissionsEngine';
 import { stable, opaque } from './contractV2';
 
 export interface AffiliateProfileInput {
- commandId:string; id:string; expectedRevision:number; nombre:string; email:string;
+ preparedLink?:boolean; commandId:string; id:string; expectedRevision:number; nombre:string; email:string;
  localidad:string; telefono:string; authUid:string; activo:boolean; porcentajeComision:number; reason:string;
 }
 function text(value:unknown,max:number,required=true){if(typeof value!=='string'||value.length>max||required&&!value.trim())throw Error('Datos del vendedor afiliado incompletos.');return value.trim();}
 /** One registry; append-only percentage history uses the existing commission engine collection. */
-export async function saveAffiliateProfile(db:Firestore,input:AffiliateProfileInput,actor:string){
+export async function saveAffiliateProfile(db:Firestore,input:AffiliateProfileInput,actor:string, preview=false){
+ if(input.preparedLink!==undefined && typeof input.preparedLink!=='boolean')throw Error('Modo de vinculación inválido.');
  const id=opaque(input.id),commandId=opaque(input.commandId),uid=text(input.authUid,128,false);
  const data={nombre:text(input.nombre,200),email:text(input.email,254).toLowerCase(),localidad:text(input.localidad,200),telefono:text(input.telefono,100,false),authUid:uid,activo:input.activo,porcentajeComision:porcentajeAPuntosBasicos(input.porcentajeComision)/100};
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)||typeof data.activo!=='boolean'||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0)throw Error('Datos del vendedor afiliado inválidos.');
  const reason=text(input.reason,500),digest=createHash('sha256').update(stable({id,data,reason,expectedRevision:input.expectedRevision,actor})).digest('hex');
- if(uid){const user=await admin.auth().getUser(uid);if(user.disabled&&data.activo)throw Error('El UID está deshabilitado en Authentication.');}
+ if(input.preparedLink && (!uid || !data.activo || input.expectedRevision!==0))throw Error('Vinculación preparada inválida.');
+ if(uid){const user=await admin.auth().getUser(uid);if(user.disabled&&data.activo)throw Error('El UID está deshabilitado en Authentication.');if(input.preparedLink && (!user.emailVerified || user.email?.toLowerCase()!==data.email))throw Error('Identidad no verificada o correo incompatible.');}
  return db.runTransaction(async tx=>{
   const ref=db.collection('vendedores').doc(id),receipt=ref.collection('registryCommands').doc(commandId),prior=await tx.get(receipt),saved=await tx.get(ref);
-  if(prior.exists){if(prior.data()!.digest!==digest)throw Error('Conflicto de comando.');return prior.data()!.result as {id:string;revision:number};}
+  if(prior.exists){if(prior.data()!.digest!==digest)throw Error('Conflicto de comando.');return {...prior.data()!.result as {id:string;revision:number},...(preview?{alreadyRegistered:true}:{})};}
+  if(input.preparedLink && saved.exists)throw Error('El perfil preparado ya existe.');
   const before=saved.data(),revision=before?.revision??0;if(before?.authUid&&before.authUid!==uid)throw Error('Un UID ya vinculado requiere un procedimiento explícito de recuperación de identidad.');if(revision!==input.expectedRevision)throw Error('El registro cambió; actualizá antes de guardar.');
   if(uid){const matches=await tx.get(db.collection('vendedores').where('authUid','==',uid).limit(2));if(matches.docs.some(d=>d.id!==id))throw Error('El UID ya pertenece a otro vendedor afiliado.');}
   const configs=await tx.get(db.collection('vendedores_configuraciones_comision').where('vendedorAfiliadoId','==',id));
+  if(input.preparedLink){const history=await tx.get(ref.collection('registryHistory').doc(commandId));const config=await tx.get(db.collection('vendedores_configuraciones_comision').doc(`registry_${id}_${commandId}`));const sameEmail=await tx.get(db.collection('vendedores').where('email','==',data.email).limit(1));if(history.exists||config.exists||!configs.empty||!sameEmail.empty)throw Error('Destinos ocupados o identidad en conflicto.');}
+  if(preview){if(!input.preparedLink)throw Error('Vista previa requiere vinculación preparada.');return {id,revision:1};}
   const now=new Date().toISOString(),latest=configs.docs.map(d=>d.data()).filter(d=>typeof d.vigenteDesde==='string'&&d.vigenteDesde<=now).sort((a,b)=>String(b.vigenteDesde).localeCompare(String(a.vigenteDesde)))[0];
   const result={id,revision:revision+1},configId=`registry_${id}_${commandId}`;
   tx.set(ref,{...data,revision:result.revision,updatedAt:now,updatedBy:actor,...(!saved.exists?{createdAt:now}:{})},{merge:true});
