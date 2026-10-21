@@ -1,0 +1,75 @@
+import './helpers/requireSafeEmulatorEnvironment';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { NextRequest } from 'next/server';
+import { admin } from '../src/lib/firebaseAdmin';
+import { fixture, addressPayload } from './testContractV2';
+import { acceptBudgetV2 } from '../src/lib/budgetAcceptanceV2Server';
+import { contractCommand, contractRefs, getContract, publicContractData } from '../src/lib/contractV2Server';
+import { operationNextAction,operationStatusLabel } from '../src/lib/operationWorkspaceV2';
+import { readFulfillment } from '../src/lib/operationFulfillmentV2Server';
+import * as route from '../src/app/api/admin/presupuestos-v2/[budgetId]/versions/[version]/contract/route';
+async function main() {
+  const db=admin.firestore(),id='unified-workspace-'+randomUUID(),r=contractRefs(db,id,1),{b}=fixture(id);
+  await r.family.create({lastVersion:1,sourceCollection:b.sourceCollection,solicitudId:b.solicitudId});
+  await r.budget.create(b);
+  await acceptBudgetV2(db,{budgetId:id,version:1,acceptedOptionId:'option-1',preferredPlanCuotas:12,commandId:'accept'},'synthetic-admin');
+  const origin=JSON.stringify({budget:(await r.budget.get()).data(),acceptance:(await r.acceptance.get()).data()});
+  const view=await getContract(db,id,1);assert.equal(view.draft,null);assert.ok(view.operation?.registered);
+  await getContract(db,id,1);assert.equal((await r.draft.get()).exists,false);
+  assert.equal(operationNextAction({draft:null,tracking:null,pendingSubmissions:false,conformityPending:false}).section,'contract');
+  let d=(await contractCommand(db,id,1,{action:'OPEN_OR_CREATE',commandId:'open'},'synthetic-admin')).draft;
+  const cmd=async(action:string,extra:Record<string,unknown>={})=>{const result=await contractCommand(db,id,1,{action,commandId:randomUUID(),expectedRevision:d.revision,...extra},'synthetic-admin');d=result.draft;return result;};
+  await cmd('UPDATE_PERSONAL_DATA',{personalData:addressPayload.personalData});
+  await cmd('SET_CONTRACT_PLAN',{contractPlanCuotas:12});
+  await cmd('SET_PAYMENT_DATES',{firstInstallmentDueDate:'2026-12-15',preferredMonthlyDueDay:30});
+  const request=await cmd('CREATE_CLIENT_DATA_REQUEST');
+  const payload={personalData:addressPayload.personalData,employmentData:addressPayload.employmentData};
+  await assert.rejects(()=>publicContractData(db,request.requestId!,request.secret!,{...payload,preferredMonthlyDueDay:15}));
+  await publicContractData(db,request.requestId!,request.secret!,payload);
+  await publicContractData(db,request.requestId!,request.secret!,payload);
+  const beforeApply=structuredClone(d);
+  await cmd('APPLY_CLIENT_SUBMISSION',{submissionId:request.requestId});
+  assert.deepEqual(d.economicTerms,beforeApply.economicTerms);assert.deepEqual(d.paymentScheduleDraft,beforeApply.paymentScheduleDraft);assert.equal(d.preferredMonthlyDueDay,30);
+  await assert.rejects(()=>cmd('MARK_READY_TO_FORMALIZE'),/conformidad/);
+  const confirm={action:'RECORD_CLIENT_CONFORMITY',commandId:'confirm',expectedRevision:d.revision,evidence:'Confirmación sintética de las condiciones y fechas vigentes'};
+  const confirmed=await Promise.all([contractCommand(db,id,1,confirm,'synthetic-admin'),contractCommand(db,id,1,confirm,'synthetic-admin')]);
+  assert.deepEqual(confirmed[0].draft,confirmed[1].draft);d=confirmed[0].draft;
+  assert.equal((await getContract(db,id,1)).clientConformity?.confirmed,true);
+  await cmd('MARK_READY_TO_FORMALIZE');assert.equal(d.status,'READY_TO_FORMALIZE');
+  await cmd('RETURN_TO_DRAFT',{reason:'Prueba de cambio de condiciones'});
+  await cmd('SET_CONTRACT_PLAN',{contractPlanCuotas:8});
+  assert.equal((await getContract(db,id,1)).clientConformity?.confirmed,false);
+  await assert.rejects(()=>cmd('MARK_READY_TO_FORMALIZE'),/conformidad/);
+  const sameRevision=d.revision;
+  const race=await Promise.allSettled([8,12].map(contractPlanCuotas=>contractCommand(db,id,1,{action:'SET_CONTRACT_PLAN',contractPlanCuotas,expectedRevision:sameRevision,commandId:randomUUID()},'synthetic-admin')));
+  assert.equal(race.filter(x=>x.status==='fulfilled').length,1);d=(await getContract(db,id,1)).draft!;
+  const tracking=await readFulfillment(db,id,1);
+  assert.equal(operationStatusLabel('PENDIENTE_PEDIDO'),'Pendiente de pedido');
+  assert.equal(operationStatusLabel('UN_ESTADO_NUEVO'),'un estado nuevo');
+  assert.equal(operationNextAction({draft:d,tracking:null,pendingSubmissions:true,conformityPending:false}).label,'Revisar datos recibidos');
+  const readyView={...d,status:'READY_TO_FORMALIZE' as const};
+  assert.equal(operationNextAction({draft:readyView,tracking:tracking.state,pendingSubmissions:false,conformityPending:false}).label,'Preparar pedido al proveedor');
+  assert.equal(operationNextAction({draft:readyView,tracking:null,pendingSubmissions:false,conformityPending:false}).label,'Consultar seguimiento del producto');assert.equal(tracking.identity.operationId,view.operation!.identity.operationId);
+  assert.equal(operationNextAction({draft:d,tracking:tracking.state,pendingSubmissions:false,conformityPending:true}).label,'Registrar conformidad del cliente');
+  const {b:other}=fixture(id+'-other');await contractRefs(db,other.id,1).budget.create(other);
+  await assert.rejects(()=>contractCommand(db,other.id,1,{action:'OPEN_OR_CREATE',commandId:'other'},'synthetic-admin'));
+  assert.equal(JSON.stringify({budget:(await r.budget.get()).data(),acceptance:(await r.acceptance.get()).data()}),origin);
+  const ctx={params:Promise.resolve({budgetId:id,version:'1'})};
+  assert.equal((await route.GET(new NextRequest('http://localhost/api/admin/contract'),ctx)).status,401);
+  const email=process.env.NEXT_PUBLIC_ADMIN_EMAIL!;assert.ok(email.endsWith('@example.invalid'));
+  try{await admin.auth().createUser({uid:'unified-admin',email,password:'Synthetic-local-only-2026!'});}catch(error){if((error as {code?:string}).code!=='auth/email-already-exists'&&(error as {code?:string}).code!=='auth/uid-already-exists')throw error;const user=await admin.auth().getUserByEmail(email);await admin.auth().updateUser(user.uid,{password:'Synthetic-local-only-2026!'});}
+  try{await admin.auth().createUser({uid:'unified-outsider',email:'outsider@example.invalid',password:'Synthetic-local-only-2026!'});}catch(error){if(!['auth/email-already-exists','auth/uid-already-exists'].includes((error as {code:string}).code))throw error;}
+  for(const [address,status] of [[email,200],['outsider@example.invalid',403]] as const){
+    const response=await fetch(`http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo-key`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:address,password:'Synthetic-local-only-2026!',returnSecureToken:true})});
+    assert.equal(response.status,200);const token=(await response.json()).idToken;
+    assert.equal((await route.GET(new NextRequest('http://localhost/api/admin/contract',{headers:{Authorization:`Bearer ${token}`}}),ctx)).status,status);
+  }
+  // Leave one accepted family without draft to verify browser read-only opening.
+  const fresh=fixture('unified-no-draft-'+randomUUID());const f=contractRefs(db,fresh.b.id,1);
+  await f.family.create({lastVersion:1});await f.budget.create(fresh.b);
+  await acceptBudgetV2(db,{budgetId:fresh.b.id,version:1,acceptedOptionId:'option-1',preferredPlanCuotas:12,commandId:'accept'},'synthetic-admin');
+  console.log('UNIFIED_WORKSPACE_EMULATOR = PASS; READ_ONLY_OPEN = PASS; NEW_PUBLIC_DATA_ONLY = PASS; ECONOMIC_CONFORMITY_CAS_REPLAY = PASS; AUTH_ROLES = PASS; ORIGIN_UNCHANGED = PASS');
+  await admin.app().delete();
+}
+void main().catch(error=>{console.error(error);process.exitCode=1;});

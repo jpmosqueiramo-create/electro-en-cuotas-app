@@ -63,7 +63,7 @@ export async function addressCompatibilityTests(db:Firestore){
  await assert.rejects(()=>publicContractData(db,freshId,fresh.secret!,clientPayload));
  await assert.rejects(()=>publicContractData(db,freshId,fresh.secret!,{...addressPayload,personalData:{...addressPayload.personalData,province:'99'}}));
  await assert.rejects(()=>publicContractData(db,freshId,fresh.secret!,{...addressPayload,personalData:{...addressPayload.personalData,postalCode:'bad'}}));
- const newPayload={...addressPayload,personalData:{...addressPayload.personalData,province:'02',postalCode:'c1425abc'}};
+ const newPayload={employmentData:addressPayload.employmentData,personalData:{...addressPayload.personalData,province:'02',postalCode:'c1425abc'}};
  const untouched=(await r.draft.get()).data();
  await publicContractData(db,freshId,fresh.secret!,newPayload);
  assert.deepEqual((await r.draft.get()).data(),untouched);

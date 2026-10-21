@@ -18,6 +18,7 @@ export async function persistReadyContract(db:Firestore,id:string,decimal=false,
   ['SET_CONTRACT_PLAN',{contractPlanCuotas:plan}],
   ['SET_PAYMENT_DATES',{firstInstallmentDueDate:'2026-12-15',preferredMonthlyDueDay:30}],
  ] as const)d=(await contractCommand(db,id,1,{action,commandId:action,expectedRevision:d.revision,...extra},'synthetic-admin-a')).draft;
+ d=(await contractCommand(db,id,1,{action:'RECORD_CLIENT_CONFORMITY',commandId:'conformity',expectedRevision:d.revision,evidence:'Synthetic client confirmation fixture'},'synthetic-admin-a')).draft;
  d=(await contractCommand(db,id,1,{action:'MARK_READY_TO_FORMALIZE',commandId:'ready',expectedRevision:d.revision},'synthetic-admin-a')).draft;
  const identity={budgetId:id,budgetVersion:1,contractDraftId:d.contractDraftId,acceptedOptionId:d.acceptedOptionId};
  return {b,a,d,r,id,identity,contractId:contractIdentity(identity),legal:f.legalContext};
