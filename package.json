@@ -10,7 +10,7 @@
     "test:pricing": "GCLOUD_PROJECT=demo-cuenta-hogar NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-cuenta-hogar tsx scripts/testCanonicalPricingEngine.ts",
     "test:pricing-flow": "GCLOUD_PROJECT=demo-cuenta-hogar NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-cuenta-hogar tsx scripts/testEndToEndPricingFlow.ts",
     "test:budget-routing": "GCLOUD_PROJECT=demo-cuenta-hogar NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-cuenta-hogar tsx scripts/testBudgetAlertRoutingFlow.ts",
-    "test:manual-budget": "GCLOUD_PROJECT=demo-cuenta-hogar NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-cuenta-hogar tsx scripts/testManualBudgetProductsFlow.ts",
+    "test:manual-budget": "GCLOUD_PROJECT=demo-cuenta-hogar NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-cuenta-hogar tsx scripts/testBudgetReferenceV2.ts",
     "test:ledger": "GCLOUD_PROJECT=demo-cuenta-hogar NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-cuenta-hogar tsx scripts/testLedgerEngine3B2.ts",
     "test:auth-guard": "GCLOUD_PROJECT=demo-cuenta-hogar NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-cuenta-hogar tsx scripts/testProductionAuthEmulatorGuard.ts",
     "test:emulator:ledger": "tsx scripts/testLedgerEmulator3B2.ts",

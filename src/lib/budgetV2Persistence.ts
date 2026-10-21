@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { buildCatalogReferencePrivatePatch } from "./catalogReferenceEditor";
 import { referenceSnapshotToDraft, validateBudgetV2, BudgetV2DomainError, budgetV2ExactObject, budgetV2OpaqueId, type BudgetV2 } from "./budgetV2";
 
-export interface BudgetCommandV2 { action:"SAVE"|"ISSUE"|"REVISE"; commandId:string; budget:BudgetV2; expectedRevision:number; privateOptionIds:string[] }
+export interface BudgetCommandV2 { action:"SAVE"|"ISSUE"|"REVISE"; commandId:string; budget:BudgetV2; expectedRevision:number; privateOptionIds:string[]; createManualSource?:boolean }
 function canonical(value:unknown):unknown {
   if(Array.isArray(value))return value.map(canonical);
   if(value&&typeof value==="object")return Object.fromEntries(Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>[k,canonical(v)]));
@@ -12,10 +12,12 @@ function canonical(value:unknown):unknown {
 function hash(value:unknown){return createHash("sha256").update(JSON.stringify(canonical(value))).digest("hex");}
 export function privateBudgetReferenceId(budgetId:string,optionId:string){return `budget_${hash([budgetId,optionId])}`;}
 export function parseBudgetCommandV2(value: unknown): BudgetCommandV2 {
-  const cmd = budgetV2ExactObject(value, ["action", "commandId", "budget", "expectedRevision", "privateOptionIds"]);
+  const cmd = budgetV2ExactObject(value, ["action", "commandId", "budget", "expectedRevision", "privateOptionIds", ...(value && typeof value === "object" && Object.hasOwn(value, "createManualSource") ? ["createManualSource"] : [])]);
   if (typeof cmd.action !== "string" || !["SAVE", "ISSUE", "REVISE"].includes(cmd.action) || !budgetV2OpaqueId(cmd.commandId) || typeof cmd.expectedRevision !== "number" || !Number.isSafeInteger(cmd.expectedRevision) || cmd.expectedRevision < 0) throw new BudgetV2DomainError("Comando inválido.");
   if (!Array.isArray(cmd.privateOptionIds) || cmd.privateOptionIds.some(id => !budgetV2OpaqueId(id)) || new Set(cmd.privateOptionIds).size !== cmd.privateOptionIds.length) throw new BudgetV2DomainError("Opciones privadas inválidas.");
+  if (cmd.createManualSource !== undefined && typeof cmd.createManualSource !== "boolean") throw new BudgetV2DomainError("Confirmación de origen inválida.");
   validateBudgetV2(cmd.budget, privateBudgetReferenceId);
+  if (cmd.createManualSource && (cmd.action !== "SAVE" || cmd.expectedRevision !== 0 || cmd.budget.version !== 1 || cmd.budget.sourceCollection !== "solicitudes_cuenta" || cmd.budget.solicitudId !== `budget_manual_${cmd.budget.id}`)) throw new BudgetV2DomainError("Origen manual inválido.");
   if (cmd.budget.revision !== cmd.expectedRevision) throw new BudgetV2DomainError("Conflicto de revisión.");
   return cmd as unknown as BudgetCommandV2;
 }
@@ -29,7 +31,8 @@ export async function persistBudgetV2(db:Firestore,input:unknown,actor:string):P
   return db.runTransaction(async tx=>{
     const [familySnap,current,command,source]=await Promise.all([tx.get(family),tx.get(versionRef),tx.get(commandRef),tx.get(db.collection(cmd.budget.sourceCollection).doc(cmd.budget.solicitudId))]);
     if(command.exists){if(command.data()!.digest!==digest)throw new BudgetV2DomainError("Conflicto: commandId ya usado.");const result = command.data()!.result; validateBudgetV2(result, privateBudgetReferenceId); return result;}
-    if(!source.exists)throw new BudgetV2DomainError("La solicitud original no existe.");
+    if(cmd.createManualSource && (source.exists || familySnap.exists)) throw new BudgetV2DomainError("El origen manual ya existe; reabrí el presupuesto.");
+    if(!source.exists&&!cmd.createManualSource)throw new BudgetV2DomainError("La solicitud original no existe.");
     if(familySnap.exists&&(familySnap.data()!.sourceCollection!==cmd.budget.sourceCollection||familySnap.data()!.solicitudId!==cmd.budget.solicitudId))throw new BudgetV2DomainError("Conflicto de origen.");
     const old=current.exists?current.data() as BudgetV2:null;
     if (old) validateBudgetV2(old, privateBudgetReferenceId);
@@ -68,6 +71,13 @@ export async function persistBudgetV2(db:Firestore,input:unknown,actor:string):P
       else tx.create(snap.ref,{...buildCatalogReferencePrivatePatch(referenceSnapshotToDraft(option.referenceSnapshot)),activo:false,publicado:false,originBudgetId:next.id,originOptionId:option.optionId,fechaCreacion:now});
       next.options=next.options.map(o=>o.optionId===option.optionId?{...o,referenceSnapshot:{...o.referenceSnapshot,referenceId:id}}:o);
     }
+    if(cmd.createManualSource)tx.create(source.ref,{
+      schemaVersion:"BUDGET_MANUAL_SOURCE_V2",origin:"ADMIN_MANUAL_BUDGET",originBudgetId:next.id,
+      nombre:next.clienteSnapshot.nombre,dni:next.clienteSnapshot.dni,cuil:next.clienteSnapshot.cuil,
+      whatsapp:next.clienteSnapshot.whatsapp,localidad:next.clienteSnapshot.localidad,
+      necesidad:next.options.map(o=>o.referenceSnapshot.nombre).join(" / "),estado:"Pendiente",
+      fecha:now,createdBy:actor,
+    });
     tx.set(target,next);
     tx.set(family,{sourceCollection:next.sourceCollection,solicitudId:next.solicitudId,lastVersion:Math.max(next.version,Number(familySnap.data()?.lastVersion??0)),updatedAt:now});
     tx.create(commandRef,{digest,result:next,actor,createdAt:now});

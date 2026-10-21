@@ -73,7 +73,8 @@ export async function testAdminSolicitudesBrowser() {
     async function until(expression: string, label: string) {
       const deadline = Date.now() + 32000;
       while (Date.now() < deadline) { if (await evaluate(expression, deadline)) return; await delay(200); }
-      throw new Error(`TIMEOUT ${label}`);
+      const diagnostic=await evaluate("JSON.stringify({path:location.pathname,text:document.body.innerText.slice(0,1800)})").catch(()=>"DOM unavailable");
+      throw new Error(`TIMEOUT ${label}: ${diagnostic}`);
     }
     async function navigate(path: string) {
       const result = await command("Page.navigate", { url: `http://localhost:3000${path}` });
@@ -129,7 +130,7 @@ export async function testAdminSolicitudesBrowser() {
       await navigate(`/admin/solicitudes/solicitudes/${duplicateId}?view=all`);
       await until("document.querySelector('main')?.innerText.includes('Información solicitada al cliente')", "exact request detail");
       assert.ok(await evaluate("document.querySelector('main').innerText.includes('Heladera · solicitud de referencia') && !document.querySelector('main').innerText.includes('Mesa · consulta con ID compartido')"));
-      for (const title of ["Resumen", "Datos", "Propuestas", "Documentos", "Actividad", "Gestión avanzada"]) assert.ok(await evaluate(`!!document.querySelector('section[aria-label="${title}"]')`), title);
+      for (const title of ["Resumen", "Datos", "Presupuestos V2", "Documentos", "Actividad", "Gestión avanzada"]) assert.ok(await evaluate(`!!document.querySelector('section[aria-label="${title}"]')`), title);
       assert.equal(await evaluate("[...document.querySelectorAll('a')].find(a => a.textContent.includes('Abrir gestión avanzada')).getAttribute('href')"), "/admin/validaciones");
       assert.ok(await evaluate("!!document.querySelector('a[aria-current=page][href=\"/admin/solicitudes\"]')"), "active navigation on detail");
       await overflow(`${viewport.name} request detail`);

@@ -15,10 +15,10 @@ const lines=budgetClientLines(dto).join("\n");for(const n of [8,12,18])assert.ok
 const pdf=renderBudgetPdfV2(dto).output();for(const value of [JSON.stringify(dto),lines,pdf])for(const secret of ["SECRET_PROVIDER","SECRET_SKU","SECRET_EAN","SECRET_COST","SECRET_FACTOR","costoProveedorSnapshot","factoresSnapshot","planesActivosSnapshot"])assert.ok(!value.includes(secret));
 assert.ok(!/combinada|cuota total/i.test(lines));
 const src=readFileSync(new URL("../src/lib/budgetV2.ts",import.meta.url),"utf8");assert.ok(!/reduce\(/.test(src));
-const legacy=readFileSync(new URL("../src/app/admin/validaciones/page.tsx",import.meta.url),"utf8");assert.ok(legacy.includes('targetPres.schemaVersion === "BUDGET_V2"'));
+const legacy=readFileSync(new URL("../src/app/admin/validaciones/page.tsx",import.meta.url),"utf8");assert.ok(!legacy.includes("handleEnviarPresupuesto"));
 console.log("P3_MODEL_TESTS = PASS; P3_IMMUTABILITY_TESTS = PASS; P3_CLIENT_DTO_TESTS = PASS; P3_PDF_WHATSAPP_TESTS = PASS; V2_CLIENT_SENSITIVE_FIELD_LEAKS = 0");
 
-// Exercise the actual Validaciones handlers; compare historical behavior with HEAD.
+// Preserve historical contract selection against the fixed pre-P3 baseline.
 import ts from "typescript";
 import { execFileSync } from "node:child_process";
 import { runInNewContext } from "node:vm";
@@ -30,34 +30,6 @@ function handler(source:string,name:string){
  visit(ast);assert.ok(value,`Missing ${name}`);
  return value!.getText(ast);
 }
-const redirectGuard='    if (!editandoPresupuestoId) { window.location.assign(`/admin/presupuestos?sourceCollection=solicitudes_cuenta&solicitudId=${encodeURIComponent(sol.id)}`); return; }\n';
-const acceptanceGuard='    if (targetPres.schemaVersion === "BUDGET_V2") return alert("La aceptación V2 se habilitará en su fase específica.");\n';
-for(const name of ["handleCargarPresupuestoParaEditar","handleCancelarEdicionPresupuesto","handleEnviarPresupuesto","handleDescargarPdfPresupuestoHistorial","handleRechazarPresupuesto","handleAceptarPresupuesto"]){
- assert.equal(handler(legacy,name).replace(redirectGuard,"").replace(acceptanceGuard,""),handler(baseValidaciones,name),`${name}: historical implementation changed`);
-}
-async function exercise(source:string,name:string,editing:string|null,schema?:string){
- const events:unknown[]=[];const item={producto:"Histórico",cuotas:8,valorCuota:1234,contado:9000};
- const pres={id:"pres_historical",fecha:"2026-01-01T12:00:00Z",estado:"Enviado",items:[item],...(schema?{schemaVersion:schema}:{})};
- const sol={id:"sol-historical",nombre:"Cliente",whatsapp:"5491100000000",presupuestos:[pres]};
- const ctx:Record<string,unknown>={editandoPresupuestoId:editing,draftItems:[item],budgetTna:"60",budgetMora:"0.5",budgetNotas:" Nota ",selectedItemsMap:{},aperturas:[sol],db:{},encodeURIComponent,confirm:()=>true,alert:()=>{},doc:(_db:unknown,col:string,id:string)=>`${col}/${id}`,updateDoc:async(path:unknown,payload:unknown)=>{events.push([path,payload]);},fetchAperturas:async()=>{},fetchSolicitudes:async()=>{},generarPdfPresupuesto:(payload:unknown)=>events.push(["pdf",payload]),window:{open:(url:string)=>events.push(["whatsapp",url]),location:{assign:(url:string)=>events.push(["redirect",url])}}};
- for(const setter of ["EditandoPresupuestoId","DraftItems","BudgetProd","BudgetContado","BudgetCuotaValor","BudgetNotas","BudgetProveedor","BudgetLinkProveedor","BudgetCostoProveedor","BudgetTna","BudgetMora"])ctx[`set${setter}`]=()=>{};
- const js=ts.transpile(`const run = ${handler(source,name)}; run;`,{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None});
- const fn=runInNewContext(js,ctx);await fn(sol,name==="handleDescargarPdfPresupuestoHistorial"?pres:pres.id);
- return JSON.parse(JSON.stringify(events)) as unknown[][];
-}
-async function historicalRegression(){
- for(const name of ["handleEnviarPresupuesto","handleDescargarPdfPresupuestoHistorial","handleAceptarPresupuesto","handleRechazarPresupuesto"]){
-  const current=await exercise(legacy,name,"pres_historical");const baseline=await exercise(baseValidaciones,name,"pres_historical");
-  // Saving refreshes the timestamp, exactly as before; normalize only that generated field.
-  for(const events of [current,baseline])for(const event of events){const payload=event[1] as {presupuestos?:{fecha:string}[]};for(const p of payload?.presupuestos??[])p.fecha="generated";}
-  assert.deepEqual(current,baseline,name);assert.ok(current.length>0);
- }
- const start=await exercise(legacy,"handleEnviarPresupuesto",null);assert.deepEqual(start,[["redirect","/admin/presupuestos?sourceCollection=solicitudes_cuenta&solicitudId=sol-historical"]]);
- assert.deepEqual(await exercise(legacy,"handleAceptarPresupuesto",null,"BUDGET_V2"),[]);
- console.log("HISTORICAL_BUDGET_REGRESSION = PASS; NEW_LEGACY_BUDGET_CREATED_FROM_VALIDACIONES = NO; V2_LEGACY_ACCEPTANCE_HANDLER_BLOCKED = YES");
-}
-historicalRegression().catch(error=>{console.error(error);process.exitCode=1;});
-
 // Contract selection may consume only an accepted historical budget, even in a mixed adversarial array.
 const contractHandler=handler(legacy,"handleOpenContratoEditor");
 assert.equal(contractHandler.replace('p.schemaVersion !== "BUDGET_V2" && ',""),handler(baseValidaciones,"handleOpenContratoEditor"));
@@ -98,18 +70,11 @@ assert.equal(budgetV2SafeErrorMessage(new Error("Firestore SDK secret /internal/
 assert.equal(budgetV2SafeErrorMessage(new BudgetV2DomainError("Conflicto de revisión.")),"Conflicto de revisión.");
 console.log("P3_ADVERSARIAL_SCHEMA_TESTS = PASS; UNEXPECTED_SERVER_ERRORS_SANITIZED = YES");
 
-const baseBudgets=execFileSync("git",["show","f2d4d061ce41086d3a4c559462fb54e120ab0454:src/app/admin/presupuestos/page.tsx"],{encoding:"utf8"});
-const currentBudgets=readFileSync(new URL("../src/app/admin/presupuestos/page.tsx",import.meta.url),"utf8");
-function mapping(source:string){const ast=ts.createSourceFile("budgets.tsx",source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);const fn=ast.statements.find(n=>ts.isFunctionDeclaration(n)&&n.name?.text==="mapOpcionToInternalBudgetItem");assert.ok(fn);return fn!.getText(ast);}
-assert.equal(mapping(currentBudgets),mapping(baseBudgets));
-assert.equal(handler(currentBudgets,"abrirModalConfeccion").replace('    if (!item.persistedLegacy) { onNew({sourceCollection: item.solicitudTipo === \"estandar\" ? \"solicitudes\" : \"solicitudes_cuenta\", id: item.solicitudId || \"\"}); return; }\n    legacyEditingRef.current = item;\n',"").replace('sessionBudgetIdRef.current = item.id;','sessionBudgetIdRef.current = item.id || "pres_" + Date.now();'),handler(baseBudgets,"abrirModalConfeccion"));
-async function budgetSaveRegression(source:string,existing=true){
- const events:unknown[]=[];const option={itemId:"historical-item",source:"MANUAL_PRESUPUESTO",pricingMode:"MANUAL_FACTOR_V1",productoId:null,nombre:"Histórico",cuotas:8,valorCuota:1234,anticipo:0,totalFinanciado:9872,precioContado:9000,costoProveedor:777,cantidad:1};
- const original={id:"pres_historical",persistedLegacy:true,items:[option]};const noop=()=>{};
- const ctx={legacyEditingRef:{current:existing?original:null},persistedBudget:existing?original:null,resolvedSolicitudId:"sol-historical",resolvedCollection:"solicitudes",savingInFlightRef:{current:false},sessionBudgetIdRef:{current:"pres_historical"},sessionDraftItemIdRef:{current:""},setSaving:noop,buildEffectiveItemsForSave:()=>[option],leadData:{nombre:"Cliente",telefono:"5491100000000",notas:"Nota editada"},confirmarCrearNueva:false,sourceMode:"MANUAL_PRESUPUESTO",pricingResult:null,db:{},doc:(_db:unknown,col:string,id:string)=>`${col}/${id}`,getDoc:async()=>({exists:()=>true,data:()=>({presupuestos:[{id:"pres_historical"}]})}),updateDoc:async(path:unknown,payload:unknown)=>events.push([path,payload]),fetchPresupuestos:async()=>{},alert:noop,onNew:()=>events.push(["V2"]),console,lifecycleRef:{current:{startAddingAnotherProduct:noop,setBudgetItems:noop,setPersistedBudget:noop,setResolvedCandidate:noop}}};
- const fn=runInNewContext(ts.transpile(`const run=${handler(source,"handleGuardarPresupuesto")};run;`,{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}),ctx);await fn();
- const normalized=JSON.parse(JSON.stringify(events)) as unknown[][];for(const event of normalized){const payload=event[1] as {presupuestos?:Record<string,unknown>[]};for(const p of payload?.presupuestos??[]) {p.fechaObjeto="generated";p.fecha="generated";p.fechaIso="generated";}}
- return normalized;
-}
-async function primaryLegacyRegression(){const old=await budgetSaveRegression(baseBudgets);const current=await budgetSaveRegression(currentBudgets);assert.deepEqual(current,old);assert.equal(current.length,1);assert.equal(current[0][0],"solicitudes/sol-historical");assert.deepEqual(await budgetSaveRegression(currentBudgets,false),[["V2"]]);console.log("LEGACY_EDIT_IN_PRESUPUESTOS_PRESERVED = PASS; NEW_LEGACY_CREATION_FROM_PRESUPUESTOS = 0");}
-primaryLegacyRegression().catch(error=>{console.error(error);process.exitCode=1;});
+// The retired editor is absent; both entry points mount only the existing V2 workspace.
+const page=readFileSync(new URL("../src/app/admin/presupuestos/page.tsx",import.meta.url),"utf8");
+const workspace=readFileSync(new URL("../src/components/admin/budgets/BudgetV2Workspace.tsx",import.meta.url),"utf8");
+assert.ok(page.includes("<BudgetV2Workspace />"));
+for(const source of [page,workspace])for(const retired of ["legacyHistory","PresupuestosContent","generarPdfPresupuesto","budgetEditorLifecycle"])assert.ok(!source.includes(retired));
+for(const retired of ["handleEnviarPresupuesto","handleAceptarPresupuesto","handleCargarPresupuestoParaEditar","Historial de Presupuestos Enviados"])assert.ok(!legacy.includes(retired));
+assert.ok(legacy.includes("Confeccionar y consultar presupuestos V2"));
+console.log("LEGACY_BUDGET_EDITOR_REMOVED = PASS; V2_ONLY_ENTRY_POINTS = PASS");
