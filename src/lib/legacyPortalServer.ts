@@ -28,17 +28,17 @@ async function ownsClient(d:Record<string,unknown>,a:PortalIdentity,lookup:(id:s
  if(historicalId&&await lookup(historicalId))return false;
  return !!a.email&&a.emailVerified&&[d.clienteEmail,d.email,record(d.datosPersonales).email].some(e=>email(e)===email(a.email));
 }
-function ownsAffiliate(d:Record<string,unknown>,a:PortalIdentity,affiliateId:string){
+export function ownsAffiliate(d:Record<string,unknown>,a:PortalIdentity,affiliateId:string){
  const uids=affiliateUidFields.map(k=>text(d[k])).filter(Boolean),ids=affiliateIdFields.map(k=>text(d[k])).filter(Boolean);
  if(uids.some(uid=>uid!==a.uid)||ids.some(id=>id!==affiliateId))return false;
  if(uids.length||ids.length)return true;return !!a.email&&a.emailVerified&&email(d.afiliadoEmail)===email(a.email);
 }
-function projection(source:string,id:string,d:Record<string,unknown>,affiliate:boolean){
+function projection(source:string,id:string,d:Record<string,unknown>,affiliate:boolean,actor:PortalIdentity){
  const personal=record(d.datosPersonales),raw=pick(d,['estado','estadoEntrega','estadoProducto','estadoRendicion','mensajeAdmin','productoId','planElegido','montoCuota','montoAbonado','metodoPago','numeroSerie','nroContrato','numeroContrato','nombreCompleto','numeroDni','cuil','direccion','localidad','whatsapp']);
  const plans=Array.isArray(d.planPagos)?d.planPagos.map(p=>{const projected=pick(p,['numero','estado','montoOriginal','montoAbonado','montoRealmenteCobrado','montoAbonadoReal','vencimiento','fechaPago','metodoPago','metodoPagoManual','notaAcumulacion']);for(const key of ['vencimiento','fechaPago']){const value=record(p)[key];if(value!==undefined&&!scalar(value)){const iso=date(value);if(iso)projected[key]=iso;}}return projected;}):[];
  return {...raw,id,sourceCollection:source,recordKey:`${source}:${id}`,fechaCreacion:date(d.fechaCreacion)||date(d.fecha)||date(d.fechaIso),productoDeseado:text(d.productoDeseado)||text(d.productoNombre)||text(d.necesidad),
   datosPersonales:{...pick(personal,['nombreCompleto','numeroDni','telefono','direccion','localidad','email','cuil']),nombreCompleto:text(personal.nombreCompleto)||text(d.nombreCompleto)||text(d.nombre),telefono:text(personal.telefono)||text(d.whatsapp),direccion:text(personal.direccion)||text(d.direccion),localidad:text(personal.localidad)||text(d.localidad)},planPagos:plans,
-  ...(affiliate?{historialContactos:Array.isArray(d.historialContactos)?d.historialContactos.map(p=>pick(p,['id','fecha','usuario','nota','promesaPago'])):[]}:{}),legacyReadOnly:true};
+  ...(affiliate?{historialContactos:[...(Array.isArray(d.historialContactos)?d.historialContactos:[]),...(Array.isArray(d.observacionesInternas)?d.observacionesInternas.filter(p=>record(p).actorUid===actor.uid):[])].map(p=>{const r=record(p);return {...pick(p,['id','fecha','usuario','nota','promesaPago']),nota:text(r.nota)||text(r.texto),usuario:text(r.usuario)||text(r.autor)};})}:{}),canReportPayment:source==='solicitudes'&&text(d.clienteAuthUid)!==''&&!d.operationId&&!d.contractSnapshotV2,legacyReadOnly:true};
 }
 export async function readLegacyPortal(db:Firestore,a:PortalIdentity,role:'CLIENT'|'AFFILIATE',read:(q:Query)=>ReturnType<Query['get']>=q=>q.get()){
  const affiliate=role==='AFFILIATE'?await activePortalAffiliate(db,a):null;
@@ -53,7 +53,7 @@ export async function readLegacyPortal(db:Firestore,a:PortalIdentity,role:'CLIEN
  for(let n=0;n<results.length;n++){
   const result=results[n],q=queries[n];if(result.status==='rejected'){warnings.push('No se pudo consultar una parte del historial. Reintentá o consultá a Administración.');continue;}
   if(result.value.size>200)warnings.push('Historial parcial: consultá a Administración por los registros adicionales.');
-  for(const doc of result.value.docs.slice(0,200)){const d=doc.data();if(role==='CLIENT'?await ownsClient(d,a,authUid):ownsAffiliate(d,a,affiliate!.id))records.set(`${q.source}:${doc.id}`,projection(q.source,doc.id,d,!!affiliate));}
+  for(const doc of result.value.docs.slice(0,200)){const d=doc.data();if(role==='CLIENT'?await ownsClient(d,a,authUid):ownsAffiliate(d,a,affiliate!.id))records.set(`${q.source}:${doc.id}`,projection(q.source,doc.id,d,!!affiliate,a));}
  }
  if(results.every(r=>r.status==='rejected'))throw new LegacyPortalError('No se pudo consultar el historial. Reintentá más tarde.');
  const notificaciones:Record<string,unknown>[]=[];
