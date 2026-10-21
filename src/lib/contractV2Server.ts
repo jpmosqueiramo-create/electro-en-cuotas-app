@@ -1,3 +1,4 @@
+import { assertCreditPreparation } from './creditReviewV2Server';
 import { operationFromAcceptance, operationRef, verifyOperation, type OperationViewV2 } from './operationV2';
 import { buildReadyEvidence, verifyReadyEvidence, type ContractReadyEvidenceV1 } from './contractReadyV2';
 import type { BudgetV2 } from './budgetV2';
@@ -81,6 +82,7 @@ export async function contractCommand(db:Firestore,id:string,v:number,input:unkn
       readyEvidence=evidence.data() as ContractReadyEvidenceV1;
       verifyReadyEvidence(budget,a.data() as BudgetAcceptanceV2,d,readyEvidence);
     }
+    if(['SET_CONTRACT_PLAN','SET_PAYMENT_DATES','MARK_READY_TO_FORMALIZE'].includes(action))await assertCreditPreparation(db,tx,id,v);
     const before=structuredClone(d);
     const conformityRef=r.draft.collection('conformity').doc('current');
     const conformity=await tx.get(conformityRef);

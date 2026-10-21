@@ -52,11 +52,9 @@ export default function HomeTechCatalog() {
 
   // Quick Form State
   const [qfNombre, setQfNombre] = useState("");
-  const qfDni = "";
   const [qfWhatsapp, setQfWhatsapp] = useState("");
   const [qfLocalidad, setQfLocalidad] = useState("");
   const [qfNecesidad, setQfNecesidad] = useState("");
-  const [qfReferente, setQfReferente] = useState("");
   const [qfSubmitting, setQfSubmitting] = useState(false);
 
   const [qfError,setQfError]=useState("");
@@ -132,10 +130,9 @@ export default function HomeTechCatalog() {
     setQfError("");
     try {
       qfSender.current ??= createPublicSolicitudSender('quick');
-      await qfSender.current({tipo:'contacto_rapido',nombreCompleto:qfNombre,numeroDni:qfDni,
-        whatsapp:qfWhatsapp,localidad:qfLocalidad,productoNombre:qfNecesidad,referidoPor:qfReferente});
-      const refText=qfReferente?` Me recomendó: ${qfReferente}.`:'';
-      const mensaje=`Hola, quiero consultar opciones para gestionar una compra. Soy ${qfNombre} de ${qfLocalidad}. Necesito: ${qfNecesidad}. Mi WhatsApp es ${qfWhatsapp}.${refText}`;
+      await qfSender.current({tipo:'consulta_v2',nombreCompleto:qfNombre,
+        whatsapp:qfWhatsapp,localidad:qfLocalidad,productoNombre:qfNecesidad});
+      const mensaje=`Hola, quiero consultar opciones para gestionar una compra. Soy ${qfNombre} de ${qfLocalidad}. Necesito: ${qfNecesidad}. Mi WhatsApp es ${qfWhatsapp}.`;
       window.location.href=`https://wa.me/5491125659686?text=${encodeURIComponent(mensaje)}`;
     } catch(error) {
       setQfError(error instanceof Error?error.message:'No pudimos confirmar el registro. Reintentá.');
@@ -659,7 +656,7 @@ export default function HomeTechCatalog() {
                   <input 
                     type="text" 
                     required 
-                    value={qfNombre} 
+                    aria-label="Nombre y apellido" value={qfNombre}
                     onChange={e => setQfNombre(e.target.value)} 
                     placeholder="Ej. Juan Pérez" 
                     className="w-full bg-[#111318] border border-[#2D323E] hover:border-[#4B5563] focus:border-[#FFD21A] focus:ring-1 focus:ring-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
@@ -673,7 +670,7 @@ export default function HomeTechCatalog() {
                   <input 
                     type="tel" 
                     required 
-                    value={qfWhatsapp} 
+                    aria-label="WhatsApp" value={qfWhatsapp}
                     onChange={e => setQfWhatsapp(e.target.value)} 
                     placeholder="Ej. 11 2345 6789" 
                     className="w-full bg-[#111318] border border-[#2D323E] hover:border-[#4B5563] focus:border-[#FFD21A] focus:ring-1 focus:ring-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
@@ -687,7 +684,7 @@ export default function HomeTechCatalog() {
                   <input 
                     type="text" 
                     required 
-                    value={qfLocalidad} 
+                    aria-label="Localidad" value={qfLocalidad}
                     onChange={e => setQfLocalidad(e.target.value)} 
                     placeholder="Ej. Lincoln, Chivilcoy, Los Toldos..." 
                     className="w-full bg-[#111318] border border-[#2D323E] hover:border-[#4B5563] focus:border-[#FFD21A] focus:ring-1 focus:ring-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all"
@@ -703,25 +700,14 @@ export default function HomeTechCatalog() {
                 <textarea 
                   required 
                   rows={3}
-                  value={qfNecesidad} 
+                  aria-label="Producto o necesidad" value={qfNecesidad}
                   onChange={e => setQfNecesidad(e.target.value)} 
                   placeholder='Ej. Heladera Gafa 380 L, Smart TV 50", lavarropas automático o pegá un link si ya viste alguno.' 
                   className="w-full bg-[#111318] border border-[#2D323E] hover:border-[#4B5563] focus:border-[#FFD21A] focus:ring-1 focus:ring-[#FFD21A] text-white placeholder-[#6B7280] text-sm rounded-xl p-3.5 outline-none transition-all resize-none"
                 />
               </div>
 
-              <div className="pt-1">
-                <label className="block text-xs font-medium text-[#9CA3AF] mb-1">
-                  ¿Te recomendó alguien? <span className="text-[#6B7280]">(opcional)</span>
-                </label>
-                <input 
-                  type="text" 
-                  value={qfReferente} 
-                  onChange={e => setQfReferente(e.target.value)} 
-                  placeholder="Nombre del vendedor afiliado o cliente" 
-                  className="w-full bg-[#111318]/70 border border-[#222530] hover:border-[#2D323E] focus:border-[#FFD21A] text-white placeholder-[#6B7280] text-xs rounded-xl p-3 outline-none transition-all"
-                />
-              </div>
+
 
               <div className="pt-2 space-y-3">
                 {qfError && <p role="alert" className="text-sm text-white">{qfError}</p>}

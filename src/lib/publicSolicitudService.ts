@@ -23,7 +23,7 @@ export async function persistAuthorizedSolicitud(db:Firestore,id:string,input:Pu
       const doc=await tx.get(db.collection('catalogo_publico').doc(input.productoId));
       const dto=doc.exists?parsePublicCatalogReference(doc.id,doc.data()):null;
       const plan=dto?.planesPublicados.find(p=>String(p.cuotas)===input.planElegido);
-      if(!dto||dto.nombre!==input.productoNombre||plan?.cuotaEstimada!==input.montoCuota)throw Error('CATALOG_SELECTION_CHANGED');
+      if(!dto||dto.nombre!==input.productoNombre||(input.planElegido?plan?.cuotaEstimada!==input.montoCuota:input.tipo!=='consulta_v2'||input.montoCuota!==undefined))throw Error('CATALOG_SELECTION_CHANGED');
     }
     await reserveContactSlot(tx,db,input.whatsapp,clock());
     tx.create(ref,{...input,...trusted,publicSubmissionHash:hash,estado:'Pendiente',fecha:FieldValue.serverTimestamp(),fechaIso:new Date().toISOString()});
@@ -31,7 +31,8 @@ export async function persistAuthorizedSolicitud(db:Firestore,id:string,input:Pu
   });
   let notificationPending=false;
   try {
-    const alert={tipo:input.tipo==='contacto_rapido'?'NUEVO_PRESUPUESTO':'APERTURA_CUENTA',
+    const alert={tipo:input.tipo==='consulta_v2'?'CONSULTA_PUBLICA_V2':input.tipo==='contacto_rapido'?'NUEVO_PRESUPUESTO':'APERTURA_CUENTA',
+      ...(input.tipo==='consulta_v2'?{sourceCollection:'solicitudes_cuenta',solicitudId:documentId}:{}),
       mensaje:`Solicitud web ${documentId}: ${input.nombreCompleto} — ${input.productoNombre}`,
       fechaCreacion:FieldValue.serverTimestamp(),leida:false};
     if(notify)await notify(documentId,alert);

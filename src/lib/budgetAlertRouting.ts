@@ -387,6 +387,11 @@ export interface AlertAction {
 export function resolveAlertAction(alerta: AlertaAdminItem): AlertAction | null {
   const tipo = alerta.tipo || "";
 
+  if(tipo==='CONSULTA_PUBLICA_V2'){
+    if(alerta.sourceCollection!=='solicitudes_cuenta'||typeof alerta.solicitudId!=='string'||!/^web_[A-Za-z0-9_-]+$/.test(alerta.solicitudId))return null;
+    return {label:'Revisar consulta',href:`/admin/solicitudes/solicitudes_cuenta/${encodeURIComponent(alerta.solicitudId)}`,type:'other'};
+  }
+
   if (isBudgetAlert(tipo)) {
     return {
       label: "Atender Solicitud",

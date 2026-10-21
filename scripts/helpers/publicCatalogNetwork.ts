@@ -5,7 +5,7 @@ export async function observePublicCatalogNetwork() {
   const targets=await(await fetch("http://127.0.0.1:9227/json/list")).json() as {type:string;webSocketDebuggerUrl:string}[];
   const socket=new WebSocket(targets.find(target=>target.type==="page")!.webSocketDebuggerUrl);
   await new Promise<void>((resolve,reject)=>{socket.addEventListener("open",()=>resolve(),{once:true});socket.addEventListener("error",()=>reject(new Error("NETWORK_AUDIT_CONNECT")),{once:true});});
-  let sequence=0,productsRequests=0,firestoreQueries=0;const pending=new Map<number,{resolve:(value:Record<string,unknown>)=>void;reject:(error:Error)=>void;timer:ReturnType<typeof setTimeout>}>();
+  let sequence=0,productsRequests=0,firestoreQueries=0;const roleHistoryRequests=new Set<string>();const pending=new Map<number,{resolve:(value:Record<string,unknown>)=>void;reject:(error:Error)=>void;timer:ReturnType<typeof setTimeout>}>();
   const bodies:unknown[]=[];const errors:unknown[]=[];const tasks:Promise<void>[]=[];
   const command=(method:string,params:Record<string,unknown>={})=>new Promise<Record<string,unknown>>((resolve,reject)=>{const id=++sequence;const timer=setTimeout(()=>{pending.delete(id);reject(new Error(`NETWORK_AUDIT_TIMEOUT ${method}`));},15000);pending.set(id,{resolve,reject,timer});socket.send(JSON.stringify({id,method,params}));});
   function inspectRequest(text:string){let decoded=text;try{decoded=decodeURIComponent(text);}catch{} if(/collectionId|structuredQuery|documents\//.test(decoded))firestoreQueries++;if(/(?:["/])productos(?:["/])/.test(decoded))productsRequests++;}
@@ -15,6 +15,7 @@ export async function observePublicCatalogNetwork() {
     const params=message.params??{};
     if(message.method==="Network.requestWillBeSent"){
       const request=params.request;
+      if(request){const path=new URL(request.url).pathname;if(["/api/cliente/historial","/api/afiliado/historial"].includes(path))roleHistoryRequests.add(path);}
 
       if(request&&/firestore|127.0.0.1:8080/.test(request.url)) {
         inspectRequest(request.url+" "+(request.postData??""));
@@ -40,7 +41,7 @@ export async function observePublicCatalogNetwork() {
 
   return {
     flush,
-    async verify(){await flush();assert.ok(bodies.length>=8,"Respuestas HTTP públicas reales auditadas");assert.ok(firestoreQueries>0,"Auditoría también observa tráfico Firestore de roles");assert.equal(productsRequests,0);for(const body of bodies)assert.deepEqual(publicSensitivePaths(body),[]);console.log(`NETWORK_SENSITIVE_FIELD_LEAKS = 0; BROWSER_PRODUCTS_REQUESTS = 0; PUBLIC_API_RESPONSES_AUDITED = ${bodies.length}`);},
+    async verify(){await flush();assert.ok(bodies.length>=8,"Respuestas HTTP públicas reales auditadas");assert.deepEqual([...roleHistoryRequests].sort(),["/api/afiliado/historial","/api/cliente/historial"],"Ambos portales consultan sus APIs autorizadas");assert.equal(firestoreQueries,0,"Los portales no consultan Firestore directamente");assert.equal(productsRequests,0);for(const body of bodies)assert.deepEqual(publicSensitivePaths(body),[]);console.log(`NETWORK_SENSITIVE_FIELD_LEAKS = 0; BROWSER_PRODUCTS_REQUESTS = 0; PUBLIC_API_RESPONSES_AUDITED = ${bodies.length}`);},
     close(){for(const request of pending.values()){clearTimeout(request.timer);request.reject(new Error("AUDIT_CLOSED"));}pending.clear();socket.close();}
   };
 }
