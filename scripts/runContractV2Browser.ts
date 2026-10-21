@@ -1,6 +1,7 @@
 import "./helpers/requireSafeEmulatorEnvironment";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
+import { testOperationClientV2Browser } from "./testOperationClientV2Browser";
 import { testOperationCustodyV2Browser } from "./testOperationCustodyV2Browser";
 import { testOperationFulfillmentV2Browser } from "./testOperationFulfillmentV2Browser";
 import { testContractV2Browser } from "./testContractV2Browser";
@@ -24,11 +25,12 @@ async function main() {
       await new Promise(resolve => setTimeout(resolve, 500));
     }
     if (!ready) throw new Error("NEXT_DEV_NOT_READY");
-    if (!process.argv.includes('--custody-only')) {
+    if (!process.argv.includes('--custody-only') && !process.argv.includes('--client-only')) {
       await testContractV2Browser();
       await testOperationFulfillmentV2Browser();
     }
-    await testOperationCustodyV2Browser();
+    if (!process.argv.includes('--client-only')) await testOperationCustodyV2Browser();
+    if (!process.argv.includes('--custody-only')) await testOperationClientV2Browser();
   } finally {
     stop();
     await new Promise<void>(resolve => { if (server.exitCode !== null || server.signalCode !== null) resolve(); else server.once("close", () => resolve()); });

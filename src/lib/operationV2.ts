@@ -33,5 +33,5 @@ export function verifyOperation(value: unknown, expected: OperationV2): asserts 
 export interface OperationViewV2 {
   identity: OperationV2; registered: boolean;
   budgetState: string; contractState: string; documentationStage: string;
-  pendingProcesses: readonly ['CLIENTE', 'COBRANZA'];
+  pendingProcesses: readonly ['COBRANZA'];
 }

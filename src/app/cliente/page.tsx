@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientServicesV2 } from '@/components/operations/ClientServicesV2';
 import { isAdminEmail } from "@/lib/adminIdentity";
 
 import { useAuth } from "@/components/AuthProvider";
@@ -249,23 +250,7 @@ export default function ClientePage() {
         }
       }
 
-      // 4. Auto-unify in Firestore for all matched solicitudes
-      for (const sol of allMatching) {
-        const solData = sol as any;
-        if (solData.clienteId !== user.uid || solData.clienteEmail !== user.email) {
-          try {
-            await updateDoc(doc(db, "solicitudes", sol.id), {
-              clienteId: user.uid,
-              clienteEmail: user.email
-            });
-            solData.clienteId = user.uid;
-            solData.clienteEmail = user.email;
-          } catch (err) {
-            console.error("Error auto-linking solicitud:", err);
-          }
-        }
-      }
-
+      // Historical reads never migrate ownership. V2 links are explicit and server-mediated.
       allMatching.sort((a, b) => {
         const dateA = a.fechaCreacion?.toDate ? a.fechaCreacion.toDate().getTime() : 0;
         const dateB = b.fechaCreacion?.toDate ? b.fechaCreacion.toDate().getTime() : 0;
@@ -560,6 +545,8 @@ export default function ClientePage() {
           </div>
         </header>
 
+        <ClientServicesV2 key={user.uid}/>
+        <p className="text-sm text-zinc-400">Resumen del circuito anterior. No incluye los servicios V2 ni informa sus cuotas, recibos o saldos.</p>
         {/* Bloques de Resumen Ejecutivo (4 Tarjetas) */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           
