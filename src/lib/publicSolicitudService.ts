@@ -1,17 +1,22 @@
 import { reserveContactSlot, cleanupExpiredContactLimits } from "./publicSolicitudRateLimit";
 import { createHash } from "node:crypto";
-import { FieldValue, type Firestore } from "firebase-admin/firestore";
-import { parsePublicSolicitud } from "./publicSolicitud";
+import { FieldValue, type Firestore, type Transaction } from "firebase-admin/firestore";
+import type { AffiliateSolicitudInput } from "./affiliateSolicitudServer";
+import { parsePublicSolicitud, type PublicSolicitudInput } from "./publicSolicitud";
 import { parsePublicCatalogReference } from "./publicCatalogContract";
 
 /** One canonical operation. Replays never overwrite administrative state or captured prices. */
 export async function persistPublicSolicitud(db: Firestore, id: string, raw: unknown,
   notify?: (id: string, payload: Record<string,unknown>)=>Promise<void>, clock: () => number = Date.now) {
+  return persistAuthorizedSolicitud(db,id,parsePublicSolicitud(raw),undefined,undefined,notify,clock);
+}
+/** Shared server persistence; affiliate attribution is resolved inside the same transaction. */
+export async function persistAuthorizedSolicitud(db:Firestore,id:string,input:PublicSolicitudInput|AffiliateSolicitudInput,attribution?: (tx:Transaction)=>Promise<Record<string,unknown>>,ownerUid?:string,notify?: (id:string,payload:Record<string,unknown>)=>Promise<void>,clock:()=>number=Date.now){
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))throw Error("INVALID_REQUEST");
-  const input=parsePublicSolicitud(raw);
-  const hash=createHash('sha256').update(JSON.stringify(input)).digest('hex');
-  const documentId=`web_${id}`,ref=db.collection('solicitudes_cuenta').doc(documentId);
+  const hash=createHash('sha256').update(JSON.stringify(ownerUid?{input,ownerUid}:input)).digest('hex');
+  const documentId=ownerUid?`aff_${createHash('sha256').update(ownerUid).digest('hex').slice(0,24)}_${id}`:`web_${id}`,ref=db.collection('solicitudes_cuenta').doc(documentId);
   const replay=await db.runTransaction(async tx=>{
+    const trusted=attribution?await attribution(tx):{};
     const existing=await tx.get(ref);
     if(existing.exists){if(existing.data()?.publicSubmissionHash!==hash)throw Error('REQUEST_CONFLICT');return true;}
     if(input.productoId){
@@ -21,7 +26,7 @@ export async function persistPublicSolicitud(db: Firestore, id: string, raw: unk
       if(!dto||dto.nombre!==input.productoNombre||plan?.cuotaEstimada!==input.montoCuota)throw Error('CATALOG_SELECTION_CHANGED');
     }
     await reserveContactSlot(tx,db,input.whatsapp,clock());
-    tx.create(ref,{...input,publicSubmissionHash:hash,estado:'Pendiente',fecha:FieldValue.serverTimestamp(),fechaIso:new Date().toISOString()});
+    tx.create(ref,{...input,...trusted,publicSubmissionHash:hash,estado:'Pendiente',fecha:FieldValue.serverTimestamp(),fechaIso:new Date().toISOString()});
     return false;
   });
   let notificationPending=false;

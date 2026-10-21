@@ -142,7 +142,8 @@ async function runRulesTests() {
       estado: { stringValue: "Pendiente" }
     }
   });
-  assert(resSolCuentaValido.status === 200, "solicitudes_cuenta: create válido permitido con HTTP 200");
+  assert(resSolCuentaValido.status === 403, "solicitudes_cuenta: create directo público denegado con HTTP 403");
+  await dbAdmin.collection("solicitudes_cuenta").doc(docSolCuentaId).set({tipo:"apertura_cuenta",nombreCompleto:"Cliente sintético",estado:"Pendiente"});
 
   const resSolCuentaArbitrario = await firestoreRestCall("POST", "/solicitudes_cuenta", {
     fields: {

@@ -62,9 +62,9 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Formularios Públicos Hardened con Validaciones de Tipo de Primer Nivel ({docId})
+    // Las altas públicas usan el servidor; se conserva la creación administrativa.
     match /solicitudes_cuenta/{docId} {
-      allow create: if request.resource.data.keys().hasAll(["tipo", "nombreCompleto", "estado"]) &&
+      allow create: if isAdmin() && request.resource.data.keys().hasAll(["tipo", "nombreCompleto", "estado"]) &&
                        request.resource.data.keys().hasOnly(["tipo", "productoId", "productoNombre", "planElegido", "montoCuota", "nombreCompleto", "numeroDni", "cuil", "fechaNacimiento", "whatsapp", "direccion", "localidad", "codigoPostal", "ocupacion", "nombreAfiliado", "referidoPor", "email", "antiguedadLaboral", "precioContado", "tasaInteresTna", "tasaMora", "fecha", "fechaIso", "fechaCreacion", "estado", "comprobanteURL", "dniFrenteURL", "dniDorsoURL"]) &&
                        isStringWithMaxLength(request.resource.data.tipo, 50) &&
                        isStringWithMaxLength(request.resource.data.nombreCompleto, 150) &&

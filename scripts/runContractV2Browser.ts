@@ -1,6 +1,7 @@
 import "./helpers/requireSafeEmulatorEnvironment";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
+import { testPortalP1Browser } from "./testPortalP1Browser";
 import { testOperationFinancialV2Browser } from "./testOperationFinancialV2Browser";
 import { testOperationDeliveryV2Browser } from "./testOperationDeliveryV2Browser";
 import { testOperationClientV2Browser } from "./testOperationClientV2Browser";
@@ -27,14 +28,15 @@ async function main() {
       await new Promise(resolve => setTimeout(resolve, 500));
     }
     if (!ready) throw new Error("NEXT_DEV_NOT_READY");
-    if (!process.argv.includes('--financial-only') && !process.argv.includes('--custody-only') && !process.argv.includes('--client-only') && !process.argv.includes('--delivery-only')) {
+    if (!process.argv.includes('--portal-p1-only') && !process.argv.includes('--financial-only') && !process.argv.includes('--custody-only') && !process.argv.includes('--client-only') && !process.argv.includes('--delivery-only')) {
       await testContractV2Browser();
       await testOperationFulfillmentV2Browser();
     }
-    if (!process.argv.includes('--financial-only')&&!process.argv.includes('--client-only')&&!process.argv.includes('--delivery-only')) await testOperationCustodyV2Browser();
-    if (!process.argv.includes('--financial-only')&&!process.argv.includes('--custody-only')&&!process.argv.includes('--delivery-only')) await testOperationClientV2Browser();
-    if (!process.argv.includes('--financial-only')&&!process.argv.includes('--custody-only')&&!process.argv.includes('--client-only')) await testOperationDeliveryV2Browser();
-    if (!['--custody-only','--client-only','--delivery-only'].some(flag=>process.argv.includes(flag))) await testOperationFinancialV2Browser();
+    if (!process.argv.includes('--portal-p1-only') && !process.argv.includes('--financial-only')&&!process.argv.includes('--client-only')&&!process.argv.includes('--delivery-only')) await testOperationCustodyV2Browser();
+    if (!process.argv.includes('--portal-p1-only') && !process.argv.includes('--financial-only')&&!process.argv.includes('--custody-only')&&!process.argv.includes('--delivery-only')) await testOperationClientV2Browser();
+    if (!process.argv.includes('--portal-p1-only') && !process.argv.includes('--financial-only')&&!process.argv.includes('--custody-only')&&!process.argv.includes('--client-only')) await testOperationDeliveryV2Browser();
+    if (!['--portal-p1-only','--custody-only','--client-only','--delivery-only'].some(flag=>process.argv.includes(flag))) await testOperationFinancialV2Browser();
+    if (!['--financial-only','--custody-only','--client-only','--delivery-only'].some(flag=>process.argv.includes(flag))) await testPortalP1Browser();
   } finally {
     stop();
     await new Promise<void>(resolve => { if (server.exitCode !== null || server.signalCode !== null) resolve(); else server.once("close", () => resolve()); });
