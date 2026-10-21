@@ -1,0 +1,10 @@
+"use client";
+import {useState} from 'react';
+import {useAuth} from '@/components/AuthProvider';
+type HistoricalRecord={recordKey:string;nombreCompleto?:string;productoDeseado?:string;productoNombre?:string;estado?:string};
+/** Historical consultation never feeds the current commission balance. */
+export function AffiliateHistoricalView(){
+ const {user}=useAuth(),[rows,setRows]=useState<HistoricalRecord[]|null>(null),[notifications,setNotifications]=useState<{id:string;mensaje:string;comisionAsociada?:number;estadoPago?:string}[]>([]),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+ async function load(){if(!user||busy)return;setBusy(true);try{const r=await fetch('/api/afiliado/historial',{headers:{Authorization:`Bearer ${await user.getIdToken()}`},cache:'no-store'});if(!r.ok)throw Error('Historial no disponible. Consultá tu vinculación con Administración.');const d=await r.json();setRows(d.solicitudes);setNotifications(d.notificaciones);setError(d.warnings.join(' '));}catch(e){setError(e instanceof Error?e.message:'No se pudo consultar.');}finally{setBusy(false);}}
+ return <details className="rounded-xl border border-zinc-700 p-4"><summary className="min-h-11 cursor-pointer">Consulta de operaciones anteriores</summary><p>Registros anteriores conservados, sin recalcular comisiones ni modificar condiciones.</p><button disabled={busy} onClick={()=>void load()} className="min-h-11 rounded border px-3">Consultar historial anterior</button>{error&&<p role="alert">{error}</p>}{rows?.map(row=><article className="my-3 break-words rounded border p-3" key={row.recordKey}><p>{row.nombreCompleto||'Cliente sin informar'}</p><p>{row.productoDeseado||row.productoNombre||'Producto sin informar'} · {row.estado||'Estado sin informar'}</p></article>)}{notifications.map(n=><p className="my-2 break-words" key={n.id}>{n.mensaje}{typeof n.comisionAsociada==='number'?` · Comisión histórica: ${new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(n.comisionAsociada)}`:''}{n.estadoPago?` · ${n.estadoPago}`:''}</p>)}{rows?.length===0&&<p>Sin registros anteriores autorizados.</p>}</details>;
+}

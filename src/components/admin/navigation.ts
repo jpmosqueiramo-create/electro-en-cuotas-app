@@ -18,6 +18,6 @@ export const ADMIN_DESTINATIONS = [
 export function activeAdminDestination(pathname: string) {
   if (pathname === "/admin/solicitudes" || pathname.startsWith("/admin/solicitudes/")) return "requests";
   if (pathname.startsWith("/admin/clientes")) return "requests";
-  if (pathname.startsWith("/admin/rendiciones")) return "collections";
+  if (pathname.startsWith("/admin/rendiciones")) return "sellers";
   return ADMIN_DESTINATIONS.find(item => item.href === pathname)?.id;
 }

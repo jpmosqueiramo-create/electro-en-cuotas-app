@@ -1,7 +1,2 @@
-"use client";
-
-import AdminComisionesPage from "../comisiones/page";
-
-export default function RendicionesPage() {
-  return <AdminComisionesPage initialTab="rendiciones" />;
-}
+import {redirect} from 'next/navigation';
+export default function RendicionesPage(){redirect('/admin/comisiones');}

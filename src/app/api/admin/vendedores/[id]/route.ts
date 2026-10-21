@@ -1,3 +1,4 @@
+import {affiliateIndex,readCustody} from '@/lib/operationCustodyV2Server';
 import { financialEnabled } from '@/lib/operationFinancialV2';
 import { NextResponse } from "next/server";
 import { admin } from "@/lib/firebaseAdmin";
@@ -81,10 +82,15 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
       }
     }
 
+    const profile=(await db.collection('vendedores').doc(canonicalVendorId).get()).data();
+    const assignments=typeof profile?.authUid==='string'&&profile.authUid?await affiliateIndex(db,profile.authUid).get():null;
+    const operations=[];
+    for(const assignment of assignments?.docs??[]){const a=assignment.data();if(a.affiliateId!==canonicalVendorId)continue;const op=await readCustody(db,a.budgetId,a.version,{uid:authRes.uid!,admin:true});operations.push({budgetId:a.budgetId,version:a.version,client:op.client,product:op.product,nextAction:op.nextAction});}
     return NextResponse.json({
       ok: true,
       mutationEnabled:financialEnabled(),
       vendedor: vendorData,
+      operations,
       cuentaCorriente,
       importePendienteCentavos:Math.max(0,cuentaCorriente.saldoCuentaCorrienteCentavos),
       importeARecuperarCentavos:Math.max(0,-cuentaCorriente.saldoCuentaCorrienteCentavos),
