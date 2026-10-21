@@ -32,6 +32,7 @@ export async function acceptBudgetV2(db: Firestore, input: unknown, actor: strin
       return old.data() as BudgetAcceptanceV2;
     }
     if (old.exists || doc.exists) fail('La aceptación ya fue registrada. No puede reemplazarse.');
+    {const review=refs.family.collection('contracts').doc(`v${c.version}`).collection('creditReview').doc('current');tx.create(review,{policy:'MANUAL_CREDIT_REVIEW_V1',operationId:operationFromAcceptance(candidate).operationId,revision:0,state:'PENDING_DATA',profileOrigin:null,resolution:'',notes:'',reviewedBy:actor,reviewedAt:candidate.acceptedAt,draftDataHash:null,documentsHash:null});}
     tx.create(operationRef(db, c.budgetId, c.version), operationFromAcceptance(candidate));
     tx.create(refs.acceptance, candidate); tx.create(refs.documentation, createDocumentationCase(candidate));
     tx.create(commandRef, { digest, version: c.version, createdAt: candidate.acceptedAt, by: actor });

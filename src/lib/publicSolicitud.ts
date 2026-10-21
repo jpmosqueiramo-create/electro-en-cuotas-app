@@ -2,7 +2,7 @@ import { isPublicReferenceId } from "./publicCatalogContract";
 
 /** Public request contract. No private pricing fields or client-selected collection. */
 export type PublicSolicitudInput = {
-  tipo: "contacto_rapido" | "apertura_cuenta";
+  tipo: "contacto_rapido" | "apertura_cuenta" | "consulta_v2";
   nombreCompleto: string; whatsapp: string; localidad: string; productoNombre: string;
   numeroDni?: string; cuil?: string; fechaNacimiento?: string; direccion?: string;
   codigoPostal?: string; ocupacion?: string; email?: string; antiguedadLaboral?: string;
@@ -15,7 +15,7 @@ const limits = { nombreCompleto:150, whatsapp:50, localidad:150, productoNombre:
 export function parsePublicSolicitud(value: unknown): PublicSolicitudInput {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw Error("INVALID_REQUEST");
   const raw=value as Record<string,unknown>;
-  if (typeof raw.tipo!=='string' || !['contacto_rapido','apertura_cuenta'].includes(raw.tipo) || Object.keys(raw).some(k=>!['tipo','montoCuota',...Object.keys(limits)].includes(k))) throw Error("INVALID_REQUEST");
+  if (typeof raw.tipo!=='string' || !['contacto_rapido','apertura_cuenta','consulta_v2'].includes(raw.tipo) || Object.keys(raw).some(k=>!['tipo','montoCuota',...Object.keys(limits)].includes(k))) throw Error("INVALID_REQUEST");
   const output: Record<string,string|number>={tipo:raw.tipo as string};
   for(const [key,max] of Object.entries(limits)) {
     const v=raw[key]; if(v===undefined)continue;
@@ -23,17 +23,21 @@ export function parsePublicSolicitud(value: unknown): PublicSolicitudInput {
     output[key]=v.trim();
   }
   if(['nombreCompleto','whatsapp','localidad','productoNombre'].some(k=>!output[k]))throw Error("INVALID_REQUEST");
+  if(raw.tipo==='consulta_v2' && Object.keys(raw).some(k=>!['tipo','nombreCompleto','whatsapp','localidad','productoNombre','productoId','planElegido','montoCuota'].includes(k))) throw Error('INVALID_REQUEST');
   if(raw.tipo==='apertura_cuenta') {
     if(['numeroDni','cuil','fechaNacimiento','direccion','codigoPostal','ocupacion','email','antiguedadLaboral'].some(k=>!output[k]) || !/^\d{2}-\d{8}-\d$/.test(String(output.cuil)) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(output.email))) throw Error("INVALID_REQUEST");
   }
   if(output.productoId) {
-    if(!isPublicReferenceId(output.productoId)||raw.tipo!=='apertura_cuenta'||!/^[1-9]\d?$/.test(String(output.planElegido))||Number(output.planElegido)>18||typeof raw.montoCuota!=='number'||!Number.isFinite(raw.montoCuota)||raw.montoCuota<=0)throw Error("INVALID_REQUEST");
-    output.montoCuota=raw.montoCuota;
+    if(!isPublicReferenceId(output.productoId)||!['apertura_cuenta','consulta_v2'].includes(String(raw.tipo)))throw Error('INVALID_REQUEST');
+    if(raw.tipo!=='consulta_v2'||raw.planElegido!==undefined||raw.montoCuota!==undefined){
+      if(!/^[1-9]\d?$/.test(String(output.planElegido))||Number(output.planElegido)>18||typeof raw.montoCuota!=='number'||!Number.isFinite(raw.montoCuota)||raw.montoCuota<=0)throw Error('INVALID_REQUEST');
+      output.montoCuota=raw.montoCuota;
+    }
   } else if(raw.montoCuota!==undefined || output.planElegido)throw Error("INVALID_REQUEST");
   return output as PublicSolicitudInput;
 }
 export function publicSolicitudOrigin(data: Record<string,unknown>): string {
-  if(data.tipo==='contacto_rapido')return 'Consulta por producto fuera del catálogo';
   if(typeof data.productoId==='string'&&data.productoId.trim()&&data.productoId!=='A definir')return 'Solicitud desde catálogo';
+  if(['contacto_rapido','consulta_v2'].includes(String(data.tipo)))return 'Consulta por producto fuera del catálogo';
   return 'Origen no registrado';
 }

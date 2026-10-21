@@ -40,6 +40,7 @@ export async function testContractDocumentWorkflowBrowser(){
       const deadline=Date.now()+8000;
       while(true){try{await browser.command('Page.handleJavaScriptDialog',{accept:true});return;}catch(error){if(Date.now()>=deadline)throw error;await browser.delay(50);}}
     }
+    await browser.until(`[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Confirmar preparación técnica'&&!b.matches(':disabled')&&b.getClientRects().length>0)`,'technical review enabled after policy load');
     await Promise.all([browser.clickText('Confirmar preparación técnica'),acceptConfirmation()]);
     await browser.until(`${root}?.innerText.includes('Revisión READY verificada')`,'dossier READY');
     const db=admin.firestore(),counter=db.doc('contractNumberingV2/CONTRACT_NUMBERING_V1');
@@ -48,12 +49,12 @@ export async function testContractDocumentWorkflowBrowser(){
     const freeze=createContractFreezeIntegrationEmulator(),archive=createPrivateDocumentArchiveEmulator();
     try{const receipt=await freeze.execute({action:'FREEZE_READY_EMULATOR',commandId:id,budgetId:id,budgetVersion:1,expectedRevision:(await r.draft.get()).data()!.revision,dependenciesId:id},'synthetic-admin-a');const snapshot=await freeze.getSnapshot(receipt.snapshotId);assert.ok(snapshot);await archive.preserve(snapshot);}finally{await freeze.close();await archive.close();}
     await browser.clickText('Recargar borrador y datos recibidos');await browser.until(`${root}?.innerText.includes('Conservación completa registrada')`,'frozen dossier/archive');
-    assert.equal(await browser.evaluate("document.querySelector('[data-testid=contract-composer] fieldset').disabled"),true);
+    assert.equal(await browser.evaluate("document.querySelector('[data-testid=contract-editable-fields]').disabled"),true);
     assert.ok((await browser.evaluate<string>(`${root}.innerText`)).includes('Términos congelados'));
     // Reopening a frozen dossier must be a GET, not a rejected OPEN_OR_CREATE command.
     const commandsBefore=(await r.draft.collection('commands').get()).size;
     await browser.navigate('/admin/presupuestos');await browser.until("!![...document.querySelectorAll('label')].find(x=>x.textContent.includes('Buscar presupuesto V2'))",'reopen history');await browser.field('Buscar presupuesto V2',id);await browser.until(`${history}?.querySelectorAll('article').length===1`,'reopen exact budget');await browser.clickText('Abrir versión 1',history);await browser.until("!!document.querySelector('[data-testid=acceptance-registered]')",'reopen acceptance');assert.equal(await browser.evaluate("document.querySelector('a[href=\"/admin/operaciones/"+id+"/1\"]')?.textContent"),'Abrir ficha de operación');await browser.navigate(`/admin/operaciones/${id}/1`);await browser.until("!!document.querySelector('[data-testid=operation-unified-workspace]')",'operation workspace');await browser.clickText('Contrato');await browser.until("!!document.querySelector('[data-testid=contract-composer]')",'contract section');await browser.evaluate("document.querySelectorAll('[data-testid=contract-composer] details').forEach(d=>d.open=true)");await browser.until(`${root}?.innerText.includes('Conservación completa registrada')`,'reopened frozen dossier');
-    assert.equal(await browser.evaluate("document.querySelector('[data-testid=contract-composer] fieldset').disabled"),true);assert.equal((await r.draft.collection('commands').get()).size,commandsBefore);
+    assert.equal(await browser.evaluate("document.querySelector('[data-testid=contract-editable-fields]').disabled"),true);assert.equal((await r.draft.collection('commands').get()).size,commandsBefore);
 
     assert.deepEqual(before,{budget:(await r.budget.get()).data(),acceptance:(await r.acceptance.get()).data(),p4:(await r.family.collection('documentation').doc('1').get()).data()});assert.deepEqual(browser.externalFirebase,[]);
     console.log('DOCUMENT_WORKFLOW_BROWSER_ADMIN_DRAFT_READY_FROZEN_ARCHIVE_SAMPLES_DESKTOP_MOBILE = PASS');

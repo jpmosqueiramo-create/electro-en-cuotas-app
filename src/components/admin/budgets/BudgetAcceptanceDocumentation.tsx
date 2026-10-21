@@ -8,7 +8,7 @@ import { ALLOWED_MIME_TYPES, DOCUMENT_LABELS, DOCUMENT_TYPES, MAX_ATTACHMENT_SIZ
 const button = 'min-h-11 rounded-xl border border-border-color bg-surface px-4 py-2 text-sm font-semibold text-brand-primary disabled:opacity-40';
 const input = 'min-h-11 w-full min-w-0 rounded-xl border border-border-color bg-surface px-3 py-2';
 const money = (n: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
-export function BudgetAcceptanceDocumentation({ budget }: { budget: BudgetV2 }) {
+export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false }: { budget: BudgetV2; documentationOnly?:boolean }) {
   const { user } = useAuth();
   const [acceptance, setAcceptance] = useState<BudgetAcceptanceV2 | null>(null);
   const [documentation, setDocumentation] = useState<BudgetDocumentationCaseV2 | null>(null);
@@ -54,12 +54,13 @@ export function BudgetAcceptanceDocumentation({ budget }: { budget: BudgetV2 }) 
     const form = new FormData(); form.append('commandId', id); form.append('file', file);
     await request(`documentation/${type}/attachments`, { method: 'POST', body: form }); await reloadDocumentation(); uploadCommands.current.delete(key);
   }
+  useEffect(()=>{if(!documentationOnly)return;let active=true;void request('documentation').then(r=>r.json()).then(data=>{if(active){setDocumentation(data.documentation);setManage(true);}}).catch(()=>{if(active)setError('No se pudo consultar la documentación.');});return()=>{active=false;};},[documentationOnly,request]);
   const option = budget.options.find(o => o.optionId === selected);
   return <section data-testid="budget-acceptance" className="min-w-0 space-y-4 rounded-xl border border-border-color p-4">
-    <h3 className="font-heading text-lg font-bold">Aceptación y documentación</h3>
+    <h3 className="font-heading text-lg font-bold">{documentationOnly?'Archivos de esta operación':'Aceptación y documentación'}</h3>
     {error && <p role="alert" className="break-words text-red-700">{error}</p>}
     {!loaded && !error && <p>Consultando aceptación…</p>}
-    {loaded && !acceptance && <button className={button} disabled={busy} onClick={() => { setOpen(!open); setConfirm(false); }}>Registrar aceptación</button>}
+    {!documentationOnly && loaded && !acceptance && <button className={button} disabled={busy} onClick={() => { setOpen(!open); setConfirm(false); }}>Registrar aceptación</button>}
     {open && !acceptance && <fieldset disabled={busy} data-testid="acceptance-panel" className="min-w-0 space-y-4">
       <legend className="font-semibold">Elegir una opción</legend>
       <p className="break-words">Presupuesto {budget.id} · Versión {budget.version} · {budget.clienteSnapshot.nombre}</p>
@@ -85,7 +86,7 @@ export function BudgetAcceptanceDocumentation({ budget }: { budget: BudgetV2 }) 
       </div>}
       <button className={button} onClick={() => setOpen(false)}>Cancelar aceptación</button>
     </fieldset>}
-    {acceptance && <div data-testid="acceptance-registered" className="space-y-2">
+    {!documentationOnly && acceptance && <div data-testid="acceptance-registered" className="space-y-2">
       <h4 className="font-semibold">ACEPTACIÓN REGISTRADA</h4><p>Opción aceptada: {acceptance.optionSnapshot.referenceSnapshot.nombre}</p>
       <p>Planes originalmente ofrecidos:</p><ul>{acceptance.optionSnapshot.referenceSnapshot.planesOfrecidos.map(p => <li key={p.cuotas}>{p.cuotas} cuotas estimadas de {money(p.cuotaEstimada)}</li>)}</ul>
       <p>{acceptance.preferredPlanCuotas === null ? 'Sin preferencia definida' : `Plan preferido: ${acceptance.preferredPlanCuotas} cuotas — ${money(acceptance.preferredPlanAmountSnapshot!)}`}</p>
@@ -94,9 +95,9 @@ export function BudgetAcceptanceDocumentation({ budget }: { budget: BudgetV2 }) 
       <button className={button} disabled={busy} onClick={() => void act(async () => { await reloadDocumentation(); setManage(!manage); })}>Gestionar documentación</button>
     </div>}
     {manage && documentation && <div data-testid="documentation-panel" className="space-y-4">
-      <h4 className="font-heading text-lg font-bold">Documentación privada</h4><p className="text-sm text-text-secondary">Los cuatro documentos son opcionales. Su ausencia no bloquea la etapa. Archivos JPEG, PNG, WEBP o PDF de hasta 10 MiB.</p>
+      <h4 className="font-heading text-lg font-bold">Documentación privada</h4><p className="text-sm text-text-secondary">{documentationOnly?'Para evaluación: DNI frente, dorso y comprobante de domicilio vigentes. Ingresos opcionales. La carpeta verificada puede reutilizar archivos anteriores.':'La carga conserva el expediente histórico; los requisitos de evaluación se revisan en la Ficha de operación.'} Archivos JPEG, PNG, WEBP o PDF de hasta 10 MiB.</p>
       <div className="grid min-w-0 gap-4 lg:grid-cols-2">{DOCUMENT_TYPES.map(type => { const slot = documentation.slots[type]; return <article key={type} data-document-type={type} className="min-w-0 space-y-3 rounded-xl border border-border-color p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2"><h5 className="font-semibold">{DOCUMENT_LABELS[type]}</h5><span className="text-xs font-semibold text-text-secondary">OPCIONAL</span></div>
+        <div className="flex flex-wrap items-center justify-between gap-2"><h5 className="font-semibold">{DOCUMENT_LABELS[type]}</h5><span className="text-xs font-semibold text-text-secondary">{documentationOnly&&type!=='PAYSLIP'?'PARA EVALUACIÓN':'OPCIONAL'}</span></div>
         <p data-slot-status className="text-sm font-semibold">{slot.status.replaceAll('_', ' ')}</p>
         {slot.observation && <p className="whitespace-pre-wrap break-words text-sm">Observación: {slot.observation}</p>}
         <label className="block space-y-2"><span className="text-sm">Agregar archivo</span><input aria-label={`Agregar archivo ${DOCUMENT_LABELS[type]}`} className={`${input} text-sm`} type="file" accept={ALLOWED_MIME_TYPES.join(',')} disabled={busy} onChange={e => { const file = e.target.files?.[0]; e.currentTarget.value = ''; if (file) void act(() => upload(type, file)); }} /></label>

@@ -5,11 +5,12 @@ import type { BudgetV2 } from '@/lib/budgetV2';
 import type { ContractDraftV2 } from '@/lib/contractV2';
 import type { OperationViewV2 } from '@/lib/operationV2';
 import type { FulfillmentV2 } from '@/lib/operationFulfillmentV2';
+import type { CreditState } from '@/lib/creditReviewV2';
 import { operationNextAction, type OperationSection } from '@/lib/operationWorkspaceV2';
 import { btn } from './ContractDataFields';
 const sections: Record<OperationSection, string> = { budget: 'Presupuesto', contract: 'Contrato', logistics: 'Proveedor y logística', affiliate: 'Vendedor afiliado', payments: 'Cuotas y pagos' };
 const money = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
-export function OperationUnifiedFrame({ budget, draft, operation, section, onSection, pendingSubmissions, conformityPending, panels }: {
+export function OperationUnifiedFrame({ budget, draft, operation, section, onSection, pendingSubmissions, conformityPending, panels,refreshKey=0 }: {refreshKey?:number;
   budget?: BudgetV2; draft: ContractDraftV2 | null; operation: OperationViewV2 | null; section: OperationSection;
   onSection: (value: OperationSection) => void; pendingSubmissions: boolean; conformityPending: boolean;
   panels: Partial<Record<OperationSection, ReactNode>>;
@@ -25,18 +26,20 @@ export function OperationUnifiedFrame({ budget, draft, operation, section, onSec
     target?.scrollIntoView({block:'start'});
     (target?.querySelector('summary,button,input') as HTMLElement|null)?.focus();
   },[focusRequest,conformityPending,pendingSubmissions,prefix,section]);
+  const [creditState,setCreditState]=useState<CreditState|undefined>();
   const [tracking, setTracking] = useState<FulfillmentV2 | null>(null), [trackingError, setTrackingError] = useState('');
   const budgetId = budget?.id ?? draft?.budgetId; const version = budget?.version ?? draft?.budgetVersion;
   const load = useCallback(async (signal?: AbortSignal) => {
     if (!user || !budgetId || !version) return;
     try {
       const response = await fetch(`/api/admin/presupuestos-v2/${encodeURIComponent(budgetId)}/versions/${version}/fulfillment`, { signal, cache: 'no-store', headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
+      const credit=await fetch(`/api/admin/presupuestos-v2/${encodeURIComponent(budgetId)}/versions/${version}/credit-review`,{signal,cache:'no-store',headers:{Authorization:`Bearer ${await user.getIdToken()}`}});if(!credit.ok)throw Error();const evaluation=await credit.json();if(!signal?.aborted)setCreditState(evaluation.review?evaluation.state:undefined);
       if (!response.ok) throw Error(); const data = await response.json();
       if (!signal?.aborted) { setTracking(data.state); setTrackingError(''); }
     } catch { if (!signal?.aborted) setTrackingError('No se pudo consultar el seguimiento. Reintentá antes de decidir el próximo paso logístico.'); }
   }, [user, budgetId, version]);
-  useEffect(() => { const controller = new AbortController(); void load(controller.signal); return () => controller.abort(); }, [load, section]);
-  const next = operationNextAction({ draft, tracking, pendingSubmissions, conformityPending });
+  useEffect(() => { const controller = new AbortController(); void load(controller.signal); return () => controller.abort(); }, [load, section,refreshKey]);
+  const next = operationNextAction({ draft, tracking, pendingSubmissions, conformityPending,creditState });
   const accepted = draft?.acceptedReferenceSnapshot ?? budget?.options.find(o => o.optionId === operation?.identity.acceptedOptionId)?.referenceSnapshot;
   return <section data-testid="operation-unified-workspace" className="min-w-0 space-y-5 border-t border-border-color pt-5">
     <header className="min-w-0 space-y-4 rounded-2xl border border-border-color bg-surface p-4 sm:p-6">
