@@ -1,4 +1,5 @@
 import './helpers/requireSafeEmulatorEnvironment';
+import { openOperationSection } from './helpers/openOperationSection';
 import assert from 'node:assert/strict';
 import { mkdirSync,writeFileSync } from 'node:fs';
 import { admin } from '../src/lib/firebaseAdmin';
@@ -29,7 +30,7 @@ export async function testOperationFulfillmentV2Browser() {
   await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:800,deviceScaleFactor:1,mobile:false});await browser.navigate('/login');await browser.until("typeof window.__FIREBASE_SIGN_IN__==='function'",'Auth demo');
   await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(adminEmail)},${JSON.stringify(adminPassword)}).then(()=>true)`);
   await browser.navigate('/admin/presupuestos');await browser.until("!![...document.querySelectorAll('label')].find(l=>l.textContent.includes('Buscar presupuesto V2'))",'history');await browser.field('Buscar presupuesto V2',id);
-  await browser.until("[...document.querySelectorAll('section')].find(s=>s.querySelector('h2')?.textContent==='Historial V2')?.querySelectorAll('article').length===1",'exact budget');await browser.clickText('Abrir versión 1',"[...document.querySelectorAll('section')].find(s=>s.querySelector('h2')?.textContent==='Historial V2')");await browser.until("!!document.querySelector('[data-testid=acceptance-registered]')",'accepted');await browser.clickText('Confeccionar contrato');
+  await browser.until("[...document.querySelectorAll('section')].find(s=>s.querySelector('h2')?.textContent==='Historial V2')?.querySelectorAll('article').length===1",'exact budget');await browser.clickText('Abrir versión 1',"[...document.querySelectorAll('section')].find(s=>s.querySelector('h2')?.textContent==='Historial V2')");await browser.until("!!document.querySelector('[data-testid=acceptance-registered]')",'accepted');await openOperationSection(browser,id,'Proveedor y logística');
   await browser.until("!!document.querySelector('[aria-label=\"Acción administrativa\"]')",'fulfillment');
   assert.equal(await browser.evaluate("document.querySelector('[data-testid=fulfillment]').textContent.includes('580.000')"),true);
   await command('UPDATE_ORDER',{'Proveedor seleccionado':'Proveedor sintético','Número de pedido / referencia del proveedor':'DEMO-123','Disponibilidad estimada':'2026-01-02','Observaciones':'Sólo prueba'},1);

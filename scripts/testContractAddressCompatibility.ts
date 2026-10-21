@@ -34,9 +34,17 @@ export async function addressCompatibilityTests(db:Firestore){
  assert.deepEqual(await publicContractData(db,requestId,token),{available:true,personalDataVersion:'LEGACY_SIX'});
  await assert.rejects(()=>publicContractData(db,requestId,token,addressPayload));
  const unmodified=(await r.draft.get()).data();
+ const historicalMetadata=(await rr.get()).updateTime;
+ const incompleteLegacy={personalData:clientPayload.personalData,employmentData:clientPayload.employmentData};
+ for(const invalid of [incompleteLegacy,{...clientPayload,preferredMonthlyDueDay:0},{...clientPayload,preferredMonthlyDueDay:32},{personalData:clientPayload.personalData}])await assert.rejects(()=>publicContractData(db,requestId,token,invalid));
+ assert.equal((await r.draft.collection('submissions').get()).size,0);
+ assert.ok((await rr.get()).updateTime!.isEqual(historicalMetadata!));
+ assert.deepEqual((await r.draft.get()).data(),unmodified);
  await publicContractData(db,requestId,token,clientPayload);
  const subRef=r.draft.collection('submissions').doc(requestId),submission=(await subRef.get()).data();
  const originalDigest=(await rr.get()).data()!.submissionDigest;
+ const originalSubUpdateTime=(await subRef.get()).updateTime;
+ const originalRequestUpdateTime=(await rr.get()).updateTime;
  assert.equal(originalDigest,digest(clientPayload));assert.ok(!Object.hasOwn(submission!,'personalDataVersion'));
  assert.deepEqual((await r.draft.get()).data(),unmodified);
  await update('UPDATE_PERSONAL_DATA',{personalData:addressPayload.personalData});
@@ -44,6 +52,8 @@ export async function addressCompatibilityTests(db:Firestore){
  // Replay the historical payload after the Draft has moved to the address format.
  await publicContractData(db,requestId,token,clientPayload);
  assert.equal((await rr.get()).data()!.submissionDigest,originalDigest);
+ assert.ok((await subRef.get()).updateTime!.isEqual(originalSubUpdateTime!));
+ assert.ok((await rr.get()).updateTime!.isEqual(originalRequestUpdateTime!));
  assert.deepEqual((await subRef.get()).data(),submission);
  const apply={action:'APPLY_CLIENT_SUBMISSION',submissionId:requestId,expectedRevision:d.revision,commandId:'apply-history'};
  const applied=await contractCommand(db,id,1,apply,'admin');d=applied.draft;
@@ -65,15 +75,44 @@ export async function addressCompatibilityTests(db:Firestore){
  await assert.rejects(()=>publicContractData(db,freshId,fresh.secret!,{...addressPayload,personalData:{...addressPayload.personalData,postalCode:'bad'}}));
  const newPayload={employmentData:addressPayload.employmentData,personalData:{...addressPayload.personalData,province:'02',postalCode:'c1425abc'}};
  const untouched=(await r.draft.get()).data();
+ const freshRequest=r.draft.collection('requests').doc(freshId),freshTime=(await freshRequest.get()).updateTime;
+ for(const invalid of [{...newPayload,preferredMonthlyDueDay:30},{...newPayload,preferredMonthlyDueDay:null},{personalData:newPayload.personalData},{employmentData:newPayload.employmentData}])await assert.rejects(()=>publicContractData(db,freshId,fresh.secret!,invalid));
+ assert.equal((await r.draft.collection('submissions').doc(freshId).get()).exists,false);
+ assert.ok((await freshRequest.get()).updateTime!.isEqual(freshTime!));
  await publicContractData(db,freshId,fresh.secret!,newPayload);
  assert.deepEqual((await r.draft.get()).data(),untouched);
  const newRef=r.draft.collection('submissions').doc(freshId),newSub=(await newRef.get()).data();
  assert.equal(newSub!.personalData.postalCode,'C1425ABC');assert.equal(newSub!.personalDataVersion,PERSONAL_ADDRESS_VERSION);
+ const newSubTime=(await newRef.get()).updateTime,newRequestTime=(await freshRequest.get()).updateTime;
  await publicContractData(db,freshId,fresh.secret!,newPayload);assert.deepEqual((await newRef.get()).data(),newSub);
+ assert.ok((await newRef.get()).updateTime!.isEqual(newSubTime!));assert.ok((await freshRequest.get()).updateTime!.isEqual(newRequestTime!));
+ await assert.rejects(()=>publicContractData(db,freshId,fresh.secret!,{...newPayload,personalData:{...newPayload.personalData,address:'Payload distinto'}}));
+ assert.deepEqual((await newRef.get()).data(),newSub);
+ console.log('CONTRACT_BOTH_SCHEMAS_INCOMPLETE_RETRY_METADATA = PASS');
  await update('APPLY_CLIENT_SUBMISSION',{submissionId:freshId});assert.equal(d.personalData.province,'02');assert.equal(d.personalData.postalCode,'C1425ABC');
  // Reapplying old evidence must preserve the now-confirmed address fields.
  await update('APPLY_CLIENT_SUBMISSION',{submissionId:requestId});assert.equal(d.personalData.province,'02');assert.equal(d.personalData.postalCode,'C1425ABC');
  assert.deepEqual((await subRef.get()).data(),submission);assert.equal((await rr.get()).data()!.submissionDigest,originalDigest);
+ // Address-format requests issued before dataScope also retain their required day.
+ const addressRequestId='legacy-address-request',addressToken=randomBytes(32).toString('base64url');
+ const ar=r.draft.collection('requests').doc(addressRequestId);
+ await ar.create({...(await rr.get()).data()!,requestId:addressRequestId,personalDataVersion:PERSONAL_ADDRESS_VERSION,tokenHash:createHash('sha256').update(addressToken).digest('hex'),status:'ACTIVE',submittedAt:null,submissionDigest:null});
+ await db.collection('contractClientDataRequests').doc(addressRequestId).create({budgetId:id,version:1});
+ await r.draft.update({activeClientDataRequestId:addressRequestId});d=(await r.draft.get()).data() as ContractDraftV2;
+ const incompleteAddress={personalData:addressPayload.personalData,employmentData:addressPayload.employmentData};
+ await assert.rejects(()=>publicContractData(db,addressRequestId,addressToken,incompleteAddress));
+ await assert.rejects(()=>publicContractData(db,addressRequestId,addressToken,{...addressPayload,preferredMonthlyDueDay:32}));
+ await publicContractData(db,addressRequestId,addressToken,addressPayload);
+ const as=r.draft.collection('submissions').doc(addressRequestId),addressBefore=await as.get(),addressRequestBefore=await ar.get();
+ assert.equal(addressRequestBefore.data()!.submissionDigest,digest(addressPayload));
+ await publicContractData(db,addressRequestId,addressToken,addressPayload);
+ assert.deepEqual((await as.get()).data(),addressBefore.data());
+ assert.ok((await as.get()).updateTime!.isEqual(addressBefore.updateTime!));
+ assert.ok((await ar.get()).updateTime!.isEqual(addressRequestBefore.updateTime!));
+ await update('APPLY_CLIENT_SUBMISSION',{submissionId:addressRequestId});assert.equal(d.preferredMonthlyDueDay,30);
+ assert.deepEqual((await as.get()).data(),addressBefore.data());
+ assert.deepEqual((await subRef.get()).data(),submission);assert.equal((await rr.get()).data()!.submissionDigest,originalDigest);
+ console.log('HISTORICAL_ADDRESS_SCHEMA_REQUIRED_DAY_RETRY_DIGEST = PASS');
  assert.deepEqual((await r.budget.get()).data(),b);assert.deepEqual((await r.acceptance.get()).data(),a);
  for(const file of ['src/lib/contractAddress.ts','src/lib/contractV2.ts','src/lib/contractV2Server.ts','src/app/completar-datos/[requestId]/public-form.tsx','src/components/admin/contracts/ContractDataFields.tsx','src/components/admin/contracts/ContractV2Composer.tsx']){
   const source=readFileSync(file,'utf8');assert.ok(!/console\.(log|warn|error|debug|info)/.test(source));

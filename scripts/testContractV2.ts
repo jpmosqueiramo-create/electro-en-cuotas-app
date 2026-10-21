@@ -44,3 +44,16 @@ export function modelTests(){
  console.log('P5C_MODEL_TESTS = PASS');console.log('P5C_SCHEDULE_TESTS = PASS');
 }
 modelTests();
+// Historical requests require the original day; new data-only requests forbid it.
+for(const [version,payload] of [['LEGACY_SIX',clientPayload],[PERSONAL_ADDRESS_VERSION,addressPayload]] as const){
+  const dataOnly={personalData:payload.personalData,employmentData:payload.employmentData};
+  assert.equal(submissionPayload(payload,version).preferredMonthlyDueDay,30);
+  assert.throws(()=>submissionPayload(dataOnly,version));
+  for(const day of [undefined,null,0,32,'30',1.5,NaN])assert.throws(()=>submissionPayload({...payload,preferredMonthlyDueDay:day},version));
+  assert.deepEqual(submissionPayload(dataOnly,version,true),dataOnly);
+  for(const day of [undefined,null,0,30])assert.throws(()=>submissionPayload({...dataOnly,preferredMonthlyDueDay:day},version,true));
+  for(const input of [{personalData:payload.personalData},{employmentData:payload.employmentData},{}]){
+    assert.throws(()=>submissionPayload(input,version));assert.throws(()=>submissionPayload(input,version,true));
+  }
+}
+console.log('CONTRACT_SUBMISSION_SCHEMAS_REQUIRED_AND_FORBIDDEN_DAY = PASS');

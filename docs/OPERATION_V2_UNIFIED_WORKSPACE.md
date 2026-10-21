@@ -30,9 +30,10 @@ sección no ejecuta comandos operativos.
 
 Los nuevos requests contractuales agregan `dataScope: PERSONAL_EMPLOYMENT_ONLY`.
 Sus submissions aceptan exclusivamente datos personales y laborales. El formulario
-público no ofrece plan, importes ni día de vencimiento. Los campos de esquema
+público nuevo no ofrece plan, importes ni día de vencimiento. Los enlaces sin
+este alcance conservan su formulario histórico con día de vencimiento obligatorio. Los campos de esquema
 `preferredMonthlyDueDay` de submissions pasan a ser opcionales para estos envíos;
-los registros históricos con ese campo conservan su lectura, digest y aplicación
+los registros históricos conservan ese campo obligatorio, su lectura, digest y aplicación
 administrativa explícita. No se reescribe ningún request o submission al leerlo.
 La aplicación de un envío nuevo conserva condiciones económicas y fechas.
 No cambian las respuestas públicas de bootstrap ni se exponen datos económicos.
@@ -71,8 +72,9 @@ retrospectivas de sus evidencias READY.
   preparación explícita, enlace/WhatsApp preparado sin envío, formulario público,
   recepción sin aplicación automática y bloqueos financieros. Diez comprobaciones
   de overflow (cinco secciones × dos anchos) sin desbordamiento.
-- Los runners browser anteriores se adaptaron a la ruta y pasos nuevos; no se
-  ejecutaron como suites CDP. La comprobación visual se hizo en el navegador real.
+- Se ejecutaron como suites CDP los tres runners: `runContractV2Browser.ts`,
+  `runContractReadyBrowser.ts` y `runContractDocumentWorkflowBrowser.ts`. Todos
+  finalizaron correctamente, incluyendo sus assertions de permisos y privacidad.
 
 Para Emulator: proyecto `demo-cuenta-hogar`, hosts Auth/Firestore locales y
 `NEXT_PUBLIC_ADMIN_EMAIL=unified-admin@example.invalid` al ejecutar la suite nueva.
@@ -94,3 +96,28 @@ La aprobación jurídica y habilitación productiva permanecen pendientes.
 ![Ficha mobile](review/operation-v2-workspace/mobile.jpg)
 ![Contrato desktop](review/operation-v2-workspace/contract-desktop.jpg)
 ![Contrato mobile](review/operation-v2-workspace/contract-mobile.jpg)
+
+## Revisión puntual de esquemas — PR #48
+
+`submissionPayload` conserva dos contratos estrictos:
+
+| Request almacenado | `preferredMonthlyDueDay` |
+| --- | --- |
+| Sin `dataScope: PERSONAL_EMPLOYMENT_ONLY` (seis u ocho campos personales) | Obligatorio; entero entre 1 y 31. Omitido, nulo, fuera de rango o con tipo incorrecto se rechaza. |
+| Con `PERSONAL_EMPLOYMENT_ONLY` | Prohibido. Sólo se aceptan `personalData` y `employmentData`. |
+
+El bootstrap expone el alcance únicamente en requests nuevos para que el formulario
+mantenga el contrato correspondiente. La aplicación administrativa valida también
+el esquema de la submission contra su request original. No se agregan defaults,
+no se cambia ningún digest histórico y no se reescriben submissions al leerlas.
+
+Las pruebas puras cubren campos faltantes y valores inválidos en ambos esquemas.
+Las pruebas de Emulator cubren requests históricos de seis y ocho campos, payloads
+incompletos, rechazo del día en requests nuevos, retries idénticos y conflictos.
+Comparan contenido, digest y `updateTime` de requests/submissions antes y después
+de los retries. Los contadores técnicos de protección son independientes.
+
+El runner contractual completo además ejecuta proveedor/logística, custodia,
+portal cliente, entrega, finanzas y portales P1. Se actualizaron sólo sus accesos
+administrativos a la ficha y la preparación explícita de borradores. No se retiró
+ninguna assertion para obtener PASS. No se ejecutaron pruebas contra producción.

@@ -49,7 +49,7 @@ export async function testContractV2Browser(){
   assert.equal(await browser.evaluate("document.querySelector('select[name=province]')===null && document.querySelector('input[name=postalCode]')===null"),true);
   assert.equal(await browser.evaluate('location.hash'),'');
   for(const [k,v] of Object.entries(historicalPayload.personalData))await browser.change(`input[name=${k}]`,v);
-  assert.equal(await browser.evaluate("document.querySelector('select[name=preferredMonthlyDueDay]')"),null);await browser.overflow('historical public mobile');await browser.clickText('Enviar datos');await browser.until("document.body.innerText.includes('Gracias. Recibimos tus datos.')",'historical received');
+  assert.equal(await browser.evaluate("document.querySelector('select[name=preferredMonthlyDueDay]').required"),true);await select('select[name=preferredMonthlyDueDay]','30');await browser.overflow('historical public mobile');await browser.clickText('Enviar datos');await browser.until("document.body.innerText.includes('Gracias. Recibimos tus datos.')",'historical received');
   const historicalSub=(await r.draft.collection('submissions').doc(legacyId).get()).data();assert.ok(!Object.hasOwn(historicalSub!.personalData,'province'));
   await browser.navigate('/login');await browser.until("typeof window.__FIREBASE_SIGN_IN__==='function'",'history admin auth');await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(adminEmail)},${JSON.stringify(adminPassword)}).then(()=>true)`);await open();
   const historySection="document.querySelector('[data-submission-id=historical-browser]')";
