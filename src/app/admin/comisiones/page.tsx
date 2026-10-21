@@ -3,10 +3,12 @@
 import { AdminNav } from "@/components/AdminNav";
 import { LOGO_BASE64 } from "@/lib/logoBase64";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
+import { useAuth } from '@/components/AuthProvider';
 import { db } from "@/lib/firebase";
+import { AffiliateCommissionWorkspace } from '@/components/admin/AffiliateCommissionWorkspace';
 import { obtenerVendedores, crearVendedor, actualizarVendedor, eliminarVendedor, Vendedor } from "@/lib/vendedoresManager";
 import { calcularOperacionFinanciera } from "@/lib/financialEngine";
-import { collection, getDocs, updateDoc, deleteDoc, addDoc, doc, query, where } from "firebase/firestore";
+import { collection, updateDoc, deleteDoc, addDoc, doc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DollarSign, CheckCircle2, AlertCircle, FileText, ChevronDown, ChevronUp, Trash2, RefreshCw, TrendingUp, Users, UserCheck } from "lucide-react";
@@ -18,6 +20,8 @@ interface Props {
 }
 
 export default function AdminComisionesPage({ initialTab = "comisiones" }: Props) {
+  const {user}=useAuth();
+  const [historyError,setHistoryError]=useState("");
   const [activeTab, setActiveTab] = useState<"comisiones" | "rendiciones" | "resumen">(initialTab);
   
   // States for Comisiones & Vendedores
@@ -31,13 +35,16 @@ export default function AdminComisionesPage({ initialTab = "comisiones" }: Props
   const [nuevoVendedorNombre, setNuevoVendedorNombre] = useState("");
   const [nuevoVendedorEmail, setNuevoVendedorEmail] = useState("");
   const [nuevoVendedorLocalidad, setNuevoVendedorLocalidad] = useState("");
-  const [nuevoVendedorPorcentaje, setNuevoVendedorPorcentaje] = useState("15");
+  const [nuevoVendedorPorcentaje, setNuevoVendedorPorcentaje] = useState("");
   const [guardandoVendedor, setGuardandoVendedor] = useState(false);
   
   const [vendedorAEditar, setVendedorAEditar] = useState<Vendedor | null>(null);
   const [editNombre, setEditNombre] = useState("");
   const [editLocalidad, setEditLocalidad] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editUid,setEditUid]=useState("");
+  const [editActive,setEditActive]=useState(true);
+  const [newUid,setNewUid]=useState("");
   const [editPorcentaje, setEditPorcentaje] = useState("");
 
   // Modal de Pago de Comisiones
@@ -60,69 +67,20 @@ export default function AdminComisionesPage({ initialTab = "comisiones" }: Props
   const [procesandoRendicion, setProcesandoRendicion] = useState(false);
 
   const fetchData = async () => {
+    if(!user)return;
+    setCargando(true);
     try {
-      setCargando(true);
-      
-      // 1. Cargar Comisiones (notificaciones de comisión > 0)
-      const qCom = query(collection(db, "notificaciones"), where("comisionAsociada", ">", 0));
-      const snapCom = await getDocs(qCom);
-      const itemsCom: any[] = [];
-      snapCom.forEach(d => {
-        itemsCom.push({ id: d.id, ...d.data() });
-      });
-      itemsCom.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-      setComisiones(itemsCom);
-
-      // 2. Cargar Vendedores
-      try { const vends = await obtenerVendedores(); setVendedoresList(vends); } catch(e){}
-
-      // 3. Cargar Historial de Pagos de Comisiones
-      try {
-        const snapPagos = await getDocs(collection(db, "pagos_comisiones"));
-        const itemsPagos: any[] = [];
-        snapPagos.forEach(d => {
-          itemsPagos.push({ id: d.id, ...d.data() });
-        });
-        itemsPagos.sort((a, b) => new Date(b.fechaPago).getTime() - new Date(a.fechaPago).getTime());
-        setHistorialPagos(itemsPagos);
-      } catch (e) {
-        console.log("Sin historial previo de pagos comisiones.");
-      }
-
-      // 4. Cargar Rendiciones de Cobranza (solicitudes entregadas)
-      try {
-        const qRend = query(collection(db, "solicitudes"), where("estadoEntrega", "==", "ENTREGADO"));
-        const snapRend = await getDocs(qRend);
-        const pRend: any[] = [];
-        const hRend: any[] = [];
-
-        snapRend.forEach(doc => {
-          const data = doc.data();
-          if (data.estadoRendicion === "PENDIENTE") {
-            pRend.push({ id: doc.id, ...data });
-          } else if (data.estadoRendicion === "CONFIRMADO") {
-            hRend.push({ id: doc.id, ...data });
-          }
-        });
-        hRend.sort((a, b) => (b.fechaCreacion?.toMillis ? b.fechaCreacion.toMillis() : 0) - (a.fechaCreacion?.toMillis ? a.fechaCreacion.toMillis() : 0));
-
-        setPendientesRendicion(pRend);
-        setHistorialRendicion(hRend);
-      } catch (e) {
-        console.error("Error cargando rendiciones:", e);
-      }
-
-    } catch (error) {
-      console.error(error);
-      alert("Error al cargar datos financieros.");
-    } finally {
-      setCargando(false);
-    }
+      const [response,vendors]=await Promise.all([fetch('/api/admin/comisiones/historial',{headers:{Authorization:`Bearer ${await user.getIdToken()}`},cache:'no-store'}),obtenerVendedores()]);
+      if(!response.ok)throw Error('No se pudo consultar el historial administrativo.');
+      const data=await response.json();
+      setComisiones(data.comisiones);setHistorialPagos(data.pagos);setVendedoresList(vendors);
+      setPendientesRendicion(data.rendiciones.filter((r:{estadoRendicion:string})=>r.estadoRendicion==='PENDIENTE'));
+      setHistorialRendicion(data.rendiciones.filter((r:{estadoRendicion:string})=>r.estadoRendicion==='CONFIRMADO'));
+      setHistoryError(data.warnings.join(' '));
+    } catch(error) {setHistoryError(error instanceof Error?error.message:'No se confirmó la consulta del historial.');}
+    finally {setCargando(false);}
   };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => {void fetchData();},[user]);
 
   // Handlers para Limpieza / Eliminación de Pruebas
   const handleEliminarRegistroComisionPrueba = async (notifId: string) => {
@@ -163,15 +121,15 @@ export default function AdminComisionesPage({ initialTab = "comisiones" }: Props
 
   const handleEliminarVendedor = async (v: Vendedor) => {
     if (!v.id) return;
-    if (!window.confirm(`¿Estás seguro de ELIMINAR el punto de venta / vendedor '${v.nombre}' (${v.localidad})?`)) return;
+    if (!window.confirm(`¿Confirmás desactivar al vendedor afiliado '${v.nombre}' (${v.localidad})?`)) return;
     try {
       await eliminarVendedor(v.id);
-      alert("Punto de venta / vendedor eliminado exitosamente.");
+      alert("Vendedor afiliado desactivado; se conserva el historial.");
       const updated = await obtenerVendedores();
       setVendedoresList(updated);
     } catch (err: any) {
       console.error(err);
-      alert("Error al eliminar vendedor: " + err.message);
+      alert("Error al desactivar vendedor afiliado: " + err.message);
     }
   };
 
@@ -180,7 +138,8 @@ export default function AdminComisionesPage({ initialTab = "comisiones" }: Props
     setEditNombre(v.nombre || "");
     setEditLocalidad(v.localidad || "");
     setEditEmail(v.email || "");
-    setEditPorcentaje(String(v.porcentajeComision || 15));
+    setEditUid(v.authUid??"");setEditActive(v.activo!==false);
+    setEditPorcentaje(v.porcentajeComision===null?"":String(v.porcentajeComision));
   };
 
   const handleGuardarEdicionVendedor = async (e: React.FormEvent) => {
@@ -193,7 +152,7 @@ export default function AdminComisionesPage({ initialTab = "comisiones" }: Props
       await actualizarVendedor(vendedorAEditar.id, {
         nombre: editNombre.trim(),
         localidad: editLocalidad.trim(),
-        email: editEmail.trim(),
+        email: editEmail.trim(),authUid:editUid.trim(),activo:editActive,revision:vendedorAEditar.revision??0,
         porcentajeComision: pct
       });
       alert("Punto de venta / vendedor actualizado exitosamente.");
@@ -217,7 +176,7 @@ export default function AdminComisionesPage({ initialTab = "comisiones" }: Props
     try {
       await crearVendedor({
         nombre: nuevoVendedorNombre.trim(),
-        email: nuevoVendedorEmail.trim() || `${nuevoVendedorNombre.toLowerCase().replace(/\s+/g, '')}@cuentahogar.com`,
+        email: nuevoVendedorEmail.trim(),authUid:newUid.trim(),
         localidad: nuevoVendedorLocalidad.trim(),
         porcentajeComision: pct,
         activo: true
@@ -226,7 +185,7 @@ export default function AdminComisionesPage({ initialTab = "comisiones" }: Props
       setNuevoVendedorNombre("");
       setNuevoVendedorEmail("");
       setNuevoVendedorLocalidad("");
-      setNuevoVendedorPorcentaje("15");
+      setNuevoVendedorPorcentaje("");setNewUid("");
       setModalAgregarVendedorOpen(false);
       const updated = await obtenerVendedores();
       setVendedoresList(updated);
@@ -475,6 +434,7 @@ export default function AdminComisionesPage({ initialTab = "comisiones" }: Props
             subtitle="Control integral de cobranzas rendidas, liquidación de comisiones a vendedores y administración de puntos de venta" 
           />
 
+          <AffiliateCommissionWorkspace/>{historyError&&<p role="alert">{historyError}</p>}
           {/* BARRA DE NAVEGACIÓN UNIFICADA DE PESTAÑAS */}
           <div className="flex flex-wrap items-center gap-2 bg-[#FFFDFC] p-2 rounded-2xl border border-[#DED8CF] shadow-xs">
             <button
@@ -564,7 +524,7 @@ export default function AdminComisionesPage({ initialTab = "comisiones" }: Props
                               <p className="text-[10px] text-[#68706E] mt-0.5">{v.email}</p>
                             </div>
                             <span className="bg-amber-100 text-amber-900 text-xs font-black px-2.5 py-1 rounded-full border border-amber-300">
-                              {v.porcentajeComision}% Com.
+                              {v.porcentajeComision===null?'Sin configurar':`${v.porcentajeComision}% Com.`}
                             </span>
                           </div>
 
@@ -578,9 +538,9 @@ export default function AdminComisionesPage({ initialTab = "comisiones" }: Props
                             <button
                               onClick={() => handleEliminarVendedor(v)}
                               className="bg-red-50 hover:bg-red-100 text-red-600 px-2.5 py-1 rounded-lg text-xs font-bold border border-red-200 transition-colors"
-                              title="Eliminar punto de venta o vendedor"
+                              title="Desactivar vendedor afiliado, conservando su historial"
                             >
-                              🗑️
+                              Desactivar
                             </button>
                           </div>
                         </div>
@@ -909,7 +869,7 @@ export default function AdminComisionesPage({ initialTab = "comisiones" }: Props
                                 <span className="text-xs text-[#B44E2A] font-bold">📍 {v.localidad}</span>
                               </div>
                               <span className="bg-amber-100 text-amber-900 text-xs font-black px-2.5 py-1 rounded-full border border-amber-300">
-                                {v.porcentajeComision}% Com.
+                                {v.porcentajeComision===null?'Sin configurar':`${v.porcentajeComision}% Com.`}
                               </span>
                             </div>
 
@@ -980,9 +940,10 @@ export default function AdminComisionesPage({ initialTab = "comisiones" }: Props
                 />
               </div>
               <div>
-                <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Email de Contacto (Opcional)</label>
+                <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Email de contacto</label>
                 <input
                   type="email"
+                  required
                   value={nuevoVendedorEmail}
                   onChange={e => setNuevoVendedorEmail(e.target.value)}
                   placeholder="vendedor@cuentahogar.com"
@@ -1001,7 +962,7 @@ export default function AdminComisionesPage({ initialTab = "comisiones" }: Props
                   className="w-full bg-[#F7F3EC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] font-black text-sm outline-none"
                 />
               </div>
-              <div className="flex gap-2 pt-2">
+              <label>UID de Firebase Auth (para acceso al panel)<input className="min-h-11 w-full rounded border p-2" value={newUid} onChange={e=>setNewUid(e.target.value)}/></label><div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setModalAgregarVendedorOpen(false)}
@@ -1059,6 +1020,7 @@ export default function AdminComisionesPage({ initialTab = "comisiones" }: Props
                 <label className="block text-[10px] text-[#68706E] font-bold uppercase mb-1">Email de Contacto</label>
                 <input
                   type="email"
+                  required
                   value={editEmail}
                   onChange={e => setEditEmail(e.target.value)}
                   placeholder="vendedor@cuentahogar.com"
@@ -1077,7 +1039,7 @@ export default function AdminComisionesPage({ initialTab = "comisiones" }: Props
                   className="w-full bg-[#F7F3EC] border border-[#DED8CF] p-2.5 rounded-xl text-[#1F2928] font-black text-sm outline-none"
                 />
               </div>
-              <div className="flex gap-2 pt-2">
+              <label>UID de Firebase Auth<input className="min-h-11 w-full rounded border p-2" value={editUid} onChange={e=>setEditUid(e.target.value)}/></label><label className="flex min-h-11 gap-2"><input type="checkbox" checked={editActive} onChange={e=>setEditActive(e.target.checked)}/>Vendedor afiliado activo</label><div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setVendedorAEditar(null)}

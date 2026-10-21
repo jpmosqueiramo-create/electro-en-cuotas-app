@@ -1,73 +1,18 @@
-import { db } from "./firebase";
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
-
+import { auth } from './firebase';
 export interface Vendedor {
-  id?: string;
-  nombre: string;
-  email: string;
-  localidad: string;
-  porcentajeComision: number; // e.g. 15 for 15%
-  telefono?: string;
-  activo?: boolean;
-  fechaCreacion?: any;
+ id?:string; nombre:string; email:string; localidad:string; porcentajeComision:number|null;
+ telefono?:string; activo?:boolean; authUid?:string; revision?:number;
 }
-
-const DEFAULT_VENDEDORES: Vendedor[] = [
-  { nombre: "Ventas Directas CABA", email: "ventas.caba@cuentahogar.com", localidad: "CABA", porcentajeComision: 15, activo: true },
-  { nombre: "Sucursal Junín", email: "junin@cuentahogar.com", localidad: "Junín", porcentajeComision: 15, activo: true },
-  { nombre: "Sucursal Lincoln", email: "lincoln@cuentahogar.com", localidad: "Lincoln", porcentajeComision: 15, activo: true },
-  { nombre: "Sucursal Chivilcoy", email: "chivilcoy@cuentahogar.com", localidad: "Chivilcoy", porcentajeComision: 15, activo: true },
-  { nombre: "Sucursal Nueve de Julio", email: "9dejulio@cuentahogar.com", localidad: "9 de Julio", porcentajeComision: 15, activo: true }
-];
-
-export const obtenerVendedores = async (): Promise<Vendedor[]> => {
-  try {
-    const snap = await getDocs(collection(db, "vendedores"));
-    const list: Vendedor[] = [];
-    snap.forEach((d) => {
-      list.push({ id: d.id, ...d.data() } as Vendedor);
-    });
-
-    if (list.length === 0) {
-      // Check if we already seeded previously to avoid re-seeding if user intentionally deleted all
-      const hasSeeded = typeof window !== "undefined" && localStorage.getItem("vendedores_initial_seeded");
-      if (!hasSeeded) {
-        if (typeof window !== "undefined") localStorage.setItem("vendedores_initial_seeded", "true");
-        for (const v of DEFAULT_VENDEDORES) {
-          try {
-            const docRef = await addDoc(collection(db, "vendedores"), {
-              ...v,
-              fechaCreacion: serverTimestamp()
-            });
-            list.push({ id: docRef.id, ...v });
-          } catch (e) {}
-        }
-      }
-    }
-    return list.filter(v => v.activo !== false);
-  } catch (e) {
-    console.error("Error al obtener vendedores:", e);
-    return DEFAULT_VENDEDORES;
-  }
-};
-
-export const crearVendedor = async (vendedor: Omit<Vendedor, "id">): Promise<Vendedor> => {
-  const payload = {
-    ...vendedor,
-    porcentajeComision: Number(vendedor.porcentajeComision) || 15,
-    activo: true,
-    fechaCreacion: serverTimestamp()
-  };
-  const docRef = await addDoc(collection(db, "vendedores"), payload);
-  return { id: docRef.id, ...payload };
-};
-
-export const actualizarVendedor = async (id: string, updates: Partial<Vendedor>): Promise<void> => {
-  const docRef = doc(db, "vendedores", id);
-  await updateDoc(docRef, updates);
-};
-
-export const eliminarVendedor = async (id: string): Promise<void> => {
-  const docRef = doc(db, "vendedores", id);
-  await deleteDoc(docRef);
-};
+const pending=new Map<string,string>();
+async function headers(){const user=auth.currentUser;if(!user)throw Error('Sesión administrativa requerida.');return {Authorization:`Bearer ${await user.getIdToken()}`,'Content-Type':'application/json'};}
+export async function obtenerVendedores():Promise<Vendedor[]>{const response=await fetch('/api/admin/vendedores',{headers:await headers(),cache:'no-store'});if(!response.ok)throw Error('No se pudo consultar vendedores afiliados.');return (await response.json()).vendedores;}
+async function save(v:Vendedor,id:string,reason:string){
+ const payload={id,expectedRevision:v.revision??0,nombre:v.nombre,email:v.email,localidad:v.localidad,telefono:v.telefono??'',authUid:v.authUid??'',activo:v.activo!==false,porcentajeComision:v.porcentajeComision,reason};
+ const key=JSON.stringify(payload);if(!pending.has(key))pending.set(key,crypto.randomUUID());
+ const response=await fetch('/api/admin/vendedores/registro',{method:'POST',headers:await headers(),body:JSON.stringify({...payload,commandId:pending.get(key)})});
+ if(!response.ok)throw Error('No se confirmó el cambio. Actualizá y verificá la revisión y el UID.');const result=await response.json();pending.delete(key);return {...v,id,revision:result.revision};
+}
+export async function crearVendedor(v:Omit<Vendedor,'id'>):Promise<Vendedor>{const key=JSON.stringify(v);if(!pending.has('create:'+key))pending.set('create:'+key,crypto.randomUUID());const result=await save(v,pending.get('create:'+key)!,'Alta administrativa');pending.delete('create:'+key);return result;}
+export async function actualizarVendedor(id:string,updates:Partial<Vendedor>):Promise<void>{const v=(await obtenerVendedores()).find(v=>v.id===id);if(!v)throw Error('Vendedor afiliado no disponible.');await save({...v,...updates},id,'Actualización administrativa');}
+/** Historical profiles are never physically deleted. */
+export async function eliminarVendedor(id:string):Promise<void>{await actualizarVendedor(id,{activo:false});}

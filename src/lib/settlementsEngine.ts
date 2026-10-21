@@ -1,9 +1,10 @@
+import { requireFinancialEmulator } from './operationFinancialV2';
 import { admin } from "./firebaseAdmin";
 import { LedgerComisionMovimiento } from "./commissionsEngine";
 
 export type EstadoLiquidacionComision = "BORRADOR" | "CONFIRMADA" | "PAGADA" | "ANULADA";
-export type TipoComponentePago = "TRANSFERENCIA" | "COMPENSACION_EFECTIVO_EN_PODER";
-export type TipoPagoConsolidado = "TRANSFERENCIA" | "COMPENSACION_EFECTIVO_EN_PODER" | "MIXTO";
+export type TipoComponentePago = "TRANSFERENCIA" | "COMPENSACION_EFECTIVO_EN_PODER" | "EFECTIVO_EN_MANO";
+export type TipoPagoConsolidado = "TRANSFERENCIA" | "COMPENSACION_EFECTIVO_EN_PODER" | "MIXTO" | "EFECTIVO_EN_MANO";
 
 export interface ComponentePagoLiquidacion {
   formaPago: TipoComponentePago;
@@ -137,6 +138,7 @@ export async function obtenerCuentaCorrienteVendedor(
 
   snap.forEach((doc) => {
     const mov = doc.data() as LedgerComisionMovimiento;
+    if(doc.data().operationSchemaVersion==='OPERATION_COMMISSION_V2')requireFinancialEmulator();
     movimientos.push(mov);
 
     if (mov.tipo === "DEVENGAMIENTO_PAGO") {
@@ -332,6 +334,7 @@ async function _raw_crearBorradorLiquidacion(
   },
   transaction?: admin.firestore.Transaction
 ): Promise<LiquidacionComision> {
+  if(!transaction)return db.runTransaction(tx=>_raw_crearBorradorLiquidacion(db,params,tx));
   if (!params.vendedorAfiliadoId || !params.vendedorAfiliadoId.trim()) {
     throw new Error("400:VENDEDOR_ID_REQUERIDO: Se requiere identificador de vendedor.");
   }
@@ -347,19 +350,20 @@ async function _raw_crearBorradorLiquidacion(
   const ikClean = params.idempotencyKey.trim();
 
   // Check idempotencia
-  const existingSnap = await db.collection("liquidaciones_comision")
-    .where("idempotencyKey", "==", ikClean)
-    .get();
+  const existingSnap = await transaction.get(db.collection("liquidaciones_comision").where("idempotencyKey", "==", ikClean));
 
   if (!existingSnap.empty) {
-    return existingSnap.docs[0].data() as LiquidacionComision;
+    const existing=existingSnap.docs[0].data() as LiquidacionComision;
+    if(existing.vendedorAfiliadoId!==vIdClean||existing.montoTotalLiquidadoCentavos!==montoSolicitado)throw Error("409:IDEMPOTENCY_CONFLICT");
+    return existing;
   }
 
   const now = new Date().toISOString();
   const liqId = "borrador_" + ikClean;
 
   // Simular asignaciones proyectadas FIFO para estimar cantidadItems
-  const fuentes = await construirFifoFuentesComision(db, vIdClean);
+  const fuentes = await construirFifoFuentesComision(db, vIdClean,transaction);
+  const available=await obtenerSaldoDisponibleLiquidacion(db,vIdClean,transaction);if(montoSolicitado>available)throw Error("400:EXCESO_MONTO_LIQUIDABLE");
   let remanentePorLiquidacion = montoSolicitado;
   let cantidadItemsProyectados = 0;
 
@@ -385,7 +389,7 @@ async function _raw_crearBorradorLiquidacion(
     updatedAt: now
   };
 
-  await db.collection("liquidaciones_comision").doc(liqId).set(payload);
+  transaction.create(db.collection("liquidaciones_comision").doc(liqId),payload);
   return payload;
 }
 
@@ -687,7 +691,7 @@ async function _raw_pagarLiquidacion(
   }
   const FORMAS_PAGO_VALIDAS = new Set(["TRANSFERENCIA", "EFECTIVO_EN_MANO", "COMPENSACION_EFECTIVO_EN_PODER", "CHEQUE"]);
   for (const c of params.componentesPago) {
-    if (!FORMAS_PAGO_VALIDAS.has(c.formaPago)) {
+    if (!Number.isSafeInteger(c.montoCentavos)||c.montoCentavos<=0||!FORMAS_PAGO_VALIDAS.has(c.formaPago)) {
       throw new Error("400:COMPONENTE_PAGO_INVALIDO: Forma de pago no admitida.");
     }
   }
@@ -743,7 +747,9 @@ async function _raw_pagarLiquidacion(
   const tieneTransferencia = params.componentesPago.some((c) => c.formaPago === "TRANSFERENCIA");
   const tieneCompensacion = params.componentesPago.some((c) => c.formaPago === "COMPENSACION_EFECTIVO_EN_PODER");
   let tipoPagoConsolidado: TipoPagoConsolidado = "TRANSFERENCIA";
-  if (tieneTransferencia && tieneCompensacion) {
+  if (params.componentesPago.every(c=>c.formaPago==='EFECTIVO_EN_MANO')) {
+    tipoPagoConsolidado = "EFECTIVO_EN_MANO";
+  } else if (tieneTransferencia && tieneCompensacion) {
     tipoPagoConsolidado = "MIXTO";
   } else if (tieneCompensacion) {
     tipoPagoConsolidado = "COMPENSACION_EFECTIVO_EN_PODER";
