@@ -18,8 +18,9 @@ export class CatalogBrowser {
     const browser=new CatalogBrowser();
     browser.profile=mkdtempSync(join(tmpdir(),'catalog-c3-browser-'));
     browser.chrome=spawn(resolveChrome(),['--headless=new',`--user-data-dir=${browser.profile}`,'--remote-debugging-port=9227','--disable-gpu','--no-first-run','--no-default-browser-check',...(process.platform==='linux'&&process.getuid?.()===0?['--no-sandbox']:[]),'about:blank'],{stdio:'ignore'});
+    try {
     let target:{webSocketDebuggerUrl:string}|undefined;
-    for(let i=0;i<80&&!target;i++) {
+    for(let i=0;i<300&&!target;i++) {
       try { const list=await(await fetch('http://127.0.0.1:9227/json/list')).json() as {type:string;webSocketDebuggerUrl:string}[]; target=list.find(item=>item.type==='page'); } catch { await browser.delay(200); }
     }
     assert.ok(target,'Chrome CDP target');
@@ -38,6 +39,7 @@ export class CatalogBrowser {
     });
     await browser.command('Page.enable');await browser.command('Network.enable');
     return browser;
+    } catch (error) { await browser.close(); throw error; }
   }
   delay(ms:number){return new Promise(resolve=>setTimeout(resolve,ms));}
   command(method:string,params:Record<string,unknown>={}):Promise<Record<string,unknown>> {

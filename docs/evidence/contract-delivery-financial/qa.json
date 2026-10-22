@@ -1,0 +1,101 @@
+{
+  "result": "PASS",
+  "baseline": "24143f6f168a76dadb51e95b260a8731fd7b294f",
+  "journeyStages": 20,
+  "extraControls": 21,
+  "sameOperationAndRevision": true,
+  "rows": [
+    {
+      "installmentNumber": 1,
+      "dueDate": "2026-12-15",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 2,
+      "dueDate": "2027-01-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 3,
+      "dueDate": "2027-02-28",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 4,
+      "dueDate": "2027-03-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 5,
+      "dueDate": "2027-04-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 6,
+      "dueDate": "2027-05-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 7,
+      "dueDate": "2027-06-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 8,
+      "dueDate": "2027-07-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 9,
+      "dueDate": "2027-08-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 10,
+      "dueDate": "2027-09-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 11,
+      "dueDate": "2027-10-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 12,
+      "dueDate": "2027-11-30",
+      "amount": 145000
+    }
+  ],
+  "economics": {
+    "capitalAmount": 580000,
+    "contractPlanCuotas": 12,
+    "factorSnapshot": 3,
+    "factorComputedTotal": 1740000,
+    "roundingAdjustment": 0,
+    "serviceAmount": 1160000,
+    "contractInstallmentAmount": 145000,
+    "contractTotal": 1740000
+  },
+  "pdfs": {
+    "mandato": {
+      "sha256": "c38373be30fe4022da3af1822ae87dec7addb5cff29b07aae6c1eb14fd0f5bfe",
+      "pages": 3,
+      "textCharacters": 6411,
+      "images": 3
+    },
+    "pagare": {
+      "sha256": "170aeda0e9824ff50bd077e42d4a1d48083cb98f70d9a222c74892c0a3bd633d",
+      "pages": 1,
+      "textCharacters": 1570,
+      "images": 0
+    }
+  },
+  "productiveWrites": 0,
+  "legalApproval": "PENDING",
+  "httpAssertions": {
+    "200": 80,
+    "409": 2,
+    "403": 7,
+    "401": 1
+  }
+}

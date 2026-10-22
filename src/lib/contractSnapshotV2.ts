@@ -1,5 +1,5 @@
 import { PERSONAL_ADDRESS_VERSION, provinceLabel } from './contractAddress';
-import { contractEconomics, contractSchedule, dataFields, personalFields, employmentFields, calendarDate, opaque, newContractDraft, type ContractDraftV2, type ContractEconomicTermsV2, type ContractEmploymentDataV2, type ContractPersonalDataV2 } from './contractV2';
+import { productDetails, contractEconomics, contractSchedule, dataFields, personalFields, employmentFields, calendarDate, opaque, newContractDraft, type ContractDraftV2, type ContractEconomicTermsV2, type ContractEmploymentDataV2, type ContractPersonalDataV2 } from './contractV2';
 import { validateBudgetV2, referenceSnapshotToDraft, type BudgetV2 } from './budgetV2';
 import type { BudgetAcceptanceV2 } from './budgetAcceptanceV2';
 import { buildBudgetOptionV2 } from './budgetReferenceV2';
@@ -37,6 +37,9 @@ export interface ContractSnapshotV2 extends ContractLegalContextV2 {
     preferredPlanCuotas: number | null; preferredPlanAmountSnapshot: number | null;
   };
   acceptedReference: ContractDraftV2['acceptedReferenceSnapshot'];
+  // Optional only for new technical-review Emulator snapshots; omitted historical
+  // records retain their exact canonical payload and digest.
+  productDetails?: NonNullable<ContractDraftV2['productDetails']>;
   personalDataVersion: typeof PERSONAL_ADDRESS_VERSION;
   personalData: Required<ContractPersonalDataV2>;
   addressInterpretation: { jurisdictionCatalogVersion: typeof PERSONAL_ADDRESS_VERSION; provinceDisplayName: string; postalPolicyVersion: 'AR_POSTAL_STRUCTURE_V1' };
@@ -119,12 +122,14 @@ export function snapshotPayloadHash(snapshot: ContractSnapshotV2): string {
 }
 export function validateContractSnapshot(value: unknown): asserts value is ContractSnapshotV2 {
   const bytes = canonicalizeContract(value); if (Buffer.byteLength(bytes) > 600000) fail('CONTRACT_SNAPSHOT_SIZE_LIMIT');
+  const productFields: Record<string, Check> = {};
+  if (value && typeof value === 'object' && Object.hasOwn(value, 'productDetails')) productFields.productDetails = v => equal(productDetails(v), v);
   shape({
     schemaVersion: literal('CONTRACT_SNAPSHOT_V2'), currency: literal('ARS'), contractId: text(), contractSnapshotId: text(), snapshotVersion: literal(1), contractNumber: text(1003),
     numbering: shape({ policyId: literal(CONTRACT_NUMBERING_POLICY), sequence: v => validateSequence(v) }),
     sourceDraft: shape({ ...identityKeys, revision: integer, readyDigest: hash }),
     origin: shape({ sourceCollection: literal('solicitudes','solicitudes_cuenta'), solicitudId: text(1500), acceptedAt: instant, acceptedBy: text(), budgetHash: hash, acceptanceHash: hash, draftHash: hash, preferredPlanCuotas: nullable(integer), preferredPlanAmountSnapshot: nullable(positive) }),
-    acceptedReference: reference, personalDataVersion: literal(PERSONAL_ADDRESS_VERSION),
+    acceptedReference: reference, ...productFields, personalDataVersion: literal(PERSONAL_ADDRESS_VERSION),
     personalData: v => { equal(dataFields(v, personalFields, true), v); },
     employmentData: v => { equal(dataFields(v, employmentFields), v); },
     addressInterpretation: shape({ jurisdictionCatalogVersion: literal(PERSONAL_ADDRESS_VERSION), provinceDisplayName: text(), postalPolicyVersion: literal('AR_POSTAL_STRUCTURE_V1') }),
@@ -151,8 +156,9 @@ export function validateContractSnapshot(value: unknown): asserts value is Contr
   if (s.addressInterpretation.provinceDisplayName !== provinceLabel(s.personalData.province)) fail();
   if (s.origin.preferredPlanCuotas === null) { if (s.origin.preferredPlanAmountSnapshot !== null) fail(); }
   else { const offered = fullRef.planesOfrecidos.find(p => p.cuotas === s.origin.preferredPlanCuotas); if (!offered || offered.cuotaEstimada !== s.origin.preferredPlanAmountSnapshot) fail(); }
+  if (Object.hasOwn(s, 'productDetails') && s.freeze.readinessPolicyVersion !== 'CONTRACT_TECHNICAL_REVIEW_V1') fail('PRODUCT_DETAILS_REQUIRE_TECHNICAL_EMULATOR_REVIEW');
   if (s.freeze.readinessPolicyVersion === 'CONTRACT_TECHNICAL_REVIEW_V1') {
-    const terms = { contractDraftId, budgetId, budgetVersion, acceptedOptionId, acceptedReferenceSnapshot:s.acceptedReference, acceptedAt:s.origin.acceptedAt, preferredPlanCuotas:s.origin.preferredPlanCuotas, personalDataVersion:s.personalDataVersion, personalData:s.personalData, employmentData:s.employmentData, economicTerms:s.economicTerms, firstInstallmentDueDate:s.paymentSchedule.firstInstallmentDueDate, preferredMonthlyDueDay:s.paymentSchedule.preferredMonthlyDueDay, paymentScheduleDraft:s.paymentSchedule.installments, preparedAt:s.freeze.preparedAt };
+    const terms = { contractDraftId, budgetId, budgetVersion, acceptedOptionId, acceptedReferenceSnapshot:s.acceptedReference, acceptedAt:s.origin.acceptedAt, preferredPlanCuotas:s.origin.preferredPlanCuotas, personalDataVersion:s.personalDataVersion, personalData:s.personalData, employmentData:s.employmentData, economicTerms:s.economicTerms, firstInstallmentDueDate:s.paymentSchedule.firstInstallmentDueDate, preferredMonthlyDueDay:s.paymentSchedule.preferredMonthlyDueDay, paymentScheduleDraft:s.paymentSchedule.installments, preparedAt:s.freeze.preparedAt, ...(s.productDetails===undefined?{}:{productDetails:s.productDetails}) };
     if (contractValueHash(terms) !== s.sourceDraft.readyDigest) fail('CONTRACT_READY_TERMS_MISMATCH');
   }
   if (s.integrity.payloadHash !== snapshotPayloadHash(s)) fail('CONTRACT_INTEGRITY_MISMATCH');

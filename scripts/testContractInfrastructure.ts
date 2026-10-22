@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import ts from 'typescript';
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -77,9 +78,23 @@ const safe:NodeJS.ProcessEnv={NODE_ENV:'test',GCLOUD_PROJECT:'demo-cuenta-hogar'
 assertContractInfrastructureEmulator(safe);
 for(const override of [{NODE_ENV:'production'},{GCLOUD_PROJECT:'negocio-facil-page'},{NEXT_PUBLIC_FIREBASE_PROJECT_ID:'negocio-facil-page'},{GOOGLE_CLOUD_PROJECT:'other'},{FIRESTORE_EMULATOR_HOST:undefined},{FIRESTORE_EMULATOR_HOST:'firestore.googleapis.com:443'},{FIREBASE_AUTH_EMULATOR_HOST:undefined},{GOOGLE_APPLICATION_CREDENTIALS:'not-read'},{FIREBASE_PRIVATE_KEY:'not-read'},{K_SERVICE:'cloud-runtime'},{FIREBASE_CONFIG:'not-read'}])assert.throws(()=>assertContractInfrastructureEmulator({...safe,...override}));
 const original=process.env.NODE_ENV;Object.assign(process.env,{NODE_ENV:'production'});try{assert.throws(()=>createContractInfrastructureEmulator());}finally{if(original===undefined)Reflect.deleteProperty(process.env,'NODE_ENV');else Object.assign(process.env,{NODE_ENV:original});}
-// No application entry point wires this technical-only module into routes, actions or UI.
-function scan(dir:string){for(const item of readdirSync(dir,{withFileTypes:true})){const path=join(dir,item.name);if(item.isDirectory())scan(path);else if(/\.[cm]?[jt]sx?$/.test(item.name))assert.ok(!/contractInfrastructureEmulator|contractSnapshotV2|contractIntegrityV2/.test(readFileSync(path,'utf8')),`Infrastructure unexpectedly connected: ${path}`);}}
+// Pure snapshot/integrity readers are used by current V2 server routes. A field
+// named contractSnapshotV2 is not an import of an Emulator writer.
+function technicalWriterImports(code:string,path='scan.ts'){
+ const found:string[]=[],file=ts.createSourceFile(path,code,ts.ScriptTarget.Latest,true);
+ function visit(node:ts.Node){
+  let specifier:ts.Expression|undefined;
+  if(ts.isImportDeclaration(node)||ts.isExportDeclaration(node))specifier=node.moduleSpecifier;
+  else if(ts.isCallExpression(node)&&(node.expression.kind===ts.SyntaxKind.ImportKeyword||ts.isIdentifier(node.expression)&&node.expression.text==='require'))specifier=node.arguments[0];
+  if(specifier&&ts.isStringLiteralLike(specifier)&&/(?:^|\/)(?:contractInfrastructureEmulator|contractFreezeIntegrationEmulator)(?:\.[cm]?[jt]s)?$/.test(specifier.text))found.push(specifier.text);
+  ts.forEachChild(node,visit);
+ }
+ visit(file);return found;
+}
+for(const benign of ["if (data.contractSnapshotV2) throw Error('Historical only');", "import {validateContractSnapshot} from '@/lib/contractSnapshotV2';", "import {contractValueHash} from '@/lib/contractIntegrityV2';"] )assert.deepEqual(technicalWriterImports(benign),[]);
+for(const unsafe of ["import {createContractInfrastructureEmulator} from '@/lib/contractInfrastructureEmulator';", "await import('@/lib/contractFreezeIntegrationEmulator');", "require('@/lib/contractInfrastructureEmulator');", "export * from '@/lib/contractFreezeIntegrationEmulator';"])assert.equal(technicalWriterImports(unsafe).length,1);
+function scan(dir:string){for(const item of readdirSync(dir,{withFileTypes:true})){const path=join(dir,item.name);if(item.isDirectory())scan(path);else if(/\.[cm]?[jt]sx?$/.test(item.name))assert.deepEqual(technicalWriterImports(readFileSync(path,'utf8'),path),[],`Technical writer unexpectedly connected: ${path}`);}}
 scan('src/app');scan('src/components');
 console.log('CONTRACT_INFRASTRUCTURE_MODEL = PASS');
 console.log('CONTRACT_CANONICALIZATION_AND_INTEGRITY = PASS');
-console.log('PRODUCTIVE_FREEZE_BLOCK = PASS; PUBLIC_OR_ADMIN_INTEGRATIONS = 0');
+console.log('PRODUCTIVE_FREEZE_BLOCK = PASS; DIRECT_TECHNICAL_WRITER_IMPORTS = 0; IMPORT_SCANNER_FALSE_POSITIVE_REGRESSION = PASS');

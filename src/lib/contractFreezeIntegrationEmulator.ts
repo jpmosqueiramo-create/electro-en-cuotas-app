@@ -120,7 +120,7 @@ export function createContractFreezeIntegrationEmulator(){
      schemaVersion:'CONTRACT_SNAPSHOT_V2',currency:'ARS',contractId:id,contractSnapshotId:sid,snapshotVersion:1,contractNumber:number,numbering:{policyId:'CONTRACT_NUMBERING_V1',sequence},
      sourceDraft:{...identity,revision:d.revision,readyDigest:e.termsDigest},
      origin:{sourceCollection:acceptance.sourceCollection,solicitudId:acceptance.solicitudId,acceptedAt:acceptance.acceptedAt,acceptedBy:acceptance.acceptedBy,budgetHash:contractValueHash(b.data()),acceptanceHash:contractValueHash(a.data()),draftHash:contractValueHash(d),preferredPlanCuotas:acceptance.preferredPlanCuotas,preferredPlanAmountSnapshot:acceptance.preferredPlanAmountSnapshot},
-     acceptedReference:d.acceptedReferenceSnapshot,personalDataVersion:PERSONAL_ADDRESS_VERSION,personalData:d.personalData as Required<typeof d.personalData>,
+     acceptedReference:d.acceptedReferenceSnapshot,...(d.productDetails===undefined?{}:{productDetails:d.productDetails}),personalDataVersion:PERSONAL_ADDRESS_VERSION,personalData:d.personalData as Required<typeof d.personalData>,
      addressInterpretation:{jurisdictionCatalogVersion:PERSONAL_ADDRESS_VERSION,provinceDisplayName:provinceLabel(d.personalData.province!),postalPolicyVersion:'AR_POSTAL_STRUCTURE_V1'},
      employmentData:d.employmentData,economicTerms:d.economicTerms!,calculationPolicyVersion:'P5C_SHARED_C1_V1',roundingPolicy:'NEXT_90_V1',
      paymentSchedule:{calendarPolicyVersion:'P5C_EXPLICIT_MONTH_CLAMP_V1',firstInstallmentDueDate:d.firstInstallmentDueDate!,preferredMonthlyDueDay:d.preferredMonthlyDueDay!,installments:d.paymentScheduleDraft},...legal,
