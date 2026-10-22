@@ -1,13 +1,14 @@
 // Offline review renderer. Does not persist, download, email or publish anything.
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { drawCuentaHogarLogo,PDF_BRAND_RESOURCE_HASH } from '../pdfBranding';
 import { jsPDF } from 'jspdf';
 import { contractValueHash } from '../contractIntegrityV2';
 import type { ContractSnapshotV2,ContractDocumentDefinitionV2 } from '../contractSnapshotV2';
 import { projectContractReview,PROJECTION_SOURCE_SHA256,type ContractReviewProjection } from './projection';
 import { templates,referenceCopy,referencePdfHashes,REVIEW_WARNING,type ReviewDocumentKind } from './templates';
 const layout=Object.freeze({format:'a4',margin:15,font:'Helvetica',fontSize:8,bodyBottom:278,renderer:'CONTRACT_REFERENCE_REVIEW_PDF_V2'});
-const rendererHash=contractValueHash({pdfSource:createHash('sha256').update(readFileSync(new URL(import.meta.url))).digest('hex'),projectionSource:PROJECTION_SOURCE_SHA256,jsPDF:jsPDF.version,layout});
+const rendererHash=contractValueHash({pdfSource:createHash('sha256').update(readFileSync(new URL(import.meta.url))).digest('hex'),projectionSource:PROJECTION_SOURCE_SHA256,jsPDF:jsPDF.version,brand:{resource:PDF_BRAND_RESOURCE_HASH,render:drawCuentaHogarLogo.toString()},layout});
 export function reviewDocumentDefinitions():ContractSnapshotV2['documentDefinitions']{
  const definition=(kind:ReviewDocumentKind):ContractDocumentDefinitionV2=>({templateId:templates[kind].id,templateVersion:templates[kind].version,templateHash:contractValueHash({warning:REVIEW_WARNING,referenceCopy,referencePdfHashes,...templates[kind]}),rendererBundleId:layout.renderer,rendererBundleHash:rendererHash,resourcesManifestHash:contractValueHash(layout),legalApprovalId:'SYNTHETIC_NOT_A_LEGAL_APPROVAL'});
  return {contract:definition('mandate'),promissoryNote:definition('promissoryNote')};
@@ -105,7 +106,7 @@ function render(kind:ReviewDocumentKind,p:ContractReviewProjection){
   y+=12;paragraph(`Importe propuesto del pagaré — referencia técnica pendiente de aprobación jurídica: ${money(p.economics.total)}.`,8,3);paragraph('Importe, vencimiento/exigibilidad, lugar y fecha de emisión del título: PENDIENTES de confirmación jurídica. No se presume el total contractual como importe del pagaré.',8,3);requireFits(264);
  }
  const pages=doc.getNumberOfPages();for(let pageNo=1;pageNo<=pages;pageNo++){
-  doc.setPage(pageNo);text(REVIEW_WARNING,15,6,7,[153,27,27],180);
+  doc.setPage(pageNo);if(kind==='mandate')drawCuentaHogarLogo(doc,180,1,10);text(REVIEW_WARNING,15,6,7,[153,27,27],180);
   text('DATOS SINTÉTICOS — CLÁUSULAS DE REFERENCIA, NO APROBADAS — NO FIRMAR',15,282,7,[153,27,27],180);
   text('Identidad de LOOP pendiente de validación documental. Parámetros legales pendientes.',15,286,7,body,180);
   text(`${p.contractNumber} | ${pageNo} / ${pages} | ${template.version}`,15,290,6.5,[100,116,139],180);

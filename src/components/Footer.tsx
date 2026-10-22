@@ -1,4 +1,5 @@
 "use client";
+import { CuentaHogarLogo } from '@/components/CuentaHogarLogo';
 
 import Link from "next/link";
 import { MapPin, RotateCcw, MessageCircle } from "lucide-react";
@@ -24,7 +25,7 @@ export default function Footer() {
           <div className="space-y-4 md:col-span-2">
             <div className="flex items-center gap-3">
               <div className="p-1.5 bg-[#111318] border border-[#FFD21A]/40 rounded-xl shadow-md">
-                <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-8 w-auto" />
+                <CuentaHogarLogo className="h-8 w-auto" />
               </div>
               <div>
                 <span className="font-bold text-white text-base block tracking-tight">CUENTA HOGAR</span>

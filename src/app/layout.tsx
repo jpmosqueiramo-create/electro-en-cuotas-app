@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     siteName: "Cuenta Hogar",
     images: [
       {
-        url: "/logo-cuenta-hogar-oficial.png",
+        url: "https://www.cuentahogar.com.ar/logo-cuenta-hogar-oficial.png",
         width: 800,
         height: 600,
         alt: "Cuenta Hogar Logo"
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Cuenta Hogar | Envíos Low Cost CABA al Interior",
     description: "Recepción en CABA, transporte propio y financiación a sola firma.",
-    images: ["/logo-cuenta-hogar-oficial.png"]
+    images: ["https://www.cuentahogar.com.ar/logo-cuenta-hogar-oficial.png"]
   },
   robots: {
     index: true,
@@ -85,7 +85,7 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
   "name": "Cuenta Hogar - Loop Gestión Integral S.R.L.",
-  "image": "https://cuenta-hogar.web.app/logo-cuenta-hogar-oficial.png",
+  "image": "https://www.cuentahogar.com.ar/logo-cuenta-hogar-oficial.png",
   "url": "https://cuenta-hogar.web.app",
   "telephone": "+5491125659686",
   "address": {

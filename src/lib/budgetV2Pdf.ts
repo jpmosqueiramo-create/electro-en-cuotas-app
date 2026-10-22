@@ -1,18 +1,20 @@
+import { drawCuentaHogarLogo } from "./pdfBranding";
 import { jsPDF } from "jspdf";
 import { budgetClientLines, type BudgetClientV2 } from "./budgetV2";
 /** Only an allowlisted commercial DTO reaches this renderer. */
 export function renderBudgetPdfV2(dto:BudgetClientV2):jsPDF{
-  const pdf=new jsPDF();let y=18;
+  const pdf=new jsPDF();let y=40;
+  drawCuentaHogarLogo(pdf,16,8,24);
   pdf.setFontSize(11);
   for(const text of budgetClientLines(dto)){
     const lines=pdf.splitTextToSize(text,178) as string[];
-    for(const line of lines){if(y>276){pdf.addPage();y=18;}pdf.text(line,16,y);y+=6;}
+    for(const line of lines){if(y>276){pdf.addPage();drawCuentaHogarLogo(pdf,16,8,24);y=40;}pdf.text(line,16,y);y+=6;}
     y+=3;
   }
   for(const option of dto.options){
     const image=option.imagenUrls[0];
     if(image?.startsWith("data:image/")){
-      try{pdf.addPage();pdf.text(option.nombre,16,18);pdf.addImage(image,16,28,100,100);}catch{/* Preserve the textual offer when an image cannot be decoded. */}
+      try{pdf.addPage();drawCuentaHogarLogo(pdf,16,8,24);pdf.text(option.nombre,16,40);pdf.addImage(image,16,48,100,100);}catch{/* Preserve the textual offer when an image cannot be decoded. */}
     }
   }
   return pdf;

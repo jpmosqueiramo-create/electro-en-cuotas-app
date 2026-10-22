@@ -1,3 +1,4 @@
+import { CuentaHogarLogo } from '@/components/CuentaHogarLogo';
 import Link from "next/link";
 import { ArrowLeft, ShieldCheck, FileText, RotateCcw } from "lucide-react";
 
@@ -677,7 +678,7 @@ export default function TermsPage() {
 
         {/* PIE DE PÁGINA CON DATOS DEL PRESTADOR */}
         <footer className="mt-12 pt-8 border-t border-[#222530] text-center text-xs text-zinc-400 space-y-3 flex flex-col items-center">
-          <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-10 sm:h-12 w-auto object-contain mb-1" />
+          <CuentaHogarLogo className="h-10 sm:h-12 w-auto object-contain mb-1" />
           <p className="font-mono text-[#FFD21A]">Versión 1.0 — Octubre de 2026 | Última actualización: {fechaActualizacion}</p>
           <div className="space-y-1 text-zinc-300">
             <p className="font-bold">LOOP GESTIÓN INTEGRAL S.R.L.</p>

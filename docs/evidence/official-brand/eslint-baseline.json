@@ -1,0 +1,1945 @@
+[
+  {
+    "file": "src/app/afiliado/page.tsx",
+    "current": [],
+    "baseline": 0,
+    "introduced": []
+  },
+  {
+    "file": "src/app/arrepentimiento/page.tsx",
+    "current": [],
+    "baseline": 1,
+    "introduced": []
+  },
+  {
+    "file": "src/app/cliente/page.tsx",
+    "current": [
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'UserCheck' is defined but never used.",
+        "line": 19,
+        "column": 3,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 19,
+        "endColumn": 12,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "UserCheck"
+            },
+            "fix": {
+              "range": [
+                892,
+                906
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"UserCheck\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'ShieldCheck' is defined but never used.",
+        "line": 19,
+        "column": 14,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 19,
+        "endColumn": 25,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "ShieldCheck"
+            },
+            "fix": {
+              "range": [
+                906,
+                919
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"ShieldCheck\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'Link2' is defined but never used.",
+        "line": 19,
+        "column": 55,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 19,
+        "endColumn": 60,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "Link2"
+            },
+            "fix": {
+              "range": [
+                947,
+                954
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"Link2\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'Upload' is defined but never used.",
+        "line": 19,
+        "column": 62,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 19,
+        "endColumn": 68,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "Upload"
+            },
+            "fix": {
+              "range": [
+                954,
+                962
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"Upload\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'Phone' is defined but never used.",
+        "line": 20,
+        "column": 17,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 20,
+        "endColumn": 22,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "Phone"
+            },
+            "fix": {
+              "range": [
+                979,
+                986
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"Phone\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'MapPin' is defined but never used.",
+        "line": 20,
+        "column": 24,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 20,
+        "endColumn": 30,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "MapPin"
+            },
+            "fix": {
+              "range": [
+                986,
+                994
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"MapPin\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'Filter' is defined but never used.",
+        "line": 20,
+        "column": 52,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 20,
+        "endColumn": 58,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "Filter"
+            },
+            "fix": {
+              "range": [
+                1014,
+                1022
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"Filter\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'FileCheck' is defined but never used.",
+        "line": 20,
+        "column": 67,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 20,
+        "endColumn": 76,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "FileCheck"
+            },
+            "fix": {
+              "range": [
+                1029,
+                1040
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"FileCheck\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 30,
+        "column": 18,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 30,
+        "endColumn": 21,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                1286,
+                1289
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                1286,
+                1289
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 34,
+        "column": 15,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 34,
+        "endColumn": 18,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                1379,
+                1382
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                1379,
+                1382
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 39,
+        "column": 21,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 39,
+        "endColumn": 24,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                1508,
+                1511
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                1508,
+                1511
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'e' is defined but never used.",
+        "line": 52,
+        "column": 14,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 52,
+        "endColumn": 15
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'tieneUnlinked' is assigned a value but never used.",
+        "line": 62,
+        "column": 10,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 62,
+        "endColumn": 23
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'dniVincular' is assigned a value but never used.",
+        "line": 63,
+        "column": 10,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 63,
+        "endColumn": 21
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'setDniVincular' is assigned a value but never used.",
+        "line": 63,
+        "column": 23,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 63,
+        "endColumn": 37
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'vinculando' is assigned a value but never used.",
+        "line": 64,
+        "column": 10,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 64,
+        "endColumn": 20
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'setVinculando' is assigned a value but never used.",
+        "line": 64,
+        "column": 22,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 64,
+        "endColumn": 35
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'e' is defined but never used.",
+        "line": 131,
+        "column": 13,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 131,
+        "endColumn": 14
+      },
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "severity": 1,
+        "message": "React Hook useEffect has missing dependencies: 'direccion', 'localidad', 'nombreCompleto', 'numeroDni', 'producto', and 'telefono'. Either include them or remove the dependency array.",
+        "line": 132,
+        "column": 6,
+        "nodeType": "ArrayExpression",
+        "endLine": 132,
+        "endColumn": 8,
+        "suggestions": [
+          {
+            "desc": "Update the dependencies array to be: [direccion, localidad, nombreCompleto, numeroDni, producto, telefono]",
+            "fix": {
+              "range": [
+                5527,
+                5529
+              ],
+              "text": "[direccion, localidad, nombreCompleto, numeroDni, producto, telefono]"
+            }
+          }
+        ]
+      },
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "severity": 1,
+        "message": "React Hook useEffect has missing dependencies: 'email' and 'fetchSolicitudes'. Either include them or remove the dependency array.",
+        "line": 162,
+        "column": 6,
+        "nodeType": "ArrayExpression",
+        "endLine": 162,
+        "endColumn": 12,
+        "suggestions": [
+          {
+            "desc": "Update the dependencies array to be: [email, fetchSolicitudes, user]",
+            "fix": {
+              "range": [
+                6755,
+                6761
+              ],
+              "text": "[email, fetchSolicitudes, user]"
+            }
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 166,
+        "column": 34,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 166,
+        "endColumn": 37,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                6936,
+                6939
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                6936,
+                6939
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 237,
+        "column": 21,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 237,
+        "endColumn": 24,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                9285,
+                9288
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                9285,
+                9288
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 708,
+        "column": 54,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 708,
+        "endColumn": 57,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                41532,
+                41535
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                41532,
+                41535
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 714,
+        "column": 52,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 714,
+        "endColumn": 55,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                41850,
+                41853
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                41850,
+                41853
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 715,
+        "column": 89,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 715,
+        "endColumn": 92,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                41961,
+                41964
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                41961,
+                41964
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      }
+    ],
+    "baseline": 26,
+    "introduced": []
+  },
+  {
+    "file": "src/app/completar-datos/[requestId]/public-form.tsx",
+    "current": [],
+    "baseline": 0,
+    "introduced": []
+  },
+  {
+    "file": "src/app/firmar-contrato/[id]/FirmarContratoClient.tsx",
+    "current": [
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'use' is defined but never used.",
+        "line": 5,
+        "column": 10,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 5,
+        "endColumn": 13,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "use"
+            },
+            "fix": {
+              "range": [
+                89,
+                93
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"use\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'ExternalLink' is defined but never used.",
+        "line": 11,
+        "column": 13,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 11,
+        "endColumn": 25,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "ExternalLink"
+            },
+            "fix": {
+              "range": [
+                396,
+                410
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"ExternalLink\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'CheckSquare' is defined but never used.",
+        "line": 11,
+        "column": 33,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 11,
+        "endColumn": 44,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "CheckSquare"
+            },
+            "fix": {
+              "range": [
+                416,
+                429
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"CheckSquare\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'User' is defined but never used.",
+        "line": 11,
+        "column": 46,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 11,
+        "endColumn": 50,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "User"
+            },
+            "fix": {
+              "range": [
+                429,
+                435
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"User\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'MapPin' is defined but never used.",
+        "line": 11,
+        "column": 52,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 11,
+        "endColumn": 58,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "MapPin"
+            },
+            "fix": {
+              "range": [
+                435,
+                443
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"MapPin\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'Phone' is defined but never used.",
+        "line": 12,
+        "column": 3,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 12,
+        "endColumn": 8,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "Phone"
+            },
+            "fix": {
+              "range": [
+                443,
+                453
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"Phone\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'Mail' is defined but never used.",
+        "line": 12,
+        "column": 10,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 12,
+        "endColumn": 14,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "Mail"
+            },
+            "fix": {
+              "range": [
+                453,
+                459
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"Mail\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'Calendar' is defined but never used.",
+        "line": 12,
+        "column": 16,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 12,
+        "endColumn": 24,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "Calendar"
+            },
+            "fix": {
+              "range": [
+                459,
+                469
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"Calendar\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'DollarSign' is defined but never used.",
+        "line": 12,
+        "column": 35,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 12,
+        "endColumn": 45,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "DollarSign"
+            },
+            "fix": {
+              "range": [
+                478,
+                490
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"DollarSign\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 21,
+        "column": 46,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 21,
+        "endColumn": 49,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                837,
+                840
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                837,
+                840
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 65,
+        "column": 21,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 65,
+        "endColumn": 24,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                2415,
+                2418
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                2415,
+                2418
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'e' is defined but never used.",
+        "line": 115,
+        "column": 15,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 115,
+        "endColumn": 16
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 133,
+        "column": 27,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 133,
+        "endColumn": 30,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                4363,
+                4366
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                4363,
+                4366
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 135,
+        "column": 19,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 135,
+        "endColumn": 22,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                4454,
+                4457
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                4454,
+                4457
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      }
+    ],
+    "baseline": 15,
+    "introduced": []
+  },
+  {
+    "file": "src/app/layout.tsx",
+    "current": [],
+    "baseline": 0,
+    "introduced": []
+  },
+  {
+    "file": "src/app/login-afiliado/page.tsx",
+    "current": [
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 51,
+        "column": 19,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 51,
+        "endColumn": 22,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                1474,
+                1477
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                1474,
+                1477
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      }
+    ],
+    "baseline": 2,
+    "introduced": []
+  },
+  {
+    "file": "src/app/login/page.tsx",
+    "current": [
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 92,
+        "column": 19,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 92,
+        "endColumn": 22,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                3379,
+                3382
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                3379,
+                3382
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      }
+    ],
+    "baseline": 2,
+    "introduced": []
+  },
+  {
+    "file": "src/app/nosotros/page.tsx",
+    "current": [
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'MapPin' is defined but never used.",
+        "line": 10,
+        "column": 3,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 10,
+        "endColumn": 9,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "MapPin"
+            },
+            "fix": {
+              "range": [
+                224,
+                235
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"MapPin\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'HelpCircle' is defined but never used.",
+        "line": 13,
+        "column": 3,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 13,
+        "endColumn": 13,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "HelpCircle"
+            },
+            "fix": {
+              "range": [
+                262,
+                277
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"HelpCircle\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'CheckCircle2' is defined but never used.",
+        "line": 16,
+        "column": 3,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 16,
+        "endColumn": 15,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "CheckCircle2"
+            },
+            "fix": {
+              "range": [
+                307,
+                324
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"CheckCircle2\"."
+          }
+        ]
+      }
+    ],
+    "baseline": 5,
+    "introduced": []
+  },
+  {
+    "file": "src/app/propuesta/page.tsx",
+    "current": [
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'MapPin' is defined but never used.",
+        "line": 7,
+        "column": 68,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 7,
+        "endColumn": 74,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "MapPin"
+            },
+            "fix": {
+              "range": [
+                260,
+                268
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"MapPin\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'FileText' is defined but never used.",
+        "line": 7,
+        "column": 76,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 7,
+        "endColumn": 84,
+        "suggestions": [
+          {
+            "messageId": "removeUnusedVar",
+            "data": {
+              "varName": "FileText"
+            },
+            "fix": {
+              "range": [
+                268,
+                278
+              ],
+              "text": ""
+            },
+            "desc": "Remove unused variable \"FileText\"."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 16,
+        "column": 56,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 16,
+        "endColumn": 59,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                587,
+                590
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                587,
+                590
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 30,
+        "column": 48,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 30,
+        "endColumn": 51,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                1368,
+                1371
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                1368,
+                1371
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 61,
+        "column": 21,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 61,
+        "endColumn": 24,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                2387,
+                2390
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                2387,
+                2390
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 110,
+        "column": 19,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 110,
+        "endColumn": 22,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                3684,
+                3687
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                3684,
+                3687
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 142,
+        "column": 32,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 142,
+        "endColumn": 35,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                4656,
+                4659
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                4656,
+                4659
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 143,
+        "column": 21,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 143,
+        "endColumn": 24,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                4687,
+                4690
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                4687,
+                4690
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 147,
+        "column": 19,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 147,
+        "endColumn": 22,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                4819,
+                4822
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                4819,
+                4822
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 177,
+        "column": 25,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 177,
+        "endColumn": 28,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                6097,
+                6100
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                6097,
+                6100
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      }
+    ],
+    "baseline": 10,
+    "introduced": []
+  },
+  {
+    "file": "src/app/solicitar/page.tsx",
+    "current": [],
+    "baseline": 1,
+    "introduced": []
+  },
+  {
+    "file": "src/app/terms/page.tsx",
+    "current": [],
+    "baseline": 1,
+    "introduced": []
+  },
+  {
+    "file": "src/components/Footer.tsx",
+    "current": [],
+    "baseline": 1,
+    "introduced": []
+  },
+  {
+    "file": "src/components/Header.tsx",
+    "current": [],
+    "baseline": 1,
+    "introduced": []
+  },
+  {
+    "file": "src/components/admin/AdminAppShell.tsx",
+    "current": [],
+    "baseline": 0,
+    "introduced": []
+  },
+  {
+    "file": "src/components/operations/ClientActivationV2.tsx",
+    "current": [],
+    "baseline": 0,
+    "introduced": []
+  },
+  {
+    "file": "src/components/operations/OperationFinancialWorkspace.tsx",
+    "current": [],
+    "baseline": 0,
+    "introduced": []
+  },
+  {
+    "file": "src/lib/budgetV2Pdf.ts",
+    "current": [],
+    "baseline": 0,
+    "introduced": []
+  },
+  {
+    "file": "src/lib/contractDocuments/operationDraftPdf.ts",
+    "current": [],
+    "baseline": 0,
+    "introduced": []
+  },
+  {
+    "file": "src/lib/contractDocuments/pdf.ts",
+    "current": [],
+    "baseline": 0,
+    "introduced": []
+  },
+  {
+    "file": "src/lib/logoBase64.ts",
+    "current": [],
+    "baseline": 0,
+    "introduced": []
+  },
+  {
+    "file": "src/lib/pdfGenerator.ts",
+    "current": [
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 2,
+        "column": 56,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 2,
+        "endColumn": 59,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                56,
+                59
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                56,
+                59
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'nombre' is assigned a value but never used.",
+        "line": 163,
+        "column": 9,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 163,
+        "endColumn": 15
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 255,
+        "column": 49,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 255,
+        "endColumn": 52,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                8789,
+                8792
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                8789,
+                8792
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 267,
+        "column": 26,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 267,
+        "endColumn": 29,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                9208,
+                9211
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                9208,
+                9211
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 326,
+        "column": 28,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 326,
+        "endColumn": 31,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                11895,
+                11898
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                11895,
+                11898
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'cNum' is assigned a value but never used.",
+        "line": 327,
+        "column": 13,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 327,
+        "endColumn": 17
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 346,
+        "column": 28,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 346,
+        "endColumn": 31,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                12603,
+                12606
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                12603,
+                12606
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'nombre' is assigned a value but never used.",
+        "line": 704,
+        "column": 9,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 704,
+        "endColumn": 15
+      },
+      {
+        "ruleId": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type.",
+        "line": 1097,
+        "column": 91,
+        "nodeType": "TSAnyKeyword",
+        "messageId": "unexpectedAny",
+        "endLine": 1097,
+        "endColumn": 94,
+        "suggestions": [
+          {
+            "messageId": "suggestUnknown",
+            "fix": {
+              "range": [
+                42637,
+                42640
+              ],
+              "text": "unknown"
+            },
+            "desc": "Use `unknown` instead, this will force you to explicitly, and safely assert the type is correct."
+          },
+          {
+            "messageId": "suggestNever",
+            "fix": {
+              "range": [
+                42637,
+                42640
+              ],
+              "text": "never"
+            },
+            "desc": "Use `never` instead, this is useful when instantiating generic type parameters that you don't need to know the type of."
+          }
+        ]
+      },
+      {
+        "ruleId": "@typescript-eslint/no-unused-vars",
+        "severity": 1,
+        "message": "'e' is defined but never used.",
+        "line": 1174,
+        "column": 12,
+        "nodeType": "Identifier",
+        "messageId": "unusedVar",
+        "endLine": 1174,
+        "endColumn": 13
+      },
+      {
+        "ruleId": "prefer-const",
+        "severity": 2,
+        "message": "'ySign' is never reassigned. Use 'const' instead.",
+        "line": 1847,
+        "column": 7,
+        "nodeType": "Identifier",
+        "messageId": "useConst",
+        "endLine": 1847,
+        "endColumn": 12,
+        "fix": {
+          "range": [
+            68889,
+            68905
+          ],
+          "text": "const ySign = 195;"
+        }
+      }
+    ],
+    "baseline": 11,
+    "introduced": []
+  },
+  {
+    "file": "scripts/runOfficialBrandBrowser.ts",
+    "current": [],
+    "baseline": 0,
+    "introduced": []
+  },
+  {
+    "file": "scripts/testOfficialBrand.ts",
+    "current": [],
+    "baseline": 0,
+    "introduced": []
+  },
+  {
+    "file": "scripts/testOfficialBrandBrowser.ts",
+    "current": [],
+    "baseline": 0,
+    "introduced": []
+  },
+  {
+    "file": "src/components/CuentaHogarLogo.tsx",
+    "current": [],
+    "baseline": 0,
+    "introduced": []
+  },
+  {
+    "file": "src/lib/brand.ts",
+    "current": [],
+    "baseline": 0,
+    "introduced": []
+  },
+  {
+    "file": "src/lib/pdfBranding.ts",
+    "current": [],
+    "baseline": 0,
+    "introduced": []
+  }
+]

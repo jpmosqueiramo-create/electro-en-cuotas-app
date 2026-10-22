@@ -1,4 +1,5 @@
 "use client";
+import { CuentaHogarLogo } from '@/components/CuentaHogarLogo';
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -71,7 +72,7 @@ function SolicitarForm() {
             <ArrowLeft className="w-4 h-4" /> Volver
           </button>
           <div className="flex items-center gap-2">
-            <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-14 md:h-16 w-auto object-contain" />
+            <CuentaHogarLogo className="h-14 md:h-16 w-auto object-contain" />
           </div>
         </div>
         

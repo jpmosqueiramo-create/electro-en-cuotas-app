@@ -1,4 +1,5 @@
 "use client";
+import { CuentaHogarLogo } from '@/components/CuentaHogarLogo';
 
 import Link from "next/link";
 import { useState } from "react";
@@ -34,11 +35,7 @@ export default function Header() {
         {/* BRANDING LOGO */}
         <Link href="/" className="flex items-center gap-3 shrink-0">
           <div className="p-1.5 bg-[#090A0D] border border-[#FFD21A]/40 rounded-xl shadow-md">
-            <img 
-              src="/logo-cuenta-hogar-oficial.png" 
-              alt="Cuenta Hogar" 
-              className="h-8 sm:h-10 w-auto object-contain" 
-            />
+            <CuentaHogarLogo className="h-12 sm:h-14" />
           </div>
           <div className="hidden sm:block text-left">
             <span className="block text-[10px] font-mono font-bold tracking-widest text-[#FFD21A] uppercase">

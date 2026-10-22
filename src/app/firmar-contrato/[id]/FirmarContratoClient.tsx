@@ -1,4 +1,5 @@
 "use client";
+import { CuentaHogarLogo } from '@/components/CuentaHogarLogo';
 
 
 import { use, useEffect, useState } from "react";
@@ -225,11 +226,7 @@ export default function FirmarContratoClient() {
         {/* ENCABEZADO OFICIAL CUENTA HOGAR */}
         <header className="bg-[#FFFDFC] border border-[#DED8CF] p-6 rounded-2xl shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-4">
-            <img 
-              src="/logo-cuenta-hogar-oficial.png" 
-              alt="Cuenta Hogar Logo" 
-              className="h-12 w-auto object-contain bg-[#173E3B] p-1.5 rounded-xl shadow-xs" 
-            />
+            <CuentaHogarLogo className="h-12 w-auto object-contain bg-[#173E3B] p-1.5 rounded-xl shadow-xs" />
             <div>
               <div className="inline-flex items-center gap-1.5 text-[10px] font-heading font-bold uppercase tracking-widest text-[#B44E2A]">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#B44E2A]" /> Portal de Firma Digital SSL
