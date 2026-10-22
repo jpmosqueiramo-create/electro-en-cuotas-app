@@ -23,7 +23,13 @@ export async function testContractDocumentWorkflowBrowser(){
     const history="[...document.querySelectorAll('section')].find(s=>s.querySelector('h2')?.textContent==='Historial V2')";
     await browser.until(`${history}?.querySelectorAll('article').length===1`,'budget');await browser.clickText('Abrir versión 1',history);await browser.until("!!document.querySelector('[data-testid=acceptance-registered]')",'acceptance');assert.equal(await browser.evaluate("document.querySelector('a[href=\"/admin/operaciones/"+id+"/1\"]')?.textContent"),'Abrir ficha de operación');await browser.navigate(`/admin/operaciones/${id}/1`);await browser.until("!!document.querySelector('[data-testid=operation-unified-workspace]')",'operation workspace');await browser.clickText('Contrato');await browser.until("!!document.querySelector('[data-testid=contract-composer]')",'contract section');await browser.evaluate("document.querySelectorAll('[data-testid=contract-composer] details').forEach(d=>d.open=true)");
     const root="document.querySelector('[data-testid=contract-document-workspace]')";
-    await browser.until(`${root}?.innerText.includes('Sin evidencia READY vigente')`,'dossier DRAFT');
+    await browser.until(`${root}?.innerText.includes('Este contrato todavía está en preparación.')`,'dossier DRAFT');
+    await browser.evaluate("document.querySelector('[data-testid=contract-review-audit]').open=false");
+    assert.equal(await browser.evaluate("document.querySelector('[data-testid=contract-review-audit]').open"),false);
+    assert.ok((await browser.evaluate<string>(`${root}.innerText`)).includes('no significa que el contrato esté firmado o formalizado'));
+    await browser.click('[data-testid=contract-review-audit] > summary');
+    assert.ok((await browser.evaluate<string>(`${root}.innerText`)).includes('Versión del borrador'));
+    await browser.click('[data-testid=contract-review-audit] > summary');
     await browser.clickText('Visualizar PDFs sintéticos',root);await browser.until("!!document.querySelector('[data-testid=contract-sample-loaded]')",'synthetic PDFs');
     assert.equal(await browser.evaluate(`${root}.querySelectorAll('iframe').length`),2);
     const text=await browser.evaluate<string>(`${root}.innerText`);for(const value of ['CH-000001','Importe propuesto del pagaré','Pendiente de aprobación jurídica','Importe exigible: sin definir','no corresponden al cliente'])assert.ok(text.includes(value));
@@ -42,18 +48,27 @@ export async function testContractDocumentWorkflowBrowser(){
     }
     await browser.until(`[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Confirmar preparación técnica'&&!b.matches(':disabled')&&b.getClientRects().length>0)`,'technical review enabled after policy load');
     await Promise.all([browser.clickText('Confirmar preparación técnica'),acceptConfirmation()]);
-    await browser.until(`${root}?.innerText.includes('Revisión READY verificada')`,'dossier READY');
+    await browser.until(`${root}?.innerText.includes('La revisión del contrato se completó correctamente.')`,'dossier READY');
+    for(const [width,height] of [[1280,800],[390,844]]){
+      await browser.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width===390});
+      await browser.overflow('review status');
+      assert.ok((await browser.evaluate<string>(`${root}.innerText`)).includes('Fecha de revisión:'));
+      assert.ok((await browser.evaluate<string>(`${root}.innerText`)).includes('Responsable:'));
+      await browser.click('[data-testid=contract-review-audit] > summary');
+      assert.ok((await browser.evaluate<string>(`${root}.innerText`)).includes('Hash de evidencia:'));
+      await browser.click('[data-testid=contract-review-audit] > summary');
+    }
     const db=admin.firestore(),counter=db.doc('contractNumberingV2/CONTRACT_NUMBERING_V1');
     if(!(await counter.get()).exists)await counter.create({schemaVersion:'CONTRACT_NUMBER_COUNTER_V1',policyId:'CONTRACT_NUMBERING_V1',executionMode:'EMULATOR_ONLY',active:true,lastAllocatedSequence:'0'});
     f.legalContext.documentDefinitions=reviewDocumentDefinitions();await db.collection(FREEZE_DEPENDENCIES_COLLECTION).doc(id).create({schemaVersion:'CONTRACT_FREEZE_SYNTHETIC_DEPENDENCIES_V1',executionMode:'EMULATOR_ONLY',legalApproval:'NOT_APPROVED_SYNTHETIC_ONLY',legalContext:f.legalContext});
     const freeze=createContractFreezeIntegrationEmulator(),archive=createPrivateDocumentArchiveEmulator();
     try{const receipt=await freeze.execute({action:'FREEZE_READY_EMULATOR',commandId:id,budgetId:id,budgetVersion:1,expectedRevision:(await r.draft.get()).data()!.revision,dependenciesId:id},'synthetic-admin-a');const snapshot=await freeze.getSnapshot(receipt.snapshotId);assert.ok(snapshot);await archive.preserve(snapshot);}finally{await freeze.close();await archive.close();}
-    await browser.clickText('Recargar borrador y datos recibidos');await browser.until(`${root}?.innerText.includes('Conservación completa registrada')`,'frozen dossier/archive');
+    await browser.clickText('Recargar borrador y datos recibidos');await browser.until(`${root}?.textContent.includes('Conservación completa registrada')`,'archive metadata loaded');await browser.evaluate("document.querySelector('[data-testid=contract-review-audit]').open=true");await browser.until(`${root}?.innerText.includes('Conservación completa registrada')`,'frozen dossier/archive');
     assert.equal(await browser.evaluate("document.querySelector('[data-testid=contract-editable-fields]').disabled"),true);
     assert.ok((await browser.evaluate<string>(`${root}.innerText`)).includes('Términos congelados'));
     // Reopening a frozen dossier must be a GET, not a rejected OPEN_OR_CREATE command.
     const commandsBefore=(await r.draft.collection('commands').get()).size;
-    await browser.navigate('/admin/presupuestos');await browser.until("!![...document.querySelectorAll('label')].find(x=>x.textContent.includes('Buscar presupuesto V2'))",'reopen history');await browser.field('Buscar presupuesto V2',id);await browser.until(`${history}?.querySelectorAll('article').length===1`,'reopen exact budget');await browser.clickText('Abrir versión 1',history);await browser.until("!!document.querySelector('[data-testid=acceptance-registered]')",'reopen acceptance');assert.equal(await browser.evaluate("document.querySelector('a[href=\"/admin/operaciones/"+id+"/1\"]')?.textContent"),'Abrir ficha de operación');await browser.navigate(`/admin/operaciones/${id}/1`);await browser.until("!!document.querySelector('[data-testid=operation-unified-workspace]')",'operation workspace');await browser.clickText('Contrato');await browser.until("!!document.querySelector('[data-testid=contract-composer]')",'contract section');await browser.evaluate("document.querySelectorAll('[data-testid=contract-composer] details').forEach(d=>d.open=true)");await browser.until(`${root}?.innerText.includes('Conservación completa registrada')`,'reopened frozen dossier');
+    await browser.navigate('/admin/presupuestos');await browser.until("!![...document.querySelectorAll('label')].find(x=>x.textContent.includes('Buscar presupuesto V2'))",'reopen history');await browser.field('Buscar presupuesto V2',id);await browser.until(`${history}?.querySelectorAll('article').length===1`,'reopen exact budget');await browser.clickText('Abrir versión 1',history);await browser.until("!!document.querySelector('[data-testid=acceptance-registered]')",'reopen acceptance');assert.equal(await browser.evaluate("document.querySelector('a[href=\"/admin/operaciones/"+id+"/1\"]')?.textContent"),'Abrir ficha de operación');await browser.navigate(`/admin/operaciones/${id}/1`);await browser.until("!!document.querySelector('[data-testid=operation-unified-workspace]')",'operation workspace');await browser.clickText('Contrato');await browser.until("!!document.querySelector('[data-testid=contract-composer]')",'contract section');await browser.evaluate("document.querySelectorAll('[data-testid=contract-composer] details').forEach(d=>d.open=true)");await browser.until(`${root}?.textContent.includes('Conservación completa registrada')`,'archive metadata loaded');await browser.evaluate("document.querySelector('[data-testid=contract-review-audit]').open=true");await browser.until(`${root}?.innerText.includes('Conservación completa registrada')`,'reopened frozen dossier');
     assert.equal(await browser.evaluate("document.querySelector('[data-testid=contract-editable-fields]').disabled"),true);assert.equal((await r.draft.collection('commands').get()).size,commandsBefore);
 
     assert.deepEqual(before,{budget:(await r.budget.get()).data(),acceptance:(await r.acceptance.get()).data(),p4:(await r.family.collection('documentation').doc('1').get()).data()});assert.deepEqual(browser.externalFirebase,[]);
