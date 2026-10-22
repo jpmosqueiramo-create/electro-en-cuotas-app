@@ -1,3 +1,5 @@
+import { getBudgetDocumentationBucket } from '@/lib/budgetDocumentationStorage';
+import { deleteTestDossier, previewTestDossierDeletion } from '@/lib/budgetTestDossierDeletion';
 import { NextResponse } from 'next/server';
 import { verifyAdminAuth } from '@/lib/adminAuth';
 import { admin } from '@/lib/firebaseAdmin';
@@ -8,6 +10,8 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     if (body.mode === 'PREVIEW' && Object.keys(body).sort().join(',') === 'budgetId,mode') return NextResponse.json({preview: await previewBudgetDeletion(admin.firestore(), body.budgetId)});
+    if (body.mode === 'PREVIEW_TEST' && Object.keys(body).sort().join(',') === 'budgetId,mode') return NextResponse.json({preview:await previewTestDossierDeletion(admin.firestore(),await getBudgetDocumentationBucket(),body.budgetId)});
+    if (body.mode === 'DELETE_TEST') { const {mode:_mode,...command}=body;void _mode;return NextResponse.json({result:await deleteTestDossier(admin.firestore(),await getBudgetDocumentationBucket(),command,auth.uid!)}); }
     if (body.mode !== 'DELETE') return NextResponse.json({error: 'Comando inválido.'}, {status: 400});
     const {mode: _mode, ...command} = body;
     void _mode;
