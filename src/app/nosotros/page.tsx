@@ -1,4 +1,5 @@
 "use client";
+import { CuentaHogarLogo } from '@/components/CuentaHogarLogo';
 
 import Link from "next/link";
 import Header from "@/components/Header";
@@ -88,11 +89,7 @@ export default function NosotrosPage() {
               <div className="lg:hidden my-6">
                 <div className="flex flex-col items-center justify-center p-6 bg-[#161922]/80 border border-[#2A2E3D] rounded-2xl shadow-xl space-y-3.5">
                   <div className="relative flex items-center justify-center p-2">
-                    <img 
-                      src="/logo-cuenta-hogar-oficial.png" 
-                      alt="Logo Oficial Cuenta Hogar" 
-                      className="w-[180px] sm:w-[220px] h-auto object-contain filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]" 
-                    />
+                    <CuentaHogarLogo className="w-[180px] sm:w-[220px] h-auto object-contain filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]" />
                   </div>
                   <p className="text-[10px] font-mono font-bold tracking-widest text-[#FFD21A] uppercase text-center">
                     GESTIÓN DE COMPRAS · LOGÍSTICA · CABA → INTERIOR
@@ -167,11 +164,7 @@ export default function NosotrosPage() {
             <div className="hidden lg:flex lg:col-span-5 flex-col items-center justify-center relative">
               <div className="w-full flex flex-col items-center justify-center p-8 lg:p-12 bg-[#161922]/60 border border-[#2A2E3D]/80 rounded-3xl shadow-2xl space-y-6 min-h-[380px]">
                 <div className="relative flex items-center justify-center p-2">
-                  <img 
-                    src="/logo-cuenta-hogar-oficial.png" 
-                    alt="Logo Oficial Cuenta Hogar" 
-                    className="w-[240px] lg:w-[280px] h-auto object-contain filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)]" 
-                  />
+                  <CuentaHogarLogo className="w-[240px] lg:w-[280px] h-auto object-contain filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)]" />
                 </div>
                 <p className="text-xs font-mono font-bold tracking-widest text-[#FFD21A] uppercase text-center max-w-[280px] leading-relaxed">
                   GESTIÓN DE COMPRAS · LOGÍSTICA · CABA → INTERIOR

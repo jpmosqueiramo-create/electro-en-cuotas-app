@@ -4,7 +4,8 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, CircleHelp, LogOut, ShieldCheck } from "lucide-react";
+import { Bell, CircleHelp, LogOut } from "lucide-react";
+import { CuentaHogarLogo } from '@/components/CuentaHogarLogo';
 import { useAuth } from "@/components/AuthProvider";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { AdminSidebar } from "./AdminSidebar";
@@ -34,7 +35,7 @@ export function AdminAppShell({ children }: { children: ReactNode }) {
         <a href="#admin-content" className="admin-skip">Saltar al contenido</a>
         <aside className="fixed inset-y-0 left-0 hidden w-60 overflow-y-auto border-r border-border-color bg-surface px-3 py-6 lg:block">
           <Link href="/admin" className="admin-control mb-7 flex items-center gap-3 rounded-lg px-3">
-            <ShieldCheck aria-hidden="true" className="size-8 text-brand-primary" />
+            <CuentaHogarLogo className="h-12" />
             <span><span className="block font-heading text-lg font-extrabold text-brand-primary">Cuenta Hogar</span><span className="text-sm text-text-secondary">Administrador</span></span>
           </Link>
           <AdminSidebar pathname={pathname} />
@@ -42,7 +43,7 @@ export function AdminAppShell({ children }: { children: ReactNode }) {
           <button type="button" onClick={handleLogout} disabled={leaving} className="admin-control flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm text-[#B42318] disabled:opacity-60"><LogOut aria-hidden="true" className="size-5" />{leaving ? "Cerrando sesión…" : "Salir"}</button>
         </aside>
         <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-border-color bg-surface px-4 py-3 sm:px-8">
-          <div><p className="font-heading text-sm font-bold text-brand-primary lg:hidden">Cuenta Hogar · Administrador</p><p className="text-sm text-text-secondary">Operación diaria <span aria-hidden="true">/</span> <span className="font-semibold text-brand-primary">{label}</span></p></div>
+          <div><p className="flex items-center gap-2 font-heading text-sm font-bold text-brand-primary lg:hidden"><CuentaHogarLogo className="h-9" />Cuenta Hogar · Administrador</p><p className="text-sm text-text-secondary">Operación diaria <span aria-hidden="true">/</span> <span className="font-semibold text-brand-primary">{label}</span></p></div>
           <div className="flex items-center gap-3">
             <Link href="/admin#alertas" className="admin-control flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm"><Bell aria-hidden="true" className="size-4" />Alertas</Link>
             <span className="hidden text-sm text-success sm:inline">Sesión activa</span>

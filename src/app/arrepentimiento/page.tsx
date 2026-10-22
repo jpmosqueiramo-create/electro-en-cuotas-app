@@ -1,4 +1,5 @@
 "use client";
+import { CuentaHogarLogo } from '@/components/CuentaHogarLogo';
 
 import { useState } from "react";
 import Link from "next/link";
@@ -107,7 +108,7 @@ export default function ArrepentimientoPage() {
             <ArrowLeft className="w-5 h-5" /> Volver al inicio
           </Link>
           <div className="flex items-center gap-2">
-            <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-10 w-auto object-contain" />
+            <CuentaHogarLogo className="h-10 w-auto object-contain" />
             <span className="font-mono text-xs uppercase tracking-widest font-black text-zinc-500 hidden sm:inline">Portal Legal</span>
           </div>
         </div>

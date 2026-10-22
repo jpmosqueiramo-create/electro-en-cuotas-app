@@ -26,7 +26,7 @@ export const generarNumeroContratoEstructurado = (sol: any, index: number = 1): 
   return "CH-" + year + month + "-" + dniPart + "-" + seqPart;
 };
 
-import { LOGO_BASE64 } from "./logoBase64";
+import { drawCuentaHogarLogo } from "./pdfBranding";
 import { jsPDF } from "jspdf";
 
 export const buildStandardPdfFilename = (
@@ -159,6 +159,7 @@ const drawFormBox = (doc: jsPDF, label: string, value: string, x: number, y: num
 
 export const generarContratoModelo = (datos: DatosContrato) => {
   const doc = new jsPDF();
+  drawCuentaHogarLogo(doc,182,0.5,9);
   const nombre = datos.nombreComprador || "Cliente";
 
   // Margins & Dimensions
@@ -903,6 +904,7 @@ export interface DatosRemito {
 
 export const generarRemitoModelo = (datos: DatosRemito) => {
   const doc = new jsPDF();
+  drawCuentaHogarLogo(doc,182,0.5,9);
   const nombre = datos.clienteNombre || "Cliente";
 
   // Box title
@@ -1005,6 +1007,7 @@ export interface DatosRemitoMulti {
 
 export const generarRemitoMultiProducto = (datos: DatosRemitoMulti) => {
   const doc = new jsPDF();
+  drawCuentaHogarLogo(doc,182,0.5,9);
 
   // Header Box
   doc.setFillColor(244, 244, 245);
@@ -1167,7 +1170,7 @@ export const generarComprobantePago = (datos: DatosComprobantePago) => {
 
   // LADO IZQUIERDO DE LA CABECERA (EMISOR / RAZÓN SOCIAL)
   try {
-    doc.addImage(LOGO_BASE64, "PNG", 13, 12, 18, 18);
+    drawCuentaHogarLogo(doc,13,12,18);
   } catch (e) {}
 
   doc.setFont("helvetica", "bold");
@@ -1484,6 +1487,7 @@ export interface DatosEstadoCuenta {
 
 export const generarEstadoCuenta = (datos: DatosEstadoCuenta) => {
   const doc = new jsPDF();
+  drawCuentaHogarLogo(doc,182,0.5,9);
   
   // Header box
   doc.setFillColor(244, 244, 245);
@@ -1668,6 +1672,7 @@ export interface DatosRemitoTipoR {
 
 export const generarRemitoTipoR = (datos: DatosRemitoTipoR) => {
   const doc = new jsPDF();
+  drawCuentaHogarLogo(doc,182,0.5,9);
 
   doc.setLineWidth(0.3);
   doc.setDrawColor(0, 0, 0);

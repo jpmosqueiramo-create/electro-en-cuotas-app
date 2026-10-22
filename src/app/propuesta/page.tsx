@@ -1,4 +1,5 @@
 "use client";
+import { CuentaHogarLogo } from "@/components/CuentaHogarLogo";
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -188,7 +189,7 @@ function PropuestaClientContent() {
               <div className="inline-flex items-center gap-1.5 text-[10px] font-heading font-bold uppercase tracking-widest text-[#B44E2A]">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#B44E2A]" /> Portal de Aceptación Electrónica Registrada
               </div>
-              <h1 className="text-xl sm:text-2xl font-heading font-extrabold text-[#173E3B]">
+              <CuentaHogarLogo className="h-14 mb-3"/><h1 className="text-xl sm:text-2xl font-heading font-extrabold text-[#173E3B]">
                 Propuesta Comercial Cuenta Hogar
               </h1>
               <p className="text-xs text-[#68706E] font-sans mt-0.5">LOOP GESTIÓN INTEGRAL S.R.L. · CUIT 30-71829384-9</p>

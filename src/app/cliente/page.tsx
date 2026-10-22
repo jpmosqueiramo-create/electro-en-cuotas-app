@@ -1,4 +1,5 @@
 "use client";
+import { CuentaHogarLogo } from '@/components/CuentaHogarLogo';
 
 import {LegacyPortalAction} from "@/components/LegacyPortalAction";
 import { ClientServicesV2 } from '@/components/operations/ClientServicesV2';
@@ -302,7 +303,7 @@ function ClientePortal() {
         <header className="bg-[#1B2027] border border-[#252A32] p-5 md:p-6 rounded-3xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-4">
             <div className="p-2 bg-[#111318] border border-[#FFD21A]/30 rounded-2xl shadow-inner shrink-0">
-              <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar" className="h-10 sm:h-12 w-auto object-contain" />
+              <CuentaHogarLogo className="h-10 sm:h-12 w-auto object-contain" />
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">

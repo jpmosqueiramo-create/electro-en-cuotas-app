@@ -1,4 +1,5 @@
 "use client";
+import { CuentaHogarLogo } from '@/components/CuentaHogarLogo';
 
 import { isAdminEmail } from "@/lib/adminIdentity";
 
@@ -114,7 +115,7 @@ export default function LoginPage() {
       <div className="bg-[#161922] border border-[#222530] p-8 sm:p-10 rounded-3xl w-full max-w-md shadow-xl">
         
         <div className="text-center mb-8">
-          <img src="/logo-cuenta-hogar-oficial.png" alt="Cuenta Hogar Logo" className="h-24 w-auto mx-auto mb-6 object-contain shadow-2xl rounded-2xl" />
+          <CuentaHogarLogo className="h-24 w-auto mx-auto mb-6 object-contain shadow-2xl rounded-2xl" />
           <h1 className="text-3xl font-bold text-[#FFD21A] mb-2 font-heading">Portal de Clientes</h1>
           <p className="text-[#9CA3AF] font-normal">{isLogin ? "Accede a tu cuenta" : "Únete y solicita tu crédito hoy"}</p>
         </div>
