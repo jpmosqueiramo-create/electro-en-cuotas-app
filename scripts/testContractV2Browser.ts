@@ -9,6 +9,8 @@ import {adminEmail,adminPassword} from './helpers/adminSolicitudesFixtures';
 import {contractRefs} from '../src/lib/contractV2Server';
 export async function testContractV2Browser(){
  const db=admin.firestore(),id=`p5c-browser-${Date.now()}`,{b,a}=fixture(id),r=contractRefs(db,id,1);
+ // This flow tests data review, not an identity change: keep the issued synthetic origin consistent.
+ b.clienteSnapshot.nombre=clientPayload.personalData.fullName;b.clienteSnapshot.dni=clientPayload.personalData.dni;
  await r.family.set({sourceCollection:b.sourceCollection,solicitudId:b.solicitudId,lastVersion:1});await r.budget.set(b);await r.acceptance.set(a);
  try{const u=await admin.auth().getUserByEmail(adminEmail);await admin.auth().updateUser(u.uid,{password:adminPassword,emailVerified:true});}catch{await admin.auth().createUser({email:adminEmail,password:adminPassword,emailVerified:true});}
  const browser=await CatalogBrowser.open();mkdirSync('/tmp/cuenta-hogar-p5d1a',{recursive:true});

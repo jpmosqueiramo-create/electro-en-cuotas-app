@@ -1,14 +1,12 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { DOCUMENT_LABELS, type DocumentType } from '@/lib/budgetAcceptanceV2';
 import { documentStages, pendingLegalRequirements, type ContractDocumentDossier } from '@/lib/contractDocuments/workflow';
 import { btn } from './ContractDataFields';
-type SampleManifest={contractNumber:string;snapshotId:string;snapshotHash:string;projectionHash:string;definitions:{contract:{templateVersion:string};promissoryNote:{templateVersion:string}};artifacts:{mandate:{sha256:string;pages:number};promissoryNote:{sha256:string;pages:number}};proposedPromissoryNoteAmount:{amount:number;status:string;enforceableAmount:null}};
 const stageLabels={DRAFT:'Borrador',TECHNICAL_REVIEW:'Revisión técnica · READY',TERMS_FROZEN:'Términos congelados · sólo Emulator',FORMALIZED:'Formalización · requiere firmas físicas y aprobación legal'};
 export function ContractDocumentWorkspace({budgetId,version,revision}:{budgetId:string;version:number;revision:number}){
-  const {user}=useAuth(),[loadedDossier,setDossier]=useState<ContractDocumentDossier|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[attempt,setAttempt]=useState(0),[sample,setSample]=useState<{manifest:SampleManifest;mandate:string;promissoryNote:string}|null>(null);
-  const urls=useRef<string[]>([]),sampleRequest=useRef<AbortController|null>(null);
+  const {user}=useAuth(),[loadedDossier,setDossier]=useState<ContractDocumentDossier|null>(null),[error,setError]=useState(''),[attempt,setAttempt]=useState(0);
   const endpoint=`/api/admin/presupuestos-v2/${encodeURIComponent(budgetId)}/versions/${version}/contract/documents`;
   const request=useCallback(async(url:string,signal?:AbortSignal)=>{
     if(!user)throw Error('Ingresá nuevamente.');
@@ -16,20 +14,6 @@ export function ContractDocumentWorkspace({budgetId,version,revision}:{budgetId:
     if(!response.ok)throw Error('No se pudo verificar la documentación contractual.');return response;
   },[user]);
   useEffect(()=>{const controller=new AbortController();void request(endpoint,controller.signal).then(r=>r.json()).then((data:ContractDocumentDossier)=>{setDossier(data);setError('');}).catch(()=>{if(!controller.signal.aborted)setError('No se pudo verificar el expediente. Reintentá la consulta del expediente.');});return()=>controller.abort();},[endpoint,revision,request,attempt]);
-  useEffect(()=>()=>{sampleRequest.current?.abort();urls.current.forEach(url=>URL.revokeObjectURL(url));},[]);
-  async function loadSample(){
-    if(busy)return;setBusy(true);setError('');const controller=new AbortController();sampleRequest.current=controller;
-    try{
-      const responses=await Promise.all(['manifest','mandate','promissoryNote'].map(kind=>request(`/api/admin/contract-document-samples/${kind}`,controller.signal)));
-      const manifest=await responses[0].json() as SampleManifest,mandate=await responses[1].arrayBuffer(),note=await responses[2].arrayBuffer();
-      for(const [bytes,hash] of [[mandate,manifest.artifacts.mandate.sha256],[note,manifest.artifacts.promissoryNote.sha256]] as const){
-        const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(v=>v.toString(16).padStart(2,'0')).join('');if(digest!==hash)throw Error('PDF_INTEGRITY');
-      }
-      if(controller.signal.aborted)return;
-      urls.current.forEach(url=>URL.revokeObjectURL(url));urls.current=[URL.createObjectURL(new Blob([mandate],{type:'application/pdf'})),URL.createObjectURL(new Blob([note],{type:'application/pdf'}))];
-      setSample({manifest,mandate:urls.current[0],promissoryNote:urls.current[1]});
-    }catch(error){if(!controller.signal.aborted)setError(error instanceof Error&&error.message==='PDF_INTEGRITY'?'La integridad de los PDF no coincide. No se mostraron los documentos recibidos.':'Muestras no disponibles. Sólo pueden visualizarse en Emulator local; no se emitieron documentos.');}finally{if(!controller.signal.aborted)setBusy(false);}
-  }
   const dossier=loadedDossier?.draftRevision===revision?loadedDossier:null;
   const panel='min-w-0 space-y-3 rounded-xl border border-border-color bg-surface p-4';
   return <section className={`${panel} space-y-5`} data-testid="contract-document-workspace"><h2 className="font-heading text-2xl font-bold">Documentación contractual</h2>
@@ -52,10 +36,7 @@ export function ContractDocumentWorkspace({budgetId,version,revision}:{budgetId:
         <p>Conservación privada: adaptador exclusivo de Emulator.</p>{dossier.archives.map(record=><div key={record.documentSetId} className="space-y-1 break-all"><p>{record.state==='COMPLETE'?'Conservación completa registrada':'Conservación pendiente de reconciliación'} · {record.documentSetId}</p>{record.artifacts.map(a=><p key={a.kind}>{a.kind==='mandate'?'Mandato':'Pagaré'} · {a.templateVersion} · {a.pages} página(s) · SHA-256 {a.sha256}</p>)}</div>)}
       </details>
       <section className={panel}><h3 className="font-bold">Requisitos pendientes</h3><ul className="list-disc pl-5">{pendingLegalRequirements.map(item=><li key={item}>{item}</li>)}</ul><p>READY y términos congelados no acreditan firma física. No existe una acción para marcar FORMALIZED en esta etapa.</p></section>
-      <section className={panel} data-testid="contract-document-samples"><h3 className="font-bold">Vista previa — muestras sintéticas</h3><p>Los ejemplos no corresponden al cliente ni al presupuesto de este expediente. No se guardan en su legajo. BORRADOR — NO VÁLIDO PARA FIRMA.</p>
-        <button className={btn} disabled={busy||!dossier.sampleAvailable} onClick={()=>void loadSample()}>{busy?'Verificando PDF…':'Visualizar PDFs sintéticos'}</button>{!dossier.sampleAvailable&&<p>Disponible exclusivamente en el entorno Emulator local. Emisión productiva deshabilitada.</p>}
-        {sample&&<div className="min-w-0 space-y-4" data-testid="contract-sample-loaded"><p>Muestra: {sample.manifest.contractNumber} · Mandato 2 páginas / pagaré 1 página</p><p>Importe propuesto del pagaré (referencia técnica): {new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(sample.manifest.proposedPromissoryNoteAmount.amount)} · Pendiente de aprobación jurídica. Importe exigible: sin definir.</p><p className="break-all">Snapshot sintético SHA-256: {sample.manifest.snapshotHash}</p><p>Plantillas: {sample.manifest.definitions.contract.templateVersion} / {sample.manifest.definitions.promissoryNote.templateVersion}</p>{(['mandate','promissoryNote'] as const).map(kind=><div key={kind}><h4 className="font-bold">{kind==='mandate'?'Contrato de mandato':'Pagaré'}</h4><a className={`${btn} inline-flex items-center`} href={sample[kind]} target="_blank" rel="noreferrer">Abrir PDF de muestra</a><iframe title={kind==='mandate'?'Muestra sintética de mandato':'Muestra sintética de pagaré'} src={sample[kind]} className="mt-2 h-[560px] w-full rounded border border-border-color"/></div>)}</div>}
-      </section>
+
     </>}
   </section>;
 }

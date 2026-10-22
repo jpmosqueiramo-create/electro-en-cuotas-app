@@ -12,6 +12,7 @@ import { CatalogBrowser } from './helpers/catalogBrowser';
 import { adminEmail,adminPassword } from './helpers/adminSolicitudesFixtures';
 export async function testContractDocumentWorkflowBrowser(){
   const id=`document-workflow-${Date.now()}`,f=infrastructureFixture(id),r=contractRefs(admin.firestore(),id,1),{budget:b,acceptance:a,draft:d}=f.source;
+  b.clienteSnapshot.nombre=d.personalData.fullName;b.clienteSnapshot.dni=d.personalData.dni;
   await r.family.set({sourceCollection:b.sourceCollection,solicitudId:b.solicitudId,lastVersion:1});await r.budget.set(b);await r.acceptance.set(a);await r.draft.set(d);await r.family.collection('documentation').doc('1').set(createDocumentationCase(a));
   const before={budget:(await r.budget.get()).data(),acceptance:(await r.acceptance.get()).data(),p4:(await r.family.collection('documentation').doc('1').get()).data()};
   const user=await admin.auth().getUserByEmail(adminEmail);await admin.auth().updateUser(user.uid,{password:adminPassword,emailVerified:true});
@@ -30,24 +31,33 @@ export async function testContractDocumentWorkflowBrowser(){
     await browser.click('[data-testid=contract-review-audit] > summary');
     assert.ok((await browser.evaluate<string>(`${root}.innerText`)).includes('Versión del borrador'));
     await browser.click('[data-testid=contract-review-audit] > summary');
-    await browser.clickText('Visualizar PDFs sintéticos',root);await browser.until("!!document.querySelector('[data-testid=contract-sample-loaded]')",'synthetic PDFs');
-    assert.equal(await browser.evaluate(`${root}.querySelectorAll('iframe').length`),2);
-    const text=await browser.evaluate<string>(`${root}.innerText`);for(const value of ['CH-000001','Importe propuesto del pagaré','Pendiente de aprobación jurídica','Importe exigible: sin definir','no corresponden al cliente'])assert.ok(text.includes(value));
+    const preview="document.querySelector('[data-testid=operation-document-previews]')";
+    await browser.until(`${preview}?.innerText.includes('Ambos documentos usan los mismos datos persistidos.')`,'operation document previews');
+    for(const label of ['Contrato de mandato','Pagaré']){
+      await browser.clickText(label+' — Ver vista previa',preview);
+      await browser.until(`document.querySelector('[data-testid=operation-document-open] h4')?.textContent.startsWith(${JSON.stringify(label)})`,'selected draft PDF');
+      assert.equal(await browser.evaluate(`${preview}.querySelectorAll('iframe').length`),1);
+      assert.ok((await browser.evaluate<string>(`${preview}.querySelector('iframe').src`)).startsWith('blob:'));
+    }
+    const text=await browser.evaluate<string>(`${preview}.innerText`);
+    for(const value of ['BORRADOR — NO VÁLIDO PARA FIRMA','No asignan número','Aprobación jurídica pendiente','Versión guardada del borrador'])assert.ok(text.includes(value),value);
     for(const value of ['SECRET_PROVIDER','SECRET_WORKPLACE','tokenHash'])assert.ok(!text.includes(value));
-    const src=await browser.evaluate<string[]>(`[...${root}.querySelectorAll('iframe')].map(f=>f.src)`);assert.ok(src.every(url=>url.startsWith('blob:')));
-    assert.equal(await browser.evaluate(`${root}.querySelectorAll('button').length`),1);
+    assert.equal(await browser.evaluate<number>(`${preview}.querySelectorAll('button').length`)>1,true);
     for(const [width,height] of [[1280,800],[390,844]]){
       await browser.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width===390});await browser.overflow('document workflow');
       await browser.evaluate(`${root}.scrollIntoView({block:'start'})`);const image=await browser.command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(`${dir}/dossier-${width}.png`,Buffer.from(image.data as string,'base64'));
-      await browser.evaluate("document.querySelector('[data-testid=contract-document-samples]').scrollIntoView({block:'start'})");const sample=await browser.command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(`${dir}/samples-${width}.png`,Buffer.from(sample.data as string,'base64'));
+      await browser.evaluate("document.querySelector('[data-testid=operation-document-previews]').scrollIntoView({block:'start'})");const sample=await browser.command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(`${dir}/samples-${width}.png`,Buffer.from(sample.data as string,'base64'));
     }
+    await browser.clickText('Cerrar vista previa',preview);
+    await browser.until(`${preview}.querySelectorAll('iframe').length===0`,'PDF viewer closed before native confirmation');
+    await browser.command('Page.bringToFront');
     // Wait for the real confirmation dialog; PDF viewer startup may delay click delivery.
     async function acceptConfirmation(){
       const deadline=Date.now()+8000;
       while(true){try{await browser.command('Page.handleJavaScriptDialog',{accept:true});return;}catch(error){if(Date.now()>=deadline)throw error;await browser.delay(50);}}
     }
     await browser.until(`[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Confirmar preparación técnica'&&!b.matches(':disabled')&&b.getClientRects().length>0)`,'technical review enabled after policy load');
-    await Promise.all([browser.clickText('Confirmar preparación técnica'),acceptConfirmation()]);
+    await Promise.all([browser.command('Runtime.evaluate',{expression:"[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Confirmar preparación técnica').click()",userGesture:true}),acceptConfirmation()]);
     await browser.until(`${root}?.innerText.includes('La revisión del contrato se completó correctamente.')`,'dossier READY');
     for(const [width,height] of [[1280,800],[390,844]]){
       await browser.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width===390});

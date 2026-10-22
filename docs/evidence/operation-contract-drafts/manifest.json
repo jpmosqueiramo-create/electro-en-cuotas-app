@@ -1,0 +1,17 @@
+{
+  "templateVersion": "OPERATION_DRAFT_REVIEW_V1",
+  "templateHash": "954b5cc610cbb966898f50ac1a9e42834960744c262fde47bc2e8f148da58038",
+  "rendererHash": "441c93d6d718e3aaddf619e192bf47a44f52e5a6fa1c2523bba6a178d426f042",
+  "sourceHash": "6b51faa216c2eae5824dc5d26bede95dce0bc2c4be08656e29913f5fe049f1b6",
+  "projectionHash": "d038585158a2cf752bd0e80b230fb33ef382f15c6b956f4ac66ad82e23962125",
+  "artifacts": {
+    "mandate": {
+      "sha256": "c745e7d022632f97128f09333b7028e87c084cca53a6c4ca8d709880383c696b",
+      "pages": 3
+    },
+    "promissoryNote": {
+      "sha256": "c5f30fd19f01b3f68d26a7d9f7bb8262cb56c1e7b1cf07b960cbb4d88438536e",
+      "pages": 1
+    }
+  }
+}
