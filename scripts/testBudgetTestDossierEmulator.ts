@@ -13,7 +13,7 @@ import { createDocumentationCase } from '../src/lib/budgetAcceptanceV2';
 import { contractSnapshotId, contractIdentity, contractOriginId } from '../src/lib/contractSnapshotV2';
 import type { Transaction } from 'firebase-admin/firestore';
 import type { Bucket } from '@google-cloud/storage';
-import { TEST_DECLARATION } from '../src/lib/budgetTestDossierPolicy';
+import { ABSENT_TEST_SOURCE_POLICY, authorizedAbsentTestSources, permitsAbsentTestSource, TEST_DECLARATION } from '../src/lib/budgetTestDossierPolicy';
 import { budgetDeletionRef } from '../src/lib/budgetV2Deletion';
 import { budgetFixture } from './helpers/budgetV2Fixtures';
 import { getBudgetDocumentationBucket } from '../src/lib/budgetDocumentationStorage';
@@ -21,10 +21,14 @@ import { POST } from '../src/app/api/admin/presupuestos-v2/eliminacion/route';
 import { p1Token, p1User } from './testPortalP1Emulator';
 import { ADMIN_EMAIL } from '../src/lib/adminIdentity';
 const db = admin.firestore();
-async function fixture(accepted = true, open = true) {
-    const budget = budgetFixture('dossier-' + randomUUID());
+async function fixture(accepted = true, open = true, knownId?: string) {
+    const budget = budgetFixture(knownId ?? ('dossier-' + randomUUID()));
     budget.solicitudId = 'dossier-source-' + randomUUID();
-    await db.doc('solicitudes/' + budget.solicitudId).set({ marker: 'SYNTHETIC_PRESERVE' });
+    if (knownId) {
+        budget.sourceCollection = 'solicitudes_cuenta';
+        budget.solicitudId = authorizedAbsentTestSources[knownId].split('/')[1];
+    }
+    await db.doc(budget.sourceCollection + '/' + budget.solicitudId).set({ marker: 'SYNTHETIC_PRESERVE' });
     let b = await persistBudgetV2(db, { action: 'SAVE', commandId: randomUUID(), budget, expectedRevision: 0, privateOptionIds: [] }, 'admin-test');
     if (!accepted)
         return { b, a: null };
@@ -117,6 +121,36 @@ async function main() {
     assert(missingPreview.blockers.includes('Solicitud de origen no disponible.'));
     await assert.rejects(() => remove(awaitCommand(missingPreview)));
     assert.equal((await db.doc('presupuestos_v2/' + missingSource.b.id).get()).exists, true);
+    for (const [id, path] of Object.entries(authorizedAbsentTestSources)) {
+        assert.equal(permitsAbsentTestSource(id, path), true);
+        assert.equal(permitsAbsentTestSource(id, path + '-other'), false);
+        assert.equal(permitsAbsentTestSource('unknown-' + id, path), false);
+        const f = await fixture(true, true, id), origin = db.doc(path);
+        await origin.delete();
+        const p = await preview(id);
+        assert.equal(p.allowed, true, p.blockers.join('\n'));
+        assert.deepEqual(p.missingSourcePaths, [path]);
+        assert.equal(p.sourceAbsencePolicy, ABSENT_TEST_SOURCE_POLICY);
+        const c = await command(id);
+        await origin.set({ marker: 'APPEARED_AFTER_PREVIEW' });
+        await assert.rejects(() => remove(c), /cambió/);
+        await origin.delete();
+        if (id === 'aee8966b-5c17-4f7f-b50c-fff959ca0f0d') {
+            await db.doc(`presupuestos_v2/${id}/contracts/v1/financial/current/payments/protected`).set({ marker: 'PROTECTED' });
+            assert.equal((await preview(id)).allowed, false);
+            await assert.rejects(() => remove(c));
+            continue;
+        }
+        const fresh = await command(id), result = await remove(fresh);
+        assert.equal((await origin.get()).exists, false);
+        const audit = await budgetDeletionRef(db, id).get();
+        assert.deepEqual(audit.data()!.missingSourcePaths, [path]);
+        assert.equal(audit.data()!.sourceAbsencePolicy, ABSENT_TEST_SOURCE_POLICY);
+        assert.deepEqual(await remove(fresh), result);
+        assert((await budgetDeletionRef(db, id).get()).updateTime!.isEqual(audit.updateTime!));
+        assert.equal((await db.doc('presupuestos_v2/' + f.b.id).get()).exists, false);
+    }
+    console.log('EXACT_FOUR_SOURCE_EXCEPTION=PASS; UNKNOWN_SOURCE=BLOCKED; SOURCE_APPEARED=STALE; SOURCE_NOT_RECREATED=PASS; ABSENCE_AUDIT_REPLAY=PASS; FINANCIAL_BLOCK_PRESERVED=PASS');
     const activeSource = await fixture();
     await db.doc('solicitudes/' + activeSource.b.solicitudId).update({ planPagos: [{ estado: 'pagada' }] });
     assert.equal((await preview(activeSource.b.id)).allowed, false);

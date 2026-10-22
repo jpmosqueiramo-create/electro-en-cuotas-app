@@ -27,17 +27,17 @@ Proyecto: `negocio-facil-page`. Revisión: `2026-10-22T02:02:22.374Z`. Base: `9a
 | `dd625377-6773-4d19-bcdd-c94f3181faf7` | Familia original ya ausente | 0 | 0 | Auditoría preexistente: eliminación `2026-10-22T01:28:45.301Z` |
 | `0fb2cb46-86a8-4f1d-bcdd-0f4471e0638e` | Familia original ya ausente | 0 | 0 | Auditoría preexistente: eliminación `2026-10-22T01:28:35.136Z` |
 
-Las seis familias originales se reconcilian como cuatro presentes y dos eliminadas previamente, según sus auditorías. Esas dos eliminaciones no fueron ejecutadas por esta tarea. No se detectaron padres de familia ausentes con descendientes en el listado raíz. Las cuatro solicitudes originales están ausentes y bloquean la modalidad. Los padres contractuales ausentes se enumeran explícitamente; no se crean ni migran.
+Las seis familias originales se reconcilian como cuatro presentes y dos eliminadas previamente, según sus auditorías. Esas dos eliminaciones no fueron ejecutadas por esta tarea. No se detectaron padres de familia ausentes con descendientes en el listado raíz. Las cuatro solicitudes originales están ausentes. El propietario autorizó expresamente esa ausencia conocida con manifiesto y auditoría, sin recreación de solicitudes. Los padres contractuales ausentes se enumeran explícitamente; no se crean ni migran.
 
 En las cuatro familias presentes, el inventario cerrado no detectó firmas, pagos, liquidaciones, entregas, registros definitivos ni archivos bajo sus prefijos documentales. Se consultaron dependencias externas por budgetId, operationId y origen, índices globales de afiliado/cliente, registros de origen/snapshot/número y metadatos de Storage. Esto no acredita aprobación jurídica ni autoriza un borrado.
 
-El grafo contiene 49 documentos existentes (48 propios de familia y un índice de asignación). Actualmente las cuatro familias quedan BLOQUEADAS porque sus solicitudes de origen están ausentes. Los paths siguientes son un inventario potencial, no un manifiesto ejecutable. Permitir el origen ausente exige una decisión explícita adicional; no se recrearán solicitudes ni se sustituirán vínculos. Un borrado futuro requiere nueva verificación y autorización productiva.
+El grafo inventariado contiene 49 documentos existentes (48 propios de familia y un índice de asignación). La excepción `KNOWN_ABSENT_TEST_SOURCES_V1`, autorizada expresamente por el propietario, admite exclusivamente las cuatro parejas exactas familia/origen de este inventario. No se extiende a otras familias ni a otro origen de una familia conocida. La ausencia se muestra en PREVIEW y queda registrada en la auditoría con su política; el origen no se recrea ni se sustituye. La huella incluye la política y la existencia/updateTime del origen: si aparece o cambia, la confirmación anterior se rechaza. Continúan todos los bloqueos de actividad real, pagos, firmas, entregas, archivos y relaciones desconocidas. Estos paths son un inventario potencial; no se ejecutó ninguna eliminación productiva. Un borrado futuro requiere nueva verificación y autorización productiva.
 
 ## Manifiesto exacto potencial, no ejecutado
 
 ### 14b82cff-5c72-438b-8bac-a69fd7ef4d0b
 
-Nombre: JUAN. Registros del grafo bloqueado, candidatos sólo tras resolver el origen: 16.
+Nombre: JUAN. Registros potencialmente eliminables, sujetos a nueva verificación y autorización productiva: 16.
 
 ```text
 presupuestos_v2/14b82cff-5c72-438b-8bac-a69fd7ef4d0b
@@ -67,7 +67,7 @@ Conservar (la solicitud de origen está ausente):
 
 ### 40aa027d-9a25-4108-9cb5-9c69f3b5a34a
 
-Nombre: PRUEBA V2 UNIFICADOS A MANUAL CATALOGO — NO REAL. Registros del grafo bloqueado, candidatos sólo tras resolver el origen: 10.
+Nombre: PRUEBA V2 UNIFICADOS A MANUAL CATALOGO — NO REAL. Registros potencialmente eliminables, sujetos a nueva verificación y autorización productiva: 10.
 
 ```text
 presupuestos_v2/40aa027d-9a25-4108-9cb5-9c69f3b5a34a
@@ -90,7 +90,7 @@ Conservar (la solicitud de origen está ausente):
 
 ### 45705278-cd5c-4544-9e93-43222691e763
 
-Nombre: PRUEBA V2 UNIFICADOS C SOLICITUD CATALOGO — NO REAL. Registros del grafo bloqueado, candidatos sólo tras resolver el origen: 3.
+Nombre: PRUEBA V2 UNIFICADOS C SOLICITUD CATALOGO — NO REAL. Registros potencialmente eliminables, sujetos a nueva verificación y autorización productiva: 3.
 
 ```text
 presupuestos_v2/45705278-cd5c-4544-9e93-43222691e763
@@ -106,7 +106,7 @@ Conservar (la solicitud de origen está ausente):
 
 ### aee8966b-5c17-4f7f-b50c-fff959ca0f0d
 
-Nombre: PRUEBA DEPLOY d927 NO REAL. Registros del grafo bloqueado, candidatos sólo tras resolver el origen: 20.
+Nombre: PRUEBA DEPLOY d927 NO REAL. Registros potencialmente eliminables, sujetos a nueva verificación y autorización productiva: 20.
 
 ```text
 presupuestos_v2/aee8966b-5c17-4f7f-b50c-fff959ca0f0d
@@ -164,7 +164,7 @@ Resultados verificados en esta rama:
 | `npx eslint` sobre ocho archivos tocados | PASS, 0 errores y 0 warnings |
 | `npm run build` | PASS |
 | `npm run test:safe` | PASS |
-| `testBudgetTestDossierEmulator.ts` | PASS: atomicidad, fallo transaccional, concurrencia, permisos, archivos/finanzas protegidos, origen ausente bloqueado |
+| `testBudgetTestDossierEmulator.ts` | PASS: atomicidad, fallo transaccional, concurrencia, permisos, archivos/finanzas protegidos, excepción exacta de cuatro orígenes ausentes y bloqueo de cualquier otro origen |
 | `testBudgetV2DeletionEmulator.ts` | PASS |
 | `testBudgetV2Emulator.ts` | PASS |
 | `testBudgetAcceptanceV2Emulator.ts` | PASS, incluyendo documentación privada y API adversarial |
@@ -174,7 +174,9 @@ Resultados verificados en esta rama:
 
 Las suites Firebase se ejecutaron con proyecto `demo-cuenta-hogar`, Firestore `127.0.0.1:8080`, Auth `127.0.0.1:9099` y Storage `127.0.0.1:9199`. La regresión histórica P4 exige su email de administrador de fixture; una primera invocación con otro email sintético dio 403 en lugar del 409 esperado. Se corrigió únicamente el entorno de invocación y la suite pasó íntegra, sin cambiar código ni assertions.
 
-La revisión automática rechazó permitir la eliminación con una solicitud de origen ausente. La implementación conserva ese bloqueo; se solicitó decisión explícita del propietario. El PR se entrega como borrador mientras esta excepción esté pendiente. Nuevas suites: `testBudgetTestDossierEmulator.ts` y `runBudgetTestDossierBrowser.ts`, con guardas demo-cuenta-hogar, Auth/Firestore/Storage Emulator y Chrome local aislado. Las fixtures son sintéticas; no se copian documentos productivos.
+La revisión automática había detenido la ampliación de elegibilidad. Posteriormente el propietario autorizó explícitamente la excepción para los cuatro expedientes inventariados con los controles descritos; se implementó esa excepción acotada. Esta autorización de código no autoriza borrados productivos. Nuevas suites: `testBudgetTestDossierEmulator.ts` y `runBudgetTestDossierBrowser.ts`, con guardas demo-cuenta-hogar, Auth/Firestore/Storage Emulator y Chrome local aislado. Las fixtures son sintéticas; no se copian documentos productivos.
+
+Las nuevas pruebas de excepción usan las parejas técnicas exactas autorizadas con contenido enteramente sintético. Ejecutar cada runner de excepción en una sesión Emulator limpia, sin importar estados previos: las auditorías/tombstones se conservan y deliberadamente impiden reutilizar esas familias en la misma sesión. No limpiar ni reutilizar registros productivos para ejecutar estas pruebas.
 
 Capturas locales fuera de Git: `/tmp/cuenta-hogar-test-dossier-review/` (desktop/mobile, manifiesto, confirmaciones y bloqueo financiero). Inventario técnico reducido: `/tmp/cuenta-hogar-test-dossier-inventory.json`. No contiene tokens, costos, proveedores ni documentos privados raw.
 

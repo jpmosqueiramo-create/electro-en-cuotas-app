@@ -7,6 +7,15 @@ import { verifyReadyEvidence, type ContractReadyEvidenceV1 } from './contractRea
 import { operationFromAcceptance, verifyOperation } from './operationV2';
 import { initialCustody } from './operationCustodyV2';
 export const TEST_DOSSIER_POLICY = 'TEST_DOSSIER_CLEANUP_V1';
+/** Owner-approved exception: exact inventoried family/source pairs only. No identity inference. */
+export const ABSENT_TEST_SOURCE_POLICY = 'KNOWN_ABSENT_TEST_SOURCES_V1';
+export const authorizedAbsentTestSources: Readonly<Record<string, string>> = Object.freeze({
+    '14b82cff-5c72-438b-8bac-a69fd7ef4d0b': 'solicitudes_cuenta/budget_manual_14b82cff-5c72-438b-8bac-a69fd7ef4d0b',
+    '40aa027d-9a25-4108-9cb5-9c69f3b5a34a': 'solicitudes_cuenta/budget_manual_40aa027d-9a25-4108-9cb5-9c69f3b5a34a',
+    '45705278-cd5c-4544-9e93-43222691e763': 'solicitudes_cuenta/web_23a681dd-d6c5-438d-903a-6e41edf03104',
+    'aee8966b-5c17-4f7f-b50c-fff959ca0f0d': 'solicitudes_cuenta/03j4qAuSiA77FOPMEcUg',
+});
+export const permitsAbsentTestSource = (id: string, path: string) => Object.hasOwn(authorizedAbsentTestSources, id) && authorizedAbsentTestSources[id] === path;
 export const TEST_DECLARATION = 'SYNTHETIC_ONLY_NO_REAL_ACTIVITY';
 export const testActions = ['OPEN_OR_CREATE', 'SET_CONTRACT_PLAN', 'SET_PAYMENT_DATES', 'UPDATE_PERSONAL_DATA', 'UPDATE_EMPLOYMENT_DATA', 'MARK_READY_TO_FORMALIZE', 'RETURN_TO_DRAFT'] as const;
 export function equal(a: unknown, b: unknown) {

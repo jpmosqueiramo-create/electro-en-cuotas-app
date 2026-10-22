@@ -4,7 +4,7 @@ import type { DocumentReference, DocumentSnapshot, Firestore, Transaction } from
 import type { BudgetV2 } from './budgetV2';
 import { budgetV2OpaqueId } from './budgetV2';
 import { budgetDeletionRef, budgetDeletionQueries, buildBudgetDeletionInventory, inspectBudgetTree, type BudgetDeletionPreview } from './budgetV2Deletion';
-import { classifyDossierRecords, TEST_DECLARATION, TEST_DOSSIER_POLICY, equal, keys } from './budgetTestDossierPolicy';
+import { classifyDossierRecords, TEST_DECLARATION, TEST_DOSSIER_POLICY, equal, keys, ABSENT_TEST_SOURCE_POLICY, permitsAbsentTestSource } from './budgetTestDossierPolicy';
 import { stable } from './contractV2';
 import { contractIdentity, contractOriginId, contractSnapshotId } from './contractSnapshotV2';
 import { operationFromAcceptance } from './operationV2';
@@ -14,6 +14,8 @@ export interface TestDossierPreview extends BudgetDeletionPreview {
     preservedPaths: string[];
     testVerification: 'ADMIN_DECLARATION_REQUIRED';
     storagePrefixes: string[];
+    missingSourcePaths: string[];
+    sourceAbsencePolicy: string | null;
 }
 const hash = (x: unknown) => createHash('sha256').update(stable(x)).digest('hex');
 function idCheck(id: unknown): asserts id is string {
@@ -100,7 +102,9 @@ async function graph(db: Firestore, id: string, tx?: Transaction) {
     }
     const source = await read(db.doc(base.preservedSource));
     preserved.push(source);
-    if (!source.exists)
+    const missingSourcePaths = source.exists ? [] : [source.ref.path];
+    const sourceAbsencePolicy = !source.exists && permitsAbsentTestSource(id, source.ref.path) ? ABSENT_TEST_SOURCE_POLICY : null;
+    if (!source.exists && !sourceAbsencePolicy)
         blockers.push('Solicitud de origen no disponible.');
     const sourceData = source.data() ?? {};
     // Historical source records are preserved. Financial/legal/physical activity still prevents cleaning their dossier.
@@ -117,7 +121,7 @@ async function graph(db: Firestore, id: string, tx?: Transaction) {
     const paths = classification.allowed.concat(indexes.map(s => s.ref.path)).sort();
     const facts = [...snapshots, ...external, ...indexes, ...preserved];
     const unique = new Map(facts.map(s => [s.ref.path, s]));
-    const preview: TestDossierPreview = { ...base, policy: TEST_DOSSIER_POLICY, paths, preservedPaths: [...new Set(preserved.map(s => s.ref.path))].sort(), testVerification: 'ADMIN_DECLARATION_REQUIRED', blockers: [...new Set(blockers)].sort(), allowed: blockers.length === 0, storagePrefixes: storagePrefixes.sort(), fingerprint: hash([...unique.values()].map(metadata).sort((a, b) => String(a[0]).localeCompare(String(b[0])))) };
+    const preview: TestDossierPreview = { ...base, policy: TEST_DOSSIER_POLICY, paths, preservedPaths: [...new Set(preserved.map(s => s.ref.path))].sort(), testVerification: 'ADMIN_DECLARATION_REQUIRED', missingSourcePaths, sourceAbsencePolicy, blockers: [...new Set(blockers)].sort(), allowed: blockers.length === 0, storagePrefixes: storagePrefixes.sort(), fingerprint: hash({ sourceAbsencePolicy, documents: [...unique.values()].map(metadata).sort((a, b) => String(a[0]).localeCompare(String(b[0]))) }) };
     return { preview, snapshots, indexes };
 }
 async function storageInspection(bucket: Bucket, prefixes: string[]) {
@@ -191,7 +195,7 @@ export async function deleteTestDossier(db: Firestore, bucket: Bucket, input: un
         if (!current.preview.allowed || current.preview.fingerprint !== c.fingerprint || stable(current.preview.storagePrefixes) !== stable(prepared.storagePrefixes))
             throw Error('El presupuesto cambió o tiene dependencias protegidas.');
         const result = { budgetId: c.budgetId, deletedPaths: current.preview.paths, deletedAt: new Date().toISOString() };
-        tx.create(audit, { schemaVersion: 'BUDGET_DELETION_V1', policy: TEST_DOSSIER_POLICY, commandId: c.commandId, digest, actor, testDeclaration: c.testDeclaration, reason: c.reason.trim(), preservedPaths: current.preview.preservedPaths, manifestHash: c.fingerprint, result });
+        tx.create(audit, { schemaVersion: 'BUDGET_DELETION_V1', policy: TEST_DOSSIER_POLICY, commandId: c.commandId, digest, actor, testDeclaration: c.testDeclaration, reason: c.reason.trim(), preservedPaths: current.preview.preservedPaths, missingSourcePaths: current.preview.missingSourcePaths, sourceAbsencePolicy: current.preview.sourceAbsencePolicy, manifestHash: c.fingerprint, result });
         const allowed = new Set(current.preview.paths);
         for (const s of [...current.snapshots, ...current.indexes])
             if (s.exists && allowed.has(s.ref.path))
