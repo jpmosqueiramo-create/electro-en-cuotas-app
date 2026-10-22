@@ -1,3 +1,4 @@
+import { readOperationIdentity } from './operationIdentityReviewServer';
 import { createHash } from 'node:crypto';
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
 import { contractRefs } from './contractV2Server';
@@ -25,15 +26,16 @@ async function context(db:Firestore,tx:Transaction,id:string,v:number){
  if(!attachment||attachment.sha256!==entry.attachment.sha256||slot.observation)profile.documents[type]={...entry,status:'OBSERVED'};
  }
  }
- return {r,expected,draft,review,profile,identityMismatch};
+ const identityReview=await readOperationIdentity(db,tx,id,v);
+ return {r,expected,draft,review,profile,identityMismatch,identityReview};
 }
 export async function readCreditReview(db:Firestore,id:string,v:number){return db.runTransaction(async tx=>{
  const c=await context(db,tx,id,v),now=new Date().toISOString(),documents=c.profile?.documents??{};const localSnapshot=await tx.get(c.r.family.collection('documentation').doc(String(v)));const local=localSnapshot.exists?localSnapshot.data() as BudgetDocumentationCaseV2:null;
- const dataReady=!c.identityMismatch&&!!c.draft&&completeness({...c.draft,economicTerms:c.draft.economicTerms}).filter(x=>x.startsWith('Datos personales')).length===0&&!!c.draft.lastClientSubmissionAppliedAt;
+ const dataReady=!c.identityReview.requiresClarification&&!c.identityMismatch&&!!c.draft&&completeness({...c.draft,economicTerms:c.draft.economicTerms}).filter(x=>x.startsWith('Datos personales')).length===0&&!!c.draft.lastClientSubmissionAppliedAt;
  const prerequisite=creditPrerequisites(dataReady,documents,now),fresh=!!c.review&&c.review.draftDataHash===personalHash(c.draft)&&c.review.documentsHash===hash(documents);
  const approved=c.review?.state==='APPROVED'&&prerequisite==='IN_REVIEW'&&fresh;
  // Return metadata only. Storage paths and identity hashes never leave the server.
- return {operationId:c.expected.operationId,identityMismatch:c.identityMismatch,review:c.review,profile:c.profile?{originBudgetId:c.profile.originBudgetId,originVersion:c.profile.originVersion,revision:c.profile.revision,verifiedAt:c.profile.verifiedAt}:null,
+ return {identityReview:c.identityReview,operationId:c.expected.operationId,identityMismatch:c.identityMismatch,review:c.review,profile:c.profile?{originBudgetId:c.profile.originBudgetId,originVersion:c.profile.originVersion,revision:c.profile.revision,verifiedAt:c.profile.verifiedAt}:null,
  documents:requiredDocuments.concat('PAYSLIP').map(type=>{const d=documents[type];return {type,required:requiredDocuments.includes(type),status:!d?'MISSING':c.identityMismatch?'OBSERVED':currentDocument(d,now)?'VERIFIED':d.status==='OBSERVED'?'OBSERVED':'EXPIRED',validUntil:d?.validUntil??null,reviewedAt:d?.reviewedAt??null,originalName:d?.attachment.originalName??null,attachmentId:d?.attachment.attachmentId??null,choices:(local?.slots?.[type]?.attachments??[]).map(a=>({id:a.attachmentId,name:a.originalName}))};}),
  state:c.review?.state==='REJECTED'||c.review?.state==='MORE_INFORMATION'?c.review.state:prerequisite!=='IN_REVIEW'?prerequisite:approved?'APPROVED' as const:'IN_REVIEW' as const,prerequisite,approved,requiresFreshReview:!fresh&&!!c.review,productiveFormalization:'DISABLED' as const};
  });}
@@ -47,6 +49,7 @@ export async function creditCommand(db:Firestore,id:string,v:number,input:unknow
  if(c.expectedRevision!==(x.review?.revision??0)||c.expectedProfileRevision!==(x.profile?.revision??0))fail('La operación cambió. Recargá antes de continuar.');
  const now=new Date().toISOString(),next:CreditReview=x.review?structuredClone(x.review):{policy:CREDIT_POLICY,operationId:x.expected.operationId,revision:0,state:'PENDING_DATA',profileOrigin:null,resolution:'',notes:'',reviewedBy:actor,reviewedAt:now,draftDataHash:null,documentsHash:null};
  let profile=x.profile,profileWrite=false;
+ if(x.identityReview.requiresClarification&&!(c.action==='VERIFY_IDENTITY'||c.action==='LINK_PROFILE'||(c.action==='DECIDE'&&['MORE_INFORMATION','PENDING_DATA'].includes(String(c.state)))))fail('Aclaración de identidad pendiente. Revisá el formulario y verificá documentalmente antes de continuar.');
  if(c.action==='VERIFY_IDENTITY'){
  if(!x.draft?.lastClientSubmissionAppliedAt)fail('Primero revisá y aplicá los datos del formulario contractual.');
  if(profile)fail('La operación ya tiene identidad verificada. No se permite reemplazarla ni fusionarla.');
@@ -84,7 +87,7 @@ export async function creditCommand(db:Firestore,id:string,v:number,input:unknow
 }
 
 export async function listVerifiedProfiles(db:Firestore){const list=await db.collectionGroup('clientProfiles').limit(100).get();const result=[];for(const doc of list.docs){const p=doc.data() as ClientDocumentProfile;if(p.schemaVersion!=='CLIENT_DOCUMENT_PROFILE_V2'||doc.ref.path!==creditRefs(db,p.originBudgetId,p.originVersion).profile.path)continue;const draft=await contractRefs(db,p.originBudgetId,p.originVersion).draft.get();if(!draft.exists)continue;result.push({budgetId:p.originBudgetId,version:p.originVersion,name:(draft.data() as ContractDraftV2).personalData.fullName,verifiedAt:p.verifiedAt});}return result;}
-export async function reusableDocumentSource(db:Firestore,id:string,v:number,type:unknown){return db.runTransaction(async tx=>{const c=await context(db,tx,id,v),entry=c.profile?.documents[documentType(type)];if(c.identityMismatch||!entry)fail('Documento no disponible para la identidad vigente.');return entry;});}
+export async function reusableDocumentSource(db:Firestore,id:string,v:number,type:unknown){return db.runTransaction(async tx=>{const c=await context(db,tx,id,v),entry=c.profile?.documents[documentType(type)];if(c.identityReview.requiresClarification||c.identityMismatch||!entry)fail('Documento no disponible para la identidad vigente.');return entry;});}
 
 /** Enrolled operations must have a fresh manual approval before economic preparation/READY. Historical unenrolled operations remain readable and unchanged. */
-export async function assertCreditPreparation(db:Firestore,tx:Transaction,id:string,v:number){const enrolled=await tx.get(creditRefs(db,id,v).review);if(!enrolled.exists)return;const c=await context(db,tx,id,v);const ready=!c.identityMismatch&&!!c.draft?.lastClientSubmissionAppliedAt&&completeness(c.draft).filter(m=>m.startsWith('Datos personales')).length===0;if(!c.review||c.review.state!=='APPROVED'||creditPrerequisites(ready,c.profile?.documents??{},new Date().toISOString())!=='IN_REVIEW'||c.review.draftDataHash!==personalHash(c.draft)||c.review.documentsHash!==hash(c.profile?.documents??{}))fail('Primero completá la evaluación crediticia y registrá una aprobación vigente.');}
+export async function assertCreditPreparation(db:Firestore,tx:Transaction,id:string,v:number){const identityReview=await readOperationIdentity(db,tx,id,v);if(identityReview.requiresClarification)fail('Primero completá la evaluación crediticia: aclaración de identidad pendiente. Revisá los datos y verificá documentalmente antes de continuar.');const enrolled=await tx.get(creditRefs(db,id,v).review);if(!enrolled.exists)return;const c=await context(db,tx,id,v);const ready=!c.identityReview.requiresClarification&&!c.identityMismatch&&!!c.draft?.lastClientSubmissionAppliedAt&&completeness(c.draft).filter(m=>m.startsWith('Datos personales')).length===0;if(!c.review||c.review.state!=='APPROVED'||creditPrerequisites(ready,c.profile?.documents??{},new Date().toISOString())!=='IN_REVIEW'||c.review.draftDataHash!==personalHash(c.draft)||c.review.documentsHash!==hash(c.profile?.documents??{}))fail('Primero completá la evaluación crediticia y registrá una aprobación vigente.');}

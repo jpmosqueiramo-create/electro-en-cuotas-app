@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
+import { OperationIdentityNotice } from './OperationIdentityNotice';
+import type { OperationIdentityReview } from '@/lib/operationIdentityReview';
 import type { BudgetV2 } from '@/lib/budgetV2';
 import type { ContractDraftV2 } from '@/lib/contractV2';
 import type { OperationViewV2 } from '@/lib/operationV2';
@@ -11,7 +13,7 @@ import { operationNextAction, type OperationSection } from '@/lib/operationWorks
 import { btn } from './ContractDataFields';
 const sections: Record<OperationSection, string> = { budget: 'Presupuesto', contract: 'Contrato', logistics: 'Proveedor y logística', affiliate: 'Vendedor afiliado', payments: 'Cuotas y pagos' };
 const money = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
-export function OperationUnifiedFrame({ budget, draft, operation, section, onSection, pendingSubmissions, conformityPending, panels,headerActions,headerContent,refreshKey=0 }: {refreshKey?:number;
+export function OperationUnifiedFrame({ budget, draft, operation, section, onSection, pendingSubmissions, conformityPending, panels,headerActions,headerContent,identityReview,refreshKey=0 }: {refreshKey?:number;identityReview?:OperationIdentityReview|null;
   budget?: BudgetV2; draft: ContractDraftV2 | null; operation: OperationViewV2 | null; section: OperationSection;
   onSection: (value: OperationSection) => void; pendingSubmissions: boolean; conformityPending: boolean;
   panels: Partial<Record<OperationSection, ReactNode>>; headerActions?: ReactNode; headerContent?: ReactNode;
@@ -40,14 +42,17 @@ export function OperationUnifiedFrame({ budget, draft, operation, section, onSec
     } catch { if (!signal?.aborted) setTrackingError('No se pudo consultar el seguimiento. Reintentá antes de decidir el próximo paso logístico.'); }
   }, [user, budgetId, version]);
   useEffect(() => { const controller = new AbortController(); void load(controller.signal); return () => controller.abort(); }, [load, section,refreshKey]);
-  const next = operationNextAction({ draft, tracking, pendingSubmissions, conformityPending,creditState });
+  const next = identityReview?.requiresClarification ? { status: 'Identidad pendiente de aclaración', label: 'Revisar identidad del cliente', responsible: 'Administración', section: 'contract' as const } : operationNextAction({ draft, tracking, pendingSubmissions, conformityPending,creditState });
   const accepted = draft?.acceptedReferenceSnapshot ?? budget?.options.find(o => o.optionId === operation?.identity.acceptedOptionId)?.referenceSnapshot;
   return <section data-testid="operation-unified-workspace" className="min-w-0 space-y-5 border-t border-border-color pt-5">
     <header className="min-w-0 space-y-4 rounded-2xl border border-border-color bg-surface p-4 sm:p-6">
       {operation&&<Link className="admin-control inline-flex min-h-11 items-center font-semibold text-brand-primary" href={`/admin/solicitudes/${operation.identity.sourceCollection}/${encodeURIComponent(operation.identity.solicitudId)}`}>Volver a solicitud</Link>}
       <p className="text-sm font-semibold text-brand-primary">Ficha de operación</p>
-      <h2 className="break-words font-heading text-2xl font-bold">{draft?.personalData.fullName || budget?.clienteSnapshot.nombre || 'Cliente'}</h2>
-      <p className="break-words">{accepted?.nombre || 'Propuesta aceptada'} · {draft?.personalData.locality || budget?.clienteSnapshot.localidad || 'Localidad pendiente'}</p>
+      <h2 className="break-words font-heading text-2xl font-bold">{budget?.clienteSnapshot.nombre || 'Cliente del presupuesto'}</h2>
+      <p className="text-sm text-text-secondary">Cliente según presupuesto aceptado</p>
+      {draft?.personalData.fullName&&draft.personalData.fullName!==budget?.clienteSnapshot.nombre&&<p className="break-words text-sm">Nombre en el borrador: {draft.personalData.fullName}</p>}
+      {identityReview&&<OperationIdentityNotice review={identityReview}/>}
+      <p className="break-words">{accepted?.nombre || 'Propuesta aceptada'} · {budget?.clienteSnapshot.localidad || 'Localidad pendiente'}</p>
       <p className="font-semibold">{next.status}</p>
       <div className="space-y-2 border-t border-border-color pt-3" role="status"><p>Próxima acción: <strong>{next.label}</strong></p><p className="text-sm">Responsable: {next.responsible}</p></div>
       <div data-testid="operation-header-actions" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center"><button className="btn-primary min-h-11 whitespace-normal" onClick={() => {onSection(next.section);setFocusRequest(value=>value+1);}}>{next.label}</button>{headerActions}</div>{headerContent}
