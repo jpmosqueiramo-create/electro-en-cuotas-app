@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { adminSolicitudNextAction, formatAdminSolicitudDate, type AdminSolicitudListItem, type AdminSolicitudSource } from "@/lib/adminSolicitudesReadModel";
 import { loadAdminSolicitudBySourceAndId } from "@/lib/adminSolicitudesReader";
 
+import { SolicitudOperationLinks } from "./SolicitudOperationLinks";
 import { presentAdminSolicitudStatus } from "./presentation";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -29,6 +30,7 @@ export function AdminSolicitudDetail({ source, id, context }: { source: AdminSol
     {back}
     {!state ? <p role="status" className="py-10 text-text-secondary">Cargando operación…</p> : state.error ? <Section title="No pudimos cargar esta operación"><p role="alert" className="text-sm text-text-secondary">La consulta falló. No se buscó en otra fuente.</p><button type="button" className="admin-control mt-4 min-h-11 rounded-xl border border-border-color px-4 text-sm font-semibold" onClick={() => { setState(null); setAttempt(value => value + 1); }}>Reintentar</button></Section> : !item ? <Section title="Operación no encontrada"><p className="text-sm text-text-secondary">No existe un registro disponible con esta referencia en la fuente indicada.</p></Section> : <>
       <PageHeader title={item.nombreCliente ?? "Operación sin nombre registrado"} subtitle={`${item.tipoPresentacion} · ${presentAdminSolicitudStatus(item.estadoOriginal)}`} actions={<span className="rounded-lg border border-border-color bg-surface px-3 py-2 text-sm font-semibold">Sólo lectura</span>} />
+      <SolicitudOperationLinks key={`${source}:${id}`} source={source} id={id} />
       <Section title="Resumen"><dl className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"><Field label="Tipo" value={item.tipoPresentacion} /><Field label="Origen" value={item.origenPresentacion} /><Field label="Referencia de catálogo" value={item.referenciaCatalogo} /><Field label="Plan preferido" value={item.planPreferido ? `${item.planPreferido} cuotas` : null} /><Field label="Cuota estimada al solicitar" value={item.cuotaCapturada !== null ? `$ ${item.cuotaCapturada.toLocaleString("es-AR")}` : null} /><Field label="Estado" value={presentAdminSolicitudStatus(item.estadoOriginal)} /><Field label="Fecha" value={formatAdminSolicitudDate(item.fechaCreacion)} /><Field label="Necesidad / bien" value={item.productoONecesidad} /><Field label="Referencia de operación" value={item.documentId} /><Field label="Próxima acción" value={adminSolicitudNextAction(item)} /></dl>
         {item.mensajeAdmin && <div className="mt-5 rounded-xl border border-border-color bg-background-main p-4"><p className="text-xs font-semibold text-text-secondary">{item.estadoOriginal === "REQUIERE_INFO" ? "Información solicitada al cliente" : "Mensaje administrativo"}</p><p className="mt-1 whitespace-pre-wrap break-words text-sm">{item.mensajeAdmin}</p></div>}
         <p className="mt-4 text-sm text-text-secondary">La preferencia de plan no equivale a aceptación de presupuesto ni constituye obligación contractual.</p>

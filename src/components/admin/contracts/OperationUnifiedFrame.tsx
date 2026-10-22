@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
 import type { BudgetV2 } from '@/lib/budgetV2';
 import type { ContractDraftV2 } from '@/lib/contractV2';
@@ -43,6 +44,7 @@ export function OperationUnifiedFrame({ budget, draft, operation, section, onSec
   const accepted = draft?.acceptedReferenceSnapshot ?? budget?.options.find(o => o.optionId === operation?.identity.acceptedOptionId)?.referenceSnapshot;
   return <section data-testid="operation-unified-workspace" className="min-w-0 space-y-5 border-t border-border-color pt-5">
     <header className="min-w-0 space-y-4 rounded-2xl border border-border-color bg-surface p-4 sm:p-6">
+      {operation&&<Link className="admin-control inline-flex min-h-11 items-center font-semibold text-brand-primary" href={`/admin/solicitudes/${operation.identity.sourceCollection}/${encodeURIComponent(operation.identity.solicitudId)}`}>Volver a solicitud</Link>}
       <p className="text-sm font-semibold text-brand-primary">Ficha de operación</p>
       <h2 className="break-words font-heading text-2xl font-bold">{draft?.personalData.fullName || budget?.clienteSnapshot.nombre || 'Cliente'}</h2>
       <p className="break-words">{accepted?.nombre || 'Propuesta aceptada'} · {draft?.personalData.locality || budget?.clienteSnapshot.localidad || 'Localidad pendiente'}</p>
