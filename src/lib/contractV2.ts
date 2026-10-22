@@ -72,9 +72,17 @@ export function contractSchedule(e:ContractEconomicTermsV2, first:string, day:nu
     return {installmentNumber:i+1,dueDate:i===0?first:`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`,amount:e.contractInstallmentAmount};
   });
 }
+export interface ContractProductDetailsV2 { quantity:number|null; condition:'NEW'|'USED'|null }
+export function productDetails(value:unknown):ContractProductDetailsV2 {
+  const o=exact(value,['quantity','condition']);
+  if(o.quantity!==null&&(typeof o.quantity!=='number'||!Number.isSafeInteger(o.quantity)||o.quantity<1))reject('Indicá una cantidad entera positiva o dejala pendiente.');
+  if(o.condition!==null&&o.condition!=='NEW'&&o.condition!=='USED')reject('Seleccioná nuevo, usado o pendiente.');
+  return {quantity:o.quantity as number|null,condition:o.condition as ContractProductDetailsV2['condition']};
+}
 export interface ContractDraftV2 {
   schemaVersion:'CONTRACT_DRAFT_V2'; contractDraftId:string;budgetId:string;budgetVersion:number;acceptedOptionId:string;revision:number;status:'DRAFT'|'READY_TO_FORMALIZE';readyEvidenceId?:string|null;
   acceptedReferenceSnapshot:Omit<BudgetReferenceSnapshotV2,'imagenUrls'>; acceptedAt:string;preferredPlanCuotas:number|null;
+  productDetails?:ContractProductDetailsV2;
   personalDataVersion?:PersonalDataVersion;personalData:ContractPersonalDataV2;employmentData:ContractEmploymentDataV2;economicTerms:ContractEconomicTermsV2|null;
   firstInstallmentDueDate:string|null;preferredMonthlyDueDay:number|null;paymentScheduleDraft:ContractPaymentScheduleV2;
   activeClientDataRequestId:string|null;lastClientSubmissionId:string|null;lastClientSubmissionAppliedAt:string|null;lastClientSubmissionAppliedBy:string|null;

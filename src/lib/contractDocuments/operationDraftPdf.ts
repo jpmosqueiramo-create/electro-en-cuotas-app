@@ -46,7 +46,7 @@ function renderOperationDraftPair(p:OperationDraftProjection){
    line(`Entre ${p.issuer.legalName}, CUIT ${p.issuer.taxId}, que opera bajo la marca ${p.issuer.tradeName}, domicilio legal: ${p.issuer.legalAddress}; representación societaria y facultades de firma: ${pending}, en adelante la MANDATARIA, y ${c.fullName||pending}, DNI ${c.dni||pending}, CUIL ${c.cuil||pending}, domicilio ${c.address||pending}, ${c.locality||pending}, ${c.province||pending}, CP ${c.postalCode||pending}, correo ${c.email||pending}, WhatsApp ${c.whatsapp||pending}, en adelante el MANDANTE o CLIENTE, se presenta el siguiente borrador de mandato específico.`);
    for(const [index,clause] of draftClauses.entries()){
     if(y>240){doc.addPage();y=24;}line(clause[0],11,true);clause.slice(1).forEach(s=>line(s));
-    if(index===0){table(['Cantidad','Bien solicitado','Condición'],[[pending,`${p.product.name} — ${p.product.description}`,pending]]);}
+    if(index===0){table(['Cantidad','Bien solicitado','Condición'],[[p.product.quantity===null?pending:String(p.product.quantity),`${p.product.name} — ${p.product.description}`,p.product.condition===null?pending:p.product.condition==='NEW'?'Nuevo':'Usado']]);}
     if(index===1)table(['Concepto','Importe'],[['Capital aplicado a la adquisición',e?money(e.capital):pending],['Servicios de Cuenta Hogar',e?money(e.service):pending],['Total contractual',e?money(e.total):pending]]);
     if(index===2){line(e?`Plan guardado: ${e.count} cuotas. Importe por cuota: ${money(e.installment)}.`:'Plan contractual: '+pending);if(p.schedule.length)table(['Cuota','Importe','Vencimiento'],p.schedule.map(r=>[String(r.installmentNumber),money(r.amount),r.dueDate.split('-').reverse().join('/')]));else line('Cronograma: '+pending);}
    }

@@ -1,0 +1,22 @@
+{
+  "environment": "FIREBASE_EMULATORS_ONLY",
+  "project": "demo-cuenta-hogar",
+  "syntheticDataOnly": true,
+  "sourceHash": "1d3e1df8effa9945496c6289d5739c1e9c0db53f8d4570de8499cc9906a07035",
+  "draftRevision": 3,
+  "projectionHash": "e85f75a0aa94cbf904c176c3961942972ecb2a677d4eb28f8e73e2ad41d83b25",
+  "product": {
+    "name": "Referencia 2",
+    "description": "Gesti\u00f3n de compra\nDescripci\u00f3n sint\u00e9tica",
+    "quantity": 2,
+    "condition": "NEW"
+  },
+  "files": {
+    "preparation-390.png": "0298ff229da5dd6e063d7e701f33c50790112130004e006f923734ec2b4539e8",
+    "mandato.pdf": "6db6ae291097c6a520c59554302f3becbcab1f1d1b4b0297853c3c488e10910f",
+    "product-1280.png": "f0b8a6761b58f2021ac1731d4968c9c9062049f5e8533ce315c97f40585c95bf",
+    "product-390.png": "d613a062db20b0540b4d87fb406ee59c2c96904618a06cc46f6065f646514991",
+    "preparation-1280.png": "1324c774c445f6044eebf6b4e8b4d3736b97cee870ac5de6f0ff09b2252cbfc7",
+    "pagare.pdf": "801b917e34c9ac65f8797eda282d9f5ecb06cb4b88c5a6d6931538d408d26805"
+  }
+}
