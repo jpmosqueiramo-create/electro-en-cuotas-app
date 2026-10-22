@@ -8,15 +8,15 @@ import { db } from "@/lib/firebase";
 import { resolveAlertAction, AlertaAdminItem } from "@/lib/budgetAlertRouting";
 import { useState, useEffect } from "react";
 import { Bell, ArrowRight, ClipboardList, Files, FileText, Wallet, Truck, CalendarDays, CheckCheck } from "lucide-react";
+import { adminPaths } from "@/lib/adminCanonicalNavigation";
 import { ADMIN_DESTINATIONS } from "@/components/admin/navigation";
 
 const OPERATIONS = [
-  { title: "Solicitudes", description: "Revisar la bandeja de solicitudes y los datos de cada operación.", href: "/admin/validaciones", icon: ClipboardList, action: "Revisar bandeja" },
-  { title: "Información y documentación", description: "Consultar la información solicitada y los documentos dentro de Validaciones.", href: "/admin/validaciones", icon: Files, action: "Revisar documentación" },
+  { title: "Solicitudes", description: "Revisar la bandeja de solicitudes y los datos de cada operación.", href: adminPaths.requests, icon: ClipboardList, action: "Revisar bandeja" },
+  { title: "Información y documentación", description: "Consultar archivos y continuar la revisión desde la ficha de operación.", href: adminPaths.documents, icon: Files, action: "Revisar documentación" },
   { title: "Presupuestos", description: "Continuar un presupuesto o consultar las propuestas preparadas.", href: "/admin/presupuestos", icon: FileText, action: "Abrir presupuestos" },
-  { title: "Pagos y cobranzas", description: "Consultar cuotas, comprobantes y gestiones de cobranza.", href: "/admin/cartera", icon: Wallet, action: "Abrir cobranzas" },
-  // Compatibilidad: las entregas continúan dentro del módulo de Validaciones.
-  { title: "Logística y entregas", description: "Revisar operaciones aprobadas en la sección Logística y Entregas de Validaciones.", href: "/admin/validaciones", icon: Truck, action: "Revisar entregas" },
+  { title: "Pagos y cobranzas", description: "Consultar cuotas, comprobantes y gestiones de cobranza.", href: adminPaths.collections, icon: Wallet, action: "Abrir cobranzas" },
+  { title: "Logística y entregas", description: "Consultar proveedor, custodia y entrega desde la ficha de operación.", href: adminPaths.logistics, icon: Truck, action: "Revisar entregas" },
 ];
 
 export default function AdminPage() {
@@ -66,7 +66,7 @@ export default function AdminPage() {
               <h2 id="alerts-title" className="flex items-center gap-2 font-heading text-base font-semibold text-brand-primary"><CheckCheck aria-hidden="true" className="size-4 shrink-0" />Sin alertas pendientes</h2>
               <p className="mt-1 text-sm text-text-secondary">No hay avisos sin leer en este momento.</p>
             </div>
-            <Link href="/admin/validaciones" className="admin-control inline-flex min-h-11 w-24 shrink-0 items-center rounded-lg text-sm text-text-secondary underline underline-offset-4 sm:w-auto">Ver bandejas</Link>
+            <Link href={adminPaths.requests} className="admin-control inline-flex min-h-11 w-24 shrink-0 items-center rounded-lg text-sm text-text-secondary underline underline-offset-4 sm:w-auto">Ver bandejas</Link>
           </div> : <>
           <div className="mb-4 flex items-start gap-3">
             <Bell aria-hidden="true" className="mt-1 size-5 shrink-0 text-brand-secondary" />
@@ -108,9 +108,9 @@ export default function AdminPage() {
 
         <section aria-labelledby="agenda-title" className="rounded-2xl border border-border-color bg-surface p-5 sm:p-6">
           <div className="flex items-center gap-3"><CalendarDays aria-hidden="true" className="size-5 text-brand-secondary" /><h2 id="agenda-title" className="font-heading text-lg font-bold text-brand-primary">Agenda y seguimiento</h2></div>
-          <p className="mt-2 text-sm text-text-secondary">Consultá promesas y vencimientos en Cartera, y los fondos pendientes de rendición en su módulo.</p>
+          <p className="mt-2 text-sm text-text-secondary">Consultá promesas y vencimientos en Cobranzas, y los fondos pendientes de rendición en su módulo.</p>
           <div className="mt-4 flex flex-wrap gap-3">
-            <Link href="/admin/cartera" className="admin-control inline-flex min-h-11 items-center rounded-xl border border-border-color px-4 text-sm font-semibold">Promesas y vencimientos</Link>
+            <Link href={adminPaths.collections} className="admin-control inline-flex min-h-11 items-center rounded-xl border border-border-color px-4 text-sm font-semibold">Promesas y vencimientos</Link>
             <Link href="/admin/rendiciones" className="admin-control inline-flex min-h-11 items-center rounded-xl border border-border-color px-4 text-sm font-semibold">Revisar rendiciones</Link>
           </div>
         </section>

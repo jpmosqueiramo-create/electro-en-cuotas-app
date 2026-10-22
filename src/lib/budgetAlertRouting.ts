@@ -1,3 +1,4 @@
+import { legacyAdminDestination } from "./adminCanonicalNavigation";
 /**
  * Módulo de Enrutamiento y Normalización de Alertas de Presupuestos y Validaciones
  * Cuenta Hogar - Root Monitoring Center & Budget Flow
@@ -345,6 +346,7 @@ export function buildBudgetRouteUrl(alerta: AlertaAdminItem): string {
 
   if (alerta.id) params.set("alertaId", alerta.id);
   if (lead.solicitudId) params.set("solicitudId", lead.solicitudId);
+  if(alerta.sourceCollection==='solicitudes'||alerta.sourceCollection==='solicitudes_cuenta')params.set("sourceCollection",alerta.sourceCollection);
   if (lead.nombre) params.set("nombre", lead.nombre);
   if (lead.dni) params.set("dni", lead.dni);
   if (lead.telefono) params.set("telefono", lead.telefono);
@@ -366,13 +368,7 @@ export function buildBudgetRouteUrl(alerta: AlertaAdminItem): string {
  */
 export function buildCreditValidationRouteUrl(alerta: AlertaAdminItem): string {
   const lead = parseLeadFromAlert(alerta);
-  const params = new URLSearchParams();
-
-  params.set("tab", "aperturas");
-  if (lead.solicitudId) params.set("solicitudId", lead.solicitudId);
-  if (lead.dni) params.set("dni", lead.dni);
-
-  return `/admin/validaciones?${params.toString()}`;
+  return legacyAdminDestination('validation',{sourceCollection:typeof alerta.sourceCollection==='string'?alerta.sourceCollection:undefined,solicitudId:lead.solicitudId});
 }
 
 export interface AlertAction {

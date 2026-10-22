@@ -154,5 +154,5 @@ export function parseAdminSolicitudFilters(params: Record<string, string | strin
   const filters: AdminSolicitudFilters = { view: params.view === "all" ? "all" : "pending", type, status, q: "" };
   // La misma allowlist rige entrada y salida. Nunca reflejar q de la URL.
   const safe = new URLSearchParams(adminSolicitudesContext(filters));
-  return { view: filters.view, type: safe.get("type") ?? "", status: safe.get("status") ?? "", q: "" };
+  return { view: filters.view, type: safe.get("type") ?? "", status: safe.get("status") ?? "", q: typeof params.reference === "string" && /^[A-Za-z0-9_-]{1,200}$/.test(params.reference) ? params.reference : "" };
 }
