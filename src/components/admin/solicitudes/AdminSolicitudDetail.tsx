@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowUpRight, FileText } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { adminSolicitudNextAction, formatAdminSolicitudDate, type AdminSolicitudListItem, type AdminSolicitudSource } from "@/lib/adminSolicitudesReadModel";
 import { loadAdminSolicitudBySourceAndId } from "@/lib/adminSolicitudesReader";
@@ -41,7 +41,6 @@ export function AdminSolicitudDetail({ source, id, context }: { source: AdminSol
       </div>
       <Section title="Presupuestos V2"><p className="text-sm text-text-secondary">La confección y el historial se consultan en el módulo único de Presupuestos V2.</p><Link className="admin-control mt-3 inline-flex min-h-11 items-center rounded-xl border border-border-color px-4 font-semibold text-brand-primary" href={`/admin/presupuestos?sourceCollection=${item.sourceCollection}&solicitudId=${encodeURIComponent(item.documentId)}`}>Abrir Presupuestos V2</Link></Section>
       <Section title="Actividad">{item.actividad.length ? <ul className="space-y-4">{item.actividad.map(event => <li key={event.label} className="border-l-2 border-border-color pl-4"><p className="text-sm font-semibold">{event.label}</p><p className="mt-1 text-sm text-text-secondary">{formatAdminSolicitudDate(event.fecha)}</p></li>)}</ul> : <p className="text-sm text-text-secondary">Sin actividad registrada</p>}</Section>
-      <section aria-label="Gestión avanzada" className="rounded-2xl border border-border-color p-5 text-sm"><h2 className="font-heading font-bold text-brand-primary">Gestión avanzada</h2><p className="mt-2 max-w-2xl text-text-secondary">Algunas acciones operativas todavía se realizan en el módulo anterior mientras completamos la migración.</p><p className="mt-1 text-text-secondary">Se abrirá la bandeja general de gestión.</p><Link href="/admin/validaciones" className="admin-control mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl border border-border-color bg-surface px-4 font-semibold text-brand-primary">Abrir gestión avanzada<ArrowUpRight aria-hidden="true" className="size-4" /></Link></section>
     </>}
   </div>;
 }

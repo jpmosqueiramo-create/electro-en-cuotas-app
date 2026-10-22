@@ -18,27 +18,10 @@ const src=readFileSync(new URL("../src/lib/budgetV2.ts",import.meta.url),"utf8")
 const legacy=readFileSync(new URL("../src/app/admin/validaciones/page.tsx",import.meta.url),"utf8");assert.ok(!legacy.includes("handleEnviarPresupuesto"));
 console.log("P3_MODEL_TESTS = PASS; P3_IMMUTABILITY_TESTS = PASS; P3_CLIENT_DTO_TESTS = PASS; P3_PDF_WHATSAPP_TESTS = PASS; V2_CLIENT_SENSITIVE_FIELD_LEAKS = 0");
 
-// Preserve historical contract selection against the fixed pre-P3 baseline.
-import ts from "typescript";
-import { execFileSync } from "node:child_process";
-import { runInNewContext } from "node:vm";
-const baseValidaciones=execFileSync("git",["show","f2d4d061ce41086d3a4c559462fb54e120ab0454:src/app/admin/validaciones/page.tsx"],{encoding:"utf8"});
-function handler(source:string,name:string){
- const ast=ts.createSourceFile("validaciones.tsx",source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
- let value:ts.Expression|undefined;
- function visit(node:ts.Node){if(ts.isVariableDeclaration(node)&&node.name.getText(ast)===name)value=node.initializer;ts.forEachChild(node,visit);}
- visit(ast);assert.ok(value,`Missing ${name}`);
- return value!.getText(ast);
-}
-// Contract selection may consume only an accepted historical budget, even in a mixed adversarial array.
-const contractHandler=handler(legacy,"handleOpenContratoEditor");
-assert.equal(contractHandler.replace('p.schemaVersion !== "BUDGET_V2" && ',""),handler(baseValidaciones,"handleOpenContratoEditor"));
-assert.ok(contractHandler.includes('p.schemaVersion !== "BUDGET_V2" && p.estado === "Aceptado"'));
-const acceptedSelection=contractHandler.match(/const acceptedBudget = (.+);/)?.[1];assert.ok(acceptedSelection);
-const selectionJs=ts.transpile(`(${acceptedSelection})`,{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None});
-const v2Accepted={id:"v2",schemaVersion:"BUDGET_V2",estado:"Aceptado"};const historicalAccepted={id:"legacy",estado:"Aceptado"};
-assert.equal(runInNewContext(selectionJs,{sol:{presupuestos:[v2Accepted]}}),undefined);
-assert.equal(runInNewContext(selectionJs,{sol:{presupuestos:[v2Accepted,historicalAccepted]}}).id,"legacy");
+// Legacy UI is retired: bookmarked entry points may only redirect, never
+// select a legacy contract or expose mutating handlers.
+assert.ok(legacy.includes("redirect(legacyAdminDestination('validation'"));
+for(const handler of ['handleOpenContratoEditor','updateDoc','deleteDoc','generarContratoModelo'])assert.ok(!legacy.includes(handler));
 
 import { parseBudgetCommandV2, privateBudgetReferenceId } from "../src/lib/budgetV2Persistence";
 import { BudgetV2DomainError, budgetV2SafeErrorMessage } from "../src/lib/budgetV2";
@@ -76,5 +59,5 @@ const workspace=readFileSync(new URL("../src/components/admin/budgets/BudgetV2Wo
 assert.ok(page.includes("<BudgetV2Workspace />"));
 for(const source of [page,workspace])for(const retired of ["legacyHistory","PresupuestosContent","generarPdfPresupuesto","budgetEditorLifecycle"])assert.ok(!source.includes(retired));
 for(const retired of ["handleEnviarPresupuesto","handleAceptarPresupuesto","handleCargarPresupuestoParaEditar","Historial de Presupuestos Enviados"])assert.ok(!legacy.includes(retired));
-assert.ok(legacy.includes("Confeccionar y consultar presupuestos V2"));
+assert.ok(legacy.includes("redirect("));
 console.log("LEGACY_BUDGET_EDITOR_REMOVED = PASS; V2_ONLY_ENTRY_POINTS = PASS");

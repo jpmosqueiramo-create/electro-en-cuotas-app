@@ -90,18 +90,16 @@ export async function testBudgetV2Browser(){
    assert.ok((await validationRef.get()).exists,"Validation fixture must exist");
    // Use the real client navigation, keeping the authenticated Firebase session ready.
    await browser.click('a[href="/admin"]');
-   await browser.until("location.pathname==='/admin'&&!!document.querySelector('a[href=\"/admin/validaciones\"]')","admin navigation");
-   await browser.click('a[href="/admin/validaciones"]');
-   await browser.until("location.pathname==='/admin/validaciones'","validation route");
-   await browser.until(`[...document.querySelectorAll('h3')].some(el=>el.textContent===${JSON.stringify(validationName)})`,"validation fixture");
-   await browser.evaluate(`[...document.querySelectorAll('h3')].find(el=>el.textContent===${JSON.stringify(validationName)}).click()`);
-   await browser.until("[...document.querySelectorAll('a')].some(a=>a.textContent.trim()==='Confeccionar y consultar presupuestos V2')","validation expanded");
-   await browser.evaluate("(()=>{window.alert=()=>{};window.confirm=()=>true;window.__compatOpened=[];window.open=url=>{window.__compatOpened.push(url);return null;};return true;})()");
+   await browser.until("location.pathname==='/admin'&&!!document.querySelector('a[href=\"/admin/solicitudes\"]')","admin navigation");
+   await browser.navigate(`/admin/validaciones?sourceCollection=solicitudes_cuenta&solicitudId=${validationId}`);
+   await browser.until(`location.pathname==='/admin/solicitudes/solicitudes_cuenta/${validationId}'`,"legacy redirect preserves identity");
+   await browser.until("!!document.querySelector('[data-testid=solicitud-detail]')","request detail");
   }
   await openValidation();
   assert.equal(await browser.evaluate("document.body.textContent.includes('Historial de Presupuestos Enviados')"),false);
   assert.equal(await browser.evaluate("document.body.textContent.includes('Armar Presupuesto Combinado')"),false);
-  const startHref=await browser.evaluate<string>("[...document.querySelectorAll('a')].find(a=>a.textContent.trim()==='Confeccionar y consultar presupuestos V2').href");
+  await browser.until("[...document.querySelectorAll('a')].some(a=>a.textContent.trim()==='Confeccionar presupuesto V2')","request loaded with V2 action");
+  const startHref=await browser.evaluate<string>("[...document.querySelectorAll('a')].find(a=>a.textContent.trim()==='Confeccionar presupuesto V2').href");
   const startUrl=new URL(startHref);assert.equal(startUrl.pathname,"/admin/presupuestos");assert.equal(startUrl.searchParams.get("sourceCollection"),"solicitudes_cuenta");assert.equal(startUrl.searchParams.get("solicitudId"),validationId);
   const beforeNew=(await validationRef.get()).data()!;await browser.navigate(startUrl.pathname+startUrl.search);
   await browser.until("!!document.querySelector('[data-new-budget-v2]')&&!document.querySelector('[data-new-budget-v2]').disabled","V2 redirect arrival");assert.deepEqual((await validationRef.get()).data(),beforeNew);

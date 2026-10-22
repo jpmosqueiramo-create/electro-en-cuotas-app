@@ -17,11 +17,11 @@ import { useAuth } from '@/components/AuthProvider';
 import { personalForEditing,stable,completeness,personalFields,employmentFields,type ClientDataSubmissionV2,type ContractDraftV2 } from '@/lib/contractV2';
 import { displayPersonal,btn,control,labels,PersonalFields,EmploymentFields } from './ContractDataFields';
 const money=(n:number)=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n);
-export function ContractV2Composer({budgetId,version,budget:initialBudget}:{budgetId:string;version:number;budget?:BudgetV2}){
+export function ContractV2Composer({budgetId,version,budget:initialBudget,initialSection='budget'}:{budgetId:string;version:number;budget?:BudgetV2;initialSection?:OperationSection}){
   const [budget,setBudget]=useState<BudgetV2|undefined>(initialBudget);
   const [creditRefresh,setCreditRefresh]=useState(0),[credit,setCredit]=useState<CreditPreparation|null>(null);
   const onCreditUpdated=useCallback((status:CreditPreparation)=>{setCredit(status);setCreditRefresh(value=>value+1);},[]);
-  const [section,setSection]=useState<OperationSection>('budget');
+  const [section,setSection]=useState<OperationSection>(initialSection);
   const [message,setMessage]=useState('');
   const [loaded,setLoaded]=useState(false),[evidence,setEvidence]=useState(''),[conformity,setConformity]=useState<{required:boolean;confirmed:boolean}|null>(null);
   const [operation,setOperation]=useState<OperationViewV2|null>(null);

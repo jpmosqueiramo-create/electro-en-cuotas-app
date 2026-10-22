@@ -15,8 +15,8 @@ export async function POST(req: Request) {
       : `📋 NUEVA APERTURA DE CUENTA: ${nombre} (DNI: ${dni || "S/D"})`;
 
     const adminUrl = isQuick 
-      ? "https://cuentahogar.com.ar/admin/presupuestos" 
-      : "https://cuentahogar.com.ar/admin/validaciones?tab=aperturas";
+      ? "https://www.cuentahogar.com.ar/admin/presupuestos"
+      : "https://www.cuentahogar.com.ar/admin/solicitudes";
 
     const emailContent = `
 NUEVA SOLICITUD DESDE CUENTA HOGAR:

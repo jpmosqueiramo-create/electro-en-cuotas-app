@@ -130,8 +130,9 @@ export async function testAdminSolicitudesBrowser() {
       await navigate(`/admin/solicitudes/solicitudes/${duplicateId}?view=all`);
       await until("document.querySelector('main')?.innerText.includes('Información solicitada al cliente')", "exact request detail");
       assert.ok(await evaluate("document.querySelector('main').innerText.includes('Heladera · solicitud de referencia') && !document.querySelector('main').innerText.includes('Mesa · consulta con ID compartido')"));
-      for (const title of ["Resumen", "Datos", "Presupuestos V2", "Documentos", "Actividad", "Gestión avanzada"]) assert.ok(await evaluate(`!!document.querySelector('section[aria-label="${title}"]')`), title);
-      assert.equal(await evaluate("[...document.querySelectorAll('a')].find(a => a.textContent.includes('Abrir gestión avanzada')).getAttribute('href')"), "/admin/validaciones");
+      for (const title of ["Resumen", "Datos", "Presupuestos V2", "Documentos", "Actividad"]) assert.ok(await evaluate(`!!document.querySelector('section[aria-label="${title}"]')`), title);
+      assert.equal(await evaluate("!!document.querySelector('section[aria-label=\"Gestión avanzada\"]')"),false);
+      assert.equal(await evaluate("document.querySelectorAll('a[href*=\"/admin/validaciones\"]').length"),0);
       assert.ok(await evaluate("!!document.querySelector('a[aria-current=page][href=\"/admin/solicitudes\"]')"), "active navigation on detail");
       await overflow(`${viewport.name} request detail`);
       await screenshot(`detail-${viewport.name}.png`);

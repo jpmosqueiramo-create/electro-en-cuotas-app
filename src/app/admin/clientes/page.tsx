@@ -227,10 +227,10 @@ export default function ClientesPage() {
                       </div>
 
                       <Link
-                        href={`/admin/validaciones`}
+                        href={`/admin/solicitudes`}
                         className="bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#173E3B] font-heading font-bold px-3.5 py-2 rounded-xl text-xs border border-[#DED8CF] hover:border-[#173E3B] transition shadow-xs"
                       >
-                        📋 Ver Legajo
+                        📋 Ver solicitudes
                       </Link>
                     </div>
 

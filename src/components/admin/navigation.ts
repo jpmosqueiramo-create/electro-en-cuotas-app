@@ -1,14 +1,12 @@
 import { CalendarDays, ClipboardList, FileText, Files, Wallet, Truck, Users, Package, ChartNoAxesCombined, Settings } from "lucide-react";
 
-// Compatibilidad transitoria: Logística abre Remitos; las entregas y la gestión
-// documental avanzada siguen disponibles en Validaciones.
 export const ADMIN_DESTINATIONS = [
   { id: "today", label: "Hoy", href: "/admin", icon: CalendarDays },
   { id: "requests", label: "Solicitudes", href: "/admin/solicitudes", icon: ClipboardList },
   { id: "budgets", label: "Presupuestos", href: "/admin/presupuestos", icon: FileText },
   { id: "documents", label: "Documentación", href: "/admin/documentacion", icon: Files },
-  { id: "collections", label: "Cobranzas", href: "/admin/cartera", icon: Wallet },
-  { id: "logistics", label: "Logística", href: "/admin/remitos", icon: Truck },
+  { id: "collections", label: "Cobranzas", href: "/admin/cobranzas", icon: Wallet },
+  { id: "logistics", label: "Logística", href: "/admin/logistica", icon: Truck },
   { id: "sellers", label: "Vendedores afiliados", href: "/admin/comisiones", icon: Users },
   { id: "catalog", label: "Catálogo", href: "/admin/productos", icon: Package },
   { id: "reports", label: "Reportes", href: "/admin/reportes", icon: ChartNoAxesCombined },

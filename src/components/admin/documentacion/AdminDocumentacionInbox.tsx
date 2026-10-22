@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminOperationsDirectory } from "../operations/AdminOperationsDirectory";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowRight, Files, RefreshCw, Search } from "lucide-react";
@@ -28,6 +29,8 @@ export function AdminDocumentacionInbox() {
   const documentKinds = Array.from(new Set(result?.items.flatMap(item => item.documentos.map(doc => doc.kind)) ?? []));
   return <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-8" data-testid="documentacion-inbox">
     <PageHeader title="Documentación" subtitle="Consultá los archivos asociados a cada operación y su disponibilidad." />
+    <AdminOperationsDirectory section="contract" />
+    <h2 className="font-heading text-xl font-bold">Archivos de solicitudes · consulta histórica</h2>
     <section aria-label="Buscar y filtrar documentación" className="space-y-3 rounded-2xl border border-border-color bg-surface px-4 py-3 sm:space-y-4 sm:p-5">
       <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
         <label className="col-span-2 min-w-0 text-sm font-semibold md:col-span-1">Buscar operación<span className="relative mt-1.5 block"><Search aria-hidden="true" className="absolute left-3 top-3 size-5 text-text-secondary" /><input aria-label="Buscar operación" type="search" value={filters.q} onChange={event => setFilters({ ...filters, q: event.target.value })} placeholder="Cliente, DNI, bien o referencia" className={`${control} pl-10`} /></span></label>
@@ -50,11 +53,10 @@ export function AdminDocumentacionInbox() {
             <div className="min-w-0"><h2 className="break-words font-heading font-bold text-brand-primary">{item.nombreCliente ?? "Nombre no registrado"}</h2><p className="mt-1 text-sm text-text-secondary">{item.dni ? `DNI ${item.dni}` : "DNI no registrado"}</p></div>
             <div className="min-w-0"><p className="break-words text-sm font-semibold">{item.productoONecesidad ?? "Necesidad no registrada"}</p><p className="mt-1 text-sm text-text-secondary">{item.tipoRegistro}</p><p className="mt-2 break-words text-xs text-text-secondary">Estado de operación: {presentAdminSolicitudStatus(item.estadoOperacion)}</p></div>
             <div className="min-w-0"><p className="mb-3 text-xs font-semibold text-text-secondary xl:hidden">Documentación</p><DocumentAvailabilityList documentos={visibleDocumentacionDocuments(item, filters.document)} /></div>
-            <Link href={`/admin/solicitudes/${item.sourceCollection}/${encodeURIComponent(item.documentId)}`} aria-label={`Ver operación de ${item.nombreCliente ?? "cliente sin nombre"}, ${item.tipoRegistro}`} className="admin-control inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-xl border border-border-color px-3 text-sm font-semibold text-brand-primary hover:bg-background-main">Ver operación<ArrowRight aria-hidden="true" className="size-4" /></Link>
+            <Link href={`/admin/solicitudes/${item.sourceCollection}/${encodeURIComponent(item.documentId)}`} aria-label={`Ver solicitud de ${item.nombreCliente ?? "cliente sin nombre"}, ${item.tipoRegistro}`} className="admin-control inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-xl border border-border-color px-3 text-sm font-semibold text-brand-primary hover:bg-background-main">Ver solicitud<ArrowRight aria-hidden="true" className="size-4" /></Link>
           </li>)}</ul>
         </section>}
       </>}
     </>}
-    <section aria-label="Gestión avanzada" className="rounded-2xl border border-border-color p-5 text-sm"><h2 className="font-heading font-bold text-brand-primary">Gestión avanzada</h2><p className="mt-2 text-text-secondary">La carga o reemplazo de archivos todavía se realiza en Gestión avanzada.</p><p className="mt-1 text-text-secondary">Se abrirá la bandeja general del módulo anterior.</p><Link href="/admin/validaciones" className="admin-control mt-3 inline-flex min-h-11 items-center rounded-xl border border-border-color bg-surface px-4 font-semibold text-brand-primary">Gestionar documentos</Link></section>
   </div>;
 }

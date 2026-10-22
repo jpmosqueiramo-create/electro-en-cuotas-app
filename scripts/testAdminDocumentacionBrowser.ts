@@ -114,7 +114,7 @@ export async function testAdminDocumentacionBrowser() {
       const requestSelector = `[data-record-key="solicitudes:${documentacionDuplicateId}"]`;
       assert.ok(await evaluate(`(() => { const row = document.querySelector(${JSON.stringify(requestSelector)}); return ['AVAILABLE','NOT_RECORDED','PENDING_SEND'].every(status => row.querySelector('[data-availability="'+status+'"]')); })()`));
       assert.ok(await evaluate("!document.querySelector('main input[type=file]')"));
-      assert.equal(await evaluate("[...document.querySelectorAll('a')].find(a => a.textContent.trim() === 'Gestionar documentos').getAttribute('href')"), "/admin/validaciones");
+      assert.equal(await evaluate("document.querySelectorAll('a[href*=\"/admin/validaciones\"]').length"),0);
       assert.ok(await evaluate("[...document.querySelectorAll('a[target=_blank]')].every(a => a.href.startsWith('https://example.test/') && a.rel.includes('noopener') && a.rel.includes('noreferrer') && a.getAttribute('aria-label').includes('nueva pestaña'))"));
       assert.ok(await evaluate("!document.querySelector('a[href*=\"Pendiente\"]')"));
       await overflow(`${viewport.name} documentation inbox`);

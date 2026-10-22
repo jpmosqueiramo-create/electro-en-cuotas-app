@@ -4,7 +4,7 @@
  * 
  * Verificación Integral de Casos A a I:
  * A. Alerta NUEVO_PRESUPUESTO enruta a /admin/presupuestos con datos del lead
- * B. Alerta APERTURA_CUENTA enruta a /admin/validaciones
+ * B. Alerta APERTURA_CUENTA enruta a /admin/solicitudes
  * C. Lead sin usuario registrado puede iniciar confección de presupuesto
  * D. Producto sin pricing configurado -> FAIL CLOSED -> no genera cuota ficticia
  * E. Producto con pricing configurado -> resultado proveniente de CANONICAL_V1
@@ -110,7 +110,7 @@ function runTestSuite() {
   assert(Boolean(actionCompra?.href.includes("/admin/presupuestos")), "A.16 NUEVA_SOLICITUD_COMPRA enruta a /admin/presupuestos");
 
   // =========================================================================
-  // CASO B: Alerta APERTURA_CUENTA enruta a /admin/validaciones
+  // CASO B: Alerta APERTURA_CUENTA enruta a /admin/solicitudes
   // =========================================================================
   console.log("\n--- CASO B: Alerta APERTURA_CUENTA y Redirección a Validaciones ---");
 
@@ -127,13 +127,13 @@ function runTestSuite() {
   assert(!isBudgetAlert(alertaCreditoReal.tipo), "B.2 APERTURA_CUENTA NO debe clasificarse como presupuesto");
 
   const directCreditUrl = buildCreditValidationRouteUrl(alertaCreditoReal);
-  assert(directCreditUrl.includes("tab=aperturas"), "B.3 buildCreditValidationRouteUrl incluye tab=aperturas");
+  assert(directCreditUrl === "/admin/solicitudes", "B.3 buildCreditValidationRouteUrl preserva referencia sin inferir colección");
 
   const actionCredit = resolveAlertAction(alertaCreditoReal);
   assert(actionCredit !== null, "B.4 resolveAlertAction devuelve acción para APERTURA_CUENTA");
   assert(actionCredit?.type === "validation", `B.5 Acción clasificada como 'validation' ('${actionCredit?.type}')`);
-  assert(Boolean(actionCredit?.href.startsWith("/admin/validaciones")), `B.6 URL de destino apunta a /admin/validaciones ('${actionCredit?.href}')`);
-  assert(Boolean(actionCredit?.href.includes("tab=aperturas")), "B.7 URL incluye tab=aperturas");
+  assert(Boolean(actionCredit?.href.startsWith("/admin/solicitudes")), `B.6 URL de destino apunta a /admin/solicitudes ('${actionCredit?.href}')`);
+  assert(Boolean(actionCredit?.href === "/admin/solicitudes"), "B.7 URL preserva referencia sin inferir colección");
 
   // =========================================================================
   // CASO C: Lead sin usuario registrado puede iniciar confección de presupuesto
