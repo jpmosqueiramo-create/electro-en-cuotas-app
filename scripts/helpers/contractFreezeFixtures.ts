@@ -7,6 +7,9 @@ import { referenceSnapshotToDraft } from '../../src/lib/budgetV2';
 import { contractIdentity } from '../../src/lib/contractSnapshotV2';
 export async function persistReadyContract(db:Firestore,id:string,decimal=false,plan=8){
  const f=infrastructureFixture(id),b=f.source.budget;
+ // Freeze tests do not exercise identity changes: seed a consistent customer before issuing.
+ b.clienteSnapshot.nombre=f.source.draft.personalData.fullName;
+ b.clienteSnapshot.dni=f.source.draft.personalData.dni;
  if(decimal){const index=b.options.findIndex(o=>o.optionId==='option-1'),s=b.options[index].referenceSnapshot;
   b.options[index]=buildBudgetOptionV2('option-1',{draft:{...referenceSnapshotToDraft(s),costoProveedor:'580000.5'},fechaCotizacion:s.fechaCotizacion,source:'NEW_REFERENCE',referenceId:null});
  }
