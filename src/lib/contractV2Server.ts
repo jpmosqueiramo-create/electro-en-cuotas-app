@@ -1,3 +1,4 @@
+import { readOperationIdentity } from './operationIdentityReviewServer';
 import { assertCreditPreparation } from './creditReviewV2Server';
 import { operationFromAcceptance, operationRef, verifyOperation, type OperationViewV2 } from './operationV2';
 import { buildReadyEvidence, verifyReadyEvidence, type ContractReadyEvidenceV1 } from './contractReadyV2';
@@ -36,7 +37,8 @@ export async function getContract(db:Firestore,id:string,v:number){
         contractState:snapshot.exists?snapshot.data()!.status:'NOT_CREATED',documentationStage:docs.data()?.workflowStage==='DOCUMENTACION'?'DOCUMENTACION':'NOT_AVAILABLE',
         pendingProcesses:['COBRANZA']};
     } else if (os.exists || snapshot.exists) reject('Falta aceptación de origen.');
-    if(!snapshot.exists)return {draft:null,budget:bs.data() as BudgetV2,requests:[],submissions:[],readiness:null,operation};
+    const identityReview=bs.exists?await readOperationIdentity(db,tx,id,v):null;
+    if(!snapshot.exists)return {identityReview,draft:null,budget:bs.data() as BudgetV2,requests:[],submissions:[],readiness:null,operation};
     const draft=snapshot.data() as ContractDraftV2;
     const consent=await tx.get(r.draft.collection('conformity').doc('current'));
     const clientConformity=consent.exists?{required:true,confirmed:consent.data()!.confirmedDigest===clientTermsDigest(draft),confirmedAt:consent.data()!.confirmedAt??null}:null;
@@ -48,7 +50,7 @@ export async function getContract(db:Firestore,id:string,v:number){
       readiness=e.data() as ContractReadyEvidenceV1;verifyReadyEvidence(b.data() as BudgetV2,a.data() as BudgetAcceptanceV2,draft,readiness);
     }
     const [requests,submissions]=await Promise.all([tx.get(r.draft.collection('requests')),tx.get(r.draft.collection('submissions'))]);
-    return {draft,budget:bs.data() as BudgetV2,readiness,operation,clientConformity,requests:requests.docs.map(x=>{const {tokenHash:_hash,submissionDigest:_digest,...safe}=x.data();void _hash;void _digest;return safe;}),submissions:submissions.docs.map(x=>x.data() as ClientDataSubmissionV2)};
+    return {identityReview,draft,budget:bs.data() as BudgetV2,readiness,operation,clientConformity,requests:requests.docs.map(x=>{const {tokenHash:_hash,submissionDigest:_digest,...safe}=x.data();void _hash;void _digest;return safe;}),submissions:submissions.docs.map(x=>x.data() as ClientDataSubmissionV2)};
   });
 }
 const actionKeys:Record<string,string[]>={OPEN_OR_CREATE:[],RECORD_CLIENT_CONFORMITY:['evidence'],MARK_READY_TO_FORMALIZE:[],RETURN_TO_DRAFT:['reason'],UPDATE_PERSONAL_DATA:['personalData'],UPDATE_EMPLOYMENT_DATA:['employmentData'],SET_CONTRACT_PLAN:['contractPlanCuotas'],SET_PAYMENT_DATES:['firstInstallmentDueDate','preferredMonthlyDueDay'],CREATE_CLIENT_DATA_REQUEST:[],REVOKE_CLIENT_DATA_REQUEST:[],APPLY_CLIENT_SUBMISSION:['submissionId']};

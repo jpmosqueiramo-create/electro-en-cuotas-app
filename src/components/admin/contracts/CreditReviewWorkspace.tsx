@@ -6,9 +6,11 @@ import { BudgetAcceptanceDocumentation } from '@/components/admin/budgets/Budget
 import { DOCUMENT_LABELS,type DocumentType } from '@/lib/budgetAcceptanceV2';
 import { creditLabels,creditNextAction,creditStates,type CreditState } from '@/lib/creditReviewV2';
 import type { readCreditReview } from '@/lib/creditReviewV2Server';
+import type { OperationIdentityReview } from '@/lib/operationIdentityReview';
+import { OperationIdentityNotice } from './OperationIdentityNotice';
 import { btn,control } from './ContractDataFields';
 type View=Awaited<ReturnType<typeof readCreditReview>>;
-export type CreditPreparation={allowed:boolean;state:CreditState|null;requiresFreshReview:boolean;checkedRevision:number};
+export type CreditPreparation={identityReview?:OperationIdentityReview|null;allowed:boolean;state:CreditState|null;requiresFreshReview:boolean;checkedRevision:number};
 export function CreditReviewWorkspace({budget,onUpdated,refreshKey=0}:{budget:BudgetV2;onUpdated:(status:CreditPreparation)=>void;refreshKey?:number}){
  const {user}=useAuth(),[view,setView]=useState<View|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[evidence,setEvidence]=useState(''),[resolution,setResolution]=useState(''),[notes,setNotes]=useState(''),[decision,setDecision]=useState<CreditState>('IN_REVIEW');
  const [profiles,setProfiles]=useState<{budgetId:string;version:number;name:string;verifiedAt:string}[]>([]),[selected,setSelected]=useState('');
@@ -17,7 +19,7 @@ export function CreditReviewWorkspace({budget,onUpdated,refreshKey=0}:{budget:Bu
  const base=`/api/admin/presupuestos-v2/${encodeURIComponent(budget.id)}/versions/${budget.version}`;
  const request=useCallback(async(path:string,init:RequestInit={})=>{if(!user)throw Error('Ingresá nuevamente.');const h=new Headers(init.headers);h.set('Authorization',`Bearer ${await user.getIdToken()}`);const r=await fetch(base+'/'+path,{...init,headers:h,cache:'no-store'});if(!r.ok){const e=await r.json();throw Error(e.error||'No se pudo completar la revisión.');}return r;},[base,user]);
  const sequence=useRef({value:0});
- const load=useCallback(async()=>{const current=++sequence.current.value;try{const data:View=await(await request('credit-review')).json();if(current!==sequence.current.value)return;setView(data);setError('');onUpdated({allowed:!data.review||data.approved,state:data.state,requiresFreshReview:data.requiresFreshReview,checkedRevision:refreshKey});}catch(error){if(current===sequence.current.value){setError('No se pudo consultar la evaluación. Reintentá.');onUpdated({allowed:false,state:null,requiresFreshReview:false,checkedRevision:refreshKey});}throw error;}},[request,onUpdated,refreshKey]);
+ const load=useCallback(async()=>{const current=++sequence.current.value;try{const data:View=await(await request('credit-review')).json();if(current!==sequence.current.value)return;setView(data);setError('');onUpdated({identityReview:data.identityReview,allowed:!data.identityReview.requiresClarification&&(!data.review||data.approved),state:data.state,requiresFreshReview:data.requiresFreshReview,checkedRevision:refreshKey});}catch(error){if(current===sequence.current.value){setError('No se pudo consultar la evaluación. Reintentá.');onUpdated({allowed:false,state:null,requiresFreshReview:false,checkedRevision:refreshKey});}throw error;}},[request,onUpdated,refreshKey]);
  useEffect(()=>{const requests=sequence.current;const refresh=()=>{if(document.visibilityState==='visible')void load().catch(()=>{});};void load().catch(()=>{});window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',refresh);const timer=setInterval(refresh,60000);return()=>{requests.value++;clearInterval(timer);window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh);};},[load]);
  async function act(work:()=>Promise<void>){if(flight.current)return;flight.current=true;setBusy(true);setError('');try{await work();}catch(e){setError(e instanceof Error?e.message:'No se pudo guardar.');}finally{flight.current=false;setBusy(false);}}
  async function command(action:string,extra:Record<string,unknown>){if(!view)return;const payload={action,expectedRevision:view.review?.revision??0,expectedProfileRevision:view.profile?.revision??0,...extra},key=JSON.stringify(payload);if(pending.current?.key!==key)pending.current={key,commandId:crypto.randomUUID()};await request('credit-review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,commandId:pending.current.commandId})});pending.current=null;await load();}
@@ -28,6 +30,7 @@ export function CreditReviewWorkspace({budget,onUpdated,refreshKey=0}:{budget:Bu
  {error&&<p role="alert" className="break-words text-red-700">{error}</p>}
  <button className={btn} disabled={busy} onClick={()=>void act(load)}>Actualizar evaluación</button>
  {!view?<p role="status">Consultando evaluación…</p>:<>
+ {view.identityReview&&<OperationIdentityNotice review={view.identityReview}/>}
  <p role="status" className="font-semibold">{creditLabels[view.state]}</p><p>Próxima acción: {creditNextAction[view.state]} · Responsable: Administración</p>
  {view.identityMismatch&&<p role="alert">Los datos de identidad no coinciden con la carpeta. Solicitá aclaración o actualización del formulario; no se reutiliza documentación ni se fusionan personas.</p>}
  {view.requiresFreshReview&&<p role="alert">Los datos o documentos cambiaron. Revisá nuevamente antes de preparar el contrato.</p>}
@@ -46,8 +49,8 @@ export function CreditReviewWorkspace({budget,onUpdated,refreshKey=0}:{budget:Bu
  </fieldset>
  <div className="grid min-w-0 gap-3 sm:grid-cols-2">{view.documents.map(d=>{const form=reviews[d.type]??{attachmentId:d.attachmentId??'',status:'VERIFIED',validUntil:d.validUntil??'',note:''};const change=(patch:Partial<typeof form>)=>setReviews({...reviews,[d.type]:{...form,...patch}});return <article key={d.type} className="min-w-0 space-y-2 rounded-xl border border-border-color p-3">
  <h4 className="font-semibold">{d.type==='PAYSLIP'?'Recibo de sueldo o comprobante de ingresos':DOCUMENT_LABELS[d.type]} {d.required?'· Obligatorio':'· Opcional'}</h4><p>{statuses[d.status]}</p>{d.validUntil&&<p>Vigencia registrada: {d.validUntil}</p>}
- {d.originalName&&<button disabled={busy||view.identityMismatch} className={btn} onClick={()=>void act(async()=>{const response=await request('credit-document/'+d.type),url=URL.createObjectURL(await response.blob()),a=document.createElement('a');a.href=url;a.download='documento';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);})}>Consultar documento privado</button>}
- <details><summary className="min-h-11 cursor-pointer">Revisar documento o solicitar actualización</summary><fieldset disabled={busy||!view.profile||view.identityMismatch} className="min-w-0 space-y-2">
+ {d.originalName&&<button disabled={busy||view.identityMismatch||view.identityReview.requiresClarification} className={btn} onClick={()=>void act(async()=>{const response=await request('credit-document/'+d.type),url=URL.createObjectURL(await response.blob()),a=document.createElement('a');a.href=url;a.download='documento';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);})}>Consultar documento privado</button>}
+ <details><summary className="min-h-11 cursor-pointer">Revisar documento o solicitar actualización</summary><fieldset disabled={busy||!view.profile||view.identityMismatch||view.identityReview.requiresClarification} className="min-w-0 space-y-2">
  <label className="block">Archivo a revisar<select className={control} value={form.attachmentId} onChange={e=>change({attachmentId:e.target.value})}><option value="">Seleccionar archivo cargado</option>{d.attachmentId&&!d.choices.some(a=>a.id===d.attachmentId)&&<option value={d.attachmentId}>Documento reutilizado</option>}{d.choices.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
  <label className="block">Resultado<select className={control} value={form.status} onChange={e=>change({status:e.target.value})}><option value="VERIFIED">Verificado</option><option value="OBSERVED">Observado: requiere actualización</option></select></label>
  <label className="block">Vigente hasta (si se verifica)<input type="date" className={control} value={form.validUntil} onChange={e=>change({validUntil:e.target.value})}/></label>
@@ -59,7 +62,7 @@ export function CreditReviewWorkspace({budget,onUpdated,refreshKey=0}:{budget:Bu
  <label className="block">Estado<select className={control} value={decision} onChange={e=>setDecision(e.target.value as CreditState)}>{creditStates.map(s=><option key={s} value={s}>{creditLabels[s]}</option>)}</select></label>
  <label className="block">Resolución<textarea className={control} maxLength={1000} value={resolution} onChange={e=>setResolution(e.target.value)}/></label>
  <label className="block">Observaciones internas<textarea className={control} maxLength={1000} value={notes} onChange={e=>setNotes(e.target.value)}/></label>
- <button className={btn} disabled={!resolution.trim()||!notes.trim()} onClick={()=>void act(()=>command('DECIDE',{state:decision,resolution,notes}))}>Registrar resolución crediticia</button>
+ <button className={btn} disabled={!resolution.trim()||!notes.trim()||(view.identityReview.requiresClarification&&!['MORE_INFORMATION','PENDING_DATA'].includes(decision))} onClick={()=>void act(()=>command('DECIDE',{state:decision,resolution,notes}))}>Registrar resolución crediticia</button>
  </fieldset></details><p>No se aprueba automáticamente. La aprobación crediticia no habilita numeración, firma ni formalización productiva.</p>
  </>}
  </section>;

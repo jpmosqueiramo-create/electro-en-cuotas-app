@@ -13,6 +13,8 @@ import { ADMIN_EMAIL } from '../src/lib/adminAuth';
 async function main(){
  const db=admin.firestore(),id=`p5c-${Date.now()}`,r=contractRefs(db,id,1),{b,a}=fixture(id);
  await assert.rejects(()=>contractCommand(db,id,1,{action:'OPEN_OR_CREATE',commandId:'missing'},'admin'));
+ // This suite exercises contract transitions, not a change of customer identity.
+ b.clienteSnapshot.nombre=clientPayload.personalData.fullName;
  await r.budget.set(b);await r.acceptance.set(a);
  const docs=db.doc(`presupuestos_v2/${id}/documentation/1`);await docs.set({marker:'PRIVATE_P4'});
  const original=JSON.stringify((await r.budget.get()).data()),accept=JSON.stringify((await r.acceptance.get()).data());

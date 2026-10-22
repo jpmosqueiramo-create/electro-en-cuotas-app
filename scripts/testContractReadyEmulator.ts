@@ -11,6 +11,8 @@ async function main(){
  const db=admin.firestore(),prefix=`ready-${Date.now()}`;
  async function fixture(suffix:string){
   const id=`${prefix}-${suffix}`,f=infrastructureFixture(id),r=contractRefs(db,id,1);
+  // READY scenarios use one consistent synthetic identity; discrepancy cases have their own regression.
+  f.source.budget.clienteSnapshot.nombre=f.source.draft.personalData.fullName;
   await r.family.set({lastVersion:1});await r.budget.set(f.source.budget);await r.acceptance.set(f.source.acceptance);await r.draft.set(f.source.draft);await r.family.collection('documentation').doc('1').set({marker:'PRIVATE_P4'});
   return {id,r,f};
  }
