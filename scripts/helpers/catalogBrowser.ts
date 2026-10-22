@@ -12,6 +12,11 @@ export class CatalogBrowser {
   private sequence=0;
   private pending=new Map<number,{resolve:(value:Record<string,unknown>)=>void;reject:(error:Error)=>void;timer:ReturnType<typeof setTimeout>}>();
   readonly externalFirebase:string[]=[];
+  readonly fulfillmentBodies:Record<string,unknown>[]=[];
+  readonly lostFulfillmentStatuses:number[]=[];
+  private loseFulfillmentMethod:'GET'|'POST'|null=null;
+  private awaitingFulfillmentPost=false;
+  private eligibleFulfillmentGets=new Set<string>();
   readonly publishBodies:unknown[]=[];
   storageWrites=0;
   static async open() {
@@ -28,11 +33,21 @@ export class CatalogBrowser {
     browser.socket.addEventListener('message',event=>{
       const message=JSON.parse(String(event.data)) as {id?:number;result?:Record<string,unknown>;error?:{message:string};method?:string;params?:{request?:{url:string;method:string;postData?:string}}};
       if(message.id) {const entry=browser.pending.get(message.id);if(entry){clearTimeout(entry.timer);browser.pending.delete(message.id);if(message.error)entry.reject(new Error(message.error.message));else entry.resolve(message.result??{});}}
+      if(message.method==='Fetch.requestPaused'){
+        const paused=message.params as unknown as {requestId:string;networkId?:string;request:{url:string;method:string};responseStatusCode?:number};
+        if(browser.loseFulfillmentMethod==='GET'&&paused.request.method==='POST'&&paused.responseStatusCode===200)browser.awaitingFulfillmentPost=false;
+        if(browser.loseFulfillmentMethod===paused.request.method&&(paused.request.method!=='GET'||browser.eligibleFulfillmentGets.has(paused.networkId??''))&&new URL(paused.request.url).pathname.endsWith('/fulfillment')&&paused.responseStatusCode===200){
+          browser.loseFulfillmentMethod=null;browser.lostFulfillmentStatuses.push(paused.responseStatusCode);
+          void browser.command('Fetch.failRequest',{requestId:paused.requestId,errorReason:'Aborted'}).then(()=>browser.command('Fetch.disable')).catch(()=>{});
+        }else void browser.command('Fetch.continueResponse',{requestId:paused.requestId}).catch(()=>{});
+      }
       const request=message.params?.request;
       if(message.method==='Network.requestWillBeSent'&&request){
         const url=new URL(request.url);
         if(/googleapis\.com$/.test(url.hostname)&&/firestore|identitytoolkit|securetoken|storage/.test(url.hostname))browser.externalFirebase.push(url.hostname);
         if(/storage/.test(url.hostname)&&['POST','PUT','PATCH','DELETE'].includes(request.method))browser.storageWrites++;
+        if(browser.loseFulfillmentMethod==='GET'&&!browser.awaitingFulfillmentPost&&url.pathname.endsWith('/fulfillment')&&request.method==='GET')browser.eligibleFulfillmentGets.add((message.params as unknown as {requestId:string}).requestId);
+        if(url.hostname==='localhost'&&url.pathname.endsWith('/fulfillment')&&request.method==='POST'&&request.postData)browser.fulfillmentBodies.push(JSON.parse(request.postData));
         if(url.pathname.endsWith('/publicar')&&request.postData)browser.publishBodies.push(JSON.parse(request.postData));
       }
     });
@@ -63,6 +78,11 @@ export class CatalogBrowser {
   async change(selector:string,value:string){await this.evaluate(`(()=>{const element=document.querySelector(${JSON.stringify(selector)});if(!element)throw Error('Missing input');const proto=element.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(proto,'value').set.call(element,${JSON.stringify(value)});element.dispatchEvent(new Event('input',{bubbles:true}));})()`);}
   async field(label:string,value:string){await this.evaluate(`(()=>{const item=[...document.querySelectorAll('label')].find(element=>element.querySelector(':scope > span')?.textContent===${JSON.stringify(label)});const element=item?.querySelector('input,textarea');if(!element)throw Error('Missing field '+${JSON.stringify(label)});const proto=element.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(proto,'value').set.call(element,${JSON.stringify(value)});element.dispatchEvent(new Event('input',{bubbles:true}));})()`);}
   async overflow(label:string){assert.ok(await this.evaluate('Math.max(document.body.scrollWidth,document.documentElement.scrollWidth)<=innerWidth+2'),`Overflow: ${label}`);}
+  async loseNextFulfillmentResponse(method:'GET'|'POST'){
+    assert.equal(process.env.GCLOUD_PROJECT,'demo-cuenta-hogar');assert.equal(process.env.FIRESTORE_EMULATOR_HOST,'127.0.0.1:8080');
+    assert.equal(await this.evaluate('location.origin'),'http://localhost:3000');this.loseFulfillmentMethod=method;this.awaitingFulfillmentPost=method==='GET';this.eligibleFulfillmentGets.clear();
+    await this.command('Fetch.enable',{patterns:[{urlPattern:'http://localhost:3000/api/admin/presupuestos-v2/*/versions/*/fulfillment',requestStage:'Response'}]});
+  }
   async screenshot(name:string){mkdirSync('/tmp/cuenta-hogar-catalogo-c3',{recursive:true});await this.evaluate('document.fonts.ready.then(()=>true)');const result=await this.command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(join('/tmp/cuenta-hogar-catalogo-c3',name),Buffer.from(result.data as string,'base64'));}
   async close(){for(const p of this.pending.values()){clearTimeout(p.timer);p.reject(new Error('CDP_CLOSED'));}this.pending.clear();this.socket?.close();this.chrome?.kill('SIGTERM');if(this.chrome&&this.chrome.exitCode===null&&this.chrome.signalCode===null)await new Promise<void>(resolve=>this.chrome.once('close',()=>resolve()));if(this.profile)rmSync(this.profile,{recursive:true,force:true,maxRetries:5,retryDelay:200});}
 }
