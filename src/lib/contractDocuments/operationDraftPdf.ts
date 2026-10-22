@@ -6,14 +6,21 @@ import type { OperationDraftProjection } from './operationDraft';
 import { OPERATION_DOCUMENT_VERSION } from './operationDraft';
 import { draftClauses,draftWarning,noteDraftText } from './operationDraftTemplates';
 import { amountWords,formatDraftAmount } from './amountWords';
+import { DocumentPreviewError } from './previewErrors';
 export type OperationDocumentKind='mandate'|'promissoryNote';
 // Exact display policy: never round saved fractional values.
 const money=formatDraftAmount;
 const pending='PENDIENTE DE REVISIÓN';
 // Hash the loaded renderer instead of reading TS source files absent from standalone.
-const rendererHash=contractValueHash({version:OPERATION_DOCUMENT_VERSION,render:generateOperationDraftPair.toString(),amountFormat:formatDraftAmount.toString(),amountWords:amountWords.toString(),jsPDF:jsPDF.version});
+const rendererHash=contractValueHash({version:OPERATION_DOCUMENT_VERSION,render:renderOperationDraftPair.toString(),amountFormat:formatDraftAmount.toString(),amountWords:amountWords.toString(),jsPDF:jsPDF.version});
 export function generateOperationDraftPair(p:OperationDraftProjection){
- if(!p.canPreview)throw Error('DOCUMENT_IDENTITY_OR_CONFORMITY_PENDING');
+ if(!p.canPreview)throw new DocumentPreviewError(p.pending.some(x=>x.section==='identity')?'DOCUMENT_IDENTITY_REVIEW_REQUIRED':'DOCUMENT_CONFORMITY_PENDING','RENDER',p.pending.some(x=>x.section==='identity')?'IDENTITY_BLOCK':'CONFORMITY_BLOCK');
+ try{return renderOperationDraftPair(p);}catch(error){
+  if(error instanceof DocumentPreviewError)throw error;
+  throw new DocumentPreviewError('DOCUMENT_RENDER_FAILED','RENDER','PDF_GENERATION_FAILED');
+ }
+}
+function renderOperationDraftPair(p:OperationDraftProjection){
  const templateHash=contractValueHash({version:OPERATION_DOCUMENT_VERSION,draftClauses,draftWarning,noteDraftText});
  const render=(kind:OperationDocumentKind)=>{
   const doc=new jsPDF({unit:'mm',format:'a4',compress:true,putOnlyUsedFonts:true});let y=34;
@@ -21,7 +28,9 @@ export function generateOperationDraftPair(p:OperationDraftProjection){
   doc.setFileId(contractValueHash({projection:p.projectionHash,templateHash,rendererHash,kind}).slice(0,32));
   const title=kind==='mandate'?'CONTRATO DE MANDATO COMERCIAL Y GESTIÓN DE COMPRA':'PAGARÉ A LA VISTA Y SIN PROTESTO';
   doc.setProperties({title:title+' — BORRADOR',author:'Cuenta Hogar',subject:'Revisión jurídica pendiente. Sin emisión definitiva.'});
-  function check(s:string){if(/[^\x20-\xff\n\u2013\u2014\u2018\u2019\u201c\u201d\u2026\u20ac]/u.test(s))throw Error('UNSUPPORTED_DOCUMENT_TEXT');return s;}
+  // Helvetica's WinAnsi repertoire includes bullets and these punctuation glyphs.
+  // Normalize only the rendered copy; never alter source records or their digests.
+  function check(s:string){const text=s.normalize('NFC').replace(/\r\n?/g,'\n').replace(/\t/g,'    ');if(/[^\x20-\xff\n\u0152\u0153\u0160\u0161\u0178\u017d\u017e\u0192\u02c6\u02dc\u2013\u2014\u2018\u2019\u201a\u201c\u201d\u201e\u2020\u2021\u2022\u2026\u2030\u2039\u203a\u20ac\u2122]/u.test(text))throw new DocumentPreviewError('DOCUMENT_RENDER_FAILED','RENDER','UNSUPPORTED_TEXT');return text;}
   function line(s:string,size=10,bold=false){
    doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);doc.setTextColor(30,50,47);
    const lines=doc.splitTextToSize(check(s),174) as string[];

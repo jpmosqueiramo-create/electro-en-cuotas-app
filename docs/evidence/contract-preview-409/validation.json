@@ -1,0 +1,39 @@
+{
+  "baseline": "28f0cf55bc0123f5a7e6da5220d767b2b5786459",
+  "data": "SYNTHETIC_ONLY",
+  "productionDiagnosis": {
+    "readOnly": true,
+    "failureStageBefore": "RENDER",
+    "reasonBefore": "UNSUPPORTED_DOCUMENT_TEXT",
+    "codePoint": "U+2022",
+    "originChecks": "PASS",
+    "identityBlock": false,
+    "conformityPending": false,
+    "economicTerms": null,
+    "scheduleRows": 0,
+    "correctedPipelineAvailable": true,
+    "correctedCode": "DOCUMENT_DATA_PENDING",
+    "readDocumentCount": 7,
+    "updateTimesUnchanged": true,
+    "productionWrites": 0
+  },
+  "tests": {
+    "unit": "PASS",
+    "emulatorHttp": "PASS",
+    "contractualRegressions": "PASS",
+    "pdfText": "PASS",
+    "browserDesktopMobile": "PASS",
+    "tsc": "PASS",
+    "eslintTouched": "PASS",
+    "testSafe": "PASS",
+    "build": "PASS",
+    "standalonePackagedRuntime": "PASS",
+    "diffCheck": "PASS"
+  },
+  "files": {
+    "pagare-sintetico.pdf": "e0b68725873124b2a4bd2c5641aa223e7b5c5f15ba7540032f0d718cedf82514",
+    "desktop.png": "a675b7dd511743ab40bd1123dfaddd481b8e17d091762ec2b7787c1799b9346d",
+    "mobile.png": "1853db175c2588d8cc74d63e1bc1231d7cbc17381ec2eee739b2b6e717cf32cc",
+    "mandato-sintetico.pdf": "34e0370af8a4edd5094eea508411330a3d579933943e80e1cfd318d6b3e59ad9"
+  }
+}

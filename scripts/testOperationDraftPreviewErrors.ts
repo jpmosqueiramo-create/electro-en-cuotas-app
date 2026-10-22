@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import { mkdirSync,writeFileSync } from 'node:fs';
+import { infrastructureFixture } from './helpers/contractInfrastructureFixtures';
+import { pendingBulletPreviewFixture } from './helpers/operationPreviewFixtures';
+import { projectOperationDraft } from '../src/lib/contractDocuments/operationDraft';
+import { generateOperationDraftPair } from '../src/lib/contractDocuments/operationDraftPdf';
+import { DocumentPreviewError,previewFailure } from '../src/lib/contractDocuments/previewErrors';
+import { contractValueHash } from '../src/lib/contractIntegrityV2';
+const {budget:b,acceptance:a,draft:d}=pendingBulletPreviewFixture('synthetic-preview-409');
+const before=contractValueHash({b,a,d}),p=projectOperationDraft(b,a,d,false,false);
+assert.equal(p.canPreview,true);assert.equal(p.economics,null);assert.deepEqual(p.schedule,[]);
+for(const label of ['Provincia','Código postal','Correo electrónico','Plan contractual confirmado pendiente','Cronograma contractual guardado pendiente'])assert.ok(p.pending.some(x=>x.label===label),label);
+assert.match(a.optionSnapshot.referenceSnapshot.descripcion,/•/);
+// Reproduce the exact old renderer rejection without retaining real content.
+assert.match(a.optionSnapshot.referenceSnapshot.descripcion,/[^\x20-\xff\n\u2013\u2014\u2018\u2019\u201c\u201d\u2026\u20ac]/u);
+const pair=generateOperationDraftPair(p);assert.equal(pair.projection.sourceHash,p.sourceHash);assert.equal(pair.promissoryNote.pages,1);assert.equal(pair.mandate.sha256,generateOperationDraftPair(p).mandate.sha256);
+const folder='/tmp/cuenta-hogar-preview-409';mkdirSync(folder,{recursive:true});
+writeFileSync(folder+'/mandato.pdf',Buffer.from(pair.mandate.base64,'base64'));writeFileSync(folder+'/pagare.pdf',Buffer.from(pair.promissoryNote.base64,'base64'));
+assert.equal(contractValueHash({b,a,d}),before);
+for(const [identity,conformity,code] of [[true,false,'DOCUMENT_IDENTITY_REVIEW_REQUIRED'],[false,true,'DOCUMENT_CONFORMITY_PENDING']] as const){
+ const blocked=projectOperationDraft(b,a,d,identity,conformity);assert.equal(blocked.canPreview,false);
+ assert.throws(()=>generateOperationDraftPair(blocked),(e:unknown)=>e instanceof DocumentPreviewError&&e.code===code);
+}
+const complete=infrastructureFixture('complete-preview-regression').source;
+const withoutSchedule=structuredClone(complete.draft);withoutSchedule.paymentScheduleDraft=[];
+const pendingSchedule=projectOperationDraft(complete.budget,complete.acceptance,withoutSchedule,false,false);assert.ok(pendingSchedule.economics);assert.ok(pendingSchedule.pending.some(x=>x.section==='schedule'));generateOperationDraftPair(pendingSchedule);
+const wrongSchedule=structuredClone(complete.draft);wrongSchedule.paymentScheduleDraft[0].amount++;
+assert.throws(()=>projectOperationDraft(complete.budget,complete.acceptance,wrongSchedule,false,false),(e:unknown)=>e instanceof DocumentPreviewError&&e.reason==='SCHEDULE_MISMATCH');
+const omitted=structuredClone(d);Reflect.deleteProperty(omitted.personalData,'address');const omittedView=projectOperationDraft(b,a,omitted,false,false);assert.ok(omittedView.pending.some(x=>x.label==='Domicilio'));generateOperationDraftPair(omittedView);assert.ok(!Object.hasOwn(omitted.personalData,'address'));
+const malformed=structuredClone(d);Reflect.set(malformed.personalData,'address',42);assert.throws(()=>projectOperationDraft(b,a,malformed,false,false),(e:unknown)=>e instanceof DocumentPreviewError&&e.reason==='INVALID_PERSONAL_DATA');
+const mismatch=structuredClone(a);mismatch.budgetVersion++;
+assert.throws(()=>projectOperationDraft(b,mismatch,d,false,false),(e:unknown)=>e instanceof DocumentPreviewError&&e.code==='DOCUMENT_ORIGIN_INCONSISTENT');
+const invalidDate=structuredClone(d);invalidDate.updatedAt='not-a-date';
+assert.throws(()=>generateOperationDraftPair(projectOperationDraft(b,a,invalidDate,false,false)),(e:unknown)=>e instanceof DocumentPreviewError&&e.code==='DOCUMENT_RENDER_FAILED');
+const unsupported={...p,product:{...p.product,name:'Producto 🧪'}};
+assert.throws(()=>generateOperationDraftPair(unsupported),(e:unknown)=>e instanceof DocumentPreviewError&&e.code==='DOCUMENT_RENDER_FAILED'&&e.reason==='UNSUPPORTED_TEXT');
+const failure=previewFailure(new Error('private-personal-content-and-token'));assert.equal(failure.status,500);assert.equal(failure.body.code,'DOCUMENT_SERVER_ERROR');assert.ok(!JSON.stringify(failure).includes('private-personal'));
+assert.equal(previewFailure(new DocumentPreviewError('DOCUMENT_ORIGIN_INCONSISTENT','PROJECTION','SOURCE_MISMATCH')).status,409);
+assert.equal(previewFailure(new DocumentPreviewError('DOCUMENT_RENDER_FAILED','RENDER','UNSUPPORTED_TEXT')).status,500);
+console.log('PREVIEW_409_REGRESSION=PASS; BULLET_CRLF_NFC; PENDING_ECONOMICS_SCHEDULE; HISTORICAL_ADDRESS; IDENTITY_CONFORMITY_BLOCK; SAFE_ERRORS; SOURCE_UNCHANGED');
