@@ -5,8 +5,9 @@ import { calendarDate, dataFields, personalFields, personalForEditing, type Cont
 import { contractValueHash } from '../contractIntegrityV2';
 import { operationFromAcceptance } from '../operationV2';
 import { provinceLabel } from '../contractAddress';
-export const OPERATION_DOCUMENT_VERSION = 'OPERATION_DRAFT_REVIEW_V1';
-export const issuerDraft = Object.freeze({legalName:'LOOP GESTIÓN INTEGRAL S.R.L.',tradeName:'Cuenta Hogar',taxId:'30-71962686-2'});
+import { contractLegalEntity } from './legalEntity';
+export const OPERATION_DOCUMENT_VERSION = 'OPERATION_DRAFT_REVIEW_V2';
+export const issuerDraft = contractLegalEntity;
 export interface DocumentPending {label:string;section:'data'|'terms'|'schedule'|'identity'|'legal'}
 export function projectOperationDraft(b:BudgetV2,a:BudgetAcceptanceV2,d:ContractDraftV2,identityBlocked:boolean,conformityPending:boolean){
  const fail=()=>{throw Error('DOCUMENT_ORIGIN_INCONSISTENT');};
@@ -25,7 +26,7 @@ export function projectOperationDraft(b:BudgetV2,a:BudgetAcceptanceV2,d:Contract
  if(!d.employmentData.cuil)missing('CUIL del cliente','data');
  missing('Cantidad y condición nuevo/usado del producto no registradas en el modelo contractual','terms');
  missing('Desglose individual de gestión y logística no disponible: se conserva Servicios de Cuenta Hogar','terms');
- missing('Domicilio legal y representación societaria pendientes de validación','legal');
+ missing('Representación societaria y facultades de firma pendientes de validación','legal');
  missing('Lugar, fecha de emisión y jurisdicción pendientes de revisión jurídica','legal');
  missing('Aprobación jurídica del mandato y de la exigibilidad del pagaré','legal');
  missing('Snapshot contractual definitivo pendiente; vista previa de borrador persistido','legal');

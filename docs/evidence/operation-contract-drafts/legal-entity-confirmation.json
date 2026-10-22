@@ -1,0 +1,14 @@
+{
+  "economicTermsUnchanged": true,
+  "all18DueDatesUnchanged": true,
+  "sourceDataHashUnchanged": true,
+  "sourceHash": "6b51faa216c2eae5824dc5d26bede95dce0bc2c4be08656e29913f5fe049f1b6",
+  "issuer": {
+    "version": "LOOP_LEGAL_ENTITY_OWNER_CONFIRMED_V1",
+    "legalName": "LOOP GESTIÓN INTEGRAL S.R.L.",
+    "tradeName": "Cuenta Hogar",
+    "taxId": "30-71962686-2",
+    "legalAddress": "Caracas 1101, Ciudad Autónoma de Buenos Aires, CP 1431"
+  },
+  "legalApproval": "PENDING"
+}

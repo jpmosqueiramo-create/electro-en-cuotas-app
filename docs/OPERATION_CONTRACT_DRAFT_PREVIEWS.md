@@ -15,9 +15,9 @@ Son referencias de estructura y redacción, no instrucciones ejecutables ni apro
 
 ## Identidad societaria y discrepancias
 
-El borrador versionado usa exclusivamente la identidad expresamente aprobada por el propietario: **LOOP GESTIÓN INTEGRAL S.R.L., CUIT 30-71962686-2**, marca Cuenta Hogar. Esto no representa verificación documental externa ni aprobación jurídica.
+El borrador versionado usa exclusivamente la identidad expresamente aprobada por el propietario: **LOOP GESTIÓN INTEGRAL S.R.L., CUIT 30-71962686-2**, nombre comercial Cuenta Hogar y domicilio legal **Caracas 1101, Ciudad Autónoma de Buenos Aires, CP 1431**. La única configuración del generador nuevo es `src/lib/contractDocuments/legalEntity.ts`; ambos instrumentos, sus cláusulas y firmas la consumen. Esto no representa verificación documental externa ni aprobación jurídica.
 
-Se encontraron valores distintos en `src/lib/pdfGenerator.ts` (CUIT `30-71829384-9`, domicilio Caracas 1101, CABA), `src/app/propuesta/page.tsx` y `src/app/firmar-contrato/[id]/FirmarContratoClient.tsx`. No se modifican esos generadores, pantallas ni configuraciones históricas. El perfil sintético congelado anterior tampoco es fuente de identidad real. Domicilio legal, representación y jurisdicción continúan pendientes: no se infieren del legacy.
+Se encontraron valores distintos en `src/lib/pdfGenerator.ts` (CUIT `30-71829384-9`, domicilio Caracas 1101, CABA), `src/app/propuesta/page.tsx` y `src/app/firmar-contrato/[id]/FirmarContratoClient.tsx`. No se modifican esos generadores, pantallas ni configuraciones históricas. El perfil sintético congelado anterior tampoco es fuente de identidad real. El domicilio legal queda confirmado por instrucción expresa del propietario. Representación y facultades de firma, jurisdicción y lugar/fecha efectiva de emisión siguen pendientes. La jurisdicción no se infiere del domicilio legal.
 
 ## Correspondencia de cláusulas
 
@@ -25,7 +25,7 @@ Todas las propuestas siguientes permanecen **PENDIENTES DE REVISIÓN JURÍDICA**
 
 | Referencia original | Decisión aprobada | Incompatibilidad | Propuesta incorporada al borrador | Revisión |
 | --- | --- | --- | --- | --- |
-| Encabezados: LOOP GESTION INTEGRAL; CUIT y domicilio incompletos | LOOP GESTIÓN INTEGRAL S.R.L.; CUIT aprobado; Cuenta Hogar es marca | Título de archivo no constituye razón social; CUIT legacy diferente | Identidad aprobada, domicilio y representación pendientes | Pendiente documental/jurídica |
+| Encabezados: LOOP GESTION INTEGRAL; CUIT y domicilio incompletos | LOOP GESTIÓN INTEGRAL S.R.L.; CUIT aprobado; Cuenta Hogar es marca | Título de archivo no constituye razón social; CUIT legacy diferente | Identidad y domicilio legal confirmados; representación y facultades pendientes | Pendiente documental/jurídica |
 | PRIMERA: mandato irrevocable para gestionar, adquirir y abonar | Mandato específico, representación limitada | Irrevocabilidad por defecto no aprobada | Encargo específico de gestionar adquisición por cuenta y orden del cliente, representación limitada; sin calificación irrevocable | Pendiente |
 | PRIMERA / facturación: factura supeditada a disponibilidad según origen | Nuevo: factura del proveedor a nombre del cliente, entrega y trazabilidad | Factura opcional para bien nuevo | Tratamientos diferenciados de nuevo/usado; sin factura ficticia ni elección automática de condición | Pendiente |
 | SEGUNDA: valor neto + gestión/logística; CFT; total a financiar | Capital, Servicios de Cuenta Hogar y total persistidos | No existe desglose separado ni cálculo CFT validado | Tres conceptos vigentes; señalar desglose de gestión/logística pendiente, sin repartir porcentajes | Pendiente |
@@ -60,7 +60,7 @@ La transacción sólo lee Budget, Acceptance, Draft, conformidad y fuentes de re
 
 La política de formato monetario conserva todos los decimales persistidos (también se prueba capital con tres decimales); no usa redondeo de presentación. El renderer nuevo no lee fuentes TS en runtime: el hash usa el código cargado, su versión, los formateadores y jsPDF, para ser compatible con standalone sin modificar el renderer histórico.
 
-Se conservan hash del origen persistido, hash de proyección, versión/hash de plantilla, hash del renderer y SHA-256 de cada PDF. La versión es `OPERATION_DRAFT_REVIEW_V1`; una futura modificación publicada debe tener una nueva versión. No se alteran las plantillas anteriores ni los manifiestos/snapshots históricos.
+Se conservan hash del origen persistido, hash de proyección, versión/hash de plantilla, hash del renderer y SHA-256 de cada PDF. La versión es `OPERATION_DRAFT_REVIEW_V2`; una futura modificación publicada debe tener una nueva versión. No se alteran las plantillas anteriores ni los manifiestos/snapshots históricos.
 
 Discrepancia de identidad no resuelta o conformidad requerida pendiente: se muestran los motivos y se bloquea el PDF. Los restantes faltantes se muestran como pendientes, sin valores ficticios. Al guardar una nueva revisión se descartan las vistas anteriores; la actualización manual también relee datos. Cambio de sesión, desmontaje y respuestas tardías invalidan la selección y revocan los blobs. No se crean enlaces públicos permanentes. En móvil se ofrece apertura en el visor nativo del dispositivo; se evita el iframe incrustado por su soporte irregular. En escritorio se mantiene iframe y enlace de apertura alternativo. Las capturas headless no certifican la rasterización del plugin PDF nativo; cada página se verifica adicionalmente mediante Poppler.
 
@@ -106,3 +106,17 @@ Bloqueos conservados: congelamiento productivo, número CH, emisión definitiva,
 TypeScript, ESLint diferencial (cero diagnósticos nuevos), build, test:safe, unitarias de documentos, extracción de texto PDF, Emulator y ambas suites browser: **PASS**. La suite browser comprueba el formulario vigente e histórico, READY, C1/archivo emulado y vistas por operación en desktop/mobile. El runner cierra explícitamente el visor PDF y utiliza un gesto de usuario CDP para aceptar la confirmación nativa de revisión; no sustituye el resultado de READY. Detalle reproducible: `docs/evidence/operation-contract-drafts/validation.json`.
 
 La comprobación adicional `scripts/testOperationDraftStandalone.ts` inicia el paquete standalone local con proyecto demo y destinos Emulator. GET anónimo retorna **401**, antes de cualquier lectura Firebase: prueba la importación del renderer en el paquete real sin fuentes TS. No inicia usuarios ni escribe datos. Se comprobó además la preservación de capital con tres decimales y la representación en letras de todo entero seguro, sin imponer un tope comercial nuevo.
+
+## Actualización societaria del PR #67
+
+Confirmación expresa del propietario: razón social LOOP GESTIÓN INTEGRAL S.R.L.; nombre comercial Cuenta Hogar; CUIT 30-71962686-2; domicilio legal Caracas 1101, Ciudad Autónoma de Buenos Aires, CP 1431. Configuración versionada `LOOP_LEGAL_ENTITY_OWNER_CONFIRMED_V1`; borradores `OPERATION_DRAFT_REVIEW_V2`. La actualización no implica aprobación de cláusulas ni facultades de firma.
+
+| Componente legacy revisado | Diferencia / riesgo | Decisión |
+| --- | --- | --- |
+| `src/lib/pdfGenerator.ts` | CUIT antiguo hardcodeado en mandato/pagaré; referencias societarias y domicilio no centralizados | Sin cambios. No usar como fuente del generador nuevo ni regenerar documentos históricos |
+| `src/app/propuesta/page.tsx` | Identificación visual con CUIT histórico | Sin cambios en este ajuste; cualquier acceso guardado a ese circuito puede seguir mostrando esa identidad histórica. No se crea un acceso desde V2 |
+| `src/app/firmar-contrato/[id]/FirmarContratoClient.tsx` | Encabezado/texto legacy con CUIT anterior y domicilio abreviado | Sin cambios; no habilitar firma ni emisión legacy desde V2. No sustituir información de documentos ya emitidos |
+
+No se realizó sustitución global ni se consultaron, migraron o modificaron registros productivos. Las muestras de `output/pdf/` son exclusivamente sintéticas y se regeneran para revisión. Permanecen pendientes representación/facultades, jurisdicción, lugar/fecha efectiva de emisión de cada instrumento, exigibilidad del pagaré y aprobación jurídica definitiva. El domicilio legal no se reutiliza automáticamente como domicilio de pago.
+
+Comparación antes/después con la misma operación sintética: economía, los 18 vencimientos y hash de datos de origen idénticos. Los hashes de proyección, plantilla y PDF cambian por la identificación societaria y la versión documental, sin alterar la fuente contractual.

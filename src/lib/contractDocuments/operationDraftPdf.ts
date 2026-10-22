@@ -34,7 +34,7 @@ export function generateOperationDraftPair(p:OperationDraftProjection){
   line(title,14,true);line('Propuesta para revisión jurídica · Sin numeración contractual definitiva',9);
   const c=p.customer,e=p.economics;
   if(kind==='mandate'){
-   line(`Entre ${p.issuer.legalName}, CUIT ${p.issuer.taxId}, que opera bajo la marca ${p.issuer.tradeName}, domicilio legal y representación: ${pending}, en adelante la MANDATARIA, y ${c.fullName||pending}, DNI ${c.dni||pending}, CUIL ${c.cuil||pending}, domicilio ${c.address||pending}, ${c.locality||pending}, ${c.province||pending}, CP ${c.postalCode||pending}, correo ${c.email||pending}, WhatsApp ${c.whatsapp||pending}, en adelante el MANDANTE o CLIENTE, se presenta el siguiente borrador de mandato específico.`);
+   line(`Entre ${p.issuer.legalName}, CUIT ${p.issuer.taxId}, que opera bajo la marca ${p.issuer.tradeName}, domicilio legal: ${p.issuer.legalAddress}; representación societaria y facultades de firma: ${pending}, en adelante la MANDATARIA, y ${c.fullName||pending}, DNI ${c.dni||pending}, CUIL ${c.cuil||pending}, domicilio ${c.address||pending}, ${c.locality||pending}, ${c.province||pending}, CP ${c.postalCode||pending}, correo ${c.email||pending}, WhatsApp ${c.whatsapp||pending}, en adelante el MANDANTE o CLIENTE, se presenta el siguiente borrador de mandato específico.`);
    for(const [index,clause] of draftClauses.entries()){
     if(y>240){doc.addPage();y=24;}line(clause[0],11,true);clause.slice(1).forEach(s=>line(s));
     if(index===0){table(['Cantidad','Bien solicitado','Condición'],[[pending,`${p.product.name} — ${p.product.description}`,pending]]);}
@@ -44,7 +44,7 @@ export function generateOperationDraftPair(p:OperationDraftProjection){
   }else{
    line('Sin garante',11,true);line('Por '+(e?money(e.total):pending),15,true);
    line(e?amountWords(e.total):'Importe en letras: '+pending,11,true);
-   line(`Beneficiario: ${p.issuer.legalName}. CUIT ${p.issuer.taxId}. Marca comercial: Cuenta Hogar.`,11,true);
+   line(`Beneficiario: ${p.issuer.legalName}. CUIT ${p.issuer.taxId}. Nombre comercial: ${p.issuer.tradeName}. Domicilio legal: ${p.issuer.legalAddress}.`,11,true);
    line(noteDraftText,10);
    line('DATOS DEL DEUDOR',11,true);
    for(const s of [`Nombre y apellido: ${c.fullName||pending}`,`DNI: ${c.dni||pending} · CUIL: ${c.cuil||pending}`,`Domicilio: ${c.address||pending}`,`Localidad: ${c.locality||pending} · Provincia: ${c.province||pending} · CP: ${c.postalCode||pending}`,`Contacto: ${c.whatsapp||pending}`,`Lugar y fecha de emisión: ${pending}`,`Domicilio de pago y jurisdicción: ${pending}`])line(s);
@@ -55,7 +55,7 @@ export function generateOperationDraftPair(p:OperationDraftProjection){
   }
   if(y>237){doc.addPage();y=24;}y+=12;
   line('____________________________________',11);line('Firma física del cliente — NO FIRMAR ESTE BORRADOR',9);
-  if(kind==='mandate'){y+=7;line('____________________________________',11);line('Por LOOP GESTIÓN INTEGRAL S.R.L. — representación pendiente',9);}
+  if(kind==='mandate'){y+=7;line('____________________________________',11);line(`Por ${p.issuer.legalName} — representación pendiente`,9);}
   const pages=doc.getNumberOfPages();
   for(let n=1;n<=pages;n++){doc.setPage(n);doc.setTextColor(150,35,35);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.text(draftWarning,18,12);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text('APROBACIÓN JURÍDICA PENDIENTE · SIN EMISIÓN DEFINITIVA',18,282);doc.setTextColor(80);doc.setFontSize(7);doc.text(`${OPERATION_DOCUMENT_VERSION} · Revisión ${p.draftRevision} · ${n}/${pages}`,18,287);doc.text(`Origen ${p.sourceHash.slice(0,20)} · Sin numeración definitiva`,18,291);}
   const bytes=Buffer.from(doc.output('arraybuffer'));return {base64:bytes.toString('base64'),sha256:createHash('sha256').update(bytes).digest('hex'),pages};

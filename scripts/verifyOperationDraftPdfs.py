@@ -7,6 +7,11 @@ for doc in [m,n]:
  for page in doc.pages: assert 'BORRADOR' in page.extract_text() and 'NO VÁLIDO PARA FIRMA' in page.extract_text()
 for text in [mt,nt]:
  assert p['issuer']['legalName'] in text and p['issuer']['taxId'] in text
+ assert p['issuer']['legalAddress'] in ' '.join(text.split())
+ assert '30-71829384-9' not in text
+ assert 'domicilio legal y representación: PENDIENTE' not in text
+ assert 'Representación societaria y facultades de firma' in mt
+ assert 'La jurisdicción no se infiere del domicilio legal confirmado.' in ' '.join(mt.split())
  assert 'Cuenta Hogar S.R.L.' not in text
  assert not re.search(r'\d+(?:[.,]\d+)?\s*%',text)
  assert 'CH-000001' not in text
