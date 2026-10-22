@@ -28,6 +28,8 @@ export async function testOperationDraftDocumentsBrowser(){
   await browser.until("!!window.__DOCUMENT_PREVIEW__",'recorded projection');assert.equal(await browser.evaluate('window.__DOCUMENT_PREVIEW__.customer.address'),d.personalData.address);
   for(const [width,height] of [[1280,900],[390,844]]){
    await browser.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width===390});
+   const fontStatus=await browser.evaluate<boolean>(`Promise.all(['--font-manrope','--font-source-sans'].map(name=>document.fonts.load('600 16px '+getComputedStyle(document.documentElement).getPropertyValue(name)))).then(groups=>groups.every(fonts=>fonts.length>0&&fonts.every(font=>font.status==='loaded')))`);assert.equal(fontStatus,true,'Both institutional fonts loaded locally');
+   assert.deepEqual(await browser.evaluate(`performance.getEntriesByType('resource').filter(entry=>/fonts[.](googleapis|gstatic)[.]com/.test(entry.name)).map(entry=>entry.name)`),[]);
    await browser.evaluate(`${root}.scrollIntoView({block:'start'})`);await browser.overflow('operation documents');
    const shot=await browser.command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(`${dir}/workspace-${width}.png`,Buffer.from(shot.data as string,'base64'));
    for(const label of ['Contrato de mandato','Pagaré']){

@@ -1,0 +1,52 @@
+{
+  "baseline": "f1914cbb7dc8433ba1b48d3bd75ff683a43cf538",
+  "remoteFailure": {
+    "build": "build-2026-10-22-007",
+    "cloudBuildId": "e8e45bc9-a297-4cad-b439-dcceef666a23",
+    "logEntries": 1170,
+    "allLogPagesRead": true,
+    "npmCi": "PASS",
+    "node": "22.23.4",
+    "next": "16.2.1",
+    "adapter": "14.0.21",
+    "phase": "TURBOPACK_GOOGLE_FONT_INTERNAL_RESOLUTION",
+    "lowLevelRemoteConditionReproducedLocally": false,
+    "transportFailureInLog": false
+  },
+  "cleanValidation": {
+    "installation": "npm ci --no-audit --no-fund",
+    "node": "22.23.4",
+    "next": "16.2.1",
+    "adapter": "14.0.21",
+    "hostPlatform": "macOS",
+    "linuxImageReproduced": false,
+    "baselineBuild": "PASS",
+    "correctedBuildWithUnusableExternalProxy": "PASS",
+    "adapterOverridesUsed": true,
+    "lockfileUnchanged": true,
+    "noServerCredentials": true,
+    "packagedFontHashesMatchOfficialInputs": true
+  },
+  "tests": {
+    "tsc": "PASS",
+    "eslintDifferential": "PASS",
+    "testSafe": "PASS",
+    "workspaceBuild": "PASS",
+    "localFontIntegrity": "PASS",
+    "previewUnits": "PASS",
+    "previewHttpEmulator": "PASS",
+    "contractDocumentsEmulator": "PASS",
+    "pdfText": "PASS",
+    "desktop1280": "PASS",
+    "mobile390": "PASS",
+    "bothFontFacesLoaded": "PASS",
+    "externalGoogleFontBrowserResources": 0,
+    "externalFirebaseBrowserRequests": 0,
+    "productionWrites": 0
+  },
+  "lockfileSha256": "aeb157321af515a9b8595fccaedf303bbf160445dc3e5ee0c307933c18019145",
+  "screenshots": {
+    "desktop.png": "3a188821af8a9c44ff1017e64384cdacf825be74844fd5d7309aa0105c73f1cc",
+    "mobile.png": "96424184baf7b304ef657200a60ef22fb476fe3b4babb3be262f94cfd2a649ae"
+  }
+}

@@ -1,19 +1,21 @@
 import type { Metadata } from "next";
-import { Manrope, Source_Sans_3 } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 
-const manrope = Manrope({
+const manrope = localFont({
+  src: "./fonts/manrope/Manrope[wght].ttf",
   variable: "--font-manrope",
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
+  display: "swap",
+  weight: "500 800",
 });
 
-const sourceSans = Source_Sans_3({
+const sourceSans = localFont({
+  src: "./fonts/sourcesans3/SourceSans3[wght].ttf",
   variable: "--font-source-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  weight: "400 700",
 });
 
 export const metadata: Metadata = {
