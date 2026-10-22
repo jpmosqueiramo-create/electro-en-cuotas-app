@@ -10,10 +10,10 @@ import { operationNextAction, type OperationSection } from '@/lib/operationWorks
 import { btn } from './ContractDataFields';
 const sections: Record<OperationSection, string> = { budget: 'Presupuesto', contract: 'Contrato', logistics: 'Proveedor y logística', affiliate: 'Vendedor afiliado', payments: 'Cuotas y pagos' };
 const money = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
-export function OperationUnifiedFrame({ budget, draft, operation, section, onSection, pendingSubmissions, conformityPending, panels,refreshKey=0 }: {refreshKey?:number;
+export function OperationUnifiedFrame({ budget, draft, operation, section, onSection, pendingSubmissions, conformityPending, panels,headerActions,headerContent,refreshKey=0 }: {refreshKey?:number;
   budget?: BudgetV2; draft: ContractDraftV2 | null; operation: OperationViewV2 | null; section: OperationSection;
   onSection: (value: OperationSection) => void; pendingSubmissions: boolean; conformityPending: boolean;
-  panels: Partial<Record<OperationSection, ReactNode>>;
+  panels: Partial<Record<OperationSection, ReactNode>>; headerActions?: ReactNode; headerContent?: ReactNode;
 }) {
   const { user } = useAuth(); const prefix = useId();
   const [focusRequest,setFocusRequest]=useState(0); const handledFocus=useRef(0);
@@ -48,7 +48,7 @@ export function OperationUnifiedFrame({ budget, draft, operation, section, onSec
       <p className="break-words">{accepted?.nombre || 'Propuesta aceptada'} · {draft?.personalData.locality || budget?.clienteSnapshot.localidad || 'Localidad pendiente'}</p>
       <p className="font-semibold">{next.status}</p>
       <div className="space-y-2 border-t border-border-color pt-3" role="status"><p>Próxima acción: <strong>{next.label}</strong></p><p className="text-sm">Responsable: {next.responsible}</p></div>
-      <button className="btn-primary min-h-11 whitespace-normal" onClick={() => {onSection(next.section);setFocusRequest(value=>value+1);}}>{next.label}</button>
+      <div data-testid="operation-header-actions" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center"><button className="btn-primary min-h-11 whitespace-normal" onClick={() => {onSection(next.section);setFocusRequest(value=>value+1);}}>{next.label}</button>{headerActions}</div>{headerContent}
       <p className="text-sm text-text-secondary">Revisión jurídica pendiente. Emisión definitiva, numeración, entrega definitiva, invitaciones y cobranza productivas bloqueadas.</p>
       {trackingError && <div role="alert"><p>{trackingError}</p><button className={btn} onClick={() => void load()}>Reintentar seguimiento</button></div>}
       {!!tracking?.incidents.filter(i => !i.resolvedAt).length && <p role="alert">Hay incidencias sin resolver. Revisá proveedor y logística antes de continuar.</p>}

@@ -7,9 +7,17 @@ import { CatalogBrowser } from './helpers/catalogBrowser';
 import { createCreditCase,reviewCommand,addDocuments } from './testCreditReviewV2Emulator';
 import { publicFixture } from './helpers/catalogC4Fixtures';
 import { adminEmail,adminPassword } from './helpers/adminSolicitudesFixtures';
+import { fixture } from './testContractV2';
+import { acceptBudgetV2 } from '../src/lib/budgetAcceptanceV2Server';
+import { contractCommand,contractRefs } from '../src/lib/contractV2Server';
 import { readCreditReview } from '../src/lib/creditReviewV2Server';
 export async function testCreditReviewBrowser(){
- const db=admin.firestore(),newClient=await createCreditCase('credit-browser-new-'+randomUUID());
+ const db=admin.firestore();
+ const pendingId='client-data-header-'+randomUUID(),pending=fixture(pendingId),pendingRefs=contractRefs(db,pendingId,1);
+ await pendingRefs.family.create({lastVersion:1});await pendingRefs.budget.create(pending.b);
+ await acceptBudgetV2(db,{budgetId:pendingId,version:1,acceptedOptionId:'option-1',preferredPlanCuotas:12,commandId:'accept'},'synthetic-admin');
+ await contractCommand(db,pendingId,1,{action:'OPEN_OR_CREATE',commandId:'open'},'synthetic-admin');
+ const newClient=await createCreditCase('credit-browser-new-'+randomUUID());
  await reviewCommand(newClient.id,'VERIFY_IDENTITY',{evidence:'Verificación documental sintética'});await addDocuments(newClient.id);
  const returning=await createCreditCase('credit-browser-returning-'+randomUUID());await reviewCommand(returning.id,'LINK_PROFILE',{originBudgetId:newClient.id,originVersion:1,evidence:'Misma identidad sintética verificada'});
  const dto=publicFixture('credit-browser-public','Referencia pública sintética');await db.collection('catalogo_publico').doc(dto.referenciaId).set(dto);
@@ -25,6 +33,15 @@ export async function testCreditReviewBrowser(){
  await browser.navigate('/solicitar?id='+dto.referenciaId+'&cuotas='+dto.planesPublicados[0].cuotas);await browser.until(`!!document.querySelector(${JSON.stringify(`select[aria-label="Plan publicado"] option[value="${dto.planesPublicados[0].cuotas}"]`)})`,'catalog plan');
  assert.equal(await browser.evaluate("document.querySelectorAll('form input[required]').length"),3);assert.equal(await browser.evaluate(`document.querySelector('select[aria-label="Plan publicado"]').value`),String(dto.planesPublicados[0].cuotas));assert.equal(await browser.evaluate(`document.querySelector('select[aria-label="Plan publicado"]').required`),false);await browser.overflow('catalog '+name);await shot('consulta-catalogo-'+name);
  await browser.navigate('/login');await browser.until("typeof window.__FIREBASE_SIGN_IN__==='function'",'auth emulator');await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(adminEmail)},${JSON.stringify(adminPassword)}).then(()=>true)`);
+ await browser.navigate('/admin/operaciones/'+pendingId+'/1');
+ await browser.until("document.querySelector('[data-testid=operation-header-actions]')?.innerText.includes('Revisar datos del cliente')",'pending data header');
+ assert.equal(await browser.evaluate("document.querySelectorAll('[data-testid=contract-request]').length"),1);
+ await browser.evaluate("document.querySelector('[data-testid=operation-unified-workspace] header').scrollIntoView({block:'start'})");await browser.overflow('data header '+name);await shot('operation-data-'+name);
+ await browser.clickText('Revisar datos del cliente');await browser.until("!!document.querySelector('[data-testid=contract-personal]')",'review correct operation');
+ await browser.clickText('Solicitar datos personales y laborales');await browser.until("!!document.querySelector('[data-testid=client-open-link]')",'request from header');
+ const requestId=(await pendingRefs.draft.get()).data()!.activeClientDataRequestId;
+ assert.equal((await pendingRefs.draft.collection('requests').doc(requestId).get()).data()!.budgetId,pendingId);
+ assert.ok(await browser.evaluate("document.querySelector('[data-testid=client-open-link]').href.includes('/completar-datos/')"));
  await browser.navigate('/admin/operaciones/'+returning.id+'/1');await browser.until("!!document.querySelector('[data-testid=operation-unified-workspace]')",'operation');await browser.clickText('Contrato');await browser.until("document.querySelector('[data-testid=credit-review]')?.innerText.includes('Carpeta vinculada')",'credit');
  assert.ok(await browser.evaluate("document.querySelector('[data-testid=credit-review]').innerText.includes('Verificado y vigente')"));await browser.overflow('credit '+name);await browser.evaluate("document.querySelector('[data-testid=credit-review]').scrollIntoView({block:'start'})");await shot('evaluacion-'+name);
  }
