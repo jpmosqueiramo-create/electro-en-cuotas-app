@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import { fiscalProjection,fiscalReceiptReference,type FiscalRequest } from '../src/lib/fiscalV2';
+export const fiscalFixture=():FiscalRequest=>({operationId:'op_'+'a'.repeat(64),snapshotId:'synthetic-snapshot',snapshotHash:'b'.repeat(64),date:'2026-01-10',documentClass:'B',kind:'INVOICE',pointOfSale:1,receiverStatus:'FINAL_CONSUMER',associatedId:null,policy:{id:'SYNTHETIC_NOT_LOOP_TAX_ADVICE',version:1,validFrom:'2026-01-01',validTo:'2026-12-31',confirmedBy:'synthetic-accountant',reference:'SYNTHETIC_ONLY',issuerStatus:'RI',allowedClasses:['A','B'],concepts:{MANAGEMENT:{treatment:'TAXED',rateBps:2100,basis:'NET',reference:'SYNTHETIC_RATE_NOT_PRODUCTIVE'},LOGISTICS:{treatment:'EXEMPT',rateBps:0,basis:'NET',reference:'SYNTHETIC_EXEMPTION_NOT_REAL'}}},lines:[{concept:'MANAGEMENT',baseCents:10000},{concept:'LOGISTICS',baseCents:2000}]});
+const f=fiscalFixture(),p=fiscalProjection(f);assert.equal(p.taxCents,2100);assert.equal(p.totalCents,14100);assert.equal(p.productiveIssuance,false);
+assert.equal(fiscalProjection({...f,receiverStatus:'RI',documentClass:'A'}).taxDisplay,'DISCRIMINATED');
+assert.throws(()=>fiscalProjection({...f,documentClass:'C'}));
+const c={...f,documentClass:'C' as const,policy:{...f.policy,issuerStatus:'EXEMPT' as const,allowedClasses:['C' as const]},lines:[{concept:'LOGISTICS' as const,baseCents:2000}]};assert.equal(fiscalProjection(c).taxCents,0);
+assert.throws(()=>fiscalProjection({...f,lines:[{concept:'MANDATE_CAPITAL',baseCents:58000000}]}));
+assert.throws(()=>fiscalProjection({...f,date:'2027-01-01'}));assert.throws(()=>fiscalProjection({...f,kind:'CREDIT_NOTE'}));
+assert.throws(()=>fiscalProjection({...f,lines:[{concept:'MANAGEMENT',baseCents:1.2}]}));
+assert.throws(()=>fiscalProjection({...f,policy:{...f.policy,confirmedBy:''}}));
+assert.deepEqual(fiscalReceiptReference('synthetic-payment',7250000,['invoice-synthetic']),{paymentId:'synthetic-payment',amountCents:7250000,invoiceIds:['invoice-synthetic'],createsInvoice:false,calculatesVat:false});
+console.log('FISCAL_A_B_C_EXPLICIT_RATES_EXEMPTION_VALIDITY_RECEIPT_NO_DUPLICATE_TAX=PASS');

@@ -1,0 +1,18 @@
+import './helpers/requireSafeEmulatorEnvironment';
+import assert from 'node:assert/strict';
+import { admin } from '../src/lib/firebaseAdmin';
+import { infrastructureFixture,syntheticSnapshot } from './helpers/contractInfrastructureFixtures';
+import { operationRef,operationFromAcceptance } from '../src/lib/operationV2';
+import { fiscalFixture } from './testFiscalV2';
+import { mockFiscalIssue,fiscalMockRoot } from '../src/lib/fiscalV2Emulator';
+async function main(){const db=admin.firestore(),fixture=infrastructureFixture('fiscal-synthetic'),snapshot=syntheticSnapshot(fixture),identity=operationFromAcceptance(fixture.source.acceptance),r={...fiscalFixture(),operationId:identity.operationId,snapshotId:snapshot.contractSnapshotId,snapshotHash:snapshot.integrity.payloadHash},root=fiscalMockRoot(db);
+ await db.collection('contractSnapshotsV2').doc(snapshot.contractSnapshotId).set(snapshot);await operationRef(db,identity.budgetId,identity.budgetVersion).set(identity);
+ const result=await Promise.all(Array.from({length:4},()=>mockFiscalIssue(db,'same-intention',r,'synthetic-admin')));assert.equal(result.filter(x=>!x.replay).length,1);assert(result.every(x=>x.number===result[0].number));
+ const invoice=root.doc(result[0].documentId),before=await invoice.get();await mockFiscalIssue(db,'same-intention',r,'synthetic-admin');assert((await invoice.get()).updateTime!.isEqual(before.updateTime!));
+ await assert.rejects(mockFiscalIssue(db,'same-intention',{...r,date:'2026-01-11'},'synthetic-admin'));
+ const credit={...r,kind:'CREDIT_NOTE' as const,associatedId:invoice.id};await mockFiscalIssue(db,'credit',credit,'synthetic-admin');await assert.rejects(mockFiscalIssue(db,'overcredit',credit,'synthetic-admin'));assert((await invoice.get()).updateTime!.isEqual(before.updateTime!));
+ await mockFiscalIssue(db,'debit',{...r,kind:'DEBIT_NOTE',associatedId:invoice.id},'synthetic-admin');
+ await assert.rejects(mockFiscalIssue(db,'cross',{...credit,operationId:'op_'+'c'.repeat(64)},'synthetic-admin'));
+ const n=(await root.get()).size,previous=process.env.GCLOUD_PROJECT;process.env.GCLOUD_PROJECT='negocio-facil-page';try{await assert.rejects(mockFiscalIssue(db,'production-denied',r,'synthetic-admin'));}finally{process.env.GCLOUD_PROJECT=previous;}assert.equal((await root.get()).size,n);
+ console.log('FISCAL_MOCK_CONCURRENCY_REPLAY_CREDIT_DEBIT_IMMUTABLE_INVOICE_PRODUCTIVE_GUARD=PASS');
+}main().then(()=>admin.app().delete()).catch(e=>{console.error(e.message);process.exitCode=1;});
