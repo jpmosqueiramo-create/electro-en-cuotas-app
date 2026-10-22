@@ -46,7 +46,28 @@ export async function testContractV2Browser(){
   await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:800,deviceScaleFactor:1,mobile:false});await browser.overflow('public desktop');await capture('public-form-desktop.png','[data-testid=public-contract-form]');
   await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   await capture('05-public-form-mobile.png' ,'[data-testid=public-contract-form]');
-  await browser.clickText('Enviar datos');await browser.until("document.body.innerText.includes('Gracias. Recibimos tus datos.')",'submitted');await capture('06-public-submitted.png','[data-testid=public-contract-form]');assert.deepEqual((await r.draft.get()).data(),before);console.log('P5C_BROWSER_PUBLIC_MOBILE = PASS');
+  // Bypass only native validation to exercise an actual server rejection in Emulator.
+  await browser.change('input[name=email]','not-an-email');
+  await browser.evaluate("document.querySelector('form').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))");
+  await browser.until("!!document.querySelector('[role=alert]')&&!document.querySelector('fieldset').disabled",'rejected submission');
+  assert.equal(await browser.evaluate("document.querySelector('[data-testid=client-data-success]')===null&&!!document.querySelector('form')"),true);
+  assert.equal((await r.draft.collection('submissions').doc(before.activeClientDataRequestId).get()).exists,false);
+  await browser.change('input[name=email]',clientPayload.personalData.email);
+  // Hold the real HTTP response after the server processes it: no optimistic success.
+  await browser.evaluate("(()=>{const original=window.fetch;window.testSubmissionPosts=0;window.fetch=async(...args)=>{if(args[1]?.method==='POST'&&String(args[0]).includes('/api/public/contract-data/')){window.testSubmissionPosts++;const response=await original(...args);await new Promise(resolve=>window.releaseSubmissionResponse=resolve);return response;}return original(...args);};const form=document.querySelector('form');form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));})()");
+  await browser.until("typeof window.releaseSubmissionResponse==='function'",'server response held');
+  assert.equal(await browser.evaluate("window.testSubmissionPosts"),1);
+  assert.equal(await browser.evaluate("!!document.querySelector('form')&&!document.querySelector('[data-testid=client-data-success]')&&document.querySelector('fieldset').disabled"),true);
+  assert.equal((await r.draft.collection('submissions').get()).size,1);
+  await browser.evaluate("(()=>{window.releaseSubmissionResponse();return true;})()");await browser.until("document.body.innerText.includes('¡Tus datos se enviaron correctamente!')",'submitted');await capture('06-public-submitted.png','[data-testid=public-contract-form]');
+  assert.equal(await browser.evaluate("document.querySelector('form')===null&&document.querySelectorAll('input,select,textarea').length===0"),true);
+  const successText=await browser.evaluate<string>("document.querySelector('[data-testid=client-data-success]').innerText");
+  for(const text of ['Recibimos tus datos personales y laborales.','Cuenta Hogar se pondrá en contacto con vos próximamente para continuar con tu solicitud.','Ya podés cerrar esta ventana.'])assert.ok(successText.includes(text));
+  for(const value of Object.values(clientPayload.personalData))assert.ok(!successText.includes(value));
+  assert.equal(await browser.evaluate("document.querySelector('[data-testid=public-contract-form] img').naturalWidth>0"),true);
+  assert.equal(await browser.evaluate("window.testSubmissionPosts"),1);await browser.overflow('success mobile');
+  await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:800,deviceScaleFactor:1,mobile:false});await browser.overflow('success desktop');await capture('success-desktop.png','[data-testid=public-contract-form]');
+  console.log('CLIENT_DATA_SUCCESS_REJECTION_DOUBLE_SUBMIT_PRIVACY_DESKTOP_MOBILE = PASS');assert.deepEqual((await r.draft.get()).data(),before);console.log('P5C_BROWSER_PUBLIC_MOBILE = PASS');
   await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:800,deviceScaleFactor:1,mobile:false});await browser.navigate('/login');await browser.until("typeof window.__FIREBASE_SIGN_IN__==='function'",'admin reauth');await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(adminEmail)},${JSON.stringify(adminPassword)}).then(()=>true)`);await open();await browser.until("!!document.querySelector('[data-testid=client-data-review]')",'review');await capture('07-admin-review-client-data.png','[data-testid=client-data-review]');
   // Handle only the explicit apply confirmation, via CDP dialog event polling.
   const click=browser.clickText('Aplicar datos recibidos');await browser.delay(200);await browser.command('Page.handleJavaScriptDialog',{accept:true});await click;await browser.until("document.querySelector('[data-testid=contract-personal] input[name=address]').value==='Domicilio demo'",'applied');await idle();
@@ -61,7 +82,7 @@ export async function testContractV2Browser(){
   assert.equal(await browser.evaluate("document.querySelector('select[name=province]')===null && document.querySelector('input[name=postalCode]')===null"),true);
   assert.equal(await browser.evaluate('location.hash'),'');
   for(const [k,v] of Object.entries(historicalPayload.personalData))await browser.change(`input[name=${k}]`,v);
-  assert.equal(await browser.evaluate("document.querySelector('select[name=preferredMonthlyDueDay]').required"),true);await select('select[name=preferredMonthlyDueDay]','30');await browser.overflow('historical public mobile');await browser.clickText('Enviar datos');await browser.until("document.body.innerText.includes('Gracias. Recibimos tus datos.')",'historical received');
+  assert.equal(await browser.evaluate("document.querySelector('select[name=preferredMonthlyDueDay]').required"),true);await select('select[name=preferredMonthlyDueDay]','30');await browser.overflow('historical public mobile');await browser.clickText('Enviar datos');await browser.until("document.body.innerText.includes('¡Tus datos se enviaron correctamente!')",'historical received');
   const historicalSub=(await r.draft.collection('submissions').doc(legacyId).get()).data();assert.ok(!Object.hasOwn(historicalSub!.personalData,'province'));
   await browser.navigate('/login');await browser.until("typeof window.__FIREBASE_SIGN_IN__==='function'",'history admin auth');await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(adminEmail)},${JSON.stringify(adminPassword)}).then(()=>true)`);await open();
   const historySection="document.querySelector('[data-submission-id=historical-browser]')";
