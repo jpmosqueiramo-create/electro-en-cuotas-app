@@ -52,6 +52,27 @@ export async function testOperationDraftDocumentsBrowser(){
   await browser.until(`${root}?.innerText.includes('Ambos documentos usan los mismos datos persistidos.')`,'recovered preview');
   await r.draft.collection('conformity').doc('current').create({confirmedDigest:null});await browser.clickText('Actualizar vistas previas guardadas',root);
   await browser.until(`${root}?.innerText.includes('Falta registrar la nueva conformidad')`,'conformity block');assert.equal(await browser.evaluate(`${root}.querySelector('button').disabled`),true);
+  // New controls use the existing command endpoint; no edits to the immutable accepted origin.
+  const prep="document.querySelector('[data-testid=contract-document-preparation]')";
+  assert.ok(await browser.evaluate(`${prep}.innerText.includes('Producto')&&${prep}.innerText.includes('Pendiente')`));
+  await browser.clickText('Revisar producto',prep);assert.equal(await browser.evaluate("document.querySelector('[data-testid=contract-product]').open"),true);
+  await browser.field('Cantidad del producto','2');
+  await browser.evaluate("(()=>{const select=document.querySelector('[aria-label=\"Condición del producto\"]');select.value='NEW';select.dispatchEvent(new Event('change',{bubbles:true}));})()");
+  await browser.clickText('Guardar datos del producto');await browser.until("document.querySelector('[data-testid=contract-composer]').innerText.includes('Revisión 6')",'saved product revision');
+  await browser.until(`[...${prep}.querySelectorAll('li')].find(row=>row.querySelector('p')?.textContent==='Producto')?.innerText.includes('Completo')`,'complete product summary');
+  assert.equal((await r.draft.get()).data()!.productDetails.quantity,2);assert.equal((await r.draft.get()).data()!.productDetails.condition,'NEW');
+  assert.equal(await browser.evaluate(`${root}.querySelectorAll('iframe').length`),0);
+  await browser.until(`${root}?.innerText.includes('Falta registrar la nueva conformidad')`,'product conformity block');
+  for(const [width,height] of [[1280,900],[390,844]]){
+   await browser.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width===390});
+   await browser.evaluate(`${prep}.scrollIntoView({block:'start'})`);await browser.overflow('document preparation');
+   const image=await browser.command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(`${dir}/preparation-${width}.png`,Buffer.from(image.data as string,'base64'));
+   await browser.clickText('Revisar producto',prep);await browser.overflow('product fields');
+   assert.equal(await browser.evaluate("document.querySelector('[data-testid=contract-product]').open"),true);
+   await browser.evaluate("document.querySelector('[data-testid=contract-product]').scrollIntoView({block:'start'})");
+   const product=await browser.command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(`${dir}/product-${width}.png`,Buffer.from(product.data as string,'base64'));
+  }
+  assert.deepEqual((await Promise.all([r.budget.get(),r.acceptance.get()])).map(s=>s.updateTime),before.slice(0,2).map(s=>s.updateTime));
   assert.equal((await db.collection('contractNumberingV2').get()).size,infrastructureBefore.numbering);assert.equal((await db.collection('contractSnapshotsV2').get()).size,infrastructureBefore.snapshots);assert.deepEqual(browser.externalFirebase,[]);assert.equal(browser.storageWrites,0);
   console.log('OPERATION_DOCUMENT_BROWSER=PASS; DESKTOP_MOBILE; TWO_PDFS; UNSAVED_FIELDS_NOT_PERSISTED; REFRESH_AFTER_SAVED_REVISION; IDENTITY_BLOCK; ZERO_PRODUCTION_REQUESTS; NO_DOCUMENT_WRITES');
  }finally{await browser.close();}

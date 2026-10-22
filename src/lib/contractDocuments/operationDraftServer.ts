@@ -17,6 +17,6 @@ export async function readOperationDraftDocuments(db:Firestore,id:string,v:numbe
   return projectOperationDraft(bs.data() as BudgetV2,as.data() as BudgetAcceptanceV2,d,identity.requiresClarification,cs.exists&&cs.data()!.confirmedDigest!==clientTermsDigest(d));
  });
  // PDF work outside the transaction. No Storage, writes, freeze or counter access.
- const code=!p.canPreview?(p.pending.some(x=>x.section==='identity')?'DOCUMENT_IDENTITY_REVIEW_REQUIRED' as const:'DOCUMENT_CONFORMITY_PENDING' as const):p.pending.some(x=>x.section==='data'||x.section==='schedule'||(x.section==='terms'&&x.label==='Plan contractual confirmado pendiente'))?'DOCUMENT_DATA_PENDING' as const:null;
+ const code=!p.canPreview?(p.pending.some(x=>x.section==='identity')?'DOCUMENT_IDENTITY_REVIEW_REQUIRED' as const:'DOCUMENT_CONFORMITY_PENDING' as const):p.pending.some(x=>x.section==='data'||x.section==='employment'||x.section==='product'||x.section==='schedule'||(x.section==='terms'&&x.label==='Plan contractual confirmado pendiente'))?'DOCUMENT_DATA_PENDING' as const:null;
  return p.canPreview?{...generateOperationDraftPair(p),available:true as const,code}:{projection:p,available:false as const,code};
 }

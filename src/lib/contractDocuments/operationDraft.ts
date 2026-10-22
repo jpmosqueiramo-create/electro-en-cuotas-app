@@ -1,7 +1,7 @@
 // Read-only projection of persisted V2 data. Never creates a frozen snapshot or number.
 import type { BudgetV2 } from '../budgetV2';
 import type { BudgetAcceptanceV2 } from '../budgetAcceptanceV2';
-import { calendarDate, dataFields, personalFields, personalForEditing, type ContractDraftV2 } from '../contractV2';
+import { calendarDate, productDetails, dataFields, personalFields, personalForEditing, type ContractDraftV2 } from '../contractV2';
 import { contractValueHash } from '../contractIntegrityV2';
 import { operationFromAcceptance } from '../operationV2';
 import { provinceLabel } from '../contractAddress';
@@ -9,7 +9,7 @@ import { contractLegalEntity } from './legalEntity';
 import { DocumentPreviewError,type PreviewReason } from './previewErrors';
 export const OPERATION_DOCUMENT_VERSION = 'OPERATION_DRAFT_REVIEW_V2';
 export const issuerDraft = contractLegalEntity;
-export interface DocumentPending {label:string;section:'data'|'terms'|'schedule'|'identity'|'legal'}
+export interface DocumentPending {label:string;section:'data'|'employment'|'product'|'terms'|'schedule'|'identity'|'conformity'|'legal'}
 export function projectOperationDraft(b:BudgetV2,a:BudgetAcceptanceV2,d:ContractDraftV2,identityBlocked:boolean,conformityPending:boolean){
  try{return projectPersistedDraft(b,a,d,identityBlocked,conformityPending);}catch(error){
   if(error instanceof DocumentPreviewError)throw error;
@@ -32,15 +32,17 @@ function projectPersistedDraft(b:BudgetV2,a:BudgetAcceptanceV2,d:ContractDraftV2
  for(const key of personalFields)if(!p[key])missing(labels[key],'data');
  try{dataFields(p,personalFields);}catch{fail('INVALID_PERSONAL_DATA');} // Missing values are pending; malformed persisted values still block.
  const province=p.province?provinceLabel(p.province):'';
- if(!d.employmentData.cuil)missing('CUIL del cliente','data');
- missing('Cantidad y condición nuevo/usado del producto no registradas en el modelo contractual','terms');
- missing('Desglose individual de gestión y logística no disponible: se conserva Servicios de Cuenta Hogar','terms');
+ if(!d.employmentData.cuil)missing('CUIL del cliente','employment');
+ const product=d.productDetails===undefined?{quantity:null,condition:null}:productDetails(d.productDetails);
+ if(product.quantity===null)missing('Cantidad del producto pendiente','product');
+ if(product.condition===null)missing('Condición nuevo/usado del producto pendiente','product');
+ missing('Desglose individual de gestión y logística no disponible: se conserva Servicios de Cuenta Hogar','legal');
  missing('Representación societaria y facultades de firma pendientes de validación','legal');
  missing('Lugar, fecha de emisión y jurisdicción pendientes de revisión jurídica','legal');
  missing('Aprobación jurídica del mandato y de la exigibilidad del pagaré','legal');
  missing('Snapshot contractual definitivo pendiente; vista previa de borrador persistido','legal');
  if(identityBlocked)missing('Discrepancia de identidad: revisar y verificar documentalmente','identity');
- if(conformityPending)missing('Nueva conformidad del cliente pendiente sobre las condiciones guardadas','terms');
+ if(conformityPending)missing('Nueva conformidad del cliente pendiente sobre las condiciones guardadas','conformity');
  const e=d.economicTerms;
  if(!e)missing('Plan contractual confirmado pendiente','terms');
  else {
@@ -53,7 +55,7 @@ function projectPersistedDraft(b:BudgetV2,a:BudgetAcceptanceV2,d:ContractDraftV2
   if(!e||rows.length!==e.contractPlanCuotas||rows.reduce((n,r)=>n+r.amount,0)!==e.contractTotal||rows.some((r,i)=>r.installmentNumber!==i+1||r.amount!==e.contractInstallmentAmount||(i>0&&r.dueDate<=rows[i-1].dueDate))||rows[0].dueDate!==d.firstInstallmentDueDate)fail('SCHEDULE_MISMATCH');
   rows.forEach(r=>calendarDate(r.dueDate));
  }
- const projection={version:OPERATION_DOCUMENT_VERSION,operationId:operationFromAcceptance(a).operationId,budgetId:b.id,budgetVersion:b.version,acceptedOptionId:a.acceptedOptionId,draftRevision:d.revision,updatedAt:d.updatedAt,issuer:issuerDraft,customer:{...p,province,cuil:d.employmentData.cuil},product:{name:reference.nombre,description:reference.descripcion},economics:e?{capital:e.capitalAmount,service:e.serviceAmount,total:e.contractTotal,count:e.contractPlanCuotas,installment:e.contractInstallmentAmount}:null,schedule:rows.map(r=>({...r})),pending,canPreview:!identityBlocked&&!conformityPending,number:null,legalApproval:'PENDING' as const,issuance:'DRAFT_REVIEW_ONLY' as const};
+ const projection={version:OPERATION_DOCUMENT_VERSION,operationId:operationFromAcceptance(a).operationId,budgetId:b.id,budgetVersion:b.version,acceptedOptionId:a.acceptedOptionId,draftRevision:d.revision,updatedAt:d.updatedAt,issuer:issuerDraft,customer:{...p,province,cuil:d.employmentData.cuil},product:{name:reference.nombre,description:reference.descripcion,...product},economics:e?{capital:e.capitalAmount,service:e.serviceAmount,total:e.contractTotal,count:e.contractPlanCuotas,installment:e.contractInstallmentAmount}:null,schedule:rows.map(r=>({...r})),pending,canPreview:!identityBlocked&&!conformityPending,number:null,legalApproval:'PENDING' as const,issuance:'DRAFT_REVIEW_ONLY' as const};
  return {...projection,sourceHash:contractValueHash({budget:b,acceptance:a,draft:d,identityBlocked,conformityPending}),projectionHash:contractValueHash(projection)};
 }
 export type OperationDraftProjection=ReturnType<typeof projectOperationDraft>;

@@ -2,6 +2,7 @@
 import { useEffect,useRef,useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import type { OperationDraftProjection } from '@/lib/contractDocuments/operationDraft';
+import { goToContractSection,type ContractSectionTarget } from './contractSectionNavigation';
 import { btn } from './ContractDataFields';
 import { documentPreviewMessages,type DocumentPreviewCode } from '@/lib/contractDocuments/previewErrors';
 type Artifact={base64:string;sha256:string;pages:number};
@@ -34,7 +35,7 @@ export function OperationDocumentPreviews({budgetId,version,revision}:{budgetId:
   }catch{if(selected!==selection.current.value)return;setFailure({key,text:'No se pudo comprobar la integridad del PDF. No se mostró el documento.'});setView(null);}
  }
  function close(){selection.current.value++;urls.current.splice(0).forEach(url=>URL.revokeObjectURL(url));setView(null);}
- function go(section:string){const selector=section==='data'?'[data-testid=contract-personal]':section==='terms'?'[data-testid=contract-economics]':section==='schedule'?'[data-testid=contract-schedule]':'[data-testid=credit-review]';const el=document.querySelector(selector);if(el instanceof HTMLDetailsElement)el.open=true;el?.scrollIntoView({behavior:'smooth',block:'start'});}
+ function go(section:ContractSectionTarget|'legal'){if(section!=='legal')goToContractSection(section);}
  return <section className="min-w-0 space-y-3 rounded-xl border border-border-color bg-surface p-4" data-testid="operation-document-previews"><h3 className="font-heading text-xl font-bold">Documentos de la operación</h3>
   <p className="font-bold text-warning">BORRADOR — NO VÁLIDO PARA FIRMA</p><p>Vistas previas de los datos guardados. No asignan número contractual, no acreditan firmas y no habilitan emisión definitiva. Aprobación jurídica pendiente.</p>
   {error&&<p role="alert">{error}</p>}
