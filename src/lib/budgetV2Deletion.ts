@@ -13,7 +13,7 @@ export interface BudgetDeletionPreview {
   budgetId: string; client: string; products: string[]; versions: number[];
   paths: string[]; blockers: string[]; preservedSource: string; fingerprint: string; allowed: boolean;
 }
-const externalQueries = (db: Firestore, id: string) => [
+export const budgetDeletionQueries = (db: Firestore, id: string) => [
   db.collection('productos').where('originBudgetId', '==', id),
   db.collection('contractClientDataRequests').where('budgetId', '==', id),
   db.collection('contractSnapshotsV2').where('sourceDraft.budgetId', '==', id),
@@ -22,7 +22,7 @@ const externalQueries = (db: Firestore, id: string) => [
   db.collection('ledger_comisiones_movimientos').where('budgetId', '==', id),
 ];
 /** Enumerate metadata only; never recurse to delete. Unknown/nested structures block deletion. */
-async function inspectTree(ref: DocumentReference) {
+export async function inspectBudgetTree(ref: DocumentReference) {
   const refs: DocumentReference[] = [ref], blockers: string[] = [];
   for (let i = 0; i < refs.length; i++) {
     const children = await refs[i].listCollections();
@@ -35,7 +35,7 @@ async function inspectTree(ref: DocumentReference) {
   }
   return { refs, blockers };
 }
-function inventory(id: string, snapshots: DocumentSnapshot[], structural: string[], external: string[]): BudgetDeletionPreview {
+export function buildBudgetDeletionInventory(id: string, snapshots: DocumentSnapshot[], structural: string[], external: string[]): BudgetDeletionPreview {
   const family = snapshots[0], blockers = [...structural, ...external];
   if (!family.exists) throw Error('El presupuesto no existe o ya fue eliminado.');
   const versions = snapshots.filter(s => s.ref.parent.path === `${family.ref.path}/versions`);
@@ -59,10 +59,10 @@ function inventory(id: string, snapshots: DocumentSnapshot[], structural: string
   return { budgetId: id, client: String(data[0]?.clienteSnapshot?.nombre ?? ''), products: [...new Set(data.flatMap(v => v.options?.map((o: {referenceSnapshot: {nombre: string}}) => o.referenceSnapshot.nombre) ?? []))] as string[], versions: data.map(v => Number(v.version)).sort((a,b) => a-b), paths, blockers: [...new Set(blockers)].sort(), preservedSource: `${f.sourceCollection}/${f.solicitudId}`, fingerprint, allowed: blockers.length === 0 };
 }
 async function readInventory(db: Firestore, id: string, tx?: Transaction) {
-  const tree = await inspectTree(db.collection('presupuestos_v2').doc(id));
+  const tree = await inspectBudgetTree(db.collection('presupuestos_v2').doc(id));
   const [snapshots, external] = await Promise.all([
     tx ? tx.getAll(...tree.refs) : db.getAll(...tree.refs),
-    Promise.all(externalQueries(db, id).map(q => tx ? tx.get(q.limit(BUDGET_DELETE_LIMIT + 1)) : q.limit(BUDGET_DELETE_LIMIT + 1).get())),
+    Promise.all(budgetDeletionQueries(db, id).map(q => tx ? tx.get(q.limit(BUDGET_DELETE_LIMIT + 1)) : q.limit(BUDGET_DELETE_LIMIT + 1).get())),
   ]);
   // Query reads protect against concurrent SAVE/REVISE/ISSUE inserts as well as updates.
   if (tx) for (const name of ['versions', 'commands', 'acceptances', 'documentation']) {
@@ -75,7 +75,7 @@ async function readInventory(db: Firestore, id: string, tx?: Transaction) {
     const source = tx ? await tx.get(sourceRef) : await sourceRef.get();
     if (!source.exists) tree.blockers.push('La solicitud de origen no está disponible; requiere revisión.');
   }
-  return { preview: inventory(id, snapshots, tree.blockers, external.flatMap(s => s.docs.map(d => d.ref.path))), snapshots };
+  return { preview: buildBudgetDeletionInventory(id, snapshots, tree.blockers, external.flatMap(s => s.docs.map(d => d.ref.path))), snapshots };
 }
 export async function previewBudgetDeletion(db: Firestore, id: string) {
   validId(id);
