@@ -46,6 +46,15 @@ export function BudgetV2Workspace(){
       setSources(list);setReferences(products.docs.map(d=>({...d.data(),id:d.id,nombre:String(d.data().nombre??"")})));setBudgets(data.budgets);
     }).catch(e=>{if(current)setError((e as Error).message);}).finally(()=>{if(current)setLoading(false);});return()=>{current=false;};
   },[user,request]);
+  const linkedBudgetOpened=useRef<string|null>(null);
+  useEffect(()=>{
+    const id=params.get('budgetId'),version=params.get('version');
+    const key=JSON.stringify([id,version,params.get('sourceCollection'),params.get('solicitudId')]);
+    if(loading||!id||!version||linkedBudgetOpened.current===key)return;
+    linkedBudgetOpened.current=key;
+    const linked=budgets.find(b=>b.id===id&&String(b.version)===version&&b.sourceCollection===params.get('sourceCollection')&&b.solicitudId===params.get('solicitudId'));
+    if(linked)setBudget(structuredClone(linked));else setError('No se encontró el presupuesto vinculado a esta solicitud.');
+  },[budgets,loading,params]);
   function selectSource(key:string){if(!budget||budget.revision>0)return;const source=sources.find(s=>`${s.sourceCollection}:${s.id}`===key);if(!source)return;setBudget({...budget,sourceCollection:source.sourceCollection,solicitudId:source.id,clienteSnapshot:{nombre:source.nombre,dni:source.dni,cuil:source.cuil,whatsapp:source.whatsapp,localidad:source.localidad}});}
   function newBudget(){const now=new Date().toISOString();const id=params.get("solicitudId"),collection=params.get("sourceCollection");const matches=sources.filter(s=>s.id===id&&(!collection||s.sourceCollection===collection));const source=matches.length===1?matches[0]:undefined;
     if(id&&!source){setError("La solicitud indicada no está disponible. Reintentá cuando termine la carga; no se creó otro origen.");return;}
