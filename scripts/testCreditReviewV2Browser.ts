@@ -9,6 +9,7 @@ import { publicFixture } from './helpers/catalogC4Fixtures';
 import { adminEmail,adminPassword } from './helpers/adminSolicitudesFixtures';
 import { fixture } from './testContractV2';
 import { acceptBudgetV2 } from '../src/lib/budgetAcceptanceV2Server';
+import { contractEconomics,contractSchedule } from '../src/lib/contractV2';
 import { contractCommand,contractRefs } from '../src/lib/contractV2Server';
 import { readCreditReview } from '../src/lib/creditReviewV2Server';
 export async function testCreditReviewBrowser(){
@@ -24,6 +25,9 @@ export async function testCreditReviewBrowser(){
  try{const u=await admin.auth().getUserByEmail(adminEmail);await admin.auth().updateUser(u.uid,{password:adminPassword,emailVerified:true});}catch{await admin.auth().createUser({email:adminEmail,password:adminPassword,emailVerified:true});}
  const browser=await CatalogBrowser.open(),captureDir='/tmp/cuenta-hogar-credit-review-v2';mkdirSync(captureDir,{recursive:true});
  async function shot(name:string){await browser.evaluate('document.fonts.ready.then(()=>true)');const image=await browser.command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(captureDir+'/'+name+'.png',Buffer.from(image.data as string,'base64'));}
+ async function select(selector:string,value:string){await browser.evaluate(`(()=>{const el=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(el,${JSON.stringify(value)});el.dispatchEvent(new Event('change',{bubbles:true}));})()`);}
+ async function termsShot(name:string,section:string){await browser.evaluate(`document.querySelector('[data-testid=${section}]').scrollIntoView({block:'start'})`);await shot(name);}
+ async function decide(state:string){await browser.until("![...document.querySelectorAll('[data-testid=credit-review] fieldset')].some(f=>f.disabled)",'credit idle before decision');await browser.evaluate(`(()=>{const a=[...document.querySelectorAll('[data-testid=credit-review] fieldset')].find(f=>f.querySelector('legend')?.textContent==='Resolución crediticia manual');a.closest('details').open=true;const select=a.querySelector('select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(select,${JSON.stringify(state)});select.dispatchEvent(new Event('change',{bubbles:true}));for(const [i,value]of ['Resolución sintética '+${JSON.stringify(state)},'Sólo Emulator'].entries()){const t=a.querySelectorAll('textarea')[i];Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(t,value);t.dispatchEvent(new Event('input',{bubbles:true}));}})()`);await browser.until("![...document.querySelectorAll('[data-testid=credit-review] fieldset')].some(f=>f.disabled)",'credit idle');await browser.clickText('Registrar resolución crediticia');await browser.until(`document.querySelector('[data-testid=credit-review] [role=status]')?.textContent===${JSON.stringify(state==='APPROVED'?'Aprobado':'En evaluación')}`,'credit decision '+state);}
  try{
  for(const [name,width,height,mobile]of [['desktop',1280,800,false],['mobile',390,844,true]] as const){
  await browser.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile});
@@ -38,6 +42,17 @@ export async function testCreditReviewBrowser(){
  assert.equal(await browser.evaluate("document.querySelectorAll('[data-testid=contract-request]').length"),1);
  await browser.evaluate("document.querySelector('[data-testid=operation-unified-workspace] header').scrollIntoView({block:'start'})");await browser.overflow('data header '+name);await shot('operation-data-'+name);
  await browser.clickText('Revisar datos del cliente');await browser.until("!!document.querySelector('[data-testid=contract-personal]')",'review correct operation');
+ await browser.evaluate("(()=>{document.querySelector('[data-testid=contract-economics]').open=true;document.querySelector('[data-testid=contract-schedule]').open=true;return true;})()");
+ await browser.until("!!document.querySelector('[aria-label=\"Cantidad de cuotas (simulación)\"]')",'simulation available before data');
+ const beforeSimulation=await pendingRefs.draft.get(),beforeCommands=(await pendingRefs.draft.collection('commands').get()).size;
+ await select('[aria-label="Cantidad de cuotas (simulación)"]','8');await browser.change('[aria-label="Primera cuota estimada"]','2027-01-31');await select('[aria-label="Día habitual estimado"]','31');
+ const expectedEconomics=contractEconomics({...beforeSimulation.data()!.acceptedReferenceSnapshot,imagenUrls:[]},8),expectedSchedule=contractSchedule(expectedEconomics,'2027-01-31',31);
+ assert.equal(await browser.evaluate("document.querySelector('[data-testid=contract-schedule] tbody').rows.length"),8);
+ assert.ok(await browser.evaluate("document.querySelector('[data-testid=contract-schedule]').textContent.includes('28/02/2027')"));
+ assert.equal(expectedSchedule.reduce((sum,row)=>sum+row.amount,0),expectedEconomics.contractTotal);
+ assert.ok((await pendingRefs.draft.get()).updateTime!.isEqual(beforeSimulation.updateTime!));assert.equal((await pendingRefs.draft.collection('commands').get()).size,beforeCommands);
+ assert.equal(await browser.evaluate("[...document.querySelectorAll('button')].some(b=>b.textContent==='Guardar fechas y revisar cronograma')"),false);
+ await termsShot('simulacion-datos-economia-'+name,'contract-economics');await termsShot('simulacion-datos-cronograma-'+name,'contract-schedule');
  await browser.clickText('Solicitar datos personales y laborales');await browser.until("!!document.querySelector('[data-testid=client-open-link]')",'request from header');
  const requestId=(await pendingRefs.draft.get()).data()!.activeClientDataRequestId;
  assert.equal((await pendingRefs.draft.collection('requests').doc(requestId).get()).data()!.budgetId,pendingId);
@@ -49,6 +64,26 @@ export async function testCreditReviewBrowser(){
  const textareas=await browser.evaluate<number>("document.querySelectorAll('[data-testid=credit-review] fieldset textarea').length");assert.ok(textareas>=2);
  await browser.evaluate("(()=>{const a=[...document.querySelectorAll('[data-testid=credit-review] fieldset')].find(f=>f.querySelector('legend')?.textContent==='Resolución crediticia manual');const t=a.querySelectorAll('textarea');for(const [i,value]of ['Revisión manual sintética','No es evaluación real'].entries()){Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(t[i],value);t[i].dispatchEvent(new Event('input',{bubbles:true}));}})()");
  await browser.clickText('Registrar resolución crediticia');await browser.until("document.querySelector('[data-testid=credit-review] [role=status]')?.textContent==='En evaluación'",'manual review saved');assert.equal((await readCreditReview(db,returning.id,1)).review?.state,'IN_REVIEW');
+ for(const [name,width,height,mobile]of [['desktop',1280,800,false],['mobile',390,844,true]] as const){
+ await browser.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile});
+ await browser.navigate('/admin/operaciones/'+returning.id+'/1');await browser.until("!!document.querySelector('[data-testid=operation-unified-workspace]')",'returning workspace');await browser.clickText('Contrato');
+ await browser.until("!!document.querySelector('[data-testid=credit-review] fieldset')",'credit controls');await decide('IN_REVIEW');
+ await browser.until("!!document.querySelector('[aria-label=\"Cantidad de cuotas (simulación)\"]')",'simulation in review');
+ await browser.evaluate("(()=>{document.querySelector('[data-testid=contract-economics]').open=true;document.querySelector('[data-testid=contract-schedule]').open=true;return true;})()");
+ await select('[aria-label="Cantidad de cuotas (simulación)"]','12');await browser.change('[aria-label="Primera cuota estimada"]','2027-01-31');await select('[aria-label="Día habitual estimado"]','31');
+ await termsShot('antes-aprobar-economia-'+name,'contract-economics');await termsShot('antes-aprobar-cronograma-'+name,'contract-schedule');
+ await decide('APPROVED');await browser.until("!!document.querySelector('[aria-label=\"Plan contractual definitivo\"]')",'approval enables economics without reload');
+ await select('[aria-label="Plan contractual definitivo"]','8');await browser.until("document.querySelector('[aria-label=\"Plan contractual definitivo\"]')?.value==='8'&&!document.querySelector('[data-testid=contract-editable-fields]').disabled",'saved plan and refreshed credit');
+ await browser.change('[aria-label="Primera cuota"]','2027-01-31');await select('[aria-label="Día habitual"]','31');await browser.clickText('Guardar fechas y revisar cronograma');
+ await browser.until("document.querySelector('[data-testid=contract-schedule] tbody').rows.length===8&&!!document.querySelector('[aria-label=\"Plan contractual definitivo\"]')&&!document.querySelector('[data-testid=contract-editable-fields]').disabled",'saved schedule');
+ const saved=(await returning.r.draft.get()).data()!;assert.equal(saved.economicTerms.contractPlanCuotas,8);assert.equal(saved.paymentScheduleDraft[1].dueDate,'2027-02-28');assert.equal(saved.paymentScheduleDraft.reduce((sum:number,row:{amount:number})=>sum+row.amount,0),saved.economicTerms.contractTotal);
+ await termsShot('aprobado-economia-'+name,'contract-economics');await termsShot('aprobado-cronograma-'+name,'contract-schedule');await browser.overflow('terms '+name);
+ await browser.evaluate("(()=>{[...document.querySelectorAll('[data-testid=contract-composer] details')].find(d=>d.querySelector('summary')?.textContent.includes('Datos laborales')).open=true;return true;})()");
+ await browser.change('input[name=employerOrWorkName]','Actualización sintética '+name);await browser.clickText('Guardar datos laborales');
+ await browser.until("!!document.querySelector('[aria-label=\"Cantidad de cuotas (simulación)\"]')&&document.querySelector('[data-testid=contract-economics]').textContent.includes('ya no está vigente')",'approval invalidated after draft update without reload');
+ assert.equal((await readCreditReview(db,returning.id,1)).approved,false);
+ }
+ console.log('CONTRACT_TERMS_SIMULATION_NO_WRITES_APPROVAL_UI_SYNC_INVALIDATION_DESKTOP_MOBILE = PASS');
  assert.deepEqual(browser.externalFirebase,[]);console.log('CREDIT_BROWSER_DESKTOP_MOBILE = PASS; QUICK_FORM = PASS; CATALOG_PLAN = PASS; VERIFIED_REUSE = PASS; MANUAL_REVIEW_UI = PASS; OVERFLOW = 0; EXTERNAL_FIREBASE = 0');
- }finally{await browser.close();}
+ }catch(error){await shot('terms-failure');console.log('CREDIT_UI_DIAGNOSTIC',await browser.evaluate("JSON.stringify({status:document.querySelector('[data-testid=credit-review] [role=status]')?.textContent,errors:[...document.querySelectorAll('[role=alert]')].map(e=>e.textContent),decision:[...document.querySelectorAll('[data-testid=credit-review] fieldset')].find(f=>f.querySelector('legend')?.textContent==='Resolución crediticia manual')?.querySelector('select')?.value})"));throw error;}finally{await browser.close();}
 }

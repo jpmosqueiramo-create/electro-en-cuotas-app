@@ -8,7 +8,7 @@ import { ALLOWED_MIME_TYPES, DOCUMENT_LABELS, DOCUMENT_TYPES, MAX_ATTACHMENT_SIZ
 const button = 'min-h-11 rounded-xl border border-border-color bg-surface px-4 py-2 text-sm font-semibold text-brand-primary disabled:opacity-40';
 const input = 'min-h-11 w-full min-w-0 rounded-xl border border-border-color bg-surface px-3 py-2';
 const money = (n: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
-export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false }: { budget: BudgetV2; documentationOnly?:boolean }) {
+export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false,onChanged }: { budget: BudgetV2; documentationOnly?:boolean;onChanged?:()=>Promise<void> }) {
   const { user } = useAuth();
   const [acceptance, setAcceptance] = useState<BudgetAcceptanceV2 | null>(null);
   const [documentation, setDocumentation] = useState<BudgetDocumentationCaseV2 | null>(null);
@@ -38,7 +38,7 @@ export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false 
     try { await work(); } catch (e) { setError(e instanceof Error ? e.message : 'No se pudo completar la operación.'); }
     finally { flight.current = false; setBusy(false); }
   }
-  async function reloadDocumentation() { const data = await (await request('documentation')).json(); setDocumentation(data.documentation); }
+  async function reloadDocumentation() { const data = await (await request('documentation')).json(); setDocumentation(data.documentation); await onChanged?.(); }
   async function accept() {
     const payload = { budgetId: budget.id, version: budget.version, acceptedOptionId: selected, preferredPlanCuotas: preferred ? Number(preferred) : null };
     const key = JSON.stringify(payload);
