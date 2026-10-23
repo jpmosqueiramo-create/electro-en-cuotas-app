@@ -1,0 +1,60 @@
+{
+  "baseline": "a8e2978f58ed79ecb838d623a0af61c7ff0299e0",
+  "scope": "closing changes, not a productive launch",
+  "testProject": "demo-cuenta-hogar",
+  "productionWrites": 0,
+  "commands": {
+    "typescript": {
+      "command": "node_modules/.bin/tsc --noEmit",
+      "exitCode": 0
+    },
+    "eslint": {
+      "command": "node_modules/.bin/eslint scripts/testProductionRendererManifest.ts scripts/verifyProductionRendererManifest.mjs src/lib/productionV2/catalog.ts src/lib/productionV2/pdf.ts src/lib/productionV2/authorization.ts src/lib/productionV2/gates.ts src/lib/adminAuth.ts scripts/testProductionAdapterEmulator.ts scripts/testAdminAuthRevocationEmulator.ts",
+      "exitCode": 0
+    },
+    "build": {
+      "command": "npm run build",
+      "exitCode": 0
+    },
+    "safe": {
+      "command": "npm run test:safe",
+      "exitCode": 0
+    },
+    "renderer": {
+      "command": "node_modules/.bin/tsx scripts/testProductionRendererManifest.ts",
+      "exitCode": 0
+    },
+    "adapter": {
+      "command": "node_modules/.bin/tsx scripts/testProductionAdapterEmulator.ts (Firebase emulators:exec, demo project)",
+      "exitCode": 0,
+      "groups": 25
+    },
+    "auth": {
+      "command": "node_modules/.bin/tsx scripts/testAdminAuthRevocationEmulator.ts (Firebase emulators:exec, demo project)",
+      "exitCode": 0
+    },
+    "browser": {
+      "command": "node_modules/.bin/tsx scripts/testProductionAdapterBrowser.ts (Firebase emulators:exec, demo project)",
+      "exitCode": 0,
+      "screensCaptured": 14
+    }
+  },
+  "logSha256": {
+    "tsc-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eslint-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-final.log": "7af94fecf32b689b4046e60e2ef982eb27e86e271728c98296cf04fd017573cd",
+    "safe.log": "791e873d1a4e8d72583c61a9591c40ad49ea5168d55dc54e6e2f975f7740c783",
+    "renderer-test-final.log": "2a71a5df14aa96fe03f54f4ec065b60944861720793b8d35c745b9c9f4a943d1",
+    "adapter-final.log": "69b61ecd7d2f23d547e000f303d6410d3f8edbfd49a5fabcb88dd0d62c98e31a",
+    "auth.log": "1daf29b18db58ea7bdbd7f29f3b86b087d03ae1c43569b51f40fcb0b7bfce8c6",
+    "browser.log": "a0ffe882c3343db63c39b4b5cb4b05ef0359c86cebe6bd39590314a5324edb5e"
+  },
+  "pdfEconomicComparison": "PASS: every persisted schedule date/amount, capital/service/total, note total",
+  "visualReview": "14 browser screenshots; original PDFs 5 pages; existing drafts 4 pages; four synthetic adapter PDFs 4 pages",
+  "limitations": [
+    "Current legal final package remains empty",
+    "No productive infrastructure exercise",
+    "Poppler local fontconfig substitution differed for two PDFs; PDFium and native text confirmed full content; no code workaround applied",
+    "Browser run preceded final catalog-data split; same empty exported catalog, unchanged routes/UI. Final split revalidated by TypeScript, ESLint, build, renderer hashes and 25 adapter groups."
+  ]
+}

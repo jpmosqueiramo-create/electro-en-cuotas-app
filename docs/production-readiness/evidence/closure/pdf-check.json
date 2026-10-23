@@ -1,0 +1,30 @@
+{
+  "MANDATE": {
+    "pages": 1,
+    "nativeText": true,
+    "testLegend": true,
+    "images": 1,
+    "sha256": "f879fc555d5611a117c6c54a6c3fac12b4b8b3477d267080746acc76dbd435fc"
+  },
+  "PAGARE": {
+    "pages": 1,
+    "nativeText": true,
+    "testLegend": true,
+    "images": 0,
+    "sha256": "dc505de07a60d9068386b598708f32d8b9a8a243da283016c06c5debbc7221fd"
+  },
+  "REMITO": {
+    "pages": 1,
+    "nativeText": true,
+    "testLegend": true,
+    "images": 1,
+    "sha256": "8494e2723d489e072cdde3d97d99862694f0504ce94c29d24376662a7b8729af"
+  },
+  "RECIBO": {
+    "pages": 1,
+    "nativeText": true,
+    "testLegend": true,
+    "images": 1,
+    "sha256": "3a099a18b4ced3ea568aa8fa2dedd32461ac828d56fcd3e4db06eb10f2085968"
+  }
+}

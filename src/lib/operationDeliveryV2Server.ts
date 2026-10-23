@@ -1,3 +1,4 @@
+import {operationRuntime,productionWriter,productionDeliveryAccess,productionReader} from './productionV2/gates';
 import { FieldValue,type Firestore,type Transaction } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
 import { admin } from './firebaseAdmin';
@@ -16,12 +17,13 @@ export async function deliveryPerson(db:Firestore,tx:Transaction,p:CustodyPartic
 export async function deliveryLoad(db:Firestore,tx:Transaction,id:string,v:number,actor:CustodyActor){
  const base=await custodyLoad(db,tx,id,v,{...actor,admin:true}),saved=await tx.get(deliveryRef(db,id,v));
  const state=saved.exists?saved.data() as DeliveryV2:initialDelivery(base.source.identity.operationId);
- if(state.schemaVersion!=='OPERATION_DELIVERY_V2'||state.operationId!==base.source.identity.operationId||!Number.isSafeInteger(state.revision)||!['PREPARING','DELIVERED_EMULATOR'].includes(state.status))deliveryFail();
+ if(state.schemaVersion!=='OPERATION_DELIVERY_V2'||state.operationId!==base.source.identity.operationId||!Number.isSafeInteger(state.revision)||!['PREPARING','DELIVERED_EMULATOR','DELIVERED'].includes(state.status))deliveryFail();
  if(!actor.admin){
   const people=[base.state.current,state.originals?.holder,state.originalsTransfer?.from,state.originalsTransfer?.to].filter((p):p is CustodyParticipant=>!!p&&p.uid===actor.uid);
   if(people.length){for(const p of people)await deliveryPerson(db,tx,p);}
   else deliveryFail('Sólo custodios físicos/documentales autorizados pueden consultar esta sección.');
  }
+ if(state.status==='DELIVERED'){const runtime=await operationRuntime(db,tx,id,v);if(!runtime)deliveryFail();const proof=await productionDeliveryAccess(runtime,tx,id,v,false);if(state.event?.executionMode!=='PRODUCTION'||state.event.issuedManifestHash!==proof.manifest.hash)deliveryFail();}
  return {...base,delivery:state};
 }
 export function deliveryChecklist(view:Awaited<ReturnType<typeof deliveryLoad>>){return deliveryChecklistState(view.delivery,view.state,view.fulfillment);}
@@ -38,17 +40,18 @@ export function deliveryChecklistState(d:DeliveryV2,c:import('./operationCustody
 export async function readDelivery(db:Firestore,id:string,v:number,actor:CustodyActor){return db.runTransaction(async tx=>{
  const view=await deliveryLoad(db,tx,id,v,actor),d=view.delivery,photos=await tx.get(deliveryRef(db,id,v).collection('photos').limit(100));
  const canDocuments=actor.admin||view.state.current?.uid===actor.uid||d.originals?.holder.uid===actor.uid||d.originalsTransfer?.from.uid===actor.uid||d.originalsTransfer?.to.uid===actor.uid;
+ const runtime=await operationRuntime(db,tx,id,v);if(runtime)await productionReader(runtime,actor);const emitted=runtime?await productionDeliveryAccess(runtime,tx,id,v,false):null;let productionMutation=false;if(runtime){try{await productionWriter(runtime,actor);await productionDeliveryAccess(runtime,tx,id,v);productionMutation=true;}catch{/* Read access survives a write pause. */}}
  const events=actor.admin?await tx.get(deliveryRef(db,id,v).collection('events').orderBy('revision','desc').limit(100)):null;
  return {state:d,product:view.fulfillment.productName,logistics:view.fulfillment.logisticsState,physicalCustodian:actor.admin?view.state.current?.uid||null:undefined,
-  mutationEnabled:deliveryEnabled(),canDocuments,canAdmin:actor.admin,missing:deliveryChecklist(view),pendingPhotos:canDocuments?photos.docs.filter(p=>p.data().state==='PENDING'&&(actor.admin||p.data().actor===actor.uid)).map(p=>({id:p.id,slot:p.data().slot as DeliverySlot,relatedId:p.data().relatedId as string})):[],photos:canDocuments?photos.docs.filter(p=>p.data().state==='COMMITTED').map(p=>({id:p.id,slot:p.data().slot as DeliverySlot,relatedId:p.data().relatedId as string})):[],
-  events:events?events.docs.map(e=>({commandId:e.id,action:e.data().action as string,actor:e.data().actor as string,at:e.data().at as string,revision:e.data().revision as number})):[],legalApproval:'PENDING',productiveClosure:'DISABLED'};
+  executionMode:runtime?'PRODUCTION' as const:'EMULATOR_ONLY' as const,issuedDocuments:emitted&&canDocuments?Object.fromEntries(Object.entries(emitted.manifest.documents).map(([k,d])=>[k,{photoId:d.photoId,reference:emitted.snapshot.contractNumber,templateVersion:d.templateVersion}])):null,mutationEnabled:runtime?productionMutation:deliveryEnabled(),canDocuments,canAdmin:actor.admin,missing:deliveryChecklist(view),pendingPhotos:canDocuments?photos.docs.filter(p=>p.data().state==='PENDING'&&(actor.admin||p.data().actor===actor.uid)).map(p=>({id:p.id,slot:p.data().slot as DeliverySlot,relatedId:p.data().relatedId as string})):[],photos:canDocuments?photos.docs.filter(p=>p.data().state==='COMMITTED').map(p=>({id:p.id,slot:p.data().slot as DeliverySlot,relatedId:p.data().relatedId as string})):[],
+  events:events?events.docs.map(e=>({commandId:e.id,action:e.data().action as string,actor:e.data().actor as string,at:e.data().at as string,revision:e.data().revision as number})):[],legalApproval:runtime?'EXACT_PACKAGE_APPROVED':'PENDING',productiveClosure:productionMutation?'AUTHORIZED':'DISABLED'};
 });}
 async function evidence(db:Firestore,tx:Transaction,id:string,v:number,photoId:unknown,slot:DeliverySlot,relatedId:string){
  const pid=opaque(photoId);const p=(await tx.get(deliveryRef(db,id,v).collection('photos').doc(pid))).data();
  if(!p||p.state!=='COMMITTED'||p.slot!==slot||p.relatedId!==relatedId||! /^[a-f0-9]{64}$/.test(p.sha256))deliveryFail('Evidencia fotográfica no disponible o de otro documento.');return p;
 }
 export async function deliveryCommand(db:Firestore,id:string,v:number,input:unknown,actor:CustodyActor){
- requireDeliveryEmulator();const c=deliveryCommandInput(input),ref=deliveryRef(db,id,v),receipt=ref.collection('commands').doc(c.commandId),digest=createHash('sha256').update(stable({c,actor})).digest('hex');
+ const runtime=await db.runTransaction(tx=>operationRuntime(db,tx,id,v));if(runtime)await productionWriter(runtime,actor);else requireDeliveryEmulator();const c=deliveryCommandInput(input),ref=deliveryRef(db,id,v),receipt=ref.collection('commands').doc(c.commandId),digest=createHash('sha256').update(stable({c,actor})).digest('hex');
  const verified=new Map<string,VerifiedEvidence>();
  if(['CONFIRM_DELIVERY','REGULARIZE_DELIVERY'].includes(c.action)){
   const files=await db.runTransaction(async tx=>{const view=await deliveryLoad(db,tx,id,v,actor),prior=await tx.get(receipt);if(prior.exists){if(prior.data()!.digest!==digest)deliveryFail('Conflicto de commandId.');return [];}
@@ -58,16 +61,17 @@ export async function deliveryCommand(db:Firestore,id:string,v:number,input:unkn
   if(files.length){const {getBudgetDocumentationBucket}=await import('./budgetDocumentationStorage');const bucket=await getBudgetDocumentationBucket();for(const p of files)verified.set(p.path,await verifyEvidenceObject(bucket,p));}
  }
  return db.runTransaction(async tx=>{
-  const view=await deliveryLoad(db,tx,id,v,actor),prior=await tx.get(receipt);if(c.operationId!==view.delivery.operationId)deliveryFail('Operación incorrecta.');
+  const view=await deliveryLoad(db,tx,id,v,actor),prior=await tx.get(receipt);const production=runtime?await productionDeliveryAccess(runtime,tx,id,v):null;if(c.operationId!==view.delivery.operationId)deliveryFail('Operación incorrecta.');
   if(prior.exists){if(prior.data()!.digest!==digest)deliveryFail('Conflicto de commandId.');return {revision:prior.data()!.revision as number,replay:true};}
   const s=structuredClone(view.delivery),d=c.data,now=new Date().toISOString();if(s.revision!==c.expectedRevision)deliveryFail('Conflicto de revisión. Recargá la entrega.');
-  if(s.status==='DELIVERED_EMULATOR'&&!['AUTHORIZE_ORIGINALS_TRANSFER','CONFIRM_ORIGINALS_DELIVERY','CONFIRM_ORIGINALS_RECEIPT','REGULARIZE_ORIGINALS_TRANSFER','CANCEL_ORIGINALS_TRANSFER'].includes(c.action))deliveryFail('Entrega ya cerrada. Sólo se admite custodia posterior de originales.');
+  if(['DELIVERED_EMULATOR','DELIVERED'].includes(s.status)&&!['AUTHORIZE_ORIGINALS_TRANSFER','CONFIRM_ORIGINALS_DELIVERY','CONFIRM_ORIGINALS_RECEIPT','REGULARIZE_ORIGINALS_TRANSFER','CANCEL_ORIGINALS_TRANSFER'].includes(c.action))deliveryFail('Entrega ya cerrada. Sólo se admite custodia posterior de originales.');
   const administrator=()=>{if(!actor.admin)deliveryFail('Control exclusivamente administrativo.');};
   let transferEvent:CustodyTransfer|null=null,updateCustody=structuredClone(view.state),updateFulfillment=structuredClone(view.fulfillment),mirror=false;
   if(c.action==='PREPARE_DELIVERY'){
    administrator();exact(d,['responsible']);const p=participant(d.responsible);await deliveryPerson(db,tx,p);if(!view.state.current||!sameParticipant(p,view.state.current)||view.state.pending)deliveryFail('El responsable debe tener custodia confirmada.');s.responsible=p;
   }else if(c.action==='PREPARE_DOCUMENT'){
    administrator();exact(d,['kind','photoId','reference','templateVersion']);const k=deliveryKind(d.kind),p=await evidence(db,tx,id,v,d.photoId,`${k}_PREPARED`,'');
+   if(production){const emitted=production.manifest.documents[k];if(d.photoId!==emitted.photoId||p.sha256!==emitted.sha256||d.templateVersion!==emitted.templateVersion||d.reference!==production.snapshot.contractNumber)deliveryFail('Sólo se admite el documento emitido para este snapshot.');}
    if(s.originals||s.originalsTransfer)deliveryFail('No se sustituye un documento con originales ya recibidos.');
    s.documents[k]={prepared:{photoId:String(d.photoId),sha256:p.sha256,reference:custodyText(d.reference),templateVersion:custodyText(d.templateVersion),by:actor.uid,at:now},signature:null,invalidatedAt:now};
   }else if(c.action==='VERIFY_SIGNATURE'){
@@ -116,9 +120,9 @@ export async function deliveryCommand(db:Firestore,id:string,v:number,input:unkn
    const ids=deliveryDocumentKinds.flatMap(k=>[s.documents[k].prepared!.photoId,s.documents[k].signature!.photoId]).concat(s.holds.flatMap(h=>h.photoIds));
    for(const photoId of new Set(ids)){const p=(await tx.get(ref.collection('photos').doc(photoId))).data();if(!p||p.state!=='COMMITTED'||p.path!==`operation-delivery-v2/${id}/v${v}/${photoId}`)deliveryFail('Archivo faltante.');const expected=deliveryDocumentKinds.flatMap(k=>[s.documents[k].prepared!,s.documents[k].signature!]).find(x=>x.photoId===photoId);if(expected&&expected.sha256!==p.sha256)deliveryFail('Hash documental diferente.');assertVerifiedEvidence(p as EvidenceMetadata,verified.get(p.path));}
    if(deliveryDocumentKinds.some(k=>s.originals!.documentHashes[k]!==s.documents[k].prepared!.sha256))deliveryFail('Originales de otra versión.');
-   s.status='DELIVERED_EMULATOR';s.event={schemaVersion:'DELIVERY_CONFIRMED_V2',executionMode:'EMULATOR_ONLY',operationId:c.operationId,commandId:c.commandId,occurredAt,recordedAt:now,recordedBy:actor.uid,responsible,product:{name:view.fulfillment.productName,referenceId:view.fulfillment.referenceId},documents:s.documents,originals:s.originals!,identity:view.source.identity,alternativeEvidence:c.action==='REGULARIZE_DELIVERY'?String(d.alternativeEvidence):null,legalApproval:'PENDING'};
-   updateCustody={...updateCustody,current:null,location:'',revision:updateCustody.revision+1,deliveryClosure:'DELIVERED_EMULATOR'};
-   updateFulfillment={...updateFulfillment,revision:updateFulfillment.revision+1,logisticsState:'DELIVERED_EMULATOR',deliveryClosure:'DELIVERED_EMULATOR',updatedAt:now,updatedBy:actor.uid};mirror=true;
+   s.status=production?'DELIVERED':'DELIVERED_EMULATOR';s.event={schemaVersion:'DELIVERY_CONFIRMED_V2',executionMode:production?'PRODUCTION':'EMULATOR_ONLY',...(production?{issuedManifestHash:production.manifest.hash}:{}),operationId:c.operationId,commandId:c.commandId,occurredAt,recordedAt:now,recordedBy:actor.uid,responsible,product:{name:view.fulfillment.productName,referenceId:view.fulfillment.referenceId},documents:s.documents,originals:s.originals!,identity:view.source.identity,alternativeEvidence:c.action==='REGULARIZE_DELIVERY'?String(d.alternativeEvidence):null,legalApproval:production?'EXACT_PACKAGE_APPROVED':'PENDING'};
+   updateCustody={...updateCustody,current:null,location:'',revision:updateCustody.revision+1,deliveryClosure:production?'DELIVERED':'DELIVERED_EMULATOR'};
+   updateFulfillment={...updateFulfillment,revision:updateFulfillment.revision+1,logisticsState:production?'DELIVERED':'DELIVERED_EMULATOR',deliveryClosure:production?'DELIVERED':'DELIVERED_EMULATOR',updatedAt:now,updatedBy:actor.uid};mirror=true;
   }
   s.revision++;tx.set(ref,s);tx.create(receipt,{digest,revision:s.revision,at:now,actor:actor.uid});
   const event={commandId:c.commandId,operationId:c.operationId,action:c.action,actor:actor.uid,at:now,revision:s.revision,expectedRevision:c.expectedRevision,data:d,evidenceGenerations:Object.fromEntries([...verified].map(([path,p])=>[path,p.generation])),transfer:transferEvent||s.originalsTransfer,delivery:s.event};tx.create(ref.collection('events').doc(c.commandId),event);

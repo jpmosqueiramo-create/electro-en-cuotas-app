@@ -56,7 +56,7 @@ export function OperationUnifiedFrame({ budget, draft, operation, section, onSec
       <p className="font-semibold">{next.status}</p>
       <div className="space-y-2 border-t border-border-color pt-3" role="status"><p>Próxima acción: <strong>{next.label}</strong></p><p className="text-sm">Responsable: {next.responsible}</p></div>
       <div data-testid="operation-header-actions" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center"><button className="btn-primary min-h-11 whitespace-normal" onClick={() => {onSection(next.section);setFocusRequest(value=>value+1);}}>{next.label}</button>{headerActions}</div>{headerContent}
-      <p className="text-sm text-text-secondary">Revisión jurídica pendiente. Emisión definitiva, numeración, entrega definitiva, invitaciones y cobranza productivas bloqueadas.</p>
+      <p className="text-sm text-text-secondary">La preparación no acredita firmas ni entrega. Cada paso requiere sus controles y la autorización específica de la operación; la facturación ARCA permanece deshabilitada.</p>
       {trackingError && <div role="alert"><p>{trackingError}</p><button className={btn} onClick={() => void load()}>Reintentar seguimiento</button></div>}
       {!!tracking?.incidents.filter(i => !i.resolvedAt).length && <p role="alert">Hay incidencias sin resolver. Revisá proveedor y logística antes de continuar.</p>}
     </header>

@@ -15,12 +15,12 @@ export interface DeliveryDocument {
  invalidatedAt:string|null;
 }
 export interface DeliveryV2 {
- schemaVersion:'OPERATION_DELIVERY_V2';operationId:string;revision:number;status:'PREPARING'|'DELIVERED_EMULATOR';
+ schemaVersion:'OPERATION_DELIVERY_V2';operationId:string;revision:number;status:'PREPARING'|'DELIVERED_EMULATOR'|'DELIVERED';
  responsible:CustodyParticipant|null;documents:Record<DeliveryDocumentKind,DeliveryDocument>;
  originals:{holder:CustodyParticipant;location:string;receivedAt:string;reference:string;documentHashes:Record<DeliveryDocumentKind,string>}|null;
  originalsTransfer:CustodyTransfer|null;
  holds:{id:string;type:'MISSING_SIGNATURE'|'DAMAGE';at:string;clearedAt:string|null;clearedBy:string|null;reason:string|null;photoIds:string[]}[];
- event:null|{schemaVersion:'DELIVERY_CONFIRMED_V2';executionMode:'EMULATOR_ONLY';operationId:string;commandId:string;occurredAt:string;recordedAt:string;recordedBy:string;responsible:CustodyParticipant;product:{name:string;referenceId:string|null};documents:Record<DeliveryDocumentKind,DeliveryDocument>;originals:NonNullable<DeliveryV2['originals']>;identity:{budgetId:string;budgetVersion:number;sourceCollection:string;solicitudId:string;acceptedOptionId:string;contractDraftId:string};alternativeEvidence:string|null;legalApproval:'PENDING'};
+ event:null|{schemaVersion:'DELIVERY_CONFIRMED_V2';executionMode:'EMULATOR_ONLY'|'PRODUCTION';issuedManifestHash?:string;operationId:string;commandId:string;occurredAt:string;recordedAt:string;recordedBy:string;responsible:CustodyParticipant;product:{name:string;referenceId:string|null};documents:Record<DeliveryDocumentKind,DeliveryDocument>;originals:NonNullable<DeliveryV2['originals']>;identity:{budgetId:string;budgetVersion:number;sourceCollection:string;solicitudId:string;acceptedOptionId:string;contractDraftId:string};alternativeEvidence:string|null;legalApproval:'PENDING'|'EXACT_PACKAGE_APPROVED'};
 }
 export function initialDelivery(operationId:string):DeliveryV2{return {schemaVersion:'OPERATION_DELIVERY_V2',operationId,revision:0,status:'PREPARING',responsible:null,documents:Object.fromEntries(deliveryDocumentKinds.map(k=>[k,{prepared:null,signature:null,invalidatedAt:null}])) as DeliveryV2['documents'],originals:null,originalsTransfer:null,holds:[],event:null};}
 export function deliveryKind(value:unknown):DeliveryDocumentKind{if(!deliveryDocumentKinds.includes(value as DeliveryDocumentKind))deliveryFail();return value as DeliveryDocumentKind;}

@@ -1,0 +1,154 @@
+{
+  "schemaVersion": "FINAL_PACKAGE_PREPARATION_V1",
+  "status": "BLOCKED_FINAL_TEXT_AND_APPROVAL_PENDING",
+  "installable": false,
+  "reviewedPrHead": "a8e2978f58ed79ecb838d623a0af61c7ff0299e0",
+  "originals": [
+    {
+      "kind": "MANDATE",
+      "version": "OWNER_ORIGINAL_MANDATE_V3",
+      "sourceFilename": "Contrato de Mandato Comercial - Cuenta Hogar SRL V3.pdf",
+      "sourceSha256": "8e23a3734506a63920de1b75a3fdcb4f0c6fe88c13c1941b3357ebd9e1a3b4d6",
+      "pageCount": 3,
+      "sourceStatus": "OWNER_REPORTED",
+      "professionalEvidence": null,
+      "extraction": "mandate-original.txt",
+      "extractionSha256": "9f4f6dcac1229486efc9a4ee9f50ec40ad4c0a608f6ede101b404be2c19a4b62",
+      "extractionPolicy": "Native text; whitespace normalized per page for comparison. PDF bytes remain authoritative."
+    },
+    {
+      "kind": "PAGARE",
+      "version": "OWNER_ORIGINAL_NOTE_UNVERSIONED",
+      "sourceFilename": "Pagaré a la Vista (Sin Garante) - Cuenta Hogar SRL.pdf",
+      "sourceSha256": "6f22b6f9bae6fd75f989ed9fb33ef53052832a43fff5d3f52fd30db56c3253b6",
+      "pageCount": 2,
+      "sourceStatus": "OWNER_REPORTED",
+      "professionalEvidence": null,
+      "extraction": "pagare-original.txt",
+      "extractionSha256": "ed06f518941c854ab4082e0944b11ee3b25ab0ec853e7905bb5833671db17371",
+      "extractionPolicy": "Native text; whitespace normalized per page for comparison. PDF bytes remain authoritative."
+    }
+  ],
+  "currentTechnicalVersion": "OPERATION_DRAFT_REVIEW_V2",
+  "currentTechnicalArtifacts": [
+    {
+      "kind": "MANDATE",
+      "version": "OPERATION_DRAFT_REVIEW_V2",
+      "textHash": "464e485acbf2d6bdcdbed9af8eed435d7c6d15425720655ecf5f8431a08388cd",
+      "pending": [
+        "Texto definitivo sin cláusulas pendientes",
+        "Representación y facultades de firma",
+        "Jurisdicción aplicable",
+        "Lugar y fecha efectivos",
+        "Validación profesional de versión exacta"
+      ]
+    },
+    {
+      "kind": "PROMISSORY_NOTE",
+      "version": "OPERATION_DRAFT_REVIEW_V2",
+      "textHash": "0ec55226c57fec5790a422194ac27d57a8e96b5cbc9a0dd738fff6961ecbbf97",
+      "pending": [
+        "Texto definitivo sin cláusulas pendientes",
+        "Representación y facultades de firma",
+        "Jurisdicción aplicable",
+        "Lugar y fecha efectivos",
+        "Validación profesional de versión exacta"
+      ]
+    }
+  ],
+  "existingSyntheticSamples": [
+    {
+      "kind": "MANDATE",
+      "pdf": "../evidence/mandato-borrador-operacion.pdf",
+      "pdfSha256": "7932ebc573882a308cf8c7b90bba5cffb080149f226769ce0f9907bb69f08d25",
+      "pageCount": 3,
+      "text": "mandate-current-synthetic-pdf.txt",
+      "textSha256": "8e29db60f518349b1e5ed101bdde00e7c92a0b01d9dd8e83a5abbb11603b1d04",
+      "status": "TECHNICAL_DRAFT_NOT_APPROVED",
+      "synthetic": true
+    },
+    {
+      "kind": "PAGARE",
+      "pdf": "../evidence/pagare-borrador-operacion.pdf",
+      "pdfSha256": "c42c56f1e243f2cdfa307ac46ffaa86df47bcdaa9e58a694292e6ba012e091d3",
+      "pageCount": 1,
+      "text": "pagare-current-synthetic-pdf.txt",
+      "textSha256": "34edef0fdeeddafb706c10eb130b882d2ea33f024c9b3c4c5561c910ee69d5ac",
+      "status": "TECHNICAL_DRAFT_NOT_APPROVED",
+      "synthetic": true
+    }
+  ],
+  "confirmedIssuer": {
+    "version": "LOOP_LEGAL_ENTITY_OWNER_CONFIRMED_V1",
+    "legalName": "LOOP GESTIÓN INTEGRAL S.R.L.",
+    "tradeName": "Cuenta Hogar",
+    "taxId": "30-71962686-2",
+    "legalAddress": "Caracas 1101, Ciudad Autónoma de Buenos Aires, CP 1431"
+  },
+  "representative": {
+    "observedInOriginal": "Juan Pablo Mosqueira Morales",
+    "observedCapacity": "Socio Gerente",
+    "facultiesEvidence": null,
+    "confirmedForFinalIssuance": false
+  },
+  "jurisdiction": null,
+  "effectiveDatesAndPlaces": "Per operation; explicitly confirmed at issuance, not inferred from legal address.",
+  "finalDocuments": {
+    "MANDATE": {
+      "id": null,
+      "version": null,
+      "sha256": null,
+      "professional": null,
+      "approvalDate": null,
+      "validationReference": null
+    },
+    "PAGARE": {
+      "id": null,
+      "version": null,
+      "sha256": null,
+      "professional": null,
+      "approvalDate": null,
+      "validationReference": null
+    },
+    "REMITO": {
+      "id": null,
+      "version": null,
+      "sha256": null,
+      "professional": null,
+      "approvalDate": null,
+      "validationReference": null
+    }
+  },
+  "remito": {
+    "originalApprovedSource": null,
+    "existingReference": "src/lib/pdfGenerator.ts#renderRemitoModelo",
+    "extractedReference": "remito-existing-renderer.txt",
+    "referenceSha256": "851708304b61d6e278303bb15e11bc79cc53edc4d276145ec0bd1a80207d30b5",
+    "status": "EXISTING_TECHNICAL_REFERENCE_NOT_APPROVED",
+    "missing": "Exact standalone remito text/layout approved for this operation, identity, fields, signature scope and tax/transport treatment.",
+    "extractionPolicy": "Source reference only; trailing whitespace stripped. Original code remains authoritative."
+  },
+  "otherLocalMandate": {
+    "filename": "Contrato de Mandato Comercial - Loop Ge...Integral SRL V5 - Documentos de Google.pdf",
+    "sha256": "a99415f02b847ce87af273dc6617cebe24acffe7a3879029bf36bb70258f84db",
+    "status": "LOCAL_FILE_NOT_IDENTIFIED_BY_EXISTING_OWNER_DECLARATION_OR_REGISTRY",
+    "automaticSubstitution": false
+  },
+  "sourceCodeSha256": {
+    "src/lib/contractDocuments/operationDraftTemplates.ts": "37bed114d473b5f6bd0479d051e6e278b0ec5e0547b30390547a4d0cc594d2df",
+    "src/lib/contractDocuments/operationDraftPdf.ts": "14933c092f4cd47ca4ca9ceb64f1cbb2faae8c1dc2cbd318b999acaf6f5dd3a2",
+    "src/lib/contractDocuments/operationDraft.ts": "8092258ad21cf26daa84c89444c3ea0ab125444c6a3fdebd0d87f101cfbcc8e7",
+    "src/lib/contractDocuments/templates.ts": "a8e5345ffa5b00f159f8842a457956607cf4b9c93bbdc7fc12a8d5f891379e84",
+    "src/lib/productionV2/catalog.ts": "048754057732b0ff63021728f7b2b5ec2a73197cb06adfbe1f6e8fd1e7f60ca1",
+    "src/lib/productionV2/finalPackages.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  "unchangedEconomics": {
+    "source": "persisted contract snapshot",
+    "total": "capital + gross services with included VAT",
+    "additionalVat": false,
+    "serviceAllocation": null,
+    "automaticPenalties": false
+  },
+  "approvalTransferred": false,
+  "productiveWrites": 0
+}

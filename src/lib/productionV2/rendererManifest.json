@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "PRODUCTION_RENDERER_SOURCE_MANIFEST_V1",
+  "sources": {
+    "src/lib/brand.ts": "7694c48700da62c07cb08eac530de33696dfe5276f947e723a4e9ff6b42b6a42",
+    "src/lib/budgetAcceptanceV2.ts": "c1e525375099e52bbcefbd956e652c01957ad8e419e9a2056a49a4cb319a863e",
+    "src/lib/budgetReferenceV2.ts": "274ae26df819558d177b6c40314444194a4875c54fc699235d86736f5d9e95b2",
+    "src/lib/budgetV2.ts": "7f0ffa7c9656a30a7e915d2d020d8320107d273fb495fc0df25ca7a4c7edf73a",
+    "src/lib/budgetV2Persistence.ts": "cc7421c95bdf010325d69ac88597c2d7b714d5e568acd3b6b0356fa8e7b1514b",
+    "src/lib/catalogReference.ts": "61f89bc616e2afb728ad7b61379f03ba2a32e974c1a6bbd65af90ac4f15ad505",
+    "src/lib/catalogReferenceEditor.ts": "d7a9f107f2d44606ff419e06a126ad6eafe41d4fd581b12bff12caaac06994cf",
+    "src/lib/contractAddress.ts": "9037c7f74b5ee71902fc46d5db5211238959beb799fb9bbb35983e6d402964f8",
+    "src/lib/contractDocuments/amountWords.ts": "6fec7ca82d64c3d9aa7e980d45f43e82e94d227c5b17656160c2cc5e6d6d439f",
+    "src/lib/contractIntegrityV2.ts": "12bfde382e577b3809a74fccb6cabccef7a209786139e2d7684dcdbf81ef9b22",
+    "src/lib/contractSnapshotV2.ts": "35f93b6ca7e64a7f6bd4115bde5807e0555a767a39f552979baa3a199ecdcc16",
+    "src/lib/contractV2.ts": "9c46c62691075cc6a7adf84298a012700cef7888875c74c5bbf85685fce55cd2",
+    "src/lib/logoBase64.ts": "0077cf4a7df0e29d9cc0de275888e6d6d8debef29be0c86549a74d323bb18c54",
+    "src/lib/pdfBranding.ts": "c3b5823bd92fc0a6be82f05b7a0e2e8704cae6d920548ca1c1259deefd8a4548",
+    "src/lib/productionV2/catalog.ts": "048754057732b0ff63021728f7b2b5ec2a73197cb06adfbe1f6e8fd1e7f60ca1",
+    "src/lib/productionV2/pdf.ts": "661d4a6da882910871a8e04292027f343b6dc4829d8df65c48c70ff63ea56db8",
+    "src/lib/referenceConfigurator.ts": "11a24f9e2028c8966f980a1e8a59526a3329d9c2547c1552f7eb7ced3128828d"
+  },
+  "resources": {
+    "font": "Helvetica-WinAnsi",
+    "lockSha256": "aeb157321af515a9b8595fccaedf303bbf160445dc3e5ee0c307933c18019145",
+    "packages": {
+      "jspdf": {
+        "version": "4.2.1",
+        "integrity": "sha512-YyAXyvnmjTbR4bHQRLzex3CuINCDlQnBqoSYyjJwTP2x9jDLuKDzy7aKUl0hgx3uhcl7xzg32agn5vlie6HIlQ==",
+        "files": {
+          "LICENSE": "dc388ec35ff463288cdde3588a36fd4ed12a45deff053243b37309acc9ef583b",
+          "README.md": "21c1ec808b4056983555049b4d593beb81f8ce0ecfcd9d6a5db33c00fc8063f7",
+          "dist/jspdf.es.js": "5b7f65fa3928b104febbcc37c7174f8e5aa3b8d9d24d0378a3fecad693d86f76",
+          "dist/jspdf.es.js.map": "fbea96b939373ef5edcb9b9beab1bf3ce21bc3dc1d38e042943b43238acec642",
+          "dist/jspdf.es.min.js": "761b3a84ae6acc087802bc60672a4092cd1d5b17c809621da37ea26c9224cb83",
+          "dist/jspdf.es.min.js.map": "4b2825bce48b0eeaeed26c5db533512018b91c26d8d41acc1b0e682504c17517",
+          "dist/jspdf.node.js": "799f5a8fb845c6a0fced4dc2c0492b467a9a6b23c8d9046ef312defc864f621b",
+          "dist/jspdf.node.js.map": "0f01202f012acc49f6b748220e885775d2792893086ce64b6e87ddd481b3303b",
+          "dist/jspdf.node.min.js": "1710d2e41a51864167ee03ad2611e3de85e17d510aef5458ce0cd55be05e1747",
+          "dist/jspdf.node.min.js.map": "8914620183554aa4072eee29e8d92c1e1d75eaaf726d44d628ff0f4a042aa400",
+          "dist/jspdf.umd.js": "c75a285514652d5a75f0813a6bb5e6d447d7bec2308a9f68cc95584fa5bf68a1",
+          "dist/jspdf.umd.js.map": "715e2afc37476a04b8bad8d2000f84432bba740650d505ec6d8cf830f0590b29",
+          "dist/jspdf.umd.min.js": "e6551fcdc32f09d6853b2c5126d18d01d9447e0da618a41a11ebeee0f6c20d54",
+          "dist/jspdf.umd.min.js.map": "6a5d22093ac86a7356266e2cdbfcd87a40e3e769e4046b2a05294620dc40f1e1",
+          "dist/polyfills.es.js": "f6d05cee41c35a9fd22ff6dbd9c6f7c27046bf64c958dcedb2c0b484973f67a8",
+          "dist/polyfills.umd.js": "be8a082ab01530d314bcddffb02353a6e08e1bb19988fd7b16c7ef04bd79e6f2",
+          "package.json": "856536611c0103535ec8c995c31299fdcc8e67cf052e8a61abe8ab02eebfac4d",
+          "types/index.d.ts": "98137bb3bf4804403e7f845acea4cbfa7cdad2c860706a120f71a1206d9b65a1"
+        }
+      },
+      "jspdf-autotable": {
+        "version": "5.0.7",
+        "integrity": "sha512-2wr7H6liNDBYNwt25hMQwXkEWFOEopgKIvR1Eukuw6Zmprm/ZcnmLTQEjW7Xx3FCbD3v7pflLcnMAv/h1jFDQw==",
+        "files": {
+          "LICENSE.txt": "99a374e0385cf714d2faae5f6e02ec79217c6bcecec39bdb9e102091471b960a",
+          "README.md": "879e202945f0ffad36b5b1612c444f46263412c46b28ff4b3e620c2353df7f9f",
+          "dist/index.d.ts": "fb67e9d5d8ec38dd6465a77ebc0b5e2c31fbb787e709cea1ba9e3079cdf9f398",
+          "dist/jspdf.plugin.autotable.js": "ebd3b5ba15ebd4291b5fcb8dbbfafc4deec520f452668d7286664cbae3ed0546",
+          "dist/jspdf.plugin.autotable.min.js": "238db5fea9fe231d70d80a108b5193821d618056c97f23821899265370531c94",
+          "dist/jspdf.plugin.autotable.mjs": "2d64e7541beb0fd8ead0a4167ea7e1be2d77345080eb00b366626456645483ea",
+          "package.json": "d6cb42760279d40c1289604d78557f09b9152d3a02c1bdef3c0b1eb4bda138de"
+        }
+      }
+    }
+  }
+}

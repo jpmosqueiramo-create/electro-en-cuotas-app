@@ -1,0 +1,10 @@
+{
+  "desktop": "PASS",
+  "mobile": "PASS",
+  "overflow": "PASS",
+  "httpGet": "PASS",
+  "post": 405,
+  "readOnly": "PASS",
+  "externalFirebaseRequests": 0,
+  "productionWrites": 0
+}

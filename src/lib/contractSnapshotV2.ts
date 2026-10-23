@@ -59,6 +59,13 @@ export interface ContractSnapshotV2 extends ContractLegalContextV2 {
     integrationPolicyVersion: 'READY_FREEZE_EMULATOR_V1'; executionMode: 'EMULATOR_ONLY';
     readyEvidenceId: string; readyEvidenceHash: string; dependenciesHash: string;
     legalTemplateReviewRequired: true;
+  } | {
+    readinessPolicyVersion: 'CONTRACT_PRODUCTION_APPROVAL_V1';
+    integrationPolicyVersion: 'READY_FREEZE_PRODUCTION_V1'; executionMode: 'PRODUCTION';
+    readyEvidenceId: string; readyEvidenceHash: string; dependenciesHash: string;
+    legalTemplateReviewRequired: true;
+    authorizationId: string; authorizationHash: string; legalPackageHash: string;
+    legalApprovalsHash: string;
   });
   integrity: { canonicalizationVersion: typeof CONTRACT_CANONICALIZATION; hashAlgorithm: 'SHA-256'; payloadHash: string };
 }
@@ -140,6 +147,10 @@ export function validateContractSnapshot(value: unknown): asserts value is Contr
       const common = { state: literal('TERMS_FROZEN'), preparedAt: instant, readyAt: instant, readyBy: text(), termsFrozenAt: instant, termsFrozenBy: text(), commandId: opaque, provenanceManifestHash: hash };
       if (v && typeof v === 'object' && (v as Record<string,unknown>).readinessPolicyVersion === 'CONTRACT_TECHNICAL_REVIEW_V1') {
         shape({ ...common, readinessPolicyVersion: literal('CONTRACT_TECHNICAL_REVIEW_V1'), integrationPolicyVersion: literal('READY_FREEZE_EMULATOR_V1'), executionMode: literal('EMULATOR_ONLY'), readyEvidenceId: opaque, readyEvidenceHash: hash, dependenciesHash: hash, legalTemplateReviewRequired: literal(true) })(v);
+      } else if (v && typeof v === 'object' && (v as Record<string,unknown>).readinessPolicyVersion === 'CONTRACT_PRODUCTION_APPROVAL_V1') {
+        // Shape/integrity only. This does NOT authorize issuance. The separate server
+        // adapter verifies the exact catalog, professional records and per-operation grant.
+        shape({ ...common, readinessPolicyVersion: literal('CONTRACT_PRODUCTION_APPROVAL_V1'), integrationPolicyVersion: literal('READY_FREEZE_PRODUCTION_V1'), executionMode: literal('PRODUCTION'), readyEvidenceId: opaque, readyEvidenceHash: hash, dependenciesHash: hash, legalTemplateReviewRequired: literal(true), authorizationId: opaque, authorizationHash: hash, legalPackageHash: hash, legalApprovalsHash: hash })(v);
       } else shape({ ...common, readinessPolicyVersion: literal('EMULATOR_FIXTURE_ONLY_V1') })(v);
     },
     integrity: shape({ canonicalizationVersion: literal(CONTRACT_CANONICALIZATION), hashAlgorithm: literal('SHA-256'), payloadHash: hash }),
@@ -156,8 +167,8 @@ export function validateContractSnapshot(value: unknown): asserts value is Contr
   if (s.addressInterpretation.provinceDisplayName !== provinceLabel(s.personalData.province)) fail();
   if (s.origin.preferredPlanCuotas === null) { if (s.origin.preferredPlanAmountSnapshot !== null) fail(); }
   else { const offered = fullRef.planesOfrecidos.find(p => p.cuotas === s.origin.preferredPlanCuotas); if (!offered || offered.cuotaEstimada !== s.origin.preferredPlanAmountSnapshot) fail(); }
-  if (Object.hasOwn(s, 'productDetails') && s.freeze.readinessPolicyVersion !== 'CONTRACT_TECHNICAL_REVIEW_V1') fail('PRODUCT_DETAILS_REQUIRE_TECHNICAL_EMULATOR_REVIEW');
-  if (s.freeze.readinessPolicyVersion === 'CONTRACT_TECHNICAL_REVIEW_V1') {
+  if (Object.hasOwn(s, 'productDetails') && !['CONTRACT_TECHNICAL_REVIEW_V1','CONTRACT_PRODUCTION_APPROVAL_V1'].includes(s.freeze.readinessPolicyVersion)) fail('PRODUCT_DETAILS_REQUIRE_TECHNICAL_REVIEW');
+  if (s.freeze.readinessPolicyVersion === 'CONTRACT_TECHNICAL_REVIEW_V1' || s.freeze.readinessPolicyVersion === 'CONTRACT_PRODUCTION_APPROVAL_V1') {
     const terms = { contractDraftId, budgetId, budgetVersion, acceptedOptionId, acceptedReferenceSnapshot:s.acceptedReference, acceptedAt:s.origin.acceptedAt, preferredPlanCuotas:s.origin.preferredPlanCuotas, personalDataVersion:s.personalDataVersion, personalData:s.personalData, employmentData:s.employmentData, economicTerms:s.economicTerms, firstInstallmentDueDate:s.paymentSchedule.firstInstallmentDueDate, preferredMonthlyDueDay:s.paymentSchedule.preferredMonthlyDueDay, paymentScheduleDraft:s.paymentSchedule.installments, preparedAt:s.freeze.preparedAt, ...(s.productDetails===undefined?{}:{productDetails:s.productDetails}) };
     if (contractValueHash(terms) !== s.sourceDraft.readyDigest) fail('CONTRACT_READY_TERMS_MISMATCH');
   }

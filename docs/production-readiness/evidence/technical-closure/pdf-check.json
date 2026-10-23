@@ -1,0 +1,30 @@
+[
+  {
+    "file": "MANDATE.pdf",
+    "sha256": "6fcd15e71a86cd8aa706034641fa9bddbdc477beb63ddaa8f097dbcfb6c4ae5d",
+    "pages": 1,
+    "nativeText": true,
+    "images": 1
+  },
+  {
+    "file": "PAGARE.pdf",
+    "sha256": "7540604982b29f02bf4223b122ebebde30313326f2bd964a49d7f4fbdf6d6018",
+    "pages": 1,
+    "nativeText": true,
+    "images": 0
+  },
+  {
+    "file": "REMITO.pdf",
+    "sha256": "2dd48025bfe5e47b4395405b15d6267e45c838d9bf6f3a7ec068015c33d5872c",
+    "pages": 1,
+    "nativeText": true,
+    "images": 1
+  },
+  {
+    "file": "RECIBO.pdf",
+    "sha256": "4fd991147b29164300165b12bf82c134c7ebc2b064c5bd9f70ae0530882f711b",
+    "pages": 1,
+    "nativeText": true,
+    "images": 1
+  }
+]

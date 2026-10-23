@@ -30,10 +30,11 @@ export async function verifyAdminAuth(req: Request): Promise<AdminAuthResult> {
     }
 
     const token = authHeader.split("Bearer ")[1];
-    const decodedToken = await admin.auth().verifyIdToken(token);
+    const decodedToken = await admin.auth().verifyIdToken(token, true);
+    const currentUser = await admin.auth().getUser(decodedToken.uid);
     const userEmail = (decodedToken.email || "").toLowerCase().trim();
 
-    if (!isAdminEmail(userEmail)) {
+    if (currentUser.disabled || !isAdminEmail(currentUser.email) || !isAdminEmail(userEmail)) {
       return {
         authorized: false,
         errorResponse: NextResponse.json(

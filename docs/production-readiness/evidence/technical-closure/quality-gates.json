@@ -1,0 +1,53 @@
+{
+  "baseline": "918f3ea0ef3049c8ddd83f032218fa31f70f699a",
+  "productionWrites": 0,
+  "testProject": "demo-cuenta-hogar",
+  "P1": "PASS",
+  "P2": "PASS",
+  "gates": {
+    "typescript": {
+      "exitCode": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "eslint": {
+      "exitCode": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "build": {
+      "exitCode": 0,
+      "logSha256": "c39894faccdd877c2bd03582d34f354824e030960da0e05e5281d4a15f1144f9"
+    },
+    "safe": {
+      "exitCode": 0,
+      "logSha256": "791e873d1a4e8d72583c61a9591c40ad49ea5168d55dc54e6e2f975f7740c783"
+    },
+    "date": {
+      "exitCode": 0,
+      "logSha256": "537b41c4fc65c53257ca5d8f724e04a05945d56a11cfe0bc4787a6695b7381b4"
+    },
+    "renderer": {
+      "exitCode": 0,
+      "logSha256": "2a71a5df14aa96fe03f54f4ec065b60944861720793b8d35c745b9c9f4a943d1"
+    },
+    "emulator": {
+      "exitCode": 0,
+      "logSha256": "a54cd7cd5e6919b9ab5087cc8bec07ff97557b9664e50719101ef46420f647f1"
+    },
+    "browser": {
+      "exitCode": 0,
+      "logSha256": "6ec19b01e8f43021ccefd94c2e996c0b27d0e8d046a568083cad3cdf6c976fde"
+    }
+  },
+  "emulatorGroups": 30,
+  "dateBoundaryCases": 8,
+  "browserScreens": 17,
+  "catalogInstalledPackages": 0,
+  "legalApproval": "PENDING_EXACT_PACKAGE",
+  "visualInspection": "Four PDF pages and nine representative desktop/mobile captures; no overflow. PDFium isolated rendering used for PDF viewer substitution issue.",
+  "browserBoundary": "Local Next + existing route exports, no deployed test endpoint. Last API strict-ID change retested by Emulator HTTP after successful visual journey.",
+  "knownLimits": [
+    "SDK alert listener denied for synthetic admin (preexisting harness limitation)",
+    "No App Hosting or live authorization exercise",
+    "Legal approval, deployment, CH initialization and real operations still require independent authorization"
+  ]
+}

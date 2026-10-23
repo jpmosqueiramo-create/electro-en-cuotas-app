@@ -1,8 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import {loadAuthorizedRequestPage, type RequestPageCursors} from "@/lib/adminSolicitudesHttpReader";
 import { useAuth } from "@/components/AuthProvider";
 import { PageHeader } from "@/components/PageHeader";
 import { ReferenceConfigurator, Field } from "../references/ReferenceConfigurator";
@@ -38,13 +37,35 @@ export function BudgetV2Workspace(){
   },[user]);
   const refresh=useCallback(async()=>{const data=await request();setBudgets(data.budgets as BudgetV2[]);},[request]);
   useEffect(()=>{
-    if(!user)return;let current=true;
-    void Promise.all([getDocs(collection(db,"solicitudes")),getDocs(collection(db,"solicitudes_cuenta")),getDocs(collection(db,"productos")),request()]).then(([std,cuenta,products,data])=>{
-      if(!current)return;
-      const list:Source[]=[];
-      for(const [snapshot,sourceCollection] of [[std,"solicitudes"],[cuenta,"solicitudes_cuenta"]] as const)for(const doc of snapshot.docs){const d=doc.data(),p=d.datosPersonales??{};list.push({sourceCollection,id:doc.id,nombre:p.nombreCompleto??d.nombreCompleto??d.nombre??"",dni:p.numeroDni??d.numeroDni??d.dni??"",cuil:p.cuil??d.cuil??"",whatsapp:p.telefono??d.whatsapp??"",localidad:p.localidad??d.localidad??"",necesidad:d.productoDeseado??d.productoNombre??d.necesidad??""});}
-      setSources(list);setReferences(products.docs.map(d=>({...d.data(),id:d.id,nombre:String(d.data().nombre??"")})));setBudgets(data.budgets);
-    }).catch(e=>{if(current)setError((e as Error).message);}).finally(()=>{if(current)setLoading(false);});return()=>{current=false;};
+    setSources([]);setReferences([]);setBudgets([]);setBudget(null);setDraft(null);setLoading(true);
+    if(!user)return;let current=true;const abort=new AbortController();
+    const report=(label:string)=>{if(current)setError(previous=>previous?previous+' '+label:label);};setError('');
+    async function loadSources(){
+      let cursors:RequestPageCursors={};const list:Source[]=[];
+      do{
+        const page=await loadAuthorizedRequestPage(user!,cursors,abort.signal);
+        for(const i of page.items)list.push({sourceCollection:i.sourceCollection,id:i.documentId,nombre:i.nombreCliente??'',dni:i.dni??'',cuil:i.cuil??'',whatsapp:i.telefono??'',localidad:i.localidad??'',necesidad:i.productoONecesidad??''});
+        if(current)setSources([...list]);
+        if(Object.keys(page.errors).length){report('No se pudieron cargar todas las solicitudes de origen.');break;}
+        cursors=page.cursors;
+      }while(current&&Object.values(cursors).some(c=>c!==null));
+    }
+    async function loadReferences(){
+      const items:Reference[]=[];let cursor:string|null=null;
+      do{
+        const response=await fetch('/api/admin/presupuestos-v2/references'+(cursor?'?cursor='+encodeURIComponent(cursor):''),{headers:{Authorization:`Bearer ${await user!.getIdToken()}`},cache:'no-store',signal:abort.signal});
+        if(!response.ok)throw Error();const page=await response.json() as {items:Reference[];nextCursor:string|null};
+        items.push(...page.items.map(d=>({...d,nombre:String(d.nombre??'')})));cursor=page.nextCursor;
+        if(current)setReferences([...items]);
+      }while(current&&cursor);
+    }
+    // A failed optional origin/catalog read cannot erase an authorized budget history.
+    void Promise.allSettled([
+      loadSources().catch(()=>report('No se pudieron consultar las solicitudes.')),
+      loadReferences().catch(()=>report('No se pudieron consultar las referencias del catálogo.')),
+      request().then(data=>{if(current)setBudgets(data.budgets);}).catch(()=>report('No se pudo consultar el historial de presupuestos.')),
+    ]).finally(()=>{if(current)setLoading(false);});
+    return()=>{current=false;abort.abort();};
   },[user,request]);
   const linkedBudgetOpened=useRef<string|null>(null);
   useEffect(()=>{
