@@ -1,0 +1,85 @@
+{
+  "result": "PASS",
+  "selectableText": true,
+  "mandatePages": 3,
+  "notePages": 1,
+  "economics": {
+    "capitalAmount": 580000,
+    "contractPlanCuotas": 12,
+    "factorSnapshot": 3,
+    "factorComputedTotal": 1740000,
+    "roundingAdjustment": 0,
+    "serviceAmount": 1160000,
+    "contractInstallmentAmount": 145000,
+    "contractTotal": 1740000
+  },
+  "exactSchedule": [
+    {
+      "installmentNumber": 1,
+      "dueDate": "2026-12-15",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 2,
+      "dueDate": "2027-01-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 3,
+      "dueDate": "2027-02-28",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 4,
+      "dueDate": "2027-03-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 5,
+      "dueDate": "2027-04-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 6,
+      "dueDate": "2027-05-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 7,
+      "dueDate": "2027-06-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 8,
+      "dueDate": "2027-07-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 9,
+      "dueDate": "2027-08-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 10,
+      "dueDate": "2027-09-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 11,
+      "dueDate": "2027-10-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 12,
+      "dueDate": "2027-11-30",
+      "amount": 145000
+    }
+  ],
+  "noteImages": 0,
+  "syntheticOnly": true,
+  "productionWrites": 0,
+  "sha256": {
+    "mandato-borrador-operacion.pdf": "9df6bde942a7e27b7f68cf990a975027809fea92e1780d8fb68310255ebf2f34",
+    "pagare-borrador-operacion.pdf": "62403510463d702513517c2bc98ec351c9c2bfb036eeb30100a7668c9cd68210"
+  }
+}

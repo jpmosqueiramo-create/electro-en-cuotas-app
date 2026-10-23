@@ -6,6 +6,7 @@ import { mkdirSync,writeFileSync } from 'node:fs';
 import { admin } from '../src/lib/firebaseAdmin';
 import { financialFixture,activateFinancialFixture } from './testOperationFinancialV2Emulator';
 import { readFinancial,financialCommand,financialRef } from '../src/lib/operationFinancialV2Server';
+import { clientBindingCommand,readClientBinding } from '../src/lib/operationClientV2Server';
 import { CatalogBrowser } from './helpers/catalogBrowser';
 import { adminEmail,adminPassword } from './helpers/adminSolicitudesFixtures';
 export async function testOperationFinancialV2Browser(){
@@ -25,8 +26,12 @@ export async function testOperationFinancialV2Browser(){
   // Only the newer server revision may remain visible, even if responses arrive out of order.
   await browser.evaluate(`(()=>{const original=window.fetch.bind(window);let held=false;window.__releaseFinancialRead=null;window.fetch=async(...args)=>{const response=await original(...args);if(!held&&String(args[0]).endsWith('/financial')){held=true;return new Promise(resolve=>{window.__releaseFinancialRead=()=>resolve(response);});}return response;};window.__restoreFinancialFetch=()=>{window.fetch=original;};window.dispatchEvent(new Event('focus'));return true;})()`);
   await browser.until("typeof window.__releaseFinancialRead==='function'",'older response completed');
+  await browser.command('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
+  await browser.evaluate("(window.dispatchEvent(new Event('focus')),true)");
+  await browser.until(`${scope}?.textContent.includes('No se pudo verificar el acceso financiero')`,'offline read fails closed');
   const beforeReverse=(await financialRef(db,f.id,1).get()).data()!;
   await financialCommand(db,f.id,1,{action:'REVERSE_PAYMENT',operationId:f.identity.operationId,expectedRevision:beforeReverse.revision,commandId:randomUUID(),data:{paymentId:view.history![0].id,reason:'Reversa sintética para verificar reconexión'}},f.root);
+  await browser.command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
   await browser.evaluate("(window.dispatchEvent(new Event('online')),true)");
   await browser.until(`${scope}?.textContent.includes('Revisión 3')`,'reconnect refresh without reload');
   await browser.evaluate("(window.__releaseFinancialRead(),window.__restoreFinancialFetch(),true)");
@@ -45,6 +50,24 @@ export async function testOperationFinancialV2Browser(){
   // Exercise the real pagination control without weakening any role/payment assertions above.
   for(let i=0;i<50;i++){const state=(await financialRef(db,f.id,1).get()).data()!;await financialCommand(db,f.id,1,{action:'CREDIT_PAYMENT',operationId:f.identity.operationId,expectedRevision:state.revision,commandId:randomUUID(),data:{paymentId:randomUUID(),amountCents:1,effectiveDate:new Date().toISOString().slice(0,10),method:'TRANSFERENCIA',reference:'BROWSER-SYNTHETIC-PAGINATION'}},f.root);}
   await browser.evaluate('window.__FIREBASE_SIGN_OUT__().then(()=>true)');await login(adminEmail,adminPassword);await browser.navigate('/admin/operaciones/'+f.id+'/1');await browser.until("!!document.querySelector('[data-testid=operation-unified-workspace]')",'unified after login');await browser.clickText('Cuotas y pagos');await browser.until("document.querySelectorAll('[data-testid=financial-receipt]').length===50",'bounded first page');await browser.clickText('Ver más pagos y recibos',scope);await browser.until("document.querySelectorAll('[data-testid=financial-receipt]').length===51",'second page merged');assert.equal(await browser.evaluate("[...document.querySelectorAll('button')].some(b=>b.textContent==='Ver más pagos y recibos')"),false);await capture('admin-financial-pagination-mobile');
+  // A successful response obtained before revocation must never restore private data.
+  await browser.evaluate('window.__FIREBASE_SIGN_OUT__().then(()=>true)');await login(`${f.clientUid}@example.test`,'Emulator-only-123');await browser.navigate('/cliente');
+  await browser.until(`${scope}?.textContent.includes('Saldo pendiente')`,'client before revocation');
+  await browser.evaluate(`(()=>{const original=window.fetch.bind(window);let held=false;window.__releaseFinancialRead=null;window.fetch=async(...args)=>{const response=await original(...args);if(!held&&String(args[0]).endsWith('/financial')){held=true;return new Promise(resolve=>{window.__releaseFinancialRead=()=>resolve(response);});}return response;};window.__restoreFinancialFetch=()=>{window.fetch=original;};document.dispatchEvent(new Event('visibilitychange'));return true;})()`);
+  await browser.until("typeof window.__releaseFinancialRead==='function'",'tab visibility refresh held');
+  const binding=(await readClientBinding(db,f.id,1)).state;
+  await clientBindingCommand(db,f.id,1,{commandId:randomUUID(),operationId:f.identity.operationId,expectedRevision:binding.revision,action:'REVOKE_ACCESS',data:{reason:'Revocación sintética para regresión PR74/77'}},f.root.uid);
+  await browser.evaluate("(window.dispatchEvent(new Event('online')),true)");
+  await browser.until(`${scope}?.textContent.includes('No se pudo verificar el acceso financiero')`,'revoked reconnection clears data');
+  await browser.evaluate("(window.__releaseFinancialRead(),window.__restoreFinancialFetch(),true)");
+  await new Promise(resolve=>setTimeout(resolve,300));
+  assert.equal(await browser.evaluate(`${scope}?.textContent.includes('Saldo pendiente')`),false,'cached successful response cannot restore revoked data');
+  assert.equal(await browser.evaluate("document.querySelectorAll('[data-testid=financial-receipt]').length"),0);
+  const revokedHttp=await browser.evaluate<number>(`window.__FIREBASE_AUTH__.currentUser.getIdToken().then(token=>fetch('/api/cliente/servicios-v2/${f.id}/1/financial',{headers:{Authorization:'Bearer '+token}})).then(r=>r.status)`);assert.equal(revokedHttp,403);
+  await capture('client-revoked-mobile');
+  await browser.navigate('/cliente');await browser.until("document.body.textContent.includes('No hay servicios V2 activados para esta cuenta.')",'revoked service absent after reload');
+  assert.equal(await browser.evaluate("document.querySelectorAll('[data-testid=financial-receipt]').length"),0);
+  console.log('CLIENT_REVOCATION_DIRECT_HTTP_403_RECONNECT_STALE_RESPONSE_RELOAD=PASS; TAB_VISIBILITY_REFRESH=PASS');
   assert.deepEqual({b:(await f.r.budget.get()).data(),a:(await f.r.acceptance.get()).data(),draft:(await f.r.draft.get()).data()},original);assert.deepEqual(browser.externalFirebase,[]);
   console.log('FINANCIAL_BROWSER_DESKTOP_MOBILE=PASS; PAGINATION_51_RECEIPTS=PASS; ADMIN_PAYMENT_RECEIPT=PASS; AFFILIATE_CLIENT_READ_ONLY=PASS; CROSS_UID=DENIED; RELOAD=PASS; RECONNECT_REVERSAL=PASS; OUT_OF_ORDER_READ=PASS; THREE_ROLE_SUMMARY=PASS; OVERFLOW=0; PRODUCTION_REQUESTS=0');
  }finally{await browser.close();}
