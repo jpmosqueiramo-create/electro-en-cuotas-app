@@ -54,7 +54,7 @@ Comparación textual/técnica; no constituye dictamen de validez jurídica.
 | Total en letras | Conversión lingüística del total persistido | No modifica el importe; pagaré por el mismo total |
 | Empresa y representante | Paquete final versionado, todavía no instalado | Empresa confirmada; representación/capacidad deben acreditarse |
 | Jurisdicción | Paquete final aprobado | No inferir del domicilio social ni del lugar de emisión |
-| Lugar/fecha de ambos instrumentos | Contexto formal explícito autorizado por operación | Sin valores inventados; actualmente la validación del día usa UTC (ver bloqueo en auditoría) |
+| Lugar/fecha de ambos instrumentos | Contexto formal explícito autorizado por operación | Sin valores inventados; día local `America/Argentina/Buenos_Aires` para nueva emisión, instantes UTC en auditoría; una recuperación conserva la fecha congelada |
 | Número CH, revisión y hashes | Contador autorizado + snapshot transaccional | No editables desde navegador; únicos, inmutables, auditados |
 | Firmas y custodia | Evidencias privadas y eventos posteriores | No se completan desde el texto de la plantilla ni desde una declaración de aprobación |
 
@@ -73,3 +73,8 @@ Para cerrar cada entrada se necesita:
 5. Revisión conjunta del texto y de los PDF renderizados, con hashes de plantillas, renderer, recursos y paquete. La autorización por operación sigue siendo independiente.
 
 Ninguna declaración en este directorio habilita emisión, entrega, numeración, cobranza ni ARCA. Los PDF de revisión conservan `BORRADOR — NO VÁLIDO PARA FIRMA`; los del test del adaptador conservan su leyenda de prueba.
+
+
+## Entrega del cierre técnico P1/P2
+
+Los originales y las muestras jurídicas técnicas anteriores se conservan byte por byte. `evidence/technical-closure/` contiene los nuevos ejemplares **sintéticos del adaptador** para comprobar recuperación, maquetación y consistencia; sus textos ficticios no sustituyen el mandato original, el pagaré ni un remito aprobado. El catálogo final instalable continúa vacío, a la espera de los requisitos enumerados arriba. No se modificaron cláusulas ni se registró aprobación nueva.

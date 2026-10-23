@@ -1,5 +1,7 @@
 # Verificaciones del cierre de PR #80
 
+> Evidencia de la revisión anterior, conservada sin reasignar resultados. La resolución posterior de P1/P2 y las pruebas actuales están en [TECHNICAL_CLOSURE.md](TECHNICAL_CLOSURE.md).
+
 Sólo pruebas afectadas por los cambios; producción: **cero escrituras**. Firebase: `demo-cuenta-hogar`, Firestore `127.0.0.1:8080`, Auth `127.0.0.1:9099`, Storage `127.0.0.1:9199`. Variables de credenciales productivas removidas del proceso; factory de test valida estos límites. No se crearon cuentas reales ni nuevas funciones de laboratorio.
 
 | Verificación ejecutada | Resultado | Evidencia |

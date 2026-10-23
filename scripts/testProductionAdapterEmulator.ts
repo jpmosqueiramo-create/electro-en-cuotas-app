@@ -1,5 +1,10 @@
 import './helpers/requireSafeEmulatorEnvironment';
 import assert from 'node:assert/strict';
+import { mock } from 'node:test';
+import { argentinaBusinessDate } from '../src/lib/productionV2/businessDate';
+import { authorizeIssuanceRecovery, revokeIssuanceRecovery, issuanceProof } from '../src/lib/productionV2/issuanceRecovery';
+import { productionOverview, type ProductionHistoryPage } from '../src/lib/productionV2/overview';
+import { operationRef } from '../src/lib/operationV2';
 import { randomUUID, randomBytes } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { admin } from '../src/lib/firebaseAdmin';
@@ -32,7 +37,7 @@ export async function test() {
     assert.throws(() => runtimeData(runtime), /LOCAL_ONLY/);
     process.env.GCLOUD_PROJECT = original;
     pass('OPAQUE_CONTEXT_AND_NO_PRODUCTIVE_TEST_OVERRIDE');
-    const approvalId = randomUUID(), approval = { commandId: approvalId, packageId: p.id, packageHash: p.sha256, approvalDate: new Date().toISOString().slice(0, 10), professional: 'Profesional sintético NO REAL', validationReference: 'SYNTHETIC_ONLY', sourceReference: 'scripts/helpers/productionAdapterFixtures.ts', confirmed: true };
+    const approvalId = randomUUID(), approval = { commandId: approvalId, packageId: p.id, packageHash: p.sha256, approvalDate: argentinaBusinessDate(), professional: 'Profesional sintético NO REAL', validationReference: 'SYNTHETIC_ONLY', sourceReference: 'scripts/helpers/productionAdapterFixtures.ts', confirmed: true };
     await assert.rejects(recordFinalPackageApproval(runtime, { ...approval, packageHash: '0'.repeat(64) }, actor));
     await recordFinalPackageApproval(runtime, approval, actor);
     assert((await recordFinalPackageApproval(runtime, approval, actor)).replay);
@@ -63,7 +68,7 @@ export async function test() {
     productionRuntimeForEmulator(db, admin.auth(), [p], [actor]);
 
     const f = await productionReadyFixture(actor), id = f.id, v = 1, sourceBefore = contractValueHash({ b: (await f.r.budget.get()).data(), a: (await f.r.acceptance.get()).data() });
-    const grant = { commandId: randomUUID(), operationId: f.identity.operationId, expectedRevision: f.ready.revision, packageId: p.id, approvalId, formal: { contractIssueDate: new Date().toISOString().slice(0, 10), contractIssuePlace: 'Lugar ficticio', promissoryNoteIssueDate: new Date().toISOString().slice(0, 10), promissoryNoteIssuePlace: 'Lugar ficticio' }, scopes: [...scopes], expiresAt: new Date(Date.now() + 86400000).toISOString(), reason: 'Autorización sintética de prueba, sin efectos reales', confirmed: true };
+    const grant = { commandId: randomUUID(), operationId: f.identity.operationId, expectedRevision: f.ready.revision, packageId: p.id, approvalId, formal: { contractIssueDate: argentinaBusinessDate(), contractIssuePlace: 'Lugar ficticio', promissoryNoteIssueDate: argentinaBusinessDate(), promissoryNoteIssuePlace: 'Lugar ficticio' }, scopes: [...scopes], expiresAt: new Date(Date.now() + 86400000).toISOString(), reason: 'Autorización sintética de prueba, sin efectos reales', confirmed: true };
     await assert.rejects(authorizeOperation(runtime, id, v, grant, f.uid));
     await admin.auth().updateUser(actor, { emailVerified: false });
     await assert.rejects(authorizeOperation(runtime, id, v, grant, actor));
@@ -107,13 +112,61 @@ export async function test() {
     pass('ALTERED_SNAPSHOT_AND_SECOND_FREEZE_REJECTED');
     // A failed object transfer cannot publish a partial document manifest. Keep and recover the reservation.
     const brokenBucket = new Proxy(bucket, { get(target, key) { if (key === 'file')
-            return (...args: Parameters<typeof bucket.file>) => { const file = target.file(...args); return new Proxy(file, { get(f, k) { if (k === 'save')
+            return (...args: Parameters<typeof bucket.file>) => { const file = target.file(...args); return new Proxy(file, { get(f, k) { if (k === 'save' && !args[0].endsWith('issued_' + contractValueHash({ snapshot: proof.snapshot.integrity.payloadHash, kind: 'MANDATE' })))
                     return async () => { throw Error('SYNTHETIC_DOWNLOAD_UNAVAILABLE'); }; const value = Reflect.get(f, k); return typeof value === 'function' ? value.bind(f) : value; } }); }; const value = Reflect.get(target, key); return typeof value === 'function' ? value.bind(target) : value; } });
     await assert.rejects(issueDocuments(runtime, brokenBucket, id, v, actor), /SYNTHETIC_DOWNLOAD_UNAVAILABLE/);
     assert.equal((await productionRef(db, id, v).collection('documents').doc('issued').get()).exists, false);
     pass('INTERRUPTED_ISSUANCE_RETAINS_RESERVATION_WITHOUT_PARTIAL_MANIFEST');
-    const issued = await Promise.all([issueDocuments(runtime, bucket, id, v, actor), issueDocuments(runtime, bucket, id, v, actor)]);
-    assert.equal(issued.filter(x => !x.replay).length, 1);
+    const frozenPaths = [snapshotRef, f.r.draft, db.doc(productionPaths.counter), db.collection(productionPaths.numbers).doc(proof.snapshot.contractNumber), productionRef(db,id,v).collection('authorizations').doc(grant.commandId)];
+    const immutableBefore = await Promise.all(frozenPaths.map(async ref => { const d = await ref.get(); return { path:ref.path, data:contractValueHash(d.data()), updateTime:d.updateTime!.toDate().toISOString() }; }));
+    const photos = operationRef(db,id,v).parent.doc('delivery').collection('photos');
+    const firstPhoto = (await photos.where('kind','==','MANDATE').get()).docs[0];
+    assert.equal(firstPhoto.data().state,'COMMITTED');
+    const existingFile = bucket.file(firstPhoto.data().path), existingMetadata = (await existingFile.getMetadata())[0], firstPhotoStamp = firstPhoto.updateTime.toMillis();
+    const recoveryInput = { commandId:randomUUID(), snapshotHash:proof.snapshot.integrity.payloadHash, authorizationId:grant.commandId, expiresAt:new Date(Date.parse(grant.expiresAt)+60000).toISOString(), reason:'Recuperación sintética autorizada; no nuevos instrumentos', confirmed:true };
+    await assert.rejects(authorizeIssuanceRecovery(runtime,id,v,{...recoveryInput,expiresAt:new Date(Date.now()+60000).toISOString()},actor),/STILL_VALID/);
+    mock.timers.enable({ apis:['Date'], now:Date.parse(grant.expiresAt)+1000 });
+    let recoveryId='';
+    try {
+        await assert.rejects(issueDocuments(runtime,bucket,id,v,actor),/EXPIRED_OR_REVOKED/);
+        await assert.rejects(authorizeIssuanceRecovery(runtime,id,v,recoveryInput,f.uid),/ADMIN_NOT_AUTHORIZED/);
+        await assert.rejects(authorizeIssuanceRecovery(runtime,id,v,{...recoveryInput,snapshotHash:'0'.repeat(64)},actor),/CONTEXT_CHANGED/);
+        await assert.rejects(authorizeIssuanceRecovery(runtime,id,v,{...recoveryInput,expiresAt:new Date(Date.now()+86400001).toISOString()},actor),/EXPIRY_INVALID/);
+        const recoveries = await Promise.all([authorizeIssuanceRecovery(runtime,id,v,recoveryInput,actor),authorizeIssuanceRecovery(runtime,id,v,recoveryInput,actor)]);
+        assert.equal(recoveries.filter(x=>!x.replay).length,1);
+        recoveryId=recoveries[0].id;
+        await assert.rejects(authorizeIssuanceRecovery(runtime,id,v,{...recoveryInput,reason:'otro'},actor),/COMMAND_CONFLICT/);
+        await assert.rejects(issueDocuments(runtime,bucket,id,v,actor,randomUUID()),/RECOVERY_REQUIRED/);
+        await assert.rejects(db.runTransaction(tx=>issuanceProof(runtime,tx,denied.id,1,recoveryId)),/SNAPSHOT_REQUIRED/);
+        pass('P1_EXPIRY_REQUIRES_EXPLICIT_HASH_BOUND_RECOVERY_ADMIN_AND_CONCURRENT_IDEMPOTENCY');
+        const rev={commandId:randomUUID(),recoveryId,reason:'Revocación sintética de recuperación'};
+        await revokeIssuanceRecovery(runtime,id,v,rev,actor);
+        assert((await revokeIssuanceRecovery(runtime,id,v,rev,actor)).replay);
+        await assert.rejects(revokeIssuanceRecovery(runtime,id,v,{...rev,reason:'distinto'},actor),/COMMAND_CONFLICT/);
+        await assert.rejects(issueDocuments(runtime,bucket,id,v,actor,recoveryId),/RECOVERY_EXPIRED_OR_REVOKED/);
+        const renewed={...recoveryInput,commandId:randomUUID()};
+        recoveryId=(await authorizeIssuanceRecovery(runtime,id,v,renewed,actor)).id;
+        mock.timers.setTime(Date.parse(recoveryInput.expiresAt));
+        await assert.rejects(issueDocuments(runtime,bucket,id,v,actor,recoveryId),/RECOVERY_EXPIRED_OR_REVOKED/);
+        mock.timers.setTime(Date.parse(grant.expiresAt)+2000);
+        pass('P1_RECOVERY_REVOCATION_AND_EXPIRY_FAIL_CLOSED');
+        const issued=await Promise.all([issueDocuments(runtime,bucket,id,v,actor,recoveryId),issueDocuments(runtime,bucket,id,v,actor,recoveryId)]);
+        assert.equal(issued.filter(x=>!x.replay).length,1);
+        assert.equal(issued[0].manifestHash,issued[1].manifestHash);
+        const manifestRef=productionRef(db,id,v).collection('documents').doc('issued'), stamp=(await manifestRef.get()).updateTime!.toMillis();
+        mock.timers.setTime(Date.parse(recoveryInput.expiresAt)+1000);
+        assert((await issueDocuments(runtime,bucket,id,v,actor,recoveryId)).replay);
+        assert.equal((await manifestRef.get()).updateTime!.toMillis(),stamp);
+        await assert.rejects(authorizeIssuanceRecovery(runtime,id,v,{...renewed,commandId:randomUUID(),expiresAt:new Date(Date.now()+60000).toISOString()},actor),/ALREADY_ISSUED/);
+        assert.equal((await manifestRef.get()).data()!.recoveryAuthorization.id,recoveryId);
+        assert.equal((await existingFile.getMetadata())[0].generation,existingMetadata.generation);
+        assert.equal((await firstPhoto.ref.get()).updateTime!.toMillis(),firstPhotoStamp);
+        assert.deepEqual(await Promise.all(frozenPaths.map(async ref=>{const d=await ref.get();return {path:ref.path,data:contractValueHash(d.data()),updateTime:d.updateTime!.toDate().toISOString()};})),immutableBefore);
+        assert.equal((await productionRef(db,id,v).collection('documents').get()).size,1);
+        assert.equal((await productionRef(db,id,v).collection('events').where('action','==','DOCUMENTS_ISSUED').get()).size,1);
+        pass('P1_RECOVERED_CONCURRENT_SINGLE_NOTE_REPLAY_IMMUTABLE_DATES_HASHES_AND_NUMBER');
+    } finally { mock.timers.reset(); }
+
     const manifest = await db.runTransaction(tx => issuedOperation(runtime, tx, id, v, 'ISSUANCE'));
     const fileCount = (await bucket.getFiles({ prefix: `operation-delivery-v2/${id}/v1/issued_` }))[0].length;
     assert.equal(fileCount, 3);
@@ -191,6 +244,20 @@ export async function test() {
         assert.equal(response.status,200);return (await response.json()).idToken as string;
     }
     const clientToken=await emulatorToken(client),affiliateToken=await emulatorToken(f.uid);
+    const adminToken=await emulatorToken(actor), { POST:productionPost, GET:productionGet }=await import('../src/app/api/admin/presupuestos-v2/[budgetId]/versions/[version]/production/route');
+    const params={params:Promise.resolve({budgetId:id,version:'1'})}, endpoint=`http://localhost:3000/api/admin/presupuestos-v2/${id}/versions/1/production`;
+    const recoveryHttp=(auth?:string,recovery:unknown=recoveryId)=>productionPost(new Request(endpoint,{method:'POST',headers:{'Content-Type':'application/json',...(auth?{Authorization:'Bearer '+auth}:{})},body:JSON.stringify({action:'RECOVER_DOCUMENTS',data:{confirmed:true,recoveryId:recovery}})}),params);
+    assert.equal((await recoveryHttp()).status,403);
+    assert.equal((await recoveryHttp(affiliateToken)).status,403);
+    assert.equal((await recoveryHttp(clientToken)).status,403);
+    assert.equal((await recoveryHttp(adminToken,'')).status,409);
+    assert.equal((await recoveryHttp(adminToken,null)).status,409);
+    assert.equal((await recoveryHttp(adminToken)).status,200);
+    assert.equal((await productionGet(new Request(endpoint+'?approvalAfter=../foreign',{headers:{Authorization:'Bearer '+adminToken}}),params)).status,409);
+    assert.equal((await productionGet(new Request(endpoint+'?approvalAfter=a&approvalAfter=b',{headers:{Authorization:'Bearer '+adminToken}}),params)).status,409);
+    assert.equal((await productionGet(new Request(endpoint,{headers:{Authorization:'Bearer '+affiliateToken}}),params)).status,403);
+    pass('RECOVERY_HTTP_ADMIN_ONLY_STRICT_IDS_AND_HISTORY_QUERY_VALIDATION');
+
     const invoke=(body:Record<string,unknown>,auth?:string)=>invitationPost(new Request('https://www.cuentahogar.com.ar/api/public/client-invitations/'+invite.invitationId,{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://www.cuentahogar.com.ar',...(auth?{Authorization:'Bearer '+auth}:{})},body:JSON.stringify(body)}),{params:Promise.resolve({invitationId:invite.invitationId!})});
     const inspect={action:'INSPECT',token};
     assert.equal((await invoke(inspect)).status,403);
@@ -210,7 +277,7 @@ export async function test() {
     pass('INVITATION_HTTP_AUTH_CONCURRENT_REPLAY_AND_NO_SECOND_ACTIVATION');
     assert.equal((await listClientServices(db, client)).length, 1);
     pass('EXPLICIT_CLIENT_UID_INVITATION_AFTER_DELIVERY');
-    const payment = await input('CREDIT_PAYMENT', { paymentId: randomUUID(), amountCents: 14500000, effectiveDate: new Date().toISOString().slice(0, 10), method: 'TRANSFERENCIA', reference: 'SYNTHETIC TEST PAYMENT' }), pays = await Promise.all([financialCommand(db, id, v, payment, f.root), financialCommand(db, id, v, payment, f.root)]);
+    const payment = await input('CREDIT_PAYMENT', { paymentId: randomUUID(), amountCents: 14500000, effectiveDate: argentinaBusinessDate(), method: 'TRANSFERENCIA', reference: 'SYNTHETIC TEST PAYMENT' }), pays = await Promise.all([financialCommand(db, id, v, payment, f.root), financialCommand(db, id, v, payment, f.root)]);
     assert.equal(pays.filter(x => !x.replay).length, 1);
     assert.equal((await financialRef(db, id, v).collection('payments').get()).size, 1);
     for (const [role, uid] of [['ADMIN', actor], ['AFFILIATE', f.uid], ['CLIENT', client]] as const) {
@@ -271,11 +338,40 @@ export async function test() {
     await revokeAuthorization(runtime, id, v, { authorizationId: authorized.id, commandId: randomUUID(), reason: 'Pausa sintética' }, actor);
     await assert.rejects(financialCommand(db, id, v, await input('CREDIT_PAYMENT', { ...payment.data, paymentId: randomUUID() }), f.root));
     assert((await readFinancial(db, id, v, f.root, 'ADMIN')).active);
+    await assert.rejects(authorizeIssuanceRecovery(runtime,id,v,{...recoveryInput,commandId:randomUUID(),expiresAt:new Date(Date.now()+60000).toISOString()},actor),/ORIGINAL_AUTHORIZATION_REVOKED/);
     pass('REVOKED_WRITE_AUTHORIZATION_PRESERVES_READ_HISTORY');
     assert.equal(sourceBefore, contractValueHash({ b: (await f.r.budget.get()).data(), a: (await f.r.acceptance.get()).data() }));
     assert.equal((await db.collection('operationsLabV1').get()).size, 0);
     assert.equal((await productionRef(db, id, v).collection('freezeCommands').get()).size, 1);
     pass('NO_LAB_MIGRATION_OR_ACCEPTANCE_REWRITE');
+    // Exercise beyond both previous caps, with identical timestamps handled by document-ID cursors.
+    for(let i=0;i<51;i++) await recordFinalPackageApproval(runtime,{...approval,commandId:randomUUID()},actor);
+    for(let i=0;i<22;i++) await authorizeOperation(runtime,denied.id,1,{...grant,commandId:randomUUID(),operationId:denied.identity.operationId,expectedRevision:denied.ready.revision},actor);
+    const historyIds=new Set<string>(), authIds=new Set<string>();
+    let page:ProductionHistoryPage={};
+    do {
+        const view=await productionOverview(runtime,denied.id,1,actor,page);
+        assert(view.approvalHistory.length<=20 && view.authorizations.length<=20);
+        for(const a of view.approvalHistory){assert(!historyIds.has(a.id));historyIds.add(a.id);}
+        if(!view.pagination.approvalAfter)break;
+        page={approvalAfter:view.pagination.approvalAfter};
+    } while(true);
+    assert.equal(historyIds.size,(await packageApprovalRef(db,approvalId).parent.get()).size);
+    page={};
+    do {
+        const view=await productionOverview(runtime,denied.id,1,actor,page);
+        for(const a of view.authorizations){assert(!authIds.has(a.id));authIds.add(a.id);}
+        if(!view.pagination.authorizationAfter)break;
+        page={authorizationAfter:view.pagination.authorizationAfter};
+    }while(true);
+    assert.equal(authIds.size,22);
+    await assert.rejects(productionOverview(runtime,id,v,f.uid),/ADMIN_REQUIRED/);
+    await assert.rejects(productionOverview(runtime,id,v,actor,{approvalAfter:'../another-operation'}));
+    await assert.rejects(productionOverview(runtime,id,v,actor,{unknown:'x'} as never));
+    const recoveryView=await productionOverview(runtime,id,v,actor);
+    assert.equal(recoveryView.recoveryAuthorizations.length,2);
+    assert.equal(recoveryView.recoveryAuthorizations.filter(x=>x.revoked).length,1);
+    pass('BOUNDED_HISTORY_ALL_APPROVALS_AND_AUTHORIZATIONS_ACCESSIBLE_NO_DUPLICATES');
     const replaced = manifest.manifest.documents.MANDATE;
     await bucket.file(replaced.path).save(Buffer.from('SYNTHETIC CORRUPTION ONLY'), { resumable: false });
     await assert.rejects(readIssuedDocument(runtime, bucket, id, v, 'MANDATE', actor));

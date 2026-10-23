@@ -1,10 +1,15 @@
 import './helpers/requireSafeEmulatorEnvironment';
 import assert from 'node:assert/strict';
+import { argentinaBusinessDate } from '../src/lib/productionV2/businessDate';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { admin } from '../src/lib/firebaseAdmin';
 import { productionReadyFixture, syntheticFinalPackage } from './helpers/productionAdapterFixtures';
 import { productionRuntimeForEmulator } from '../src/lib/productionV2/runtime';
-import { productionPaths } from '../src/lib/productionV2/freeze';
+import { freezeOperation, productionPaths } from '../src/lib/productionV2/freeze';
+import { authorizeOperation, scopes } from '../src/lib/productionV2/authorization';
+import { issueDocuments } from '../src/lib/productionV2/documents';
+import { getBudgetDocumentationBucket } from '../src/lib/budgetDocumentationStorage';
+import { randomUUID } from 'node:crypto';
 import { productionOverview } from '../src/lib/productionV2/overview';
 import { readDelivery } from '../src/lib/operationDeliveryV2Server';
 import { readFinancial } from '../src/lib/operationFinancialV2Server';
@@ -52,7 +57,7 @@ async function run() {
         await capture('authorization-pending-desktop', 'production-operation');
         await detail('Registro jurídico del paquete final');
         await select('[data-testid=production-operation] select[name=package]', p.id);
-        for (const [name, value] of Object.entries({ date: new Date().toISOString().slice(0, 10), professional: 'Profesional ficticio de prueba', reference: 'SYNTHETIC_APPROVAL_ONLY', source: 'Fixture sintético, no documento jurídico real' }))
+        for (const [name, value] of Object.entries({ date: argentinaBusinessDate(), professional: 'Profesional ficticio de prueba', reference: 'SYNTHETIC_APPROVAL_ONLY', source: 'Fixture sintético, no documento jurídico real' }))
             await browser.change(`[data-testid=production-operation] input[name=${name}]`, value);
         await browser.click('[data-testid=production-operation] input[name=confirmed]');
         await browser.clickText('Registrar aprobación identificada', prod);
@@ -61,7 +66,7 @@ async function run() {
         assert(approved);
         await detail('Autorizar una operación real');
         await select('[data-testid=production-operation] select[name=approval]', approved.id);
-        for (const [name, value] of Object.entries({ issueDate: new Date().toISOString().slice(0, 10), issuePlace: 'Lugar sintético', noteDate: new Date().toISOString().slice(0, 10), notePlace: 'Lugar sintético', expires: new Date(Date.now() + 86400000 - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16), reason: 'AUTORIZACIÓN SINTÉTICA DE PRUEBA, SIN EFECTOS REALES' }))
+        for (const [name, value] of Object.entries({ issueDate: argentinaBusinessDate(), issuePlace: 'Lugar sintético', noteDate: argentinaBusinessDate(), notePlace: 'Lugar sintético', expires: new Date(Date.now() + 86400000 - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16), reason: 'AUTORIZACIÓN SINTÉTICA DE PRUEBA, SIN EFECTOS REALES' }))
             await browser.change(`[data-testid=production-operation] input[name=${name}]`, value);
         await browser.evaluate(`${prod}.querySelectorAll('input[name=scope]').forEach(x=>x.click())`);
         await browser.click('[data-testid=production-operation] form input[type=checkbox]:not([name])');
@@ -130,7 +135,7 @@ async function run() {
         await browser.until("!!document.querySelector('[data-testid=client-activation-link]')", 'invitation prepared');
         const invite = await browser.evaluate<string>("document.querySelector('[data-testid=client-activation-link]').href");
         await browser.change('[aria-label="Importe acreditado"]', '145000');
-        await browser.change('[aria-label="Fecha efectiva"]', new Date().toISOString().slice(0, 10));
+        await browser.change('[aria-label="Fecha efectiva"]', argentinaBusinessDate());
         await browser.change('[aria-label="Referencia de acreditación"]', 'SYNTHETIC PAYMENT NO REAL MONEY');
         await browser.clickText('Confirmar pago acreditado', finance);
         await browser.until(`${finance}?.textContent.replace(/\\s/g,'').includes('Saldopendiente:$1.595.000,00')`, 'admin balance');
@@ -182,9 +187,41 @@ async function run() {
             await browser.until(`${finance}?.textContent.replace(/\\s/g,'').includes('Saldopendiente:$1.740.000,00')`,'reversed balance '+path);
             await capture(path.slice(1)+'-reversed-desktop','financial-v2');
         }
+        // A second, entirely synthetic fixture starts from an interrupted frozen issue.
+        // Only seeding/interruption is programmatic; recovery is completed through the actual UI/API.
+        await logout(); await login(email);
+        const interrupted=await productionReadyFixture(actor), bucket=await getBudgetDocumentationBucket();
+        const expiry=Date.now()+15000;
+        const recoveryGrant=await authorizeOperation(runtime,interrupted.id,1,{commandId:randomUUID(),operationId:interrupted.identity.operationId,expectedRevision:interrupted.ready.revision,packageId:p.id,approvalId:approved.id,
+            formal:{contractIssueDate:argentinaBusinessDate(),promissoryNoteIssueDate:argentinaBusinessDate(),contractIssuePlace:'Lugar sintético',promissoryNoteIssuePlace:'Lugar sintético'},scopes:[...scopes],expiresAt:new Date(expiry).toISOString(),reason:'Autorización sintética para interrupción controlada',confirmed:true},actor);
+        await freezeOperation(runtime,interrupted.id,1,{commandId:randomUUID(),authorizationId:recoveryGrant.id,expectedRevision:interrupted.ready.revision,confirmed:true},actor);
+        const unavailable=new Proxy(bucket,{get(target,key){if(key==='file')return (...args:Parameters<typeof bucket.file>)=>{const file=target.file(...args);return new Proxy(file,{get(f,k){if(k==='save')return async()=>{throw Error('SYNTHETIC_INTERRUPTION');};const value=Reflect.get(f,k);return typeof value==='function'?value.bind(f):value;}});};const value=Reflect.get(target,key);return typeof value==='function'?value.bind(target):value;}});
+        await assert.rejects(issueDocuments(runtime,unavailable,interrupted.id,1,actor),/SYNTHETIC_INTERRUPTION/);
+        await new Promise(resolve=>setTimeout(resolve,Math.max(0,expiry-Date.now()+100)));
+        await browser.navigate(`/admin/operaciones/${interrupted.id}/1?section=contract`);
+        await browser.until(`${prod}?.textContent.includes('La autorización de emisión venció')`,'expired emission recovery');
+        await capture('recovery-pending-desktop','issuance-recovery');
+        await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+        await capture('recovery-pending-mobile','issuance-recovery');
+        await browser.change('input[name=recoveryExpires]',new Date(Date.now()+3600000-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16));
+        await browser.change('input[name=recoveryReason]','Nueva autorización sintética exacta; misma emisión');
+        await browser.click('[data-testid=issuance-recovery] form input[type=checkbox]');
+        await browser.change('input[name=recoveryReason]','Autorización sintética revisada, sin efectos reales');
+        assert(await browser.evaluate(`[...${prod}.querySelectorAll('button')].find(b=>b.textContent==='Autorizar recuperación de emisión').disabled`),'editing invalidates confirmation');
+        await browser.click('[data-testid=issuance-recovery] form input[type=checkbox]');
+        await browser.clickText('Autorizar recuperación de emisión',prod);
+        await browser.until(`document.querySelector('[aria-label="Autorización de recuperación vigente"]')?.options.length===2`,'recovery authorized by HTTP');
+        const recovery=(await productionOverview(runtime,interrupted.id,1,actor)).recoveryAuthorizations[0];
+        await select('[aria-label="Autorización de recuperación vigente"]',recovery.id);
+        await browser.evaluate(`[...${prod}.querySelectorAll('label')].find(x=>x.textContent.includes('Confirmo completar los archivos')).querySelector('input').click()`);
+        await browser.clickText('Recuperar los mismos documentos',prod);
+        await browser.until(`${prod}?.textContent.includes('Abrir pagaré emitido')`,'recovered single package');
+        await capture('recovery-completed-mobile','production-operation');
+        await detail('Auditoría de autorizaciones y versiones');
+        assert(await browser.evaluate(`[...${prod}.querySelectorAll('button')].some(b=>b.textContent==='Siguientes aprobaciones'&&b.disabled)`));
         assert.equal(browser.externalFirebase.length, 0);
         assert(!server.calls.some(c => c.status >= 500));
-        writeFileSync(out + '/results.json', JSON.stringify({ browser: 'PASS', mode: 'REAL_ADAPTER_ON_LOCAL_EMULATORS', http: 'existing route exports in shared isolated test process', screens, requests: server.calls, productionWrites: 0, total: 1740000, paid: 145000, balanceAfterPayment: 1595000, balanceAfterReversal: 1740000 }, null, 2));
+        writeFileSync(out + '/results.json', JSON.stringify({ browser: 'PASS', recovery: 'PASS_EXPIRED_AUTHORIZATION_HTTP_UI', mode: 'REAL_ADAPTER_ON_LOCAL_EMULATORS', http: 'existing route exports in shared isolated test process', screens, requests: server.calls, productionWrites: 0, total: 1740000, paid: 145000, balanceAfterPayment: 1595000, balanceAfterReversal: 1740000 }, null, 2));
         console.log('PRODUCTION_ADAPTER_BROWSER_DESKTOP_MOBILE_THREE_ROLES=PASS');
     }
     catch (error) {

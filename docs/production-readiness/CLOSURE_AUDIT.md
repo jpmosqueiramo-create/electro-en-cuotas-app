@@ -1,5 +1,7 @@
 # Auditoría focalizada y cierre de preparación — PR #80
 
+> Registro de la revisión anterior. Los P1/P2 aquí identificados se implementaron posteriormente; el estado vigente y sus evidencias están en [TECHNICAL_CLOSURE.md](TECHNICAL_CLOSURE.md). Se conserva este informe para trazabilidad.
+
 HEAD recibido: `a8e2978f58ed79ecb838d623a0af61c7ff0299e0`. Main remoto comprobado: `70b47ef75ae94ba8decc61550b6ea98b096a72ee`.
 
 **La preparación y las correcciones de este cierre no habilitan el lanzamiento de instrumentos reales.** Hay pendientes documentales exactos y recuperación de emisión todavía no implementada. El PR se conserva en borrador; no se recomienda activar emisión real mediante este estado.

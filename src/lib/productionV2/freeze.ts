@@ -1,4 +1,5 @@
 import { renderFinalDocument } from './pdf';
+import { assertCurrentIssueDates } from './businessDate';
 import { finalDocumentKinds } from './catalog';
 import type { Transaction } from 'firebase-admin/firestore';
 import { exact, opaque, type ContractDraftV2 } from '../contractV2';
@@ -83,15 +84,15 @@ export async function freezeOperation(runtime: ProductionRuntime, id: string, v:
         const a = grant.authorization;
         if (a.sourceHash !== source.sourceHash || a.readyRevision !== source.draft.revision || a.operationId !== source.identity.operationId)
             throw Error('PRODUCTION_AUTHORIZATION_STALE');
-        const today = new Date().toISOString().slice(0, 10);
-        if (a.legalContext.documentContext.contractIssueDate !== today || a.legalContext.documentContext.promissoryNoteIssueDate !== today)
-            throw Error('ACTUAL_ISSUE_DATE_REQUIRED');
+        // Check the authorized dates; never replace accepted dates at a day boundary.
+        const issueInstant = new Date();
+        assertCurrentIssueDates(a.legalContext.documentContext, issueInstant);
         const counter = await tx.get(db.doc(productionPaths.counter)), ct = counter.data();
         // No lazy initialization, test counter adoption or numbering migration.
         if (!ct || ct.schemaVersion !== 'CONTRACT_NUMBER_COUNTER_V1' || ct.policyId !== 'CONTRACT_NUMBERING_V1' || ct.executionMode !== 'PRODUCTION' || ct.active !== true || typeof ct.initializationAuthorizationReference !== 'string' || !ct.initializationAuthorizationReference.trim())
             throw Error('PRODUCTION_COUNTER_AUTHORIZATION_REQUIRED');
         validateSequence(ct.lastAllocatedSequence, true);
-        const sequence = (BigInt(ct.lastAllocatedSequence) + BigInt(1)).toString(), number = contractNumber(sequence), identity = source.identity, idc = contractIdentity(contractKey(identity)), sid = contractSnapshotId(contractKey(identity)), now = new Date().toISOString(), d = source.draft, e = source.evidence, ac = source.acceptance;
+        const sequence = (BigInt(ct.lastAllocatedSequence) + BigInt(1)).toString(), number = contractNumber(sequence), identity = source.identity, idc = contractIdentity(contractKey(identity)), sid = contractSnapshotId(contractKey(identity)), now = issueInstant.toISOString(), d = source.draft, e = source.evidence, ac = source.acceptance;
         const sr = db.collection(productionPaths.snapshots).doc(sid), nr = db.collection(productionPaths.numbers).doc(number), or = db.collection(productionPaths.origins).doc(contractOriginId(contractKey(identity))), er = db.collection(productionPaths.evidence).doc(idc);
         const all = await Promise.all([tx.get(sr), tx.get(nr), tx.get(or), tx.get(er)]);
         if (all.some(x => x.exists))

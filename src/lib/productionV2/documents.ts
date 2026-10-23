@@ -8,6 +8,7 @@ import { operationRef } from '../operationV2';
 import { readVerifiedEvidenceObject, type EvidenceMetadata } from '../operationEvidenceV2';
 import { productionRef, type ProductionScope } from './authorization';
 import { frozenOperation } from './freeze';
+import { issuanceProof } from './issuanceRecovery';
 import { requireProductionActor, runtimeData, type ProductionRuntime } from './runtime';
 import { finalDocumentKinds, type FinalDocumentKind } from './catalog';
 import { renderFinalDocument } from './pdf';
@@ -31,6 +32,7 @@ export interface IssuedManifest {
     documents: Record<FinalDocumentKind, IssuedDocument>;
     issuedAt: string;
     issuedBy: string;
+    recoveryAuthorization?: { id: string; hash: string };
     hash: string;
 }
 export async function issuedOperation(runtime: ProductionRuntime, tx: Transaction, id: string, v: number, scope: ProductionScope, forWrite = true) {
@@ -40,6 +42,10 @@ export async function issuedOperation(runtime: ProductionRuntime, tx: Transactio
     const { hash, ...payload } = m;
     if (hash !== contractValueHash(payload))
         throw Error('ISSUED_DOCUMENTS_INTEGRITY');
+    if (m.recoveryAuthorization) {
+        const recovered = await issuanceProof(runtime, tx, id, v, m.recoveryAuthorization.id, false);
+        if (recovered.recovery?.hash !== m.recoveryAuthorization.hash) throw Error('ISSUED_RECOVERY_INTEGRITY');
+    }
     for (const k of finalDocumentKinds) {
         const p = m.documents[k], expectedId = 'issued_' + contractValueHash({ snapshot: m.snapshotHash, kind: k });
         if (!p || p.photoId !== expectedId || p.kind !== k || p.path !== `operation-delivery-v2/${id}/v${v}/${expectedId}` || p.state !== 'COMMITTED' || !p.generation || p.templateHash !== proof.package.templates[k].sha256 || p.templateVersion !== proof.package.templates[k].version || p.templateId !== proof.package.templates[k].id)
@@ -50,15 +56,27 @@ export async function issuedOperation(runtime: ProductionRuntime, tx: Transactio
     }
     return { ...proof, manifest: m };
 }
-export async function issueDocuments(runtime: ProductionRuntime, bucket: Bucket, id: string, v: number, actor: string) {
-    const { db, test } = await requireProductionActor(runtime, actor), proof = await db.runTransaction(tx => frozenOperation(runtime, tx, id, v, 'ISSUANCE'));
+export async function issueDocuments(runtime: ProductionRuntime, bucket: Bucket, id: string, v: number, actor: string, recoveryId?: string) {
+    const { db, test } = await requireProductionActor(runtime, actor);
+    // A completed command is a read-only replay, even after expiry. No leases,
+    // object regeneration, dates or updateTime changes for an existing issuance.
+    const completed = await db.runTransaction(async tx => {
+        if (!(await tx.get(productionRef(db, id, v).collection('documents').doc('issued'))).exists) return null;
+        await issuanceProof(runtime, tx, id, v, recoveryId, false);
+        return (await issuedOperation(runtime, tx, id, v, 'ISSUANCE', false)).manifest;
+    });
+    if (completed) {
+        for (const doc of Object.values(completed.documents)) await readVerifiedEvidenceObject(bucket, doc);
+        return { manifestHash: completed.hash, replay: true };
+    }
+    const proof = await db.runTransaction(tx => issuanceProof(runtime, tx, id, v, recoveryId));
     // Rendering and all Storage reads/writes occur outside transactions. Deterministic
     // bytes + create-only object paths recover interruptions without issuing a second note.
     const documents = {} as Record<FinalDocumentKind, IssuedDocument>;
     for (const k of finalDocumentKinds) {
         const pdf = renderFinalDocument(proof.snapshot, proof.package, k, test), photoId = 'issued_' + contractValueHash({ snapshot: proof.snapshot.integrity.payloadHash, kind: k }), path = `operation-delivery-v2/${id}/v${v}/${photoId}`, file = bucket.file(path);
         const ref = operationRef(db, id, v).parent.doc('delivery').collection('photos').doc(photoId), base = { photoId, kind: k, path, sha256: pdf.sha256, size: pdf.bytes.length, mime: 'application/pdf' as const, templateId: proof.package.templates[k].id, templateVersion: proof.package.templates[k].version, templateHash: proof.package.templates[k].sha256, slot: `${k}_PREPARED`, relatedId: '', actor: proof.snapshot.freeze.termsFrozenBy, createdAt: proof.snapshot.freeze.termsFrozenAt, snapshotHash: proof.snapshot.integrity.payloadHash };
-        const allowed = async (tx: Transaction) => { const current = await frozenOperation(runtime, tx, id, v, 'ISSUANCE'); if (current.snapshot.integrity.payloadHash !== proof.snapshot.integrity.payloadHash)
+        const allowed = async (tx: Transaction) => { const current = await issuanceProof(runtime, tx, id, v, recoveryId); if (current.snapshot.integrity.payloadHash !== proof.snapshot.integrity.payloadHash)
             throw Error('DOCUMENT_CONTEXT_CHANGED'); };
         await db.runTransaction(async (tx) => { await allowed(tx); const prior = await tx.get(ref); if (prior.exists) {
             for (const [key, value] of Object.entries(base))
@@ -112,7 +130,7 @@ export async function issueDocuments(runtime: ProductionRuntime, bucket: Bucket,
         documents[k] = p;
     }
     return db.runTransaction(async (tx) => {
-        const current = await frozenOperation(runtime, tx, id, v, 'ISSUANCE'), ref = productionRef(db, id, v).collection('documents').doc('issued'), old = await tx.get(ref);
+        const current = await issuanceProof(runtime, tx, id, v, recoveryId), ref = productionRef(db, id, v).collection('documents').doc('issued'), old = await tx.get(ref);
         if (current.snapshot.integrity.payloadHash !== proof.snapshot.integrity.payloadHash)
             throw Error('DOCUMENT_CONTEXT_CHANGED');
         if (old.exists) {
@@ -128,9 +146,9 @@ export async function issueDocuments(runtime: ProductionRuntime, bucket: Bucket,
             if (!p || p.state !== 'COMMITTED' || p.generation !== expected.generation || p.sha256 !== expected.sha256)
                 throw Error('ISSUED_DOCUMENT_COLLISION');
         }
-        const issuedAt = new Date().toISOString(), data = { schemaVersion: 'PRODUCTION_DOCUMENT_MANIFEST_V1' as const, executionMode: 'PRODUCTION' as const, operationId: current.identity.operationId, snapshotId: current.snapshot.contractSnapshotId, snapshotHash: current.snapshot.integrity.payloadHash, packageHash: current.package.sha256, documents, issuedAt, issuedBy: actor }, hash = contractValueHash(data);
+        const issuedAt = new Date().toISOString(), data = { schemaVersion: 'PRODUCTION_DOCUMENT_MANIFEST_V1' as const, executionMode: 'PRODUCTION' as const, operationId: current.identity.operationId, snapshotId: current.snapshot.contractSnapshotId, snapshotHash: current.snapshot.integrity.payloadHash, packageHash: current.package.sha256, documents, issuedAt, issuedBy: actor, ...(current.recovery ? { recoveryAuthorization: { id: current.recovery.id, hash: current.recovery.hash } } : {}) }, hash = contractValueHash(data);
         tx.create(ref, { ...data, hash });
-        tx.create(productionRef(db, id, v).collection('events').doc('documents_issued'), { action: 'DOCUMENTS_ISSUED', manifestHash: hash, actor, at: issuedAt });
+        tx.create(productionRef(db, id, v).collection('events').doc('documents_issued'), { action: 'DOCUMENTS_ISSUED', manifestHash: hash, actor, at: issuedAt, recoveryAuthorization: current.recovery ? { id: current.recovery.id, hash: current.recovery.hash } : null });
         return { manifestHash: hash, replay: false };
     });
 }

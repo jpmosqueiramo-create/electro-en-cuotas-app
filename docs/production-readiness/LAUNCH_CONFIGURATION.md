@@ -6,7 +6,7 @@ Este procedimiento no autoriza sus mutaciones. No se consultaron ni modificaron 
 
 | Paso | Preparación exacta | Autorización independiente |
 |---|---|---|
-| 1. Código | Revisar PR #80, defectos pendientes de `CLOSURE_AUDIT.md`, merge manual y SHA resultante | Merge manual; no se ejecutó |
+| 1. Código | Revisar PR #80 y cierre técnico `TECHNICAL_CLOSURE.md`, merge manual y SHA resultante | Merge manual; no se ejecutó |
 | 2. Publicación cerrada | `PRODUCTION_OPERATIONS_ENABLED` ausente o `false`; no añadir allowlist ni activar laboratorio | Rollout del SHA explícitamente aprobado |
 | 3. Documentos | Completar paquete de `legal-package/`; instalar mandato, pagaré y remito exactos en `approvedFinalPackages`, conservar versiones anteriores | Aprobación exacta y revisión del commit documental |
 | 4. Numeración | Inventario de contador/números/orígenes/snapshots; manifiesto de inicialización CH | Número inicial y escritura exacta autorizados; no se presupone que comienza en 1 |
@@ -69,6 +69,36 @@ No se proporcionan payloads rellenados para una operación real. El titular aún
 
 Primero lectura: ficha, fuente aceptada, preparación documental, presupuesto, contrato y cuotas sin botones de escritura habilitados accidentalmente. Después, sólo con expediente y autorizaciones concretas: confirmar paquete/revisión, congelar y emitir una vez; abrir los tres archivos; comprobar importes/fechas/número/revisión/hash. Firmas, recepción de originales, custodia y entrega requieren hechos reales. Activar el cronograma una vez, acreditar únicamente pagos comprobados y revertir por comando auditado; recibo no es factura ARCA.
 
-Una emisión interrumpida se recupera con los mismos identificadores/archivos mientras la autorización siga vigente. Si venció o fue revocada, detenerse: no cambiar fechas, autorizaciones, hashes ni crear otro pagaré. El flujo de renovación exacta tras congelamiento está pendiente (bloqueo técnico previo a lanzamiento).
+Una emisión interrumpida se recupera con los mismos identificadores/archivos mientras la autorización siga vigente. Si venció, usar el procedimiento de recuperación siguiente. Si fue revocada, detenerse: la recuperación no levanta una revocación. No cambiar fechas, snapshot, hashes ni crear otro pagaré.
 
 Pausa bajo autorización: poner el flag en false o revocar un permiso concreto. Lecturas e historia permanecen; no borrar archivos, números, saldos ni evidencias. Un rollback requiere aprobación y evaluación de compatibilidad con snapshots ya emitidos; no revierte obligaciones reales. No restaurar Rules inseguras. Las reversas económicas se registran mediante el motor existente, nunca editando saldos.
+
+## Recuperación de emisión vencida
+
+En la misma ficha, Administración ve la fecha original y el número reservado. Requiere cuenta activa/verificada, rol actual, UID autorizado y ejecución habilitada, además de la aprobación jurídica exacta vigente.
+
+1. Revisar número, snapshot y autorización original; la emisión no debe tener un manifiesto completo. No editar el snapshot ni la aceptación.
+2. Registrar `AUTHORIZE_ISSUANCE_RECOVERY` con `commandId`, `snapshotHash`, `authorizationId` original, `expiresAt` ISO UTC (máximo 24 horas), `reason` y `confirmed:true`. La pantalla exige una confirmación específica. El servidor liga operación, revisión congelada, número, paquete, aprobación y recursos por hash; no acepta otra plantilla o datos económicos.
+3. Seleccionar la autorización de recuperación y confirmar separadamente `RECOVER_DOCUMENTS`, con `recoveryId` y `confirmed:true`. Se conservan los paths determinísticos y bytes de los instrumentos originales. La recuperación no consulta el día actual como nueva fecha de emisión.
+4. Ante pérdida de respuesta, actualizar el estado y consultar el manifiesto antes de reintentar. Conservar identificadores y payload; un manifiesto completo se devuelve sin escrituras, incluso tras vencer el permiso. Un archivo faltante/reemplazado después de un manifiesto completo falla: no se regenera silenciosamente.
+5. `REVOKE_ISSUANCE_RECOVERY` recibe `recoveryId`, `commandId`, `reason`. La revocación y el vencimiento bloquean nuevas etapas. Revocar la autorización original o la aprobación jurídica también impide completar archivos; una recuperación no amplía DELIVERY, FINANCE ni CLIENT_ACTIVATION.
+
+Persistencia aditiva bajo `production/current`: `issuanceRecoveries/{commandId}`, su `revocations/current` y evento `events/recovery_{commandId}`. El manifiesto emitido agrega opcionalmente `recoveryAuthorization:{id,hash}`. Los históricos sin ese campo conservan su validación. Sin migraciones, colecciones públicas, índices compuestos ni Rules nuevas. Storage permanece privado; sólo se crean objetos faltantes, nunca se sobreescriben instrumentos.
+
+## Política de fecha efectiva
+
+Para nuevas autorizaciones: `AR_LOCAL_ISSUE_DATE_V1`, zona `America/Argentina/Buenos_Aires`. El día visible se obtiene en servidor con esa zona. Mandato y pagaré mantienen las fechas explícitas autorizadas; congelar verifica que ambas correspondan al día local del mismo instante UTC que se registra en auditoría. Si cambia el día, rechaza y exige una autorización explícita corregida; no cambia datos aceptados. Los snapshots históricos y la recuperación conservan las fechas guardadas. Los campos `at`, `issuedAt`, `termsFrozenAt` y vencimientos de permisos siguen siendo instantes UTC. El día de un vencimiento contractual no se modifica por esta política.
+
+## Anulación de una reserva CH sin reutilización
+
+Este procedimiento detiene la operatoria; **no declara extinguida una obligación ni anula jurídicamente un pagaré**.
+
+1. Inventariar en lectura el número, snapshot, autorización, manifiesto, generaciones de los archivos, firmas, entrega y actividad financiera. Identificar motivo y expediente de decisión.
+2. Obtener autorización administrativa específica. Si ya existen instrumentos, firmas, entrega o pagos, obtener además la decisión jurídica/contable correspondiente antes de actuar. No editar saldos para simular una anulación.
+3. Mediante la acción existente `REVOKE_AUTHORIZATION`, registrar motivo y referencia de la decisión contra la autorización original. Revocar también recuperaciones abiertas. Guardar los recibos idempotentes y la evidencia de la decisión. Esto impide nuevas emisiones, entrega, activación o pagos por ese permiso, pero conserva las lecturas.
+4. Conservar **sin cambios** contador, `contractNumbersV2/{CH}`, origen, snapshot, comandos, PDF, firmas e historia. El número sigue consumido; no reducir `lastAllocatedSequence`, borrar reservas, rellenar huecos ni adjudicarlo a otra persona. Una emisión interrumpida no requiere anular: usar recuperación.
+5. No hay un comando de cancelación jurídica del instrumento ni una pantalla que declare “obligación extinguida”. Si se necesita ese proceso, diseñarlo y aprobarlo por separado. Un nuevo negocio no reutiliza el snapshot, el origen ni el número del anterior.
+
+## Consulta de historia
+
+La API GET acepta exclusivamente `approvalAfter`, `authorizationAfter`, `recoveryAfter`, cursores de ID validados en colecciones fijas. Cada tipo muestra hasta 20 registros y lee uno adicional para saber si hay otra página. Orden por ID/documento, sin índice compuesto; fechas y responsables originales permanecen. La pantalla ofrece primera/siguiente página en auditoría, mantiene revocaciones visibles y permite seleccionar aprobaciones/autorizaciones de páginas anteriores. Las lecturas no generan registros. Refrescar desde la primera página incorpora nuevas altas concurrentes.
