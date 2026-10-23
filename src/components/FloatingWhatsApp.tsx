@@ -36,7 +36,7 @@ export default function FloatingWhatsApp() {
   const [isHovered, setIsHovered] = useState(false);
 
   // Ocultar en páginas de admin/panel interno si aplica
-  if (pathname === "/solicitar" || pathname.startsWith("/completar-datos/") || pathname.startsWith("/admin") || pathname.startsWith("/afiliado") || pathname.startsWith("/cliente")) {
+  if (pathname === "/solicitar" || pathname.startsWith("/completar-datos/") || pathname.startsWith("/laboratorio/") || pathname.startsWith("/admin") || pathname.startsWith("/afiliado") || pathname.startsWith("/cliente")) {
     return null;
   }
 

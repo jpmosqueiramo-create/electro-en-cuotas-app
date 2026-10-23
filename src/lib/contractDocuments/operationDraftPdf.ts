@@ -1,3 +1,4 @@
+import { LAB_WATERMARK } from '../operationsLabPolicy';
 import { drawCuentaHogarLogo,PDF_BRAND_RESOURCE_HASH } from '../pdfBranding';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -21,12 +22,16 @@ export function generateOperationDraftPair(p:OperationDraftProjection){
   throw new DocumentPreviewError('DOCUMENT_RENDER_FAILED','RENDER','PDF_GENERATION_FAILED');
  }
 }
-function renderOperationDraftPair(p:OperationDraftProjection){
+export function generateLabOperationDraftPair(p:OperationDraftProjection){
+ if(!p.canPreview)throw new DocumentPreviewError('DOCUMENT_CONFORMITY_PENDING','RENDER','CONFORMITY_BLOCK');
+ return renderOperationDraftPair(p,true);
+}
+function renderOperationDraftPair(p:OperationDraftProjection, laboratory=false){
  const templateHash=contractValueHash({version:OPERATION_DOCUMENT_VERSION,draftClauses,draftWarning,noteDraftText});
  const render=(kind:OperationDocumentKind)=>{
   const doc=new jsPDF({unit:'mm',format:'a4',compress:true,putOnlyUsedFonts:true});let y=34;
   doc.setCreationDate('D:'+p.updatedAt.slice(0,19).replace(/\D/g,'')+"+00'00'");
-  doc.setFileId(contractValueHash({projection:p.projectionHash,templateHash,rendererHash,kind}).slice(0,32));
+  doc.setFileId(contractValueHash({projection:p.projectionHash,templateHash,rendererHash,kind,...(laboratory?{laboratory:true}:{})}).slice(0,32));
   const title=kind==='mandate'?'CONTRATO DE MANDATO COMERCIAL Y GESTIÓN DE COMPRA':'PAGARÉ A LA VISTA Y SIN PROTESTO';
   doc.setProperties({title:title+' — BORRADOR',author:'Cuenta Hogar',subject:'Revisión jurídica pendiente. Sin emisión definitiva.'});
   // Helvetica's WinAnsi repertoire includes bullets and these punctuation glyphs.
@@ -68,6 +73,7 @@ function renderOperationDraftPair(p:OperationDraftProjection){
   if(kind==='mandate'){y+=7;line('____________________________________',11);line(`Por ${p.issuer.legalName} — representación pendiente`,9);}
   const pages=doc.getNumberOfPages();
   for(let n=1;n<=pages;n++){doc.setPage(n);if(kind==='mandate')drawCuentaHogarLogo(doc,175,5,16);doc.setTextColor(150,35,35);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.text(draftWarning,18,12);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text('APROBACIÓN JURÍDICA PENDIENTE · SIN EMISIÓN DEFINITIVA',18,282);doc.setTextColor(80);doc.setFontSize(7);doc.text(`${OPERATION_DOCUMENT_VERSION} · Revisión ${p.draftRevision} · ${n}/${pages}`,18,287);doc.text(`Origen ${p.sourceHash.slice(0,20)} · Sin numeración definitiva`,18,291);}
+  if(laboratory){for(let n=1;n<=pages;n++){doc.setPage(n);doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(150,35,35);doc.text(LAB_WATERMARK,18,18);}}
   const bytes=Buffer.from(doc.output('arraybuffer'));return {base64:bytes.toString('base64'),sha256:createHash('sha256').update(bytes).digest('hex'),pages};
  };
  return {projection:p,templateVersion:OPERATION_DOCUMENT_VERSION,templateHash,rendererHash,mandate:render('mandate'),promissoryNote:render('promissoryNote')};

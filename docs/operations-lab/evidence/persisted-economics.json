@@ -1,0 +1,87 @@
+{
+  "terms": {
+    "capitalAmount": 580000,
+    "contractPlanCuotas": 12,
+    "factorSnapshot": 3,
+    "factorComputedTotal": 1740000,
+    "roundingAdjustment": 0,
+    "serviceAmount": 1160000,
+    "contractInstallmentAmount": 145000,
+    "contractTotal": 1740000
+  },
+  "schedule": [
+    {
+      "installmentNumber": 1,
+      "dueDate": "2027-01-15",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 2,
+      "dueDate": "2027-02-15",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 3,
+      "dueDate": "2027-03-15",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 4,
+      "dueDate": "2027-04-15",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 5,
+      "dueDate": "2027-05-15",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 6,
+      "dueDate": "2027-06-15",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 7,
+      "dueDate": "2027-07-15",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 8,
+      "dueDate": "2027-08-15",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 9,
+      "dueDate": "2027-09-15",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 10,
+      "dueDate": "2027-10-15",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 11,
+      "dueDate": "2027-11-15",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 12,
+      "dueDate": "2027-12-15",
+      "amount": 145000
+    }
+  ],
+  "snapshotHash": "5a52a84029ae9e2c4e50d0ca3b8f32acf4f16c68164d6f55964a0c0946035da9",
+  "fiscal": [
+    {
+      "concept": "CONTRACT_SERVICES",
+      "baseCents": 95867769,
+      "taxCents": 20132231,
+      "totalCents": 116000000,
+      "policyReference": "SIMULACIÓN EXPLÍCITA",
+      "treatment": "TAXED",
+      "rateBps": 2100,
+      "basis": "GROSS_INCLUDED"
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+import './helpers/requireSafeEmulatorEnvironment';
+import assert from 'node:assert/strict';
+import {mkdirSync,writeFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {labParticipantCommand} from '../src/lib/operationsLabParticipants';
+import {labRepository,resolveLabViewerContext} from '../src/lib/operationsLabContext';
+import * as viewerApi from '../src/app/api/laboratorio/[sessionId]/route';
+import * as adminApi from '../src/app/api/admin/laboratorio/[sessionId]/route';
+import {getContract} from '../src/lib/contractV2Server';
+import {renderLabReceipt} from '../src/lib/operationsLabDocuments';
+import {randomUUID} from 'node:crypto';
+import {admin} from '../src/lib/firebaseAdmin';
+import {createLabSession} from '../src/lib/operationsLabServer';
+import {resolveLabExecutionContext,labSessionReference} from '../src/lib/operationsLabContext';
+import {labCircuitCommand,readLabCircuit,type LabAction} from '../src/lib/operationsLabCircuit';
+async function main(){
+ assert.equal(process.env.GCLOUD_PROJECT,'demo-cuenta-hogar');
+ const db=admin.firestore(),uid='synthetic-circuit-admin',sessionId=randomUUID(),env={OPERATIONS_LAB_ENABLED:'true',OPERATIONS_LAB_ADMIN_UIDS:JSON.stringify([uid])};
+ Object.assign(process.env,env);
+ await createLabSession(db,uid,{commandId:sessionId},env);const c=await resolveLabExecutionContext(db,uid,sessionId,env);
+ let view=await readLabCircuit(c);
+ const run=async(action:LabAction)=>{const input={action,commandId:randomUUID(),expectedRevision:view.workflow?.revision??0};view=await labCircuitCommand(c,input);const root=labSessionReference(db,uid,sessionId);const before=await root.collection('contracts').doc('workflow').get();assert.deepEqual(await labCircuitCommand(c,input),view);assert((await root.collection('contracts').doc('workflow').get()).updateTime!.isEqual(before.updateTime!));return view;};
+ for(const action of ['CREATE_REQUEST','ISSUE_BUDGET','ACCEPT','REVIEW_SYNTHETIC_DATA'] as const)await run(action);
+ const settings={quantity:1,condition:'NEW',firstDate:'2027-01-15',dueDay:15};
+ const edit={action:'UPDATE_DRAFT' as const,commandId:randomUUID(),expectedRevision:view.workflow!.revision,settings};
+ view=await labCircuitCommand(c,edit);assert.deepEqual(view.settings,settings);assert.deepEqual(await labCircuitCommand(c,edit),view);
+ await assert.rejects(labCircuitCommand(c,{...edit,commandId:randomUUID(),expectedRevision:view.workflow!.revision,settings:{...settings,quantity:0}}));
+ for(const action of ['READY','FREEZE','DOCUMENTS'] as const)await run(action);
+ await assert.rejects(labCircuitCommand(c,{...edit,commandId:randomUUID(),expectedRevision:view.workflow!.revision}));
+ await assert.rejects(labCircuitCommand(c,{action:'DELIVER',commandId:randomUUID(),expectedRevision:view.workflow!.revision}));
+ for(const action of ['SIGN_MANDATE','SIGN_PAGARE','SIGN_REMITO'] as const)await run(action);
+ await assert.rejects(labCircuitCommand(c,{action:'DELIVER',commandId:randomUUID(),expectedRevision:view.workflow!.revision}));
+ await run('CUSTODY');await run('DELIVER');await run('ACTIVATE');
+ assert.equal(view.financial!.balanceCents,174000000);assert.equal(view.financial!.installments.length,12);assert(view.financial!.installments.every(i=>i.amountCents===14500000));
+ await assert.rejects(labCircuitCommand(c,{action:'ACTIVATE',commandId:randomUUID(),expectedRevision:view.workflow!.revision}));
+ const concurrent={action:'PAY' as const,commandId:randomUUID(),expectedRevision:view.workflow!.revision};
+ const responses=await Promise.all([labCircuitCommand(c,concurrent),labCircuitCommand(c,concurrent)]);assert.deepEqual(responses[0],responses[1]);view=responses[0];
+ assert.equal(view.financial!.balanceCents,159500000);assert.equal(view.financial!.payments.length,1);
+ const paymentAudit=(await labSessionReference(db,uid,sessionId).collection('events').doc(concurrent.commandId).get()).data()!;assert.equal(paymentAudit.expectedRevision,concurrent.expectedRevision);assert.equal(paymentAudit.paymentId,concurrent.commandId);assert.equal(paymentAudit.operationId,view.workflow!.operationId);
+ assert.equal(view.financial!.fiscal.totalCents,116000000);assert.equal(view.financial!.fiscal.lines[0].baseCents+view.financial!.fiscal.taxCents,116000000);
+ const out='/tmp/ch78-lab-pdfs';mkdirSync(out,{recursive:true});
+ const snapshot=await labRepository(c).read('snapshots',view.workflow!.operationId!);writeFileSync(out+'/persisted-economics.json',JSON.stringify({terms:snapshot!.value.source.draft.economicTerms,schedule:snapshot!.value.source.draft.paymentScheduleDraft,snapshotHash:snapshot!.value.hash,fiscal:view.financial!.fiscal.lines},null,2));
+ for(const kind of ['MANDATE','PAGARE','REMITO']){const doc=await labRepository(c).read('documents',view.workflow!.operationId+'_'+kind);writeFileSync(out+'/'+kind+'.pdf',Buffer.from(doc!.value.base64,'base64'));}
+ writeFileSync(out+'/RECIBO.pdf',await renderLabReceipt(c,view.financial!.payments[0].receiptId));
+ const owner=createHash('sha256').update(uid).digest('hex'),credentials:string[]=[];
+ const viewers=['synthetic-lab-client','synthetic-lab-affiliate'];process.env.OPERATIONS_LAB_PARTICIPANT_UIDS=JSON.stringify(viewers);
+ for(const [i,member]of viewers.entries()){
+  const email=member+'@example.test',password='Synthetic-only-123';await admin.auth().createUser({uid:member,email,password,emailVerified:true});
+  const grant={commandId:randomUUID(),uid:member,role:i?'AFFILIATE':'CLIENT',action:'GRANT'};
+  await labParticipantCommand(c,grant);await labParticipantCommand(c,grant);
+  const login=await fetch('http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,returnSecureToken:true})});
+  const token=(await login.json()).idToken;credentials.push(token);
+  const request=(sid=sessionId)=>new Request('http://localhost/api/laboratorio/'+sid+'?owner='+owner,{headers:{Authorization:'Bearer '+token}});
+  const options={params:Promise.resolve({sessionId})};
+  const response=await viewerApi.GET(request(),options);assert.equal(response.status,200);const body=await response.json();assert.equal(body.financial.balanceCents,159500000);assert(!JSON.stringify(body).includes('snapshotHash'));assert(!JSON.stringify(body).includes('capitalCents'));
+  assert.equal((await viewerApi.GET(request(randomUUID()),{params:Promise.resolve({sessionId:randomUUID()})})).status,403);
+  assert.equal((await adminApi.POST(new Request('http://localhost/api/admin/laboratorio/'+sessionId,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({action:'PAY',commandId:randomUUID(),expectedRevision:view.workflow!.revision})}),options)).status,403);
+  const reader=await resolveLabViewerContext(db,member,owner,sessionId,env);
+  await assert.rejects(labRepository(reader).transaction(async tx=>{tx.create('requests','forbidden',{synthetic:true});}));
+  await labParticipantCommand(c,{...grant,commandId:randomUUID(),action:'REVOKE'});
+  await assert.rejects(labRepository(reader).read('contracts','workflow'));
+  assert.equal((await viewerApi.GET(request(),options)).status,403);
+  await labParticipantCommand(c,{...grant,commandId:randomUUID()});
+ }
+ await run('REVERSE');assert.equal(view.financial!.balanceCents,174000000);
+ for(const token of credentials){const response=await viewerApi.GET(new Request('http://localhost/api/laboratorio/'+sessionId+'?owner='+owner,{headers:{Authorization:'Bearer '+token}}),{params:Promise.resolve({sessionId})});assert.equal((await response.json()).financial.balanceCents,174000000);}
+ assert.equal((await viewerApi.GET(new Request('http://localhost/api/laboratorio/'+sessionId+'?owner='+owner),{params:Promise.resolve({sessionId})})).status,401);
+
+ await assert.rejects(labCircuitCommand(c,{...concurrent,action:'REVERSE'}));
+ const partial={action:'PAY' as const,amountCents:7250000,commandId:randomUUID(),expectedRevision:view.workflow!.revision};
+ view=await labCircuitCommand(c,partial);assert.equal(view.financial!.balanceCents,166750000);assert.equal(view.financial!.installments[0].status,'PARCIAL');await run('REVERSE');assert.equal(view.financial!.balanceCents,174000000);
+ await assert.rejects(labCircuitCommand(c,{action:'PAY',amountCents:0,commandId:randomUUID(),expectedRevision:view.workflow!.revision}));
+ await assert.rejects(labCircuitCommand(c,{action:'PAY',amountCents:174000001,commandId:randomUUID(),expectedRevision:view.workflow!.revision}));
+ const normal=await getContract(db,'lab-'+sessionId,1);assert.equal(normal.draft,null);assert.equal(normal.operation,null);
+ await assert.rejects(labCircuitCommand(c,{action:'PAY',commandId:randomUUID(),expectedRevision:view.workflow!.revision,budgetId:'normal-operation'}));
+ assert.equal((await db.collection('presupuestos_v2').get()).size,0);
+ assert.equal((await db.collection('contractSnapshotsV2').get()).size,0);
+ assert.equal((await db.collection('contractNumberingV2').get()).size,0);
+ console.log('LAB_CIRCUIT_PASS: request, issued budget, acceptance, synthetic review, READY, atomic freeze, documents, three signatures, custody, delivery, activation, 12 installments, payment 145000, balance 1595000, reversal 1740000, replay, concurrency, no normal-root writes');
+}
+main().then(()=>admin.app().delete()).catch(e=>{console.error(e.stack);process.exitCode=1;});
