@@ -4,7 +4,7 @@ import { stable,opaque } from './contractV2';
 import { requireInvitationEmulator } from './operationClientV2';
 import { validateContractSnapshot } from './contractSnapshotV2';
 import { operationRef } from './operationV2';
-import { fiscalProjection,type FiscalRequest } from './fiscalV2';
+import { fiscalProjection,contractServicesGrossLine,type FiscalRequest } from './fiscalV2';
 export const fiscalMockRoot=(db:Firestore)=>db.collection('presupuestos_v2').doc('_fiscal_mock_v1').collection('contracts');
 /** No ARCA credentials, network, real CAE or productive number. */
 export async function mockFiscalIssue(db:Firestore,commandId:string,request:FiscalRequest,actor:string) {
@@ -16,6 +16,11 @@ export async function mockFiscalIssue(db:Firestore,commandId:string,request:Fisc
   const snapshot=(await tx.get(db.collection('contractSnapshotsV2').doc(request.snapshotId))).data();validateContractSnapshot(snapshot);
   const source=snapshot.sourceDraft,identity=(await tx.get(operationRef(db,source.budgetId,source.budgetVersion))).data();
   if(snapshot.integrity.payloadHash!==request.snapshotHash||snapshot.contractSnapshotId!==request.snapshotId||identity?.operationId!==request.operationId||identity?.acceptedOptionId!==source.acceptedOptionId)throw Error('FISCAL_SNAPSHOT_OR_OPERATION_MISMATCH');
+  const services=request.lines.find(line=>line.concept==='CONTRACT_SERVICES');
+  if(services){
+   const canonical=contractServicesGrossLine(snapshot.economicTerms.serviceAmount);
+   if(request.lines.length!==1||services.grossCents===undefined||services.grossCents>canonical.grossCents||request.kind==='INVOICE'&&services.grossCents!==canonical.grossCents)throw Error('FISCAL_CONTRACT_SERVICES_MISMATCH');
+  }
   if(request.associatedId){const ref=root.doc(request.associatedId),creditControl=root.doc('credit_'+request.associatedId),[associated,control]=await tx.getAll(ref,creditControl);const a=associated.data();if(!a||a.kind!=='INVOICE'||a.operationId!==request.operationId||a.snapshotHash!==request.snapshotHash||a.documentClass!==request.documentClass||a.executionMode!=='MOCK_ONLY'||a.receiverStatus!==projection.receiverStatus||a.policyHash!==projection.policyHash||a.date>projection.date)throw Error('FISCAL_ASSOCIATION_INVALID');
    if(request.kind==='CREDIT_NOTE'){const credited=control.data()?.creditedCents||0;if(credited+projection.totalCents>a.totalCents)throw Error('FISCAL_CREDIT_EXCEEDS_ORIGINAL');const previousLines=control.data()?.lines||{};const lineCredits:Record<string,{baseCents:number;taxCents:number}>={...previousLines};
     for(const line of projection.lines){const original=(a.lines as typeof projection.lines).find(l=>l.concept===line.concept);const previous=previousLines[line.concept]||{baseCents:0,taxCents:0};if(!original||previous.baseCents+line.baseCents>original.baseCents||previous.taxCents+line.taxCents>original.taxCents)throw Error('FISCAL_CREDIT_LINE_EXCEEDS_ORIGINAL');lineCredits[line.concept]={baseCents:previous.baseCents+line.baseCents,taxCents:previous.taxCents+line.taxCents};}

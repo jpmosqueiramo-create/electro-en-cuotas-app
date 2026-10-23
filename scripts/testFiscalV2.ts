@@ -11,3 +11,15 @@ assert.throws(()=>fiscalProjection({...f,lines:[{concept:'MANAGEMENT',baseCents:
 assert.throws(()=>fiscalProjection({...f,policy:{...f.policy,confirmedBy:''}}));
 assert.deepEqual(fiscalReceiptReference('synthetic-payment',7250000,['invoice-synthetic']),{paymentId:'synthetic-payment',amountCents:7250000,invoiceIds:['invoice-synthetic'],createsInvoice:false,calculatesVat:false});
 console.log('FISCAL_A_B_C_EXPLICIT_RATES_EXEMPTION_VALIDITY_RECEIPT_NO_DUPLICATE_TAX=PASS');
+
+export function grossFiscalFixture():FiscalRequest{const f=fiscalFixture();return {...f,policy:{...f.policy,version:2,concepts:{CONTRACT_SERVICES:{treatment:'TAXED',rateBps:2100,basis:'GROSS_INCLUDED',reference:'SYNTHETIC_AGGREGATE_NO_ALLOCATION'}}},lines:[{concept:'CONTRACT_SERVICES',grossCents:116000000}]};}
+const gross=grossFiscalFixture(),extracted=fiscalProjection(gross);
+assert.equal(extracted.totalCents,116000000);assert.equal(extracted.lines[0].baseCents,95867769);assert.equal(extracted.taxCents,20132231);
+for(const rateBps of [0,1050,2100,2700])for(const grossCents of [1,2,5,121,9999,116000000,Number.MAX_SAFE_INTEGER]){
+ const request={...gross,policy:{...gross.policy,concepts:{CONTRACT_SERVICES:{...gross.policy.concepts.CONTRACT_SERVICES!,rateBps}}},lines:[{concept:'CONTRACT_SERVICES' as const,grossCents}]};
+ const result=fiscalProjection(request);assert.equal(result.totalCents,grossCents);assert.equal(result.lines[0].baseCents+result.taxCents,grossCents);assert(result.taxCents>=0);
+}
+assert.throws(()=>fiscalProjection({...gross,lines:[{concept:'CONTRACT_SERVICES',baseCents:100}]}));
+assert.throws(()=>fiscalProjection({...gross,policy:{...gross.policy,concepts:{}}}));
+assert.throws(()=>fiscalProjection({...gross,lines:[{concept:'CONTRACT_SERVICES',grossCents:1.2}]}));
+console.log('GROSS_INCLUDED_EXTRACTION_EXACT_NO_ADDED_VAT_NO_ALLOCATION=PASS');
