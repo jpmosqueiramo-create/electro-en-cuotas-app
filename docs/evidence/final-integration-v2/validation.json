@@ -1,0 +1,24 @@
+{
+  "base": "b95395fbe678de2033f46d078449e2eae7448808",
+  "localIntegratedHead": "a3f34c384fee86c63fa154ab7b35ebde8d222959",
+  "productionWrites": 0,
+  "merge": false,
+  "deploy": false,
+  "testResults": {
+    "testV2IntegralJourney": "PASS",
+    "testContractDeliveryFinancialControls": "PASS",
+    "testOperationClientV2Emulator": "PASS",
+    "testLegalApprovalEmulator": "PASS",
+    "testFiscalV2Emulator": "PASS",
+    "testOperationFinancialV2Emulator": "PASS",
+    "testAffiliateIntegrationV2Emulator": "PASS",
+    "browserRefreshDesktopMobile": "PASS",
+    "typescript": "PASS",
+    "eslintDifferential": "PASS",
+    "build": "PASS",
+    "testSafe": "PASS",
+    "pdfExact12Installments": "PASS",
+    "legalFinalMetadataRegression": "PASS"
+  },
+  "protectedLocalScriptSha256": "09fb398ff9c634f7c5ca32a3769518dbde67d8ebca3f1f59a930ccdfe6340881"
+}
