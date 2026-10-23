@@ -902,10 +902,9 @@ export interface DatosRemito {
   afiliadoEmail?: string;
 }
 
-export const generarRemitoModelo = (datos: DatosRemito) => {
+export const renderRemitoModelo = (datos: DatosRemito) => {
   const doc = new jsPDF();
   drawCuentaHogarLogo(doc,182,0.5,9);
-  const nombre = datos.clienteNombre || "Cliente";
 
   // Box title
   doc.setFillColor(244, 244, 245);
@@ -973,10 +972,11 @@ export const generarRemitoModelo = (datos: DatosRemito) => {
   y += 5;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
-  doc.text("Firma Despachante (Loop Gestión Integral S.R.L. — Gerente Juan Pablo Mosqueira)", 15, y);
+  const senderSignatureLabel = doc.splitTextToSize("Firma Despachante (Loop Gestión Integral S.R.L. — Gerente Juan Pablo Mosqueira)", 75);
+  doc.text(senderSignatureLabel, 15, y);
   doc.text("Firma de Conformidad Cliente", 120, y);
 
-  y += 5;
+  y += Math.max(5, senderSignatureLabel.length * 4);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
   doc.setTextColor(100, 116, 139);
@@ -987,7 +987,10 @@ export const generarRemitoModelo = (datos: DatosRemito) => {
   doc.text("DNI/Legajo: ________________________", 15, y);
   doc.text("DNI: ________________________", 120, y);
 
-  doc.save(`Remito_${datos.nroRemito}_${nombre.replace(/\s/g,"_")}.pdf`);
+  return doc;
+};
+export const generarRemitoModelo = (datos: DatosRemito) => {
+  renderRemitoModelo(datos).save(`Remito_${datos.nroRemito}_${(datos.clienteNombre || "Cliente").replace(/\s/g,"_")}.pdf`);
 };
 
 export interface LineaRemitoMulti {

@@ -1,11 +1,13 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
+import OperationsLabCircuit from '@/components/operations/OperationsLabCircuit';
 import { LAB_WATERMARK } from '@/lib/operationsLabPolicy';
 type Session = { id: string; createdAt: string; state: string };
 export default function OperationsLabPage() {
   const { user } = useAuth();
   const [sessions, setSessions] = useState<Session[]>([]), [available, setAvailable] = useState(false), [busy, setBusy] = useState(false), [message, setMessage] = useState('Verificando acceso…');
+  const [selected,setSelected]=useState<string|null>(null);
   const [viewUid, setViewUid] = useState<string | null>(null);
   const authorized = available && viewUid === user?.uid;
   const visibleSessions = authorized ? sessions : [];
@@ -20,7 +22,7 @@ export default function OperationsLabPage() {
         if (!response.ok) throw new Error('El laboratorio está deshabilitado o tu cuenta no tiene autorización explícita.');
         const data = await response.json();
         if (generation.current !== seq) return;
-        setSessions(data.sessions); setViewUid(user.uid); setAvailable(true); setMessage('Acceso verificado. Circuito de operaciones todavía en preparación.');
+        setSessions(data.sessions); setViewUid(user.uid); setAvailable(true); setMessage('Acceso verificado. Elegí una sesión o registrá una nueva para recorrer el circuito sintético.');
       } catch (error) { if (generation.current === seq) setMessage(error instanceof Error ? error.message : 'No se pudo verificar el acceso.'); }
     })();
     return () => { generation.current = seq + 1; };
@@ -49,11 +51,12 @@ export default function OperationsLabPage() {
     <p className="rounded border border-yellow-500 bg-yellow-50 p-4 font-bold text-black">Sólo datos sintéticos · {LAB_WATERMARK}</p>
     <p role="status">{message}</p>
     <section className="space-y-3 rounded border p-4"><h2 className="text-xl font-semibold">Preparación del laboratorio</h2>
-      <p>Este primer incremento permite registrar una sesión aislada. La solicitud, los documentos, la entrega y los pagos de prueba todavía no están disponibles.</p>
+      <p>Cada sesión mantiene sus propios datos y permite recorrer consulta, presupuesto, contrato, documentos, firmas, entrega y pagos simulados.</p>
       <button className="min-h-11 w-full rounded bg-yellow-400 px-4 py-2 font-bold text-black disabled:opacity-50 sm:w-auto" disabled={!authorized || busy} onClick={() => void start()}>{busy ? 'Registrando…' : 'Registrar sesión sintética'}</button>
       <p>No se habilita ninguna acción contractual, financiera ni fiscal real.</p>
     </section>
-    <section><h2 className="text-xl font-semibold">Sesiones recientes</h2>{visibleSessions.length ? <ul>{visibleSessions.map((s, i) => <li key={s.id} className="border-b py-3">Sesión {i + 1} · {new Date(s.createdAt).toLocaleString('es-AR')} · Circuito pendiente</li>)}</ul> : <p>No hay sesiones disponibles para esta cuenta.</p>}</section>
-    <p>Las futuras vistas de cliente y vendedor afiliado se identificarán como simulaciones. No equivalen a iniciar sesión con esos roles.</p>
+    <section><h2 className="text-xl font-semibold">Sesiones recientes</h2>{visibleSessions.length ? <ul>{visibleSessions.map((s, i) => <li key={s.id} className="border-b py-3">Sesión {i + 1} · {new Date(s.createdAt).toLocaleString('es-AR')} · <button className="min-h-11 rounded border px-3" onClick={()=>setSelected(s.id)}>Abrir circuito</button></li>)}</ul> : <p>No hay sesiones disponibles para esta cuenta.</p>}</section>
+    {authorized&&selected&&<OperationsLabCircuit key={user?.uid+selected} sessionId={selected}/>}
+    <p>El selector de vistas es una simulación administrativa. Para probar permisos, usá cuentas sintéticas independientes expresamente autorizadas.</p>
   </main>;
 }

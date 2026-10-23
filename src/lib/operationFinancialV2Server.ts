@@ -6,7 +6,7 @@ import { exact,opaque,stable } from './contractV2';
 import { contractRefs } from './contractV2Server';
 import { contractSnapshotId,validateContractSnapshot,type ContractSnapshotV2 } from './contractSnapshotV2';
 import { contractValueHash } from './contractIntegrityV2';
-import { calcularImputacionesFIFO,type EstadoCuotaDerivado } from './ledgerEngine';
+import { allocateOperationPayment } from './operationFinancialAllocationV2';
 import { custodyLoad,type CustodyActor } from './operationCustodyV2Server';
 import { deliveryRef } from './operationDeliveryV2Server';
 import { deliveryDocumentKinds,type DeliveryV2 } from './operationDeliveryV2';
@@ -96,8 +96,7 @@ export async function financialCommand(db:Firestore,id:string,v:number,input:unk
    if(!Number.isSafeInteger(data.amountCents)||Number(data.amountCents)<=0||!['TRANSFERENCIA','EFECTIVO'].includes(String(data.method))||typeof data.reference!=='string'||!data.reference.trim()||data.reference.length>200)financialFail('Datos de pago inválidos.');
    const amount=Number(data.amountCents),summary=accountingSummary(s,payments),effectiveDate=financialDate(data.effectiveDate);if(amount>summary.balanceCents)financialFail('El pago supera el saldo contractual.');if(effectiveDate<proof.delivery.event!.occurredAt.slice(0,10))financialFail('Pago anterior a entrega efectiva. No se admiten anticipos.');
    // Reuse legacy FIFO allocation order/partial amounts, never its source lookup, tax split, commissions or writers.
-   const rows=summary.installments.map(i=>({numero:i.number,saldoCentavos:i.balanceCents,capitalPendienteCentavos:i.balanceCents,servicioNetoPendienteCentavos:0,ivaPendienteCentavos:0} as EstadoCuotaDerivado));
-   const allocations=calcularImputacionesFIFO(rows,amount).map(a=>({installmentNumber:a.cuotaNumero,amountCents:a.importeAplicadoCentavos}));if(allocations.reduce((n,a)=>n+a.amountCents,0)!==amount)financialFail();
+   const allocations=allocateOperationPayment(summary,amount);
    created={id:pid,amountCents:amount,effectiveDate,recordedAt:now,actor:actor.uid,method:data.method as FinancialPayment['method'],reference:data.reference.trim(),allocations,reversedAt:null,reversedBy:null,reversalReason:null,receiptId:`receipt_${pid}`};
   }else{
    exact(data,['paymentId','reason']);const pid=opaque(data.paymentId),saved=await tx.get(ref.collection('payments').doc(pid)),p=saved.exists?validatePayment(saved.data() as FinancialPayment,pid,s):null;if(p){const r=await tx.get(ref.collection('receipts').doc(p.receiptId));if(stable(r.data()||null)!==stable(customerReceipt(p,s)))financialFail('Recibo inconsistente.');}if(!p||p.reversedAt||typeof data.reason!=='string'||!data.reason.trim()||data.reason.length>500)financialFail('Pago no reversible o motivo ausente.');reversed={...p,reversedAt:now,reversedBy:actor.uid,reversalReason:data.reason.trim()};

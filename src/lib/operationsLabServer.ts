@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { LAB_SCHEMA, LabError, labCommand, requireLabAccess } from './operationsLabPolicy';
 
-// No business service accepts this namespace yet. Never pass a normal operation ID here.
+// Session root for the isolated repository. Never pass a normal operation ID here.
 function sessions(db: Firestore, uid: string) {
   const owner = createHash('sha256').update(uid).digest('hex');
   return db.collection('operationsLabV1').doc(owner).collection('sessions');

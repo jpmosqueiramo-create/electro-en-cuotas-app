@@ -1,0 +1,30 @@
+{
+  "result": "LAB_PDF_PASS",
+  "checks": 68,
+  "files": [
+    {
+      "file": "MANDATE.pdf",
+      "pages": 3,
+      "imagePlacements": 3,
+      "sha256": "21654ea2c7565b0e2fcf1920907672133101c4b10fa0cc34e2dc25d5f5e2367c"
+    },
+    {
+      "file": "PAGARE.pdf",
+      "pages": 1,
+      "imagePlacements": 0,
+      "sha256": "cdd75985726261fce03b421501e7c487f92f7786f2aee94d1417259079e1053f"
+    },
+    {
+      "file": "REMITO.pdf",
+      "pages": 1,
+      "imagePlacements": 1,
+      "sha256": "6644144be7c585921b4b59bf15db40d48d89820b3aabae4296826020142d8101"
+    },
+    {
+      "file": "RECIBO.pdf",
+      "pages": 1,
+      "imagePlacements": 1,
+      "sha256": "52577542b199c2f51dac3dc75f21843080db98f6b3a265442cfa1ab1a9b7e9b2"
+    }
+  ]
+}

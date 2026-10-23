@@ -24,8 +24,9 @@ export async function deliveryLoad(db:Firestore,tx:Transaction,id:string,v:numbe
  }
  return {...base,delivery:state};
 }
-export function deliveryChecklist(view:Awaited<ReturnType<typeof deliveryLoad>>){
- const d=view.delivery,c=view.state,f=view.fulfillment,missing:string[]=[];
+export function deliveryChecklist(view:Awaited<ReturnType<typeof deliveryLoad>>){return deliveryChecklistState(view.delivery,view.state,view.fulfillment);}
+export function deliveryChecklistState(d:DeliveryV2,c:import('./operationCustodyV2').OperationCustodyV2,f:import('./operationFulfillmentV2').FulfillmentV2){
+ const missing:string[]=[];
  if(!d.responsible)missing.push('Responsable de entrega');
  if(!c.current||c.pending||!d.responsible||!sameParticipant(c.current,d.responsible))missing.push('Custodia física acreditada del responsable');
  if(f.logisticsState!=='ENTREGA_PROGRAMADA')missing.push('Entrega programada en logística');
