@@ -34,8 +34,8 @@ import { createPrivateDocumentArchiveEmulator } from '../src/lib/contractDocumen
 import { contractValueHash } from '../src/lib/contractIntegrityV2';
 import {readOperationDraftDocuments} from '../src/lib/contractDocuments/operationDraftServer';
 import { mockFiscalIssue,mockSupplierInvoice,fiscalMockRoot } from '../src/lib/fiscalV2Emulator';
-import { fiscalReceiptReference } from '../src/lib/fiscalV2';
-import { fiscalFixture } from './testFiscalV2';
+import { fiscalReceiptReference,contractServicesGrossLine } from '../src/lib/fiscalV2';
+import { grossFiscalFixture } from './testFiscalV2';
 import { drawCuentaHogarLogo } from '../src/lib/pdfBranding';
 import { financialEnabled } from '../src/lib/operationFinancialV2';
 import { deliveryEnabled } from '../src/lib/operationDeliveryV2';
@@ -189,7 +189,7 @@ async function main(){
  await delivery('RECEIVE_ORIGINALS',{holder,location:'Carpeta sintética',receivedAt:new Date().toISOString(),reference:'ORIGINALS-TEST',alternativeEvidence:'EVIDENCIA_SINTETICA_NO_FIRMA_REAL'});await delivery('CONFIRM_DELIVERY',{occurredAt:new Date().toISOString()},affiliateToken);const delivered=(await readDelivery(db,f.id,1,root)).state;assert.equal(delivered.status,'DELIVERED_EMULATOR');pass('11_THREE_SIGNATURES_DELIVERY_SIMULATION');
  await prerequisitesRef(db,f.id,1).create({schemaVersion:'EMULATOR_CLIENT_ACTIVATION_FIXTURE_V2',project:'demo-cuenta-hogar',delivered:true,mandateSigned:true,pagareSigned:true,remitoSigned:true});
  await clientBindingCommand(db,f.id,1,{action:'LINK',data:{uid:client.uid,reason:'Vínculo explícito sintético'},operationId:op,commandId:randomUUID(),expectedRevision:0},u.uid);const inviteToken=randomBytes(32).toString('base64url');const invite=await clientBindingCommand(db,f.id,1,{action:'INVITE',data:{email:personal.email,token:inviteToken},operationId:op,commandId:randomUUID(),expectedRevision:1},u.uid);await redeemClientInvitation(db,invite.invitationId!,inviteToken,randomUUID(),client.uid);assert.equal((await listClientServices(db,client.uid)).length,1);pass('12_CLIENT_ACTIVATION_EMULATOR_BRIDGE');
- const fiscalRequest={...fiscalFixture(),operationId:op,snapshotId:snapshot.contractSnapshotId,snapshotHash:snapshot.integrity.payloadHash,lines:[{concept:'MANAGEMENT' as const,baseCents:95867769}]};
+ const fiscalRequest={...grossFiscalFixture(),operationId:op,snapshotId:snapshot.contractSnapshotId,snapshotHash:snapshot.integrity.payloadHash,lines:[contractServicesGrossLine(snapshot.economicTerms.serviceAmount)]};
  const fiscalIssued=await mockFiscalIssue(db,'integral-fiscal-synthetic',fiscalRequest,u.uid),fiscalRef=fiscalMockRoot(db).doc(fiscalIssued.documentId),fiscalBefore=await fiscalRef.get();
  assert.equal(fiscalBefore.data()!.totalCents,snapshot.economicTerms.serviceAmount*100);assert.equal(fiscalBefore.data()!.taxCents,20132231);
  await mockSupplierInvoice(db,'integral-supplier-synthetic',{operationId:op,snapshotId:snapshot.contractSnapshotId,snapshotHash:snapshot.integrity.payloadHash,buyerUid:client.uid,supplierReference:'SYNTHETIC_PROVIDER',documentReference:'SIM-SUP-0001',totalCents:snapshot.economicTerms.capitalAmount*100},u.uid);
