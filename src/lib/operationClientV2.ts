@@ -10,7 +10,7 @@ export function invitationsEnabled(env:Record<string,string|undefined>=process.e
 export function requireInvitationEmulator(){if(!invitationsEnabled())portalFail('Invitaciones V2 productivas deshabilitadas. Falta cierre de entrega y control de firmas.');}
 export interface ClientBindingV2 {
  schemaVersion:'OPERATION_CLIENT_V2';operationId:string;revision:number;uid:string|null;
- state:'PREPARED'|'ACTIVE';activeInvitationId:string|null;activatedAt:string|null;
+ state:'PREPARED'|'ACTIVE'|'REVOKED';activeInvitationId:string|null;activatedAt:string|null;
 }
 export interface ClientInvitationV2 {
  schemaVersion:'CLIENT_INVITATION_V2';invitationId:string;operationId:string;budgetId:string;version:number;
@@ -21,6 +21,6 @@ export function portalEmail(value:unknown){if(typeof value!=='string'||value.len
 export function portalToken(value:unknown):string {if(typeof value!=='string'||! /^[A-Za-z0-9_-]{43}$/.test(value))portalFail();return value;}
 export function parseClientCommand(value:unknown){
  const c=exact(value,['commandId','operationId','expectedRevision','action','data']);opaque(c.commandId);
- if(!/^op_[a-f0-9]{64}$/.test(String(c.operationId))||!Number.isSafeInteger(c.expectedRevision)||Number(c.expectedRevision)<0||!['LINK','INVITE','REVOKE'].includes(String(c.action))||!c.data||typeof c.data!=='object'||Array.isArray(c.data))portalFail();
- return c as unknown as {commandId:string;operationId:string;expectedRevision:number;action:'LINK'|'INVITE'|'REVOKE';data:Record<string,unknown>};
+ if(!/^op_[a-f0-9]{64}$/.test(String(c.operationId))||!Number.isSafeInteger(c.expectedRevision)||Number(c.expectedRevision)<0||!['LINK','INVITE','REVOKE','REVOKE_ACCESS'].includes(String(c.action))||!c.data||typeof c.data!=='object'||Array.isArray(c.data))portalFail();
+ return c as unknown as {commandId:string;operationId:string;expectedRevision:number;action:'LINK'|'INVITE'|'REVOKE'|'REVOKE_ACCESS';data:Record<string,unknown>};
 }

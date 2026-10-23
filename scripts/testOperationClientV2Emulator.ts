@@ -79,6 +79,21 @@ async function main() {
  assert.equal((await verifyClientAuth(req(jwt),f.b.solicitudId)).authorized,false,'V2 activation does not grant legacy financial access');
  const bad=await publicApi.POST(new Request('http://localhost/api',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://evil.example'},body:JSON.stringify({action:'INSPECT',token:fi.token})}),{params:Promise.resolve({invitationId:fi.id})});assert.equal(bad.status,403);
  await admin.auth().updateUser(customer.uid,{disabled:true});await assert.rejects(listClientServices(db,customer.uid));await admin.auth().updateUser(customer.uid,{disabled:false});
+ const active=(await readClientBinding(db,f.id,1)).state;
+ const revokeAccess={commandId:'revoke-active',operationId:f.operation.operationId,expectedRevision:active.revision,action:'REVOKE_ACCESS',data:{reason:'Revocación sintética explícita'}};
+ const revocations=await Promise.all(Array.from({length:4},()=>clientBindingCommand(db,f.id,1,revokeAccess,'admin-demo')));
+ assert.equal(revocations.filter(r=>!r.replay).length,1);
+ const revokedSnap=await clientBindingRef(db,f.id,1).get();
+ assert.equal(revokedSnap.data()!.state,'REVOKED');assert.equal(revokedSnap.data()!.uid,customer.uid);assert.equal(revokedSnap.data()!.activatedAt,active.activatedAt);
+ await clientBindingCommand(db,f.id,1,revokeAccess,'admin-demo');assert((await clientBindingRef(db,f.id,1).get()).updateTime!.isEqual(revokedSnap.updateTime!));
+ await assert.rejects(clientBindingCommand(db,f.id,1,{...revokeAccess,data:{reason:'Otro motivo'}},'admin-demo'),/commandId/);
+ await assert.rejects(readClientService(db,f.id,1,customer.uid));
+ const remaining=await listClientServices(db,customer.uid);assert.equal(remaining.length,1);assert.equal(remaining[0].budgetId,f2.id);
+ await assert.rejects(redeemClientInvitation(db,invite.id,invite.token,'redeem-identical',customer.uid));
+ await assert.rejects(issueClientInvitation(f,email));
+ const revokeReq=(token?:string)=>new NextRequest('http://localhost/api',{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify(revokeAccess)});
+ assert.equal((await adminApi.POST(revokeReq(),ctx)).status,401);assert.equal((await adminApi.POST(revokeReq(jwt),ctx)).status,401);
+ console.log('ACTIVE_ACCESS_REVOCATION_CONCURRENCY_REPLAY_MULTIPLE_SERVICES=PASS');
  assert.equal(JSON.stringify({budget:(await f.r.budget.get()).data(),acceptance:(await f.r.acceptance.get()).data()}),original);assert.equal(JSON.stringify((await legacy.get()).data()),old);
  console.log('CLIENT_PORTAL_EMULATOR=PASS; SINGLE_USE_EXPIRY_REVOCATION=PASS; CONCURRENCY_IDEMPOTENCY_ATOMICITY=PASS; MULTIPLE_SERVICES=PASS; UID_ISOLATION=PASS; FINANCIAL_ACCESS=DENIED; HISTORICAL_MUTATIONS=0; PRODUCTIVE_INVITATIONS=DISABLED; PRODUCTION_WRITES=0');
 }

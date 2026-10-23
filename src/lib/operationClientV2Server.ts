@@ -16,7 +16,7 @@ async function context(db:Firestore,tx:Transaction,id:string,v:number) {
  const origin=await fulfillmentOrigin(db,tx,id,v);if(!origin.registered)portalFail('Operación histórica sin identidad V2. No se migra automáticamente.');
  const ref=clientBindingRef(db,id,v),snap=await tx.get(ref);
  const state=snap.exists?snap.data() as ClientBindingV2:{schemaVersion:'OPERATION_CLIENT_V2' as const,operationId:origin.identity.operationId,revision:0,uid:null,state:'PREPARED' as const,activeInvitationId:null,activatedAt:null};
- if(state.schemaVersion!=='OPERATION_CLIENT_V2'||state.operationId!==origin.identity.operationId||!Number.isSafeInteger(state.revision)||!['PREPARED','ACTIVE'].includes(state.state))portalFail();
+ if(state.schemaVersion!=='OPERATION_CLIENT_V2'||state.operationId!==origin.identity.operationId||!Number.isSafeInteger(state.revision)||!['PREPARED','ACTIVE','REVOKED'].includes(state.state))portalFail();
  return {origin,state,ref};
 }
 async function requirePrerequisites(db:Firestore,tx:Transaction,id:string,v:number) {
@@ -54,10 +54,10 @@ export async function clientBindingCommand(db:Firestore,id:string,v:number,input
    exact(d,['uid','reason']);const uid=String(d.uid),u=await authUser(uid);
    if(typeof d.reason!=='string'||!d.reason.trim()||d.reason.length>500)portalFail('Motivo requerido.');
    if(state.uid===u.uid)portalFail('La cuenta ya está vinculada.');
-   if(state.state==='ACTIVE'||state.activeInvitationId)portalFail('No se reemplaza una cuenta activa ni con invitación pendiente. Revocá primero o revisá administrativamente.');
+   if(state.state==='ACTIVE'||state.state==='REVOKED'||state.activeInvitationId)portalFail('No se reemplaza una cuenta activa ni con invitación pendiente. Revocá primero o revisá administrativamente.');
    state.uid=u.uid;
   }else if(c.action==='INVITE') {
-   exact(d,['email','token']);await requirePrerequisites(db,tx,id,v);if(state.state==='ACTIVE')portalFail('Servicio ya activado.');
+   exact(d,['email','token']);await requirePrerequisites(db,tx,id,v);if(state.state==='ACTIVE'||state.state==='REVOKED')portalFail('Servicio activo o acceso revocado. Revisión administrativa requerida.');
    const email=portalEmail(d.email);if(isAdminEmail(email))portalFail('Cuenta no disponible.');
    if(state.uid){const u=await authUser(state.uid);if(portalEmail(u.email)!==email)portalFail('Email distinto al de la cuenta vinculada.');}
    else {try{await admin.auth().getUserByEmail(email);portalFail('La cuenta existe. Vinculá primero su UID explícitamente.');}catch(e){if((e as {code?:string}).code!=='auth/user-not-found')throw e;}}
@@ -65,6 +65,12 @@ export async function clientBindingCommand(db:Firestore,id:string,v:number,input
    const invitationId='invite_'+hash(stable([id,v,c.commandId]));
    nextInvitation={schemaVersion:'CLIENT_INVITATION_V2',invitationId,operationId:state.operationId,budgetId:id,version:v,tokenHash:hash(portalToken(d.token)),email,targetUid:state.uid,state:'PENDING',createdBy:actor,createdAt:now,expiresAt:new Date(Date.parse(now)+86400000).toISOString(),redeemedBy:null,redeemedAt:null,revokedAt:null};
    state.activeInvitationId=invitationId;
+  }else if(c.action==='REVOKE_ACCESS') {
+   exact(d,['reason']);
+   if(typeof d.reason!=='string'||!d.reason.trim()||d.reason.length>500)portalFail('Motivo requerido.');
+   if(state.state!=='ACTIVE'||!state.uid||state.activeInvitationId)portalFail('Sólo se revoca un vínculo activo.');
+   state.state='REVOKED';
+   // Keep UID, activation date, index and financial history as an audit trail.
   }else {
    exact(d,['invitationId']);if(state.activeInvitationId!==d.invitationId)portalFail('Invitación no vigente.');
    revoked=(await tx.get(invitationRef(db,state.activeInvitationId!))).data() as ClientInvitationV2;
@@ -74,7 +80,7 @@ export async function clientBindingCommand(db:Firestore,id:string,v:number,input
   if(revoked)tx.update(invitationRef(db,revoked.invitationId),{state:'REVOKED',revokedAt:now});
   if(nextInvitation)tx.create(invitationRef(db,nextInvitation.invitationId),nextInvitation);
   tx.set(ref,state);tx.create(receipt,{digest,result,actor,at:now});
-  tx.create(ref.collection('events').doc(c.commandId),{commandId:c.commandId,action:c.action,actor,at:now,revision:state.revision,expectedRevision:c.expectedRevision,uid:state.uid,invitationId:nextInvitation?.invitationId||revoked?.invitationId||null,reason:c.action==='LINK'?d.reason:null});
+  tx.create(ref.collection('events').doc(c.commandId),{commandId:c.commandId,action:c.action,actor,at:now,revision:state.revision,expectedRevision:c.expectedRevision,uid:state.uid,invitationId:nextInvitation?.invitationId||revoked?.invitationId||null,reason:c.action==='LINK'||c.action==='REVOKE_ACCESS'?d.reason:null});
   return result;
  });
 }
@@ -106,10 +112,12 @@ export async function redeemClientInvitation(db:Firestore,invitationId:string,to
   return {activated:true,replay:false};
  });
 }
-export async function readClientService(db:Firestore,id:string,v:number,uid:string) {
+async function clientService(db:Firestore,id:string,v:number,uid:string,omitRevoked:boolean) {
  await authUser(uid);
  return db.runTransaction(async tx=>{
-  const {origin,state}=await context(db,tx,id,v);if(state.state!=='ACTIVE'||state.uid!==uid)portalFail('Servicio no disponible.');
+  const {origin,state}=await context(db,tx,id,v);
+  if(omitRevoked&&state.state==='REVOKED'&&state.uid===uid)return null;
+  if(state.state!=='ACTIVE'||state.uid!==uid)portalFail('Servicio no disponible.');
   await requirePrerequisites(db,tx,id,v);
   const budget=(await tx.get(contractRefs(db,id,v).budget)).data()!;
   const financial=(await tx.get(operationRef(db,id,v).parent.doc('financial'))).data();
@@ -117,8 +125,11 @@ export async function readClientService(db:Firestore,id:string,v:number,uid:stri
   return {budgetId:id,version:v,operationId:origin.identity.operationId,service:'Gestión de compra por mandato',product:origin.initial.productName,status:'Servicio vinculado',activatedAt:state.activatedAt,locality:budget.clienteSnapshot.localidad as string,financialInformationAvailable:financial?.schemaVersion==='OPERATION_FINANCIAL_V2'&&financial?.operationId===state.operationId};
  });
 }
+export async function readClientService(db:Firestore,id:string,v:number,uid:string) {
+ const service=await clientService(db,id,v,uid,false);if(!service)portalFail('Servicio no disponible.');return service;
+}
 export async function listClientServices(db:Firestore,uid:string) {
  await authUser(uid);const index=await clientIndex(db,uid).get(),services=[];
- for(const doc of index.docs){const d=doc.data();if(d.uid!==uid||doc.id!==d.operationId)portalFail();services.push(await readClientService(db,d.budgetId,d.version,uid));}
+ for(const doc of index.docs){const d=doc.data();if(d.uid!==uid||doc.id!==d.operationId)portalFail();const service=await clientService(db,d.budgetId,d.version,uid,true);if(service)services.push(service);}
  return services;
 }
