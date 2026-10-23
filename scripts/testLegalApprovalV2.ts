@@ -6,6 +6,8 @@ const artifacts=currentLegalArtifacts.map(a=>({...a,pending:[]}));
 const records:LegalApprovalRecord[]=artifacts.map(({kind,version,textHash})=>({...approvalInput({kind,version,textHash,status:'VERIFIED',approvalDate:'2026-01-01',professional:'Profesional sintético',validationReference:'REFERENCIA SINTETICA NO LEGAL',evidence:null}),schemaVersion:'LEGAL_APPROVAL_V1',recordedBy:'synthetic-admin',recordedAt:'2026-01-01T00:00:00Z'}));
 assert.equal(legalIssuanceAssessment(artifacts,records,true).legalPrerequisitesSatisfied,true);
 assert.equal(legalIssuanceAssessment(artifacts,records,true).productiveIssuanceEnabled,false);
+// Server registry envelopes add metadata; only explicit approval fields are validated.
+assert.equal(legalIssuanceAssessment(artifacts,records.map((r,i)=>({...r,id:'record-'+i,digest:'technical-metadata'})),true).legalPrerequisitesSatisfied,true);
 assert.equal(legalIssuanceAssessment(currentLegalArtifacts,records,true).legalPrerequisitesSatisfied,false);
 assert.equal(legalIssuanceAssessment(artifacts,records,false).legalPrerequisitesSatisfied,false);
 assert.equal(legalIssuanceAssessment(artifacts,records.map(r=>({...r,textHash:'0'.repeat(64)})),true).legalPrerequisitesSatisfied,false);

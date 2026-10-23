@@ -37,7 +37,7 @@ export function legalIssuanceAssessment(artifacts:readonly LegalArtifact[],recor
  for(const kind of ['MANDATE','PROMISSORY_NOTE'] as const){const artifact=artifacts.find(a=>a.kind===kind);if(!artifact||artifacts.filter(a=>a.kind===kind).length!==1){reasons.push(kind+'_ARTIFACT_REQUIRED');continue;}
   if(artifact.pending.length)reasons.push(kind+'_TEXT_PENDING');
   const matching=records.find(r=>r.kind===kind&&r.version===artifact.version&&r.textHash===artifact.textHash&&r.status==='VERIFIED');
-  if(!matching)reasons.push(kind+'_EXACT_APPROVAL_REQUIRED');else {try{const {schemaVersion,recordedBy,recordedAt,...input}=matching;if(schemaVersion!=='LEGAL_APPROVAL_V1')fail();text(recordedBy);if(!Number.isFinite(Date.parse(recordedAt)))fail();approvalInput(input);}catch{reasons.push(kind+'_APPROVAL_INVALID');}}
+  if(!matching)reasons.push(kind+'_EXACT_APPROVAL_REQUIRED');else {try{const {schemaVersion,recordedBy,recordedAt,kind,version,textHash,status,approvalDate,professional,validationReference,evidence}=matching;const input={kind,version,textHash,status,approvalDate,professional,validationReference,evidence};if(schemaVersion!=='LEGAL_APPROVAL_V1')fail();text(recordedBy);if(!Number.isFinite(Date.parse(recordedAt)))fail();approvalInput(input);}catch{reasons.push(kind+'_APPROVAL_INVALID');}}
  }
  if(!formalDataComplete)reasons.push('FORMAL_DATA_REQUIRED');
  return {legalPrerequisitesSatisfied:reasons.length===0,productiveIssuanceEnabled:false as const,reasons:[...reasons,'INDEPENDENT_PRODUCTION_AUTHORIZATION_REQUIRED']};
