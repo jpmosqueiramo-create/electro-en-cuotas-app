@@ -194,6 +194,7 @@ service cloud.firestore {
     match /{collection}/{document=**} {
       allow read, write: if collection != "catalogo_publico"
         && collection != "presupuestos_v2"
+        && collection != "operationsLabV1"
         && !isContractServerOnlyRoot(collection)
         && isAdmin();
     }

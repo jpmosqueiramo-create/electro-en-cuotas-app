@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, FileText, Files, Wallet, Truck, Users, Package, ChartNoAxesCombined, Settings } from "lucide-react";
+import { CalendarDays, ClipboardList, FileText, Files, Wallet, Truck, Users, Package, ChartNoAxesCombined, Settings, FlaskConical } from "lucide-react";
 
 export const ADMIN_DESTINATIONS = [
   { id: "today", label: "Hoy", href: "/admin", icon: CalendarDays },
@@ -10,6 +10,7 @@ export const ADMIN_DESTINATIONS = [
   { id: "sellers", label: "Vendedores afiliados", href: "/admin/comisiones", icon: Users },
   { id: "catalog", label: "Catálogo", href: "/admin/productos", icon: Package },
   { id: "reports", label: "Reportes", href: "/admin/reportes", icon: ChartNoAxesCombined },
+  { id: "laboratory", label: "Laboratorio de operaciones", href: "/admin/laboratorio", icon: FlaskConical },
   { id: "settings", label: "Configuración", href: "/admin/envios", icon: Settings },
 ] as const;
 
