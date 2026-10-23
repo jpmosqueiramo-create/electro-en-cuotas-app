@@ -123,9 +123,10 @@
     "originalApprovedSource": null,
     "existingReference": "src/lib/pdfGenerator.ts#renderRemitoModelo",
     "extractedReference": "remito-existing-renderer.txt",
-    "referenceSha256": "8258c3294d5cb3dbfeaa1bf4a80f14e7867ac5b7629aa814c17c126a477e1353",
+    "referenceSha256": "851708304b61d6e278303bb15e11bc79cc53edc4d276145ec0bd1a80207d30b5",
     "status": "EXISTING_TECHNICAL_REFERENCE_NOT_APPROVED",
-    "missing": "Exact standalone remito text/layout approved for this operation, identity, fields, signature scope and tax/transport treatment."
+    "missing": "Exact standalone remito text/layout approved for this operation, identity, fields, signature scope and tax/transport treatment.",
+    "extractionPolicy": "Source reference only; trailing whitespace stripped. Original code remains authoritative."
   },
   "otherLocalMandate": {
     "filename": "Contrato de Mandato Comercial - Loop Ge...Integral SRL V5 - Documentos de Google.pdf",

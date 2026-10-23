@@ -64,7 +64,7 @@ export const renderRemitoModelo = (datos: DatosRemito) => {
   doc.setLineWidth(0.3);
   doc.line(15, y, 90, y);
   doc.line(120, y, 195, y);
-  
+
   y += 5;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
@@ -78,7 +78,7 @@ export const renderRemitoModelo = (datos: DatosRemito) => {
   doc.setTextColor(100, 116, 139);
   doc.text("Aclaración: ________________________", 15, y);
   doc.text("Aclaración: ________________________", 120, y);
-  
+
   y += 5;
   doc.text("DNI/Legajo: ________________________", 15, y);
   doc.text("DNI: ________________________", 120, y);
