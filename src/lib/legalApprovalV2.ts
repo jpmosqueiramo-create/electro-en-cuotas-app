@@ -6,7 +6,9 @@ import { OPERATION_DOCUMENT_VERSION } from './contractDocuments/operationDraft';
 
 export type LegalKind = 'MANDATE' | 'PROMISSORY_NOTE';
 export interface LegalArtifact {kind:LegalKind;version:string;textHash:string;pending:string[]}
+export interface LegalSource {documentId:string;reference:string;type:'ORIGINAL_FILE'|'TECHNICAL_TEMPLATE';hashBasis:'FILE_BYTES'|'CANONICAL_TEMPLATE'}
 export interface LegalApprovalRecord {
+ source?:LegalSource;
  schemaVersion:'LEGAL_APPROVAL_V1';kind:LegalKind;version:string;textHash:string;
  status:'OWNER_REPORTED'|'VERIFIED';approvalDate:string|null;professional:string|null;validationReference:string|null;
  evidence:{path:string;sha256:string;generation:string}|null;recordedBy:string;recordedAt:string;
@@ -16,19 +18,32 @@ export const currentLegalArtifacts:readonly LegalArtifact[]=(['MANDATE','PROMISS
  kind,version:OPERATION_DOCUMENT_VERSION,textHash:digest({kind,version:OPERATION_DOCUMENT_VERSION,issuer:contractLegalEntity,text:kind==='MANDATE'?draftClauses:noteDraftText}),
  pending:['Texto definitivo sin cláusulas pendientes','Representación y facultades de firma','Jurisdicción aplicable','Lugar y fecha efectivos','Validación profesional de versión exacta'],
 }));
-export const ownerLegalDeclaration={status:'OWNER_REPORTED' as const,scope:'Última versión, según declaración del titular',verifiedVersion:null,approvalDate:null,professional:null,validationReference:null};
+export const originalLegalArtifacts = [
+ {kind:'MANDATE' as const,version:'OWNER_ORIGINAL_MANDATE_V3',textHash:'8e23a3734506a63920de1b75a3fdcb4f0c6fe88c13c1941b3357ebd9e1a3b4d6',source:{documentId:'owner-original-mandate-v3',reference:'Contrato de Mandato Comercial - Cuenta Hogar SRL V3.pdf',type:'ORIGINAL_FILE' as const,hashBasis:'FILE_BYTES' as const}},
+ {kind:'PROMISSORY_NOTE' as const,version:'OWNER_ORIGINAL_NOTE_UNVERSIONED',textHash:'6f22b6f9bae6fd75f989ed9fb33ef53052832a43fff5d3f52fd30db56c3253b6',source:{documentId:'owner-original-note',reference:'Pagaré a la Vista (Sin Garante) - Cuenta Hogar SRL.pdf',type:'ORIGINAL_FILE' as const,hashBasis:'FILE_BYTES' as const}},
+];
+export const registrableLegalArtifacts = [...originalLegalArtifacts,...currentLegalArtifacts.map(a=>({...a,source:{documentId:'technical-'+a.kind.toLowerCase(),reference:'src/lib/contractDocuments/operationDraftTemplates.ts',type:'TECHNICAL_TEMPLATE' as const,hashBasis:'CANONICAL_TEMPLATE' as const}}))];
+/** Validate new references only; historical records and their command digests remain untouched. */
+export function assertRegistrableApproval(a:ReturnType<typeof approvalInput>) {
+ const found=registrableLegalArtifacts.find(v=>v.kind===a.kind&&v.version===a.version&&v.textHash===a.textHash);
+ if(!found || (a.source ? stable(a.source)!==stable(found.source) : found.source.type==='ORIGINAL_FILE')) throw Error('LEGAL_SOURCE_INCONSISTENT');
+}
+export const ownerLegalDeclaration={status:'OWNER_REPORTED' as const,scope:'Modelos originales entregados, aprobados según declaración del titular; no se transfiere aprobación a plantillas derivadas',verifiedVersion:null,approvalDate:null,professional:null,validationReference:null};
 function fail():never {throw Error('LEGAL_APPROVAL_INVALID');}
 function text(v:unknown,max=500):string {if(typeof v!=='string'||!v.trim()||v.length>max)fail();return v;}
 export function approvalInput(input:unknown) {
- const d=exact(input,['kind','version','textHash','status','approvalDate','professional','validationReference','evidence']);
+ const hasSource=!!input&&typeof input==='object'&&Object.hasOwn(input,'source');
+ const d=exact(input,[...(hasSource?['source']:[]),'kind','version','textHash','status','approvalDate','professional','validationReference','evidence']);
  if(!['MANDATE','PROMISSORY_NOTE'].includes(String(d.kind))||!['OWNER_REPORTED','VERIFIED'].includes(String(d.status))||! /^[a-f0-9]{64}$/.test(String(d.textHash)))fail();text(d.version,120);
- if(d.status==='OWNER_REPORTED') {if([d.approvalDate,d.professional,d.validationReference,d.evidence].some(v=>v!==null))fail();}
- else {
-  if(typeof d.approvalDate!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(d.approvalDate)||new Date(d.approvalDate).toISOString().slice(0,10)!==d.approvalDate||d.approvalDate>new Date().toISOString().slice(0,10))fail();
-  text(d.professional);text(d.validationReference);
-  // Private evidence is optional; a verified professional reference is mandatory.
-  if(d.evidence!==null){const e=exact(d.evidence,['path','sha256','generation']);if(typeof e.path!=='string'||!/^legal-approvals\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+$/.test(e.path)||! /^[a-f0-9]{64}$/.test(String(e.sha256)))fail();text(e.generation,100);}
+ if(hasSource){const source=exact(d.source,['documentId','reference','type','hashBasis']);text(source.documentId,120);text(source.reference,500);if(!['ORIGINAL_FILE','TECHNICAL_TEMPLATE'].includes(String(source.type))||source.hashBasis!==(source.type==='ORIGINAL_FILE'?'FILE_BYTES':'CANONICAL_TEMPLATE'))fail();}
+ // Missing professional metadata never upgrades an owner declaration.
+ if(d.status==='VERIFIED'&&[d.approvalDate,d.professional,d.validationReference].some(v=>v===null))fail();
+ if(d.approvalDate!==null){
+  if(typeof d.approvalDate!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(d.approvalDate)||!Number.isFinite(Date.parse(d.approvalDate))||new Date(d.approvalDate).toISOString().slice(0,10)!==d.approvalDate||d.approvalDate>new Date().toISOString().slice(0,10))fail();
  }
+ if(d.professional!==null)text(d.professional);
+ if(d.validationReference!==null)text(d.validationReference);
+ if(d.evidence!==null){const e=exact(d.evidence,['path','sha256','generation']);if(typeof e.path!=='string'||!/^legal-approvals\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+$/.test(e.path)||! /^[a-f0-9]{64}$/.test(String(e.sha256)))fail();text(e.generation,100);}
  return d as unknown as Omit<LegalApprovalRecord,'schemaVersion'|'recordedBy'|'recordedAt'>;
 }
 /** Eligibility only. No emitter/numbering capability or runtime flag is created here. */
@@ -37,7 +52,7 @@ export function legalIssuanceAssessment(artifacts:readonly LegalArtifact[],recor
  for(const kind of ['MANDATE','PROMISSORY_NOTE'] as const){const artifact=artifacts.find(a=>a.kind===kind);if(!artifact||artifacts.filter(a=>a.kind===kind).length!==1){reasons.push(kind+'_ARTIFACT_REQUIRED');continue;}
   if(artifact.pending.length)reasons.push(kind+'_TEXT_PENDING');
   const matching=records.find(r=>r.kind===kind&&r.version===artifact.version&&r.textHash===artifact.textHash&&r.status==='VERIFIED');
-  if(!matching)reasons.push(kind+'_EXACT_APPROVAL_REQUIRED');else {try{const {schemaVersion,recordedBy,recordedAt,kind,version,textHash,status,approvalDate,professional,validationReference,evidence}=matching;const input={kind,version,textHash,status,approvalDate,professional,validationReference,evidence};if(schemaVersion!=='LEGAL_APPROVAL_V1')fail();text(recordedBy);if(!Number.isFinite(Date.parse(recordedAt)))fail();approvalInput(input);}catch{reasons.push(kind+'_APPROVAL_INVALID');}}
+  if(!matching)reasons.push(kind+'_EXACT_APPROVAL_REQUIRED');else {try{const {schemaVersion,recordedBy,recordedAt,kind,version,textHash,status,approvalDate,professional,validationReference,evidence,source}=matching;const input={...(source?{source}:{}),kind,version,textHash,status,approvalDate,professional,validationReference,evidence};if(schemaVersion!=='LEGAL_APPROVAL_V1')fail();text(recordedBy);if(!Number.isFinite(Date.parse(recordedAt)))fail();approvalInput(input);}catch{reasons.push(kind+'_APPROVAL_INVALID');}}
  }
  if(!formalDataComplete)reasons.push('FORMAL_DATA_REQUIRED');
  return {legalPrerequisitesSatisfied:reasons.length===0,productiveIssuanceEnabled:false as const,reasons:[...reasons,'INDEPENDENT_PRODUCTION_AUTHORIZATION_REQUIRED']};

@@ -1,0 +1,54 @@
+{
+  "main": "49cc1d0d20a901ae508cd93228888d7607b1820f",
+  "project": "demo-cuenta-hogar",
+  "productionWrites": 0,
+  "tests": [
+    {
+      "log": "/tmp/ch75-tsc-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "log": "/tmp/ch75-lint-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "log": "/tmp/ch75-safe.log",
+      "sha256": "791e873d1a4e8d72583c61a9591c40ad49ea5168d55dc54e6e2f975f7740c783"
+    },
+    {
+      "log": "/tmp/ch75-legal-unit-final.log",
+      "sha256": "298901d99a9fe8b72d3efa7f15cb80d886f188c81170a36fd5381f08d61e6da2"
+    },
+    {
+      "log": "/tmp/ch75-docs.log",
+      "sha256": "f77fb7975afaded1d83833398a29c139e789af879215a8c55a9d8611bee18562"
+    },
+    {
+      "log": "/tmp/ch75-fiscal.log",
+      "sha256": "92f908b6b6988846c948513a9b4d788fd24abc13bb7144bd95b7663eaf1cd6db"
+    },
+    {
+      "log": "/tmp/ch75-pdf-exact.json",
+      "sha256": "79b76146580bcdec5a0a21bd8fd5ef7e74c3532cb68af99eddf99a39d02aac54"
+    },
+    {
+      "log": "/tmp/ch75-integration.log",
+      "sha256": "091138a9b2dc023f0167a92be760785c48b8aab78b3509c05b5b1bdb7496e484"
+    },
+    {
+      "log": "/tmp/ch-final-refresh-browser.log",
+      "sha256": "70159f3cc75332a996883aa6de4ec06e27ba75160001e4371b8eba11edc60f13"
+    },
+    {
+      "log": "/tmp/ch-final-legal-browser.log",
+      "sha256": "22106320ce25f34109170849f989cc361929010cebe6b62895e511f054ff0deb"
+    },
+    {
+      "log": "/tmp/ch75-build-final.log",
+      "sha256": "f05bf6e032252a631640d5ddb1c7f87da3cc93d60298db031ab60d8f4ecbf880"
+    }
+  ],
+  "originals": "../../integration-final-v2/ORIGINALS_MATRIX.md",
+  "productionIssuanceEnabled": false,
+  "result": "PASS"
+}
