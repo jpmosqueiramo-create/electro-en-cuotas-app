@@ -1,5 +1,7 @@
 # Integración final V2 — resultado y habilitación pendiente
 
+Actualización vigente contra main con #74 e IVA contenido: [Preparación segura de #75, #76 y #77](SAFE_INTEGRATION.md). El resto de este informe conserva la evidencia de la validación anterior.
+
 Base auditada: `b95395fbe678de2033f46d078449e2eae7448808` (PR #73 mergeado). Cuatro PRs pequeños: #74 revocación de cliente; #75 aprobación jurídica; #76 modelo fiscal/mock y recorrido integral; #77 resumen financiero y actualización de portales. #77 tiene como base #76 para mantener su diff pequeño; después de integrar #76 debe cambiarse a main. Ninguno fue mergeado ni desplegado.
 
 Integración local validada: `a3f34c384fee86c63fa154ab7b35ebde8d222959` (rama local, sin push). Incluye #74 `f7d1c2427b2405a0e1f3cb4cb38817d344dd57a5`, #75 `46d28ef47e3ebbdaa33ded859126993891539913`, #76 `e20692975b12f79c0fa6047f86081cc024a07a00` y código #77 `d0198c171b81a7b6fa3b86c29afc113c2563b35c`. El commit posterior de #77 incorpora sólo este informe y evidencias.
