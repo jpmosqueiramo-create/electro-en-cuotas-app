@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import rendererManifest from './rendererManifest.json';
 import autoTable from 'jspdf-autotable';
 import { createHash } from 'node:crypto';
 import { drawCuentaHogarLogo, PDF_BRAND_RESOURCE_HASH } from '../pdfBranding';
@@ -15,8 +16,12 @@ function variables(s: FinalSnapshot, kind: FinalDocumentKind) {
     return { CLIENT_NAME: c.fullName, CLIENT_DNI: c.dni, CLIENT_ADDRESS: c.address, CLIENT_LOCALITY: c.locality, CLIENT_PROVINCE: s.addressInterpretation.provinceDisplayName, CLIENT_POSTAL_CODE: c.postalCode,
         ISSUER_NAME: s.issuer.legalName, ISSUER_CUIT: s.issuer.taxId, ISSUER_ADDRESS: s.issuer.legalAddress, REPRESENTATIVE: s.issuer.representative.fullName, CAPACITY: s.issuer.representative.capacity, JURISDICTION: String(d.parameters.jurisdiction), ISSUE_DATE: n ? d.promissoryNoteIssueDate : d.contractIssueDate, ISSUE_PLACE: n ? d.promissoryNoteIssuePlace : d.contractIssuePlace, CONTRACT_NUMBER: s.contractNumber, PRODUCT: s.acceptedReference.nombre, QUANTITY: String(s.productDetails?.quantity ?? ''), CONDITION: s.productDetails?.condition === 'NEW' ? 'NUEVO' : s.productDetails?.condition === 'USED' ? 'USADO' : '', CAPITAL: formatDraftAmount(e.capitalAmount), SERVICES_GROSS: formatDraftAmount(e.serviceAmount), TOTAL: formatDraftAmount(e.contractTotal), TOTAL_WORDS: amountWords(e.contractTotal), INSTALLMENT_COUNT: String(e.contractPlanCuotas), INSTALLMENT_AMOUNT: formatDraftAmount(e.contractInstallmentAmount) };
 }
-export const FINAL_RESOURCES_HASH = contractValueHash({ brand: PDF_BRAND_RESOURCE_HASH, jsPDF: jsPDF.version, font: 'Helvetica-WinAnsi', table: 'jspdf-autotable-5.0.7' });
-export function assertFinalRenderer(p: FinalPackage) { validateFinalPackage(p); if (p.rendererHash !== FINAL_RENDERER_HASH || p.resourcesHash !== FINAL_RESOURCES_HASH)
+// A checked, source-controlled manifest is stable across tsx and Next minification.
+// npm prebuild verifies its source/dependency bytes; never regenerate it at runtime.
+export const FINAL_RESOURCES_HASH = contractValueHash({ ...rendererManifest.resources, brand: PDF_BRAND_RESOURCE_HASH });
+export const FINAL_RENDERER_HASH = contractValueHash(rendererManifest);
+export function assertFinalRenderer(p: FinalPackage) { validateFinalPackage(p); if (jsPDF.version !== rendererManifest.resources.packages.jspdf.version)
+    throw Error('FINAL_RENDERER_DEPENDENCY_MISMATCH'); if (p.rendererHash !== FINAL_RENDERER_HASH || p.resourcesHash !== FINAL_RESOURCES_HASH)
     throw Error('APPROVED_RENDERER_VERSION_MISMATCH'); for (const t of Object.values(p.templates)) {
     display(t.title);
     for (const paragraph of t.paragraphs) {
@@ -77,4 +82,3 @@ export function renderFinalDocument(snapshot: FinalSnapshot, p: FinalPackage, ki
     const bytes = Buffer.from(doc.output('arraybuffer'));
     return { bytes, sha256: createHash('sha256').update(bytes).digest('hex'), pages };
 }
-export const FINAL_RENDERER_HASH = contractValueHash({ policy: 'FINAL_RENDERER_V1', render: renderFinalDocument.toString(), variables: variables.toString(), display: display.toString(), tokens, amountFormat: formatDraftAmount.toString(), amountWords: amountWords.toString(), logo: drawCuentaHogarLogo.toString(), resources: FINAL_RESOURCES_HASH });

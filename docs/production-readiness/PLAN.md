@@ -54,7 +54,7 @@ Además siguen pendientes: facultades de representación, jurisdicción aplicabl
 - No se modificaron Rules, IAM, secretos, Auth ni configuración productiva. No se crearon cuentas reales ni se asignaron los correos personales.
 - La prueba local usa exclusivamente `demo-cuenta-hogar` y un paquete ficticio marcado sin validez; el factory de tests rechaza hosts no locales, credenciales y runtime productivo.
 - Una aprobación caducada impide completar una emisión interrumpida. La renovación posterior al congelamiento no se automatiza en este PR; exige diseño/revisión y autorización antes de una recuperación real.
-- La huella del renderer se debe comprobar contra el artefacto compilado a publicar. Diferencias de bundle/minificación bloquean el paquete; no se omiten para conseguir emisión.
+- La huella del renderer usa un manifiesto versionado, verificado antes del build y probado frente a minificación; el catálogo de datos se hashea por separado. Los paquetes históricos siguen siendo necesarios para las lecturas.
 - Los listados de aprobaciones/autorizaciones del panel son acotados (50/20); se deberá incorporar búsqueda/paginación si supera ese volumen.
 
 ## Despliegue propuesto — no ejecutado
@@ -75,3 +75,7 @@ Este recorrido está probado localmente con datos ficticios. Su ejecución real 
 ## Recuperación
 
 Deshabilitar nuevos comandos o revocar la autorización bajo aprobación específica, conservando lectura y auditoría. Recuperar emisiones interrumpidas con los mismos identificadores/archivos mientras la autorización siga vigente; nunca emitir otro pagaré como reparación. Las reversas usan el ledger existente. No borrar instrumentos, reiniciar CH ni editar saldos. Un rollback requiere autorización y compatibilidad con snapshots ya emitidos; no deshace obligaciones.
+
+## Cierre focalizado posterior
+
+Ver [CLOSURE_AUDIT.md](CLOSURE_AUDIT.md), el [paquete documental cotejado](legal-package/README.md) y la [configuración propuesta](LAUNCH_CONFIGURATION.md). No se considera listo para emisión real mientras permanezcan los pendientes indicados.

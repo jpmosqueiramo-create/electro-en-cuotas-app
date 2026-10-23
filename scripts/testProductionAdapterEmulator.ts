@@ -5,7 +5,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { admin } from '../src/lib/firebaseAdmin';
 import { productionReadyFixture, syntheticFinalPackage } from './helpers/productionAdapterFixtures';
 import { productionRuntimeForEmulator, productionRuntime, runtimeData } from '../src/lib/productionV2/runtime';
-import { recordFinalPackageApproval, authorizeOperation, productionRef, scopes, revokeAuthorization } from '../src/lib/productionV2/authorization';
+import { recordFinalPackageApproval, authorizeOperation, productionRef, scopes, revokeAuthorization, approvedPackage, packageApprovalRef } from '../src/lib/productionV2/authorization';
 import { freezeOperation, productionPaths, frozenOperation } from '../src/lib/productionV2/freeze';
 import { issueDocuments, issuedOperation, readIssuedDocument } from '../src/lib/productionV2/documents';
 import { getBudgetDocumentationBucket } from '../src/lib/budgetDocumentationStorage';
@@ -16,7 +16,8 @@ import { syntheticPng } from './testOperationDeliveryV2Emulator';
 import { financialCommand, financialRef, readFinancial, readFinancialReceipt } from '../src/lib/operationFinancialV2Server';
 import { clientBindingCommand, readClientBinding, listClientServices } from '../src/lib/operationClientV2Server';
 import { financialReceiptPdf } from '../src/lib/operationFinancialReceiptPdf';
-import { finalDocumentKinds } from '../src/lib/productionV2/catalog';
+import { finalDocumentKinds, packageHash } from '../src/lib/productionV2/catalog';
+import { assertFinalRenderer } from '../src/lib/productionV2/pdf';
 const db = admin.firestore(), results: Record<string, string> = {}, dir = '/tmp/ch-production-adapter';
 function pass(name: string) { results[name] = 'PASS'; console.log(name + ' = PASS'); }
 export async function test() {
@@ -37,6 +38,30 @@ export async function test() {
     assert((await recordFinalPackageApproval(runtime, approval, actor)).replay);
     await assert.rejects(recordFinalPackageApproval(runtime, { ...approval, professional: 'diferente' }, actor));
     pass('EXACT_PACKAGE_APPROVAL_IDEMPOTENCY');
+    // Simulate a previously installed immutable package, never replace its bytes.
+    const oldBody = { ...p, id: 'synthetic-archived-renderer', rendererHash: 'a'.repeat(64) };
+    const { sha256: discardedHash, ...oldPayload } = oldBody; void discardedHash;
+    const oldPackage = { ...oldPayload, sha256: packageHash(oldPayload) };
+    const historicalRuntime = productionRuntimeForEmulator(db, admin.auth(), [p, oldPackage], [actor]);
+    const oldApprovalId = randomUUID(), archivedApproval = { ...approval, commandId: oldApprovalId, packageId: oldPackage.id, packageHash: oldPackage.sha256 };
+    await assert.rejects(recordFinalPackageApproval(historicalRuntime, archivedApproval, actor), /RENDERER_VERSION_MISMATCH/);
+    assert.equal((await packageApprovalRef(db, oldApprovalId).get()).exists, false);
+    const priorApproval = (await packageApprovalRef(db, approvalId).get()).data()!;
+    const { digest: discardedDigest, schemaVersion, status, at, ...oldApprovalBody } = priorApproval; void discardedDigest;
+    const historicalBody = { ...oldApprovalBody, packageId: oldPackage.id, packageHash: oldPackage.sha256, rendererHash: oldPackage.rendererHash };
+    // Fixture of a previously valid version. Production APIs cannot create this.
+    await packageApprovalRef(db, oldApprovalId).create({ schemaVersion, status, at, ...historicalBody, digest: contractValueHash(historicalBody) });
+    const historicalBefore = (await packageApprovalRef(db, oldApprovalId).get()).updateTime!.toMillis();
+    assert.equal((await db.runTransaction(tx => approvedPackage(historicalRuntime, tx, oldPackage.id, oldApprovalId, false))).package.sha256, oldPackage.sha256);
+    assert.equal((await packageApprovalRef(db, oldApprovalId).get()).updateTime!.toMillis(), historicalBefore);
+    assert.throws(() => assertFinalRenderer(oldPackage), /RENDERER_VERSION_MISMATCH/);
+    pass('ARCHIVED_PACKAGE_READS_PRESERVE_HASHES_AND_NEW_ISSUANCE_REJECTS_OLD_RENDERER');
+    await packageApprovalRef(db, oldApprovalId).collection('revocations').doc('current').create({ reason: 'Synthetic revocation only' });
+    await assert.rejects(db.runTransaction(tx => approvedPackage(historicalRuntime, tx, oldPackage.id, oldApprovalId)), /APPROVAL_REVOKED/);
+    await db.runTransaction(tx => approvedPackage(historicalRuntime, tx, oldPackage.id, oldApprovalId, false));
+    pass('PACKAGE_REVOCATION_BLOCKS_WRITES_PRESERVES_IMMUTABLE_READ');
+    productionRuntimeForEmulator(db, admin.auth(), [p], [actor]);
+
     const f = await productionReadyFixture(actor), id = f.id, v = 1, sourceBefore = contractValueHash({ b: (await f.r.budget.get()).data(), a: (await f.r.acceptance.get()).data() });
     const grant = { commandId: randomUUID(), operationId: f.identity.operationId, expectedRevision: f.ready.revision, packageId: p.id, approvalId, formal: { contractIssueDate: new Date().toISOString().slice(0, 10), contractIssuePlace: 'Lugar ficticio', promissoryNoteIssueDate: new Date().toISOString().slice(0, 10), promissoryNoteIssuePlace: 'Lugar ficticio' }, scopes: [...scopes], expiresAt: new Date(Date.now() + 86400000).toISOString(), reason: 'Autorización sintética de prueba, sin efectos reales', confirmed: true };
     await assert.rejects(authorizeOperation(runtime, id, v, grant, f.uid));
@@ -124,6 +149,20 @@ export async function test() {
     await delivery('CONFIRM_DELIVERY', { occurredAt: new Date().toISOString() }, { uid: f.uid, admin: false });
     assert.equal((await readDelivery(db, id, v, f.root)).state.status, 'DELIVERED');
     pass('THREE_SIGNATURES_ORIGINALS_CUSTODY_REQUIRED_BEFORE_DELIVERY');
+    const deliveredBefore = contractValueHash((await readDelivery(db,id,v,f.root)).state.event);
+    await delivery('AUTHORIZE_ORIGINALS_TRANSFER', { to: { role: 'DEPOT', uid: actor, affiliateId: null }, occurredAt: new Date().toISOString(), location: 'Archivo administrativo sintético', reason: 'Retorno sintético de originales después de entrega' });
+    const transfer = (await readDelivery(db,id,v,f.root)).state.originalsTransfer!;
+    assert(transfer, 'An authorized pending transfer must remain readable');
+    await assert.rejects(financialCommand(db,id,v,{action:'ACTIVATE',data:{},commandId:randomUUID(),operationId:f.identity.operationId,expectedRevision:0},f.root), /DELIVERY_REQUIRED/);
+    await assert.rejects(delivery('CONFIRM_ORIGINALS_RECEIPT', { transferId: transfer.id }, { uid:f.uid2,admin:false }));
+    await delivery('CONFIRM_ORIGINALS_DELIVERY', { transferId: transfer.id }, { uid:f.uid,admin:false });
+    await delivery('CONFIRM_ORIGINALS_RECEIPT', { transferId: transfer.id });
+    const transferred = (await readDelivery(db,id,v,f.root)).state;
+    assert.equal(transferred.originalsTransfer,null);
+    assert.equal(transferred.originals!.holder.uid,actor);
+    assert.equal(contractValueHash(transferred.event), deliveredBefore, 'Original delivery evidence stays immutable');
+    pass('POST_DELIVERY_ORIGINALS_TRANSFER_READABLE_CONFIRMABLE_WITH_FINANCE_GATED');
+
     const input = async (action: string, data: Record<string, unknown>) => ({ action, data, commandId: randomUUID(), operationId: f.identity.operationId, expectedRevision: (await financialRef(db, id, v).get()).data()?.revision ?? 0 });
     const activate = await input('ACTIVATE', {}), act = await Promise.all([financialCommand(db, id, v, activate, f.root), financialCommand(db, id, v, activate, f.root)]);
     assert.equal(act.filter(x => !x.replay).length, 1);

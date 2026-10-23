@@ -31,7 +31,8 @@
     "test:browser:catalog-c3": "tsx scripts/runCatalogReferenceBrowser.ts",
     "test:catalog-c4": "tsx scripts/testPublicCatalog.ts",
     "test:emulator:catalog-c4": "tsx scripts/testPublicCatalogEmulator.ts",
-    "test:browser:catalog-c4": "tsx scripts/runPublicCatalogBrowser.ts"
+    "test:browser:catalog-c4": "tsx scripts/runPublicCatalogBrowser.ts",
+    "prebuild": "node scripts/verifyProductionRendererManifest.mjs"
   },
   "dependencies": {
     "firebase": "^12.11.0",

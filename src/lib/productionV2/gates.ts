@@ -39,12 +39,14 @@ export async function productionDeliveryProof(runtime: ProductionRuntime, tx: Tr
     const saved = await tx.get(ref), d = saved.data() as DeliveryV2 | undefined;
     const [cs, fs] = await Promise.all([tx.get(operationRef(db, id, v).parent.doc('custody')), tx.get(operationRef(db, id, v).parent.doc('fulfillment'))]);
     const c = cs.data(), f = fs.data();
-    if (!d || d.status !== 'DELIVERED' || d.operationId !== issued.identity.operationId || d.event?.executionMode !== 'PRODUCTION' || d.event.operationId !== issued.identity.operationId || d.event.legalApproval !== 'EXACT_PACKAGE_APPROVED' || d.event.issuedManifestHash !== issued.manifest.hash || !d.originals || d.originalsTransfer || !c || !f || c.current || c.pending || c.deliveryClosure !== 'DELIVERED' || f.deliveryClosure !== 'DELIVERED' || f.logisticsState !== 'DELIVERED' || c.incidents.some((i: {
+    if (!d || d.status !== 'DELIVERED' || d.operationId !== issued.identity.operationId || d.event?.executionMode !== 'PRODUCTION' || d.event.operationId !== issued.identity.operationId || d.event.legalApproval !== 'EXACT_PACKAGE_APPROVED' || d.event.issuedManifestHash !== issued.manifest.hash || !d.originals || forWrite && d.originalsTransfer || !c || !f || c.current || c.pending || c.deliveryClosure !== 'DELIVERED' || f.deliveryClosure !== 'DELIVERED' || f.logisticsState !== 'DELIVERED' || c.incidents.some((i: {
         resolvedAt: string | null;
     }) => !i.resolvedAt) || f.incidents.some((i: {
         resolvedAt: string | null;
     }) => !i.resolvedAt) || d.holds.some(h => !h.clearedAt))
         throw Error('PRODUCTION_DELIVERY_REQUIRED');
+    // A transfer pending after delivery is readable so its two participants can
+    // complete it. New activation/payment/invitation proofs still require settled custody.
     const files = new Map<string, EvidenceMetadata>();
     for (const k of finalDocumentKinds) {
         const doc = d.documents[k], emitted = issued.manifest.documents[k];

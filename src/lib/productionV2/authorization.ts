@@ -40,6 +40,7 @@ export async function recordFinalPackageApproval(runtime: ProductionRuntime, inp
     const { db } = await requireProductionActor(runtime, actor), c = exact(input, ['commandId', 'packageId', 'packageHash', 'approvalDate', 'professional', 'validationReference', 'sourceReference', 'confirmed']);
     opaque(c.commandId);
     const p = exactPackage(runtime, opaque(c.packageId));
+    assertFinalRenderer(p);
     if (c.packageHash !== p.sha256 || c.confirmed !== true)
         throw Error('EXACT_FINAL_PACKAGE_CONFIRMATION_REQUIRED');
     calendarDate(c.approvalDate);
@@ -63,7 +64,8 @@ export async function approvedPackage(runtime: ProductionRuntime, tx: Transactio
     const { db, test } = runtimeData(runtime), p = exactPackage(runtime, packageId), saved = await tx.get(packageApprovalRef(db, approvalId)), a = saved.data();
     if (!a || a.schemaVersion !== 'EXACT_FINAL_PACKAGE_APPROVAL_V1' || a.status !== 'PROFESSIONAL_VERSION_IDENTIFIED' || a.packageId !== p.id || a.packageHash !== p.sha256 || a.rendererHash !== p.rendererHash || a.resourcesHash !== p.resourcesHash || !a.professional || !a.validationReference || !a.sourceReference || !a.actor || !a.at || finalDocumentKinds.some(k => a.templateHashes?.[k] !== p.templates[k].sha256))
         throw Error('EXACT_FINAL_PACKAGE_APPROVAL_REQUIRED');
-    assertFinalRenderer(p);
+    // Historical proofs verify the installed immutable package and persisted hashes.
+    // They never rerender bytes or require the current renderer. New issuance does.
     const { schemaVersion: _, status: __, at: ___, digest, ...payload } = a;
     void _;
     void __;
@@ -111,6 +113,7 @@ export async function authorizeOperation(runtime: ProductionRuntime, id: string,
         if (c.operationId !== source.identity.operationId)
             throw Error('PRODUCTION_OPERATION_MISMATCH');
         const approved = await approvedPackage(runtime, tx, String(c.packageId), String(c.approvalId));
+        assertFinalRenderer(approved.package);
         const at = new Date().toISOString(), authorization = { schemaVersion: 'PRODUCTION_OPERATION_AUTHORIZATION_V1' as const, id: commandId, operationId: source.identity.operationId, budgetId: id, version: v, readyRevision: Number(c.expectedRevision), packageId: approved.package.id, packageHash: approved.package.sha256, approvalId: String(c.approvalId), approvalHash: approved.approvalHash, sourceHash: source.sourceHash, scopes: [...(c.scopes as ProductionScope[])].sort() as ProductionScope[], legalContext: legalContext(approved.package, String(c.approvalId), c.formal), reason, actor, at, expiresAt, digest };
         const hash = contractValueHash(authorization);
         tx.create(ref, { ...authorization, hash });

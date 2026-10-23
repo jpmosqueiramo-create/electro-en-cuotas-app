@@ -1,3 +1,4 @@
+import installedFinalPackages from './finalPackages.json';
 import type { ContractSnapshotV2, ContractLegalContextV2 } from '../contractSnapshotV2';
 import { contractValueHash } from '../contractIntegrityV2';
 export type FinalDocumentKind = 'MANDATE' | 'PAGARE' | 'REMITO';
@@ -40,7 +41,9 @@ export function validateFinalPackage(p: FinalPackage) {
 }
 // No approved final derived text has been identified. Installing a reviewed package
 // is a code-reviewed release; neither a flag nor an administrative declaration can add one.
-export const approvedFinalPackages: readonly FinalPackage[] = Object.freeze([]);
+// Data is hashed by packageHash, independently of the renderer source manifest.
+// Keeping reviewed packages in a separate non-executable file avoids a hash cycle.
+export const approvedFinalPackages: readonly FinalPackage[] = Object.freeze(installedFinalPackages as readonly FinalPackage[]);
 export type FinalSnapshot = ContractSnapshotV2 & {
     freeze: Extract<ContractSnapshotV2['freeze'], {
         readinessPolicyVersion: 'CONTRACT_PRODUCTION_APPROVAL_V1';

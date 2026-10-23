@@ -1,0 +1,106 @@
+{
+  "suite": "PRODUCTION_ADAPTER_ON_EMULATOR",
+  "results": {
+    "OPAQUE_CONTEXT_AND_NO_PRODUCTIVE_TEST_OVERRIDE": "PASS",
+    "EXACT_PACKAGE_APPROVAL_IDEMPOTENCY": "PASS",
+    "ARCHIVED_PACKAGE_READS_PRESERVE_HASHES_AND_NEW_ISSUANCE_REJECTS_OLD_RENDERER": "PASS",
+    "PACKAGE_REVOCATION_BLOCKS_WRITES_PRESERVES_IMMUTABLE_READ": "PASS",
+    "ROLE_EMAIL_AND_CURRENT_CONFORMITY_REQUIRED": "PASS",
+    "ATOMIC_FREEZE_NUMBERING_CONCURRENT_REPLAY": "PASS",
+    "PERSISTED_ECONOMICS_12_INSTALLMENTS_NO_ADDITIONAL_VAT": "PASS",
+    "ALTERED_SNAPSHOT_AND_SECOND_FREEZE_REJECTED": "PASS",
+    "INTERRUPTED_ISSUANCE_RETAINS_RESERVATION_WITHOUT_PARTIAL_MANIFEST": "PASS",
+    "THREE_PRIVATE_IMMUTABLE_DOCUMENTS_NO_DUPLICATE_NOTE": "PASS",
+    "THREE_SIGNATURES_ORIGINALS_CUSTODY_REQUIRED_BEFORE_DELIVERY": "PASS",
+    "POST_DELIVERY_ORIGINALS_TRANSFER_READABLE_CONFIRMABLE_WITH_FINANCE_GATED": "PASS",
+    "UNIQUE_FINANCIAL_ACTIVATION": "PASS",
+    "INVITATION_HTTP_BOUNDARY_EXPLICIT_UID_VERIFIED_AUTH_AND_DELIVERY": "PASS",
+    "INVITATION_HTTP_AUTH_CONCURRENT_REPLAY_AND_NO_SECOND_ACTIVATION": "PASS",
+    "EXPLICIT_CLIENT_UID_INVITATION_AFTER_DELIVERY": "PASS",
+    "ONE_PAYMENT_SAME_BALANCE_THREE_ROLES": "PASS",
+    "PRIVATE_RECEIPTS_AND_DISABLED_ACCOUNT_DENIED": "PASS",
+    "CROSS_ROLE_AND_CROSS_ACCOUNT_DENIED": "PASS",
+    "AUDITED_REVERSAL_RESTORES_ORIGINAL_BALANCE": "PASS",
+    "PARTIAL_PAYMENTS_FIFO_AND_EXACT_REVERSALS": "PASS",
+    "CLIENT_REVOCATION_RECHECKED": "PASS",
+    "REVOKED_WRITE_AUTHORIZATION_PRESERVES_READ_HISTORY": "PASS",
+    "NO_LAB_MIGRATION_OR_ACCEPTANCE_REWRITE": "PASS",
+    "REPLACED_DOCUMENT_GENERATION_BLOCKED": "PASS"
+  },
+  "productionWrites": 0,
+  "operationId": "op_2f38b7392a7615226b5f38e1f361f6dac70abe2a5ed457af4cf209b97d8074f8",
+  "snapshotHash": "ebde37b10a1d9ca2d3a3b0daffdbfffe17242113d207499abc4a32d43ecefca3",
+  "manifestHash": "b16b45f4ca8be3e5f352902c2d5c306076bf6c7851b78b322f0480264d13caa4",
+  "economics": {
+    "capitalAmount": 580000,
+    "contractPlanCuotas": 12,
+    "factorSnapshot": 3,
+    "factorComputedTotal": 1740000,
+    "roundingAdjustment": 0,
+    "serviceAmount": 1160000,
+    "contractInstallmentAmount": 145000,
+    "contractTotal": 1740000
+  },
+  "schedule": [
+    {
+      "installmentNumber": 1,
+      "dueDate": "2026-12-15",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 2,
+      "dueDate": "2027-01-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 3,
+      "dueDate": "2027-02-28",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 4,
+      "dueDate": "2027-03-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 5,
+      "dueDate": "2027-04-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 6,
+      "dueDate": "2027-05-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 7,
+      "dueDate": "2027-06-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 8,
+      "dueDate": "2027-07-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 9,
+      "dueDate": "2027-08-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 10,
+      "dueDate": "2027-09-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 11,
+      "dueDate": "2027-10-30",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 12,
+      "dueDate": "2027-11-30",
+      "amount": 145000
+    }
+  ]
+}
