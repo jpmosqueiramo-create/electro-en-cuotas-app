@@ -1,3 +1,6 @@
+import type {ProductionRuntime} from './productionV2/runtime';
+import {requireProductionActor} from './productionV2/runtime';
+import {productionDeliveryProof} from './productionV2/gates';
 import type { Firestore,Transaction } from 'firebase-admin/firestore';
 import type { FinancialPayment } from './operationFinancialV2';
 import { requireFinancialEmulator } from './operationFinancialV2';
@@ -6,8 +9,8 @@ import { createHash } from 'node:crypto';
 const key=(...values:unknown[])=>'v2_'+createHash('sha256').update(JSON.stringify(values)).digest('hex');
 type Assignment={affiliateId:string;uid:string}|null;
 /** All reads are prepared before the caller writes payment, receipt and these ledger entries atomically. */
-export async function preparePaymentCommissions(db:Firestore,tx:Transaction,params:{operationId:string;budgetId:string;version:number;assignment:Assignment;payment:FinancialPayment;clientName:string;productName:string;reversal:boolean;actor:string;at:string}){
- requireFinancialEmulator();const {operationId,payment,reversal,assignment,actor,at}=params,ledger=db.collection('ledger_comisiones_movimientos');
+export async function preparePaymentCommissions(db:Firestore,tx:Transaction,params:{operationId:string;budgetId:string;version:number;assignment:Assignment;payment:FinancialPayment;clientName:string;productName:string;reversal:boolean;actor:string;at:string},runtime?:ProductionRuntime){
+ if(runtime){const data=await requireProductionActor(runtime,params.actor);if(data.db!==db)throw Error('COMMISSION_CONTEXT_MISMATCH');const proof=await productionDeliveryProof(runtime,tx,params.budgetId,params.version,'FINANCE');if(proof.identity.operationId!==params.operationId)throw Error('COMMISSION_OPERATION_MISMATCH');}else requireFinancialEmulator();const {operationId,payment,reversal,assignment,actor,at}=params,ledger=db.collection('ledger_comisiones_movimientos');
  const ids=payment.allocations.map(a=>key(operationId,payment.id,a.installmentNumber));
  const existing=await Promise.all(ids.map(id=>tx.get(ledger.doc(id))));
  const rows:Record<string,unknown>[]=[];
@@ -23,7 +26,7 @@ export async function preparePaymentCommissions(db:Firestore,tx:Transaction,para
   payment.allocations.forEach((allocation,i)=>{
    if(existing[i].exists)throw Error('Devengamiento existente sin comando financiero coincidente.');
    const amount=Number(BigInt(allocation.amountCents)*BigInt(pct)/BigInt(10000));
-   rows.push({id:ids[i],solicitudId:operationId,operationId,budgetId:params.budgetId,budgetVersion:params.version,operationSchemaVersion:'OPERATION_COMMISSION_V2',attributionPolicy:'CURRENT_ASSIGNMENT_AT_CREDIT_V1',commissionBasePolicy:'CREDITED_INSTALLMENT_ALLOCATIONS_V1',executionMode:'EMULATOR_ONLY',vendedorAfiliadoId:assignment.affiliateId,vendedorAfiliadoUid:assignment.uid,vendedorAfiliadoEmail:String(v.email??''),ledgerPagoMovimientoId:payment.id,clienteNombre:params.clientName,productoResumen:params.productName,tipo:'DEVENGAMIENTO_PAGO',montoComisionCentavos:amount,montoComisionDevengadoCentavos:amount,moneda:'ARS',porcentajeAplicadoBasisPoints:pct,baseComisionableCentavos:allocation.amountCents,commissionSchemaVersion:'COMMISSION_V1',snapshotComisionId:cfg.id,cuotaNumero:allocation.installmentNumber,idempotencyKey:ids[i],registradoPor:actor,createdAt:at});
+   rows.push({id:ids[i],solicitudId:operationId,operationId,budgetId:params.budgetId,budgetVersion:params.version,operationSchemaVersion:'OPERATION_COMMISSION_V2',attributionPolicy:'CURRENT_ASSIGNMENT_AT_CREDIT_V1',commissionBasePolicy:'CREDITED_INSTALLMENT_ALLOCATIONS_V1',executionMode:runtime?'PRODUCTION':'EMULATOR_ONLY',vendedorAfiliadoId:assignment.affiliateId,vendedorAfiliadoUid:assignment.uid,vendedorAfiliadoEmail:String(v.email??''),ledgerPagoMovimientoId:payment.id,clienteNombre:params.clientName,productoResumen:params.productName,tipo:'DEVENGAMIENTO_PAGO',montoComisionCentavos:amount,montoComisionDevengadoCentavos:amount,moneda:'ARS',porcentajeAplicadoBasisPoints:pct,baseComisionableCentavos:allocation.amountCents,commissionSchemaVersion:'COMMISSION_V1',snapshotComisionId:cfg.id,cuotaNumero:allocation.installmentNumber,idempotencyKey:ids[i],registradoPor:actor,createdAt:at});
   });
  }
  // Immutable entries in the SAME commission ledger consumed by the existing settlement engine.

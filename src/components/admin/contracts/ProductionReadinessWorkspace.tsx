@@ -45,7 +45,7 @@ export function ProductionReadinessWorkspace({budgetId,version,revision,refreshK
           {item.state!=='READY'&&['PERSONAL','PRODUCT','ECONOMICS','SCHEDULE','IDENTITY','CREDIT','CONFORMITY','READY_REVIEW','MANDATE_LEGAL','PROMISSORY_NOTE_LEGAL'].includes(item.key)&&<Link className="inline-block text-sm font-semibold underline" href={destination(item,budgetId,version)}>Revisar sección</Link>}
         </li>)}</ul>
       </details>
-      <p className="text-sm">Emisión definitiva, entrega, cobranza y facturación ARCA permanecen bloqueadas. La aprobación de un original no se transfiere a un texto modificado.</p>
+      <p className="text-sm">Esta lista revisa la preparación; no autoriza emitir, entregar ni cobrar. Consultá la habilitación específica de la operación. ARCA sigue bloqueada y la aprobación de un original no se transfiere a textos modificados.</p>
     </>}
     <button type="button" className={btn} onClick={()=>setAttempt(n=>n+1)}>Actualizar comprobación</button>
   </section>;

@@ -27,8 +27,8 @@ async function run(){
   for(const [width,height,mobile]of [[1280,900,false],[390,844,true]] as const){
    await browser.command('Emulation.setDeviceMetricsOverride',{width,height,mobile,deviceScaleFactor:1});
    await browser.evaluate(`${scope}.scrollIntoView({block:'start'})`);await browser.overflow('production-readiness-'+width);
-   await browser.until(`${scope}?.textContent.includes('Emisión definitiva, entrega, cobranza y facturación ARCA permanecen bloqueadas')`,'complete readiness panel');
-   const text=await browser.evaluate<string>(`${scope}.innerText`);writeFileSync(`${out}/readiness-${width}.txt`,text);assert(text.includes('Emisión definitiva, entrega, cobranza y facturación ARCA permanecen bloqueadas'));assert(text.includes('aprobación')||text.includes('validación'));
+   await browser.until(`${scope}?.textContent.includes('Esta lista revisa la preparación; no autoriza emitir, entregar ni cobrar')`,'complete readiness panel');
+   const text=await browser.evaluate<string>(`${scope}.innerText`);writeFileSync(`${out}/readiness-${width}.txt`,text);assert(text.includes('Esta lista revisa la preparación; no autoriza emitir, entregar ni cobrar'));assert(text.includes('aprobación')||text.includes('validación'));
    const shot=await browser.command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(`${out}/readiness-${width}.png`,Buffer.from(shot.data as string,'base64'));
   }
   await browser.clickText('Actualizar comprobación',scope);await browser.until(`${scope}?.textContent.includes('Próximo paso:')`,'refresh remains read only');

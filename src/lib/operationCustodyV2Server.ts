@@ -35,8 +35,9 @@ export async function custodyLoad(db: Firestore, tx: Transaction, id: string, v:
  if (!source.registered) custodyFail('Operación histórica sin identidad registrada: sólo lectura, sin migración.');
  const [snap, assigned, f] = await Promise.all([tx.get(custodyRef(db,id,v)), tx.get(assignmentRef(db,id,v)), tx.get(fulfillmentRef(db,id,v))]);
  const state = snap.exists ? snap.data() as OperationCustodyV2 : initialCustody(source.identity.operationId);
- if (state.schemaVersion !== 'OPERATION_CUSTODY_V2' || state.operationId !== source.identity.operationId || !Number.isSafeInteger(state.revision) || !['BLOCKED_PHYSICAL_SIGNATURES_REQUIRED','DELIVERED_EMULATOR'].includes(state.deliveryClosure)) custodyFail();
+ if (state.schemaVersion !== 'OPERATION_CUSTODY_V2' || state.operationId !== source.identity.operationId || !Number.isSafeInteger(state.revision) || !['BLOCKED_PHYSICAL_SIGNATURES_REQUIRED','DELIVERED_EMULATOR','DELIVERED'].includes(state.deliveryClosure)) custodyFail();
  if(state.deliveryClosure==='DELIVERED_EMULATOR'){const d=(await tx.get(custodyRef(db,id,v).parent.doc('delivery'))).data();if(!deliveryEnabled()||d?.status!=='DELIVERED_EMULATOR'||d.event?.operationId!==state.operationId||state.current||state.pending)custodyFail('Cierre de entrega inconsistente.');}
+ if(state.deliveryClosure==='DELIVERED'){const {operationRuntime,productionDeliveryProof}=await import('./productionV2/gates');const runtime=await operationRuntime(db,tx,id,v);if(!runtime)custodyFail('Entrega no acreditada.');await productionDeliveryProof(runtime,tx,id,v,'DELIVERY',false);}
  if (stable(state.assignment) !== stable(assigned.exists ? { affiliateId: assigned.data()!.affiliateId, uid: assigned.data()!.uid } : null)) custodyFail('Asignación inconsistente.');
  if (!actor.admin) {
   const permittedParticipant = participantAccess && state.pending && [state.pending.from,state.pending.to].some(p=>p.uid===actor.uid && p.role!=='AFFILIATE');
@@ -68,8 +69,8 @@ export async function readCustody(db: Firestore, id: string, v: number, actor: C
    availability:fulfillment.confirmedAvailabilityDate || fulfillment.estimatedAvailabilityDate,
    estimatedDelivery:fulfillment.estimatedDeliveryDate, logisticsState:fulfillment.logisticsState,
    currentRole:state.current?.role ?? null, location:state.location,
-   canReportIncident:state.deliveryClosure!=='DELIVERED_EMULATOR'&&state.current?.uid===actor.uid&&!pending,
-   nextAction:state.deliveryClosure==='DELIVERED_EMULATOR'?'Entrega registrada en Emulator; consultar seguimiento y pagos acreditados':pending ? 'Confirmar únicamente la entrega o recepción física que te corresponde' : 'Esperar autorización administrativa; conservar el producto si está bajo tu custodia',
+   canReportIncident:!['DELIVERED_EMULATOR','DELIVERED'].includes(state.deliveryClosure)&&state.current?.uid===actor.uid&&!pending,
+   nextAction:['DELIVERED_EMULATOR','DELIVERED'].includes(state.deliveryClosure)?'Entrega registrada; consultar seguimiento y pagos acreditados':pending ? 'Confirmar únicamente la entrega o recepción física que te corresponde' : 'Esperar autorización administrativa; conservar el producto si está bajo tu custodia',
    pending:pending ? { id:pending.id, fromRole:pending.from.role, toRole:pending.to.role, occurredAt:pending.occurredAt,
     canDeliver:pending.from.uid===actor.uid && !pending.deliveredAt, canReceive:pending.to.uid===actor.uid && !pending.receivedAt,
     delivered:!!pending.deliveredAt, received:!!pending.receivedAt } : null,
@@ -106,7 +107,7 @@ export async function custodyCommand(db:Firestore,id:string,v:number,input:unkno
   if(c.operationId!==source.identity.operationId)custodyFail('Identidad operativa incorrecta.');
   const prior=await tx.get(receipt);
   if(prior.exists){if(prior.data()!.digest!==digest)custodyFail('Conflicto de commandId.');return {revision:prior.data()!.revision,replay:true};}
-  if(current.deliveryClosure==='DELIVERED_EMULATOR'&&c.action!=='ASSIGN')custodyFail('Producto entregado en Emulator: no se transfiere otra vez.');
+  if(['DELIVERED_EMULATOR','DELIVERED'].includes(current.deliveryClosure)&&c.action!=='ASSIGN')custodyFail('Producto entregado en Emulator: no se transfiere otra vez.');
   if(c.expectedRevision!==current.revision)custodyFail('Conflicto de revisión. Recargá la operación.');
   const s=structuredClone(current),d=c.data,now=new Date().toISOString();
   const admin=()=>{if(!actor.admin)custodyFail('Acción exclusivamente administrativa.');};

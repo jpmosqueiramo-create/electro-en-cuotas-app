@@ -1,42 +1,36 @@
-# Preparación productiva V2 — alcance y bloqueos
+# Preparación productiva V2 — PR #80
 
-Base auditada: `70b47ef75ae94ba8decc61550b6ea98b096a72ee`.
+Base: `70b47ef75ae94ba8decc61550b6ea98b096a72ee`. Rama: `feature/production-v2-activation`.
 
-**NO LISTO PARA HABILITACIÓN INTEGRAL.** Este cambio incorpora una comprobación real, administrativa y de sólo lectura, y corrige la carga autenticada de Solicitudes. No habilita emisión, entrega ni finanzas productivas. No representa la finalización del objetivo de lanzamiento.
+**Adaptador normal implementado y probado con datos sintéticos en Emulator. Activación real pendiente de aprobación documental exacta, configuración y autorizaciones independientes.** El catálogo de textos finales permanece vacío y los comandos productivos deshabilitados por defecto. Este PR no constituye una aprobación jurídica ni una autorización para operar con clientes reales.
 
-## Implementación entregada
+## Alcance integrado
 
-- Ficha de operación → Contrato: preparación para operar con clientes reales, próximo requisito y responsable, enlaces a módulos existentes.
-- `GET /api/admin/presupuestos-v2/{budgetId}/versions/{version}/production-readiness`: identidad explícita, origen aceptado, datos, producto, economía y fechas mediante motores actuales, conformidad, revisión READY, identidad documental, aprobación crediticia y registro jurídico.
-- Una operación histórica sin revisión crediticia sigue siendo legible, pero nunca se presenta como aprobada para emitir instrumentos nuevos. No se modifica el tratamiento histórico de `assertCreditPreparation`.
-- Revisión íntegra de Auth en el nuevo acceso: token revocado/inválido, cuenta deshabilitada, correo no verificado o identidad no administrativa impiden la lectura.
-- Respuesta sin datos personales, documentos ni secretos; `private, no-store`. El digest sólo detecta cambios: no es un token ni autorización de emisión.
-- Solicitudes: API administrativa por fuente, paginación de 100 registros y cursor por ID, sin nuevos índices. Mantiene las dos fuentes y proyecciones históricas. No hay escrituras ni cambios de tipos persistidos.
-- La bandeja espera Auth y descarta respuestas de otra sesión; conserva resultados ante fallos parciales y los elimina de la vista cuando se conoce una denegación de acceso. Los filtros indican que actúan sobre registros cargados.
-- Fixtures de administración configurables para usar exclusivamente un correo sintético bajo `demo-cuenta-hogar`.
+Se conserva la corrección de Solicitudes del primer commit: consultas paginadas por servidor, Auth inicializada, aislamiento de sesión y tratamiento de fallos parciales. El confeccionador de presupuestos reutiliza esas lecturas autorizadas y una API administrativa paginada de referencias privadas; un fallo de origen o catálogo ya no vacía el historial permitido. La preparación productiva continúa como consulta de requisitos, nunca como permiso de emisión.
+
+El adaptador separado de `src/lib/productionV2/` conecta revisión READY, aprobación exacta del paquete jurídico y autorización por operación con numeración CH, snapshot íntegro, tres PDF privados, firmas, originales, entrega y ledger. Reutiliza los motores existentes de cálculo, custodia, cuotas, pagos, reversas y comisiones. El adaptador Emulator y el Laboratorio permanecen intactos.
+
+El propietario autorizó específicamente conectar la ruta de invitaciones al nuevo control servidor. La ruta obtiene el contexto de la invitación persistida y exige Auth verificada del UID previamente vinculado, autorización de la operación y entrega con tres firmas. No permite convertir una invitación Emulator en productiva ni crear una cuenta real desde este circuito.
 
 ## Matriz de habilitación real
 
-| Módulo | Estado del código normal | Evidencia / condición |
+| Módulo | Código y comprobación | Condición para uso real |
 |---|---|---|
-| Administración | Operativa con Auth | `adminAuth.ts`, `AuthProvider.tsx`; las nuevas consultas revalidan Auth |
-| Solicitudes públicas | Operativa | `publicSolicitud*`; persistencia servidor, cupo e idempotencia existentes |
-| Bandeja Solicitudes | Corregida en este PR | `adminSolicitudesHttpReader.ts`, `adminSolicitudesServer.ts`; antes SDK y correo fijo en Rules |
-| Presupuesto y Acceptance | Operativos | `budgetV2Persistence.ts`, `budgetAcceptanceV2Server.ts`; conservar snapshots/versiones |
-| Datos, identidad y crédito | Operativos | `contractV2Server.ts`, `creditReviewV2Server.ts`, `operationIdentityReviewServer.ts` |
-| Preparación económica y READY | Operativa; no equivale a emisión | `contractV2Server.ts`, `contractReadyV2.ts` |
-| Mandato y pagaré actuales | Borradores únicamente | `contractDocuments/operationDraftTemplates.ts`, `operationDraftPdf.ts`; cláusulas pendientes y advertencia |
-| Congelamiento y CH | Bloqueado fuera de Emulator | `contractFreezeIntegrationEmulator.ts`, `contractInfrastructureEmulator.ts`; identidad/validaciones reales reutilizables, adaptador exclusivo de prueba |
-| Snapshot definitivo | Falta adaptador productivo | `contractSnapshotV2.ts` sólo acepta políticas de Emulator; no modificar discriminadores sin adaptar y probar toda la cadena |
-| Proveedor y logística | Operativos hasta entrega programada | `operationFulfillmentV2Server.ts` |
-| Afiliado, asignación y custodia | Operativos bajo vínculo explícito | `operationCustodyV2Server.ts`, `affiliateRegistryServer.ts` |
-| Remito, firmas y originales | Motor probado en Emulator | `operationDeliveryV2Server.ts`, `operationDeliveryV2Photos.ts`; falta vinculación con documentos definitivos emitidos |
-| Entrega real | Bloqueada | `requireDeliveryEmulator`; tres firmas, custodia, incidencias y evidencia se conservan |
-| Activación de cliente | Bloqueada | `operationClientV2Server.ts`: `EMULATOR_CLIENT_ACTIVATION_FIXTURE_V2`; no es prueba de una entrega real |
-| Cuotas, pagos, recibos, reversas | Motor FIFO probado; producción bloqueada | `operationFinancialV2Server.ts`: `EMULATOR_FINANCIAL_APPROVAL_V1` + snapshot/entrega sintéticos |
-| Tres portales | Misma fuente financiera en pruebas | `readFinancial`; UID, asignación activa y vínculo cliente revocable |
-| Comisiones | Devengamiento V2 ligado al pago; no habilitado financieramente | `operationCommissionV2Server.ts`; preserva atribución/porcentaje congelados |
-| ARCA | Fuera del alcance, bloqueada | `fiscalV2Emulator.ts`; recibo de pago no equivale a comprobante fiscal |
+| Administración | Auth y permisos existentes; nuevas consultas comprueban usuario activo y verificado | Cuenta administrativa autorizada |
+| Solicitudes y presupuestos | Persistencia, cupo, idempotencia, catálogo/manual y Acceptance existentes; bandeja corregida | Sin cambio comercial ni migración |
+| Datos, identidad y crédito | Motores existentes; origen explícito, revisión documental y conformidad | Identidad y aprobación crediticia vigentes |
+| READY | Evidencia técnica y origen verificados | No equivale a firma ni emisión |
+| Paquete jurídico final | Catálogo inmutable por hash + registro profesional exacto | **Pendiente: catálogo vacío** |
+| Autorización de operación | Actor, revisión, fuente, paquete, alcances y vencimiento; revocación auditada | Confirmación administrativa independiente por operación |
+| Congelamiento / CH | Adaptador normal transaccional; unicidad, replay y colisiones probados | Paquete aprobado + contador previamente autorizado + configuración habilitada |
+| Mandato / pagaré / remito | Archivos privados inmutables, misma revisión, recuperación sin segundo pagaré | Autorización vigente; sólo texto final instalado y aprobado |
+| Proveedor / logística / afiliado | Se conservan módulos y asignaciones existentes | Permisos y custodia vigentes |
+| Firmas / originales / entrega | Motor existente comprueba documentos emitidos, tres firmas, evidencia, originales e incidencias | Custodia acreditada y autorización DELIVERY; no reemplaza controles por fixtures |
+| Cliente | Invitación de un uso y revocable, UID existente explícito; ruta HTTP conectada | Auth activa/verificada + entrega + autorización CLIENT_ACTIVATION |
+| Cuotas / pagos / recibos / reversas | Mismo ledger FIFO; activación única e importes persistidos; recibos privados | Autorización FINANCE, entrega y acreditación administrativa efectiva |
+| Tres portales | Saldo único; cliente vinculado y afiliado asignado; revocación vigente | No se asignaron cuentas personales |
+| Comisiones | Mismo devengamiento asociado al pago/reversa | Sin cambios de base/porcentaje; liquidaciones productivas siguen bloqueadas |
+| ARCA | Separada, sin comunicación productiva | **No autorizada / no habilitada** |
 
 ## Aprobación jurídica que falta, exactamente
 
@@ -51,28 +45,33 @@ Entre los cambios documentados: irrevocabilidad/representación, factura del pro
 
 Además siguen pendientes: facultades de representación, jurisdicción aplicable, lugar y fecha efectiva de cada instrumento, aprobación exacta del texto y tratamiento del remito. El CUIT/domicilio societarios ya confirmados no resuelven esos campos. No se asignan porcentajes a gestión, logística ni asistencia técnica.
 
-## Incidente de revisión automática y alternativa segura
+## Seguridad, compatibilidad y límites
 
-La revisión automática rechazó una propuesta de refactor amplio del congelamiento porque introducía `PRODUCTION` / `legalTemplateReviewRequired:false` antes de demostrar un adaptador productivo autorizado por versiones exactas. **El comando rechazado no se ejecutó y ese refactor no forma parte del diff.** No se eludió el rechazo con flags ni rutas alternativas.
+- No se eliminaron controles de identidad, conformidad, READY, firma o integridad. Un flag no basta para emitir.
+- No hay autorización recibida desde `production=true`, un ID arbitrario o un snapshot del navegador. El contexto es una capacidad opaca del servidor.
+- No se modifican aceptación, presupuesto, hashes ni documentos históricos. No hay migración automática.
+- El registro de aprobación del paquete no sustituye el permiso de cada operación. Los comandos comprueban estado y permisos nuevamente.
+- No se modificaron Rules, IAM, secretos, Auth ni configuración productiva. No se crearon cuentas reales ni se asignaron los correos personales.
+- La prueba local usa exclusivamente `demo-cuenta-hogar` y un paquete ficticio marcado sin validez; el factory de tests rechaza hosts no locales, credenciales y runtime productivo.
+- Una aprobación caducada impide completar una emisión interrumpida. La renovación posterior al congelamiento no se automatiza en este PR; exige diseño/revisión y autorización antes de una recuperación real.
+- La huella del renderer se debe comprobar contra el artefacto compilado a publicar. Diferencias de bundle/minificación bloquean el paquete; no se omiten para conseguir emisión.
+- Los listados de aprobaciones/autorizaciones del panel son acotados (50/20); se deberá incorporar búsqueda/paginación si supera ese volumen.
 
-Se completó la alternativa sin ese riesgo: consulta de prerrequisitos, pruebas de guardas y corrección del acceso administrativo reproducido. El PR permanece en borrador; el motor productivo completo todavía no está implementado.
+## Despliegue propuesto — no ejecutado
 
-## Diseño concreto pendiente de revisión para completar el mismo PR
+1. Revisar y mergear manualmente este PR; verificar SHA exacto, gates y ausencia de diferencias de infraestructura. Autorizar separadamente el rollout del SHA mergeado.
+2. Publicar inicialmente deshabilitado: `PRODUCTION_OPERATIONS_ENABLED` ausente/false y sin nuevos UID configurados. Verificar en lectura que los circuitos actuales permanecen operativos.
+3. Identificar y aprobar el paquete final exacto de los tres documentos, incluyendo representación, jurisdicción y recursos. Incorporarlo al catálogo mediante revisión de código; verificar hashes del build y conservar las versiones anteriores.
+4. Inventariar numeración existente y autorizar explícitamente la inicialización del contador CH con su referencia de autorización. No reiniciar ni adoptar numeración de pruebas.
+5. Autorizar las cuentas existentes y sus roles, y únicamente entonces configurar en servidor `PRODUCTION_OPERATION_ADMIN_UIDS` y `PRODUCTION_OPERATIONS_ENABLED`. Conservar todos los overrides anteriores. No activar Laboratorio ni ARCA.
+6. Registrar la aprobación documental identificada y autorizar una operación real concreta con alcances explícitos. No autorizar ni acreditar obligaciones por el solo hecho de desplegar.
 
-1. **Catálogo final aprobado y renderer:** vincular cada texto final y recursos por hash con registros profesionales exactos. Conservar los originales y aprobar diferencias materiales. Separar cuerpo jurídico de variables. No quitar marcas de borrador de un renderer que aún contiene propuestas. El pagaré lleva el total persistido, sin logo; mandato y remito conservan branding.
-2. **Autorización por operación:** recibo inmutable servidor, con operationId, versión, revisión READY, digest de conformidad, hash del paquete jurídico, actor, fecha y alcance explícito. Una política server-side deshabilitada por defecto no sustituye dicho recibo. Nunca aceptar `production=true` ni contexto enviado por navegador como autorización.
-3. **Congelamiento compartido:** extraer validación de origen, READY y snapshot sin cambiar su semántica. Mantener el adaptador Emulator intacto. El nuevo adaptador normal recibe una autorización opaca comprobada por servidor; en una misma transacción verifica aprobación crediticia existente/vigente, conformidad, revisión esperada, autorización, numeración CH y destinos únicos. No reservar número antes de disponer de renderer aprobado y datos formales completos.
-4. **Documentos inmutables:** registrar paquete ligado a snapshot+hash+versiones+generaciones privadas de Storage. Recuperación idempotente de una emisión interrumpida, sin segundo pagaré ni documento alternativo. Descargas por servidor y generación fijada, nunca tokens públicos permanentes. Revalidar metadatos en transacción, archivos fuera de ella.
-5. **Entrega:** adaptar el motor existente, añadiendo prueba del paquete definitivo emitido. Conservar tres firmas físicas, originales, custodia, responsable y ausencia de incidentes. No sustituirlas por booleans o fixtures de Emulator.
-6. **Cliente y ledger:** reemplazar exclusivamente las dependencias sintéticas de los adaptadores normales por verificación de emisión+entrega de la misma operación. Activación atómica única; mismos importes persistidos, FIFO, pagos parciales, recibos, reversas y comisiones. La revocación del cliente y reasignación del afiliado deben seguir aplicándose en cada consulta.
-7. **Aceptación técnica antes de publicar:** ejecutar en `demo-cuenta-hogar` el adaptador normal con un paquete jurídico ficticio claramente de test, sin configuración que habilite esa sustitución en producción. Probar races/replays/fallos parciales/custodia/identidad/roles/generaciones. Los PASS del circuito actual con fixtures **no** certifican este adaptador aún pendiente.
+## Aceptación del propietario
 
-## Despliegue y aceptación del propietario
+Desde Ficha de operación → Contrato, revisar requisitos, registrar el paquete aprobado, autorizar la operación READY y confirmar congelamiento y emisión. Abrir los tres PDF y comprobar identidad, importes y fechas persistidos. Registrar después evidencia auténtica de las tres firmas, originales y custodia; confirmar entrega sólo si cumple los controles. Activar cuotas una sola vez y vincular explícitamente un UID existente. El cliente inicia sesión con esa cuenta verificada antes de usar la invitación. Cliente y afiliado consultan su operación; únicamente Administración acredita o revierte pagos efectivamente comprobados.
 
-No se realizó merge, rollout, publicación de Rules, cambio de IAM/secretos/Auth ni escritura productiva. No se asignaron los correos personales a roles.
+Este recorrido está probado localmente con datos ficticios. Su ejecución real requiere las aprobaciones anteriores y autorización expresa; no se realizó en producción. Las instrucciones técnicas y recuperación están en [ADAPTER.md](ADAPTER.md); evidencias y límites en [TEST_RESULTS.md](TEST_RESULTS.md).
 
-Este PR en su estado actual **no debe anunciarse como lanzamiento integral**. Si sólo se publica la consulta/lectura, tras merge manual: verificar SHA aprobado, tsc/lint/build/test y Rules/configuración sin diferencias; rollout manual de ese SHA con autorización separada; smoke de lectura de Solicitudes y preparación productiva. No activar nada por variables nuevas: este diff no agrega flags.
+## Recuperación
 
-Para el lanzamiento integral, completar y revisar los siete pasos anteriores. Luego merge manual, SHA exacto, despliegue deshabilitado inicialmente, autorización explícita de roles/cuentas existentes y de la primera operación real. No crear usuarios ni usar correos personales de forma implícita. La prueba de aceptación deberá guardar evidencia de contrato+pagaré+remito, tres firmas reales, custodia y entrega antes del alta de cuotas; pago real sólo con autorización expresa y comprobante efectivo. ARCA seguirá separada.
-
-Recuperación: una consulta es de sólo lectura; el rollback de aplicación requiere autorización y no modifica registros. Si ya existieran instrumentos o movimientos reales, detener comandos nuevos y conservar auditoría; no borrar, regenerar pagarés ni cancelar deuda mediante rollback de código.
+Deshabilitar nuevos comandos o revocar la autorización bajo aprobación específica, conservando lectura y auditoría. Recuperar emisiones interrumpidas con los mismos identificadores/archivos mientras la autorización siga vigente; nunca emitir otro pagaré como reparación. Las reversas usan el ledger existente. No borrar instrumentos, reiniciar CH ni editar saldos. Un rollback requiere autorización y compatibilidad con snapshots ya emitidos; no deshace obligaciones.

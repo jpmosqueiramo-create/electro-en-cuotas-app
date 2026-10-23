@@ -1,0 +1,16 @@
+{
+  "base": "70b47ef75ae94ba8decc61550b6ea98b096a72ee",
+  "branch": "feature/production-v2-activation",
+  "gates": {
+    "typescript": "PASS",
+    "eslintDifferential": "PASS (54 TS/TSX)",
+    "build": "PASS Next 16.2.1 Turbopack",
+    "testSafe": "PASS",
+    "privateReferencesAuthPagination": "PASS 103=100+3",
+    "legacyClientBrowser": "PASS"
+  },
+  "productionWrites": 0,
+  "protectedLocalScriptIncluded": false,
+  "rulesIamSecretsConfigurationChanged": false,
+  "finalLegalCatalogEntries": 0
+}

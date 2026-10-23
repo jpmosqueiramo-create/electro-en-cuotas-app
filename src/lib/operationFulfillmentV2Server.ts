@@ -22,7 +22,7 @@ export async function fulfillmentOrigin(db:Firestore,tx:Transaction,id:string,v:
 export function storedFulfillment(raw:unknown,initial:FulfillmentV2):FulfillmentV2 {
  if(!raw||typeof raw!=='object')throw new FulfillmentError('Seguimiento inconsistente.');
  const s=raw as FulfillmentV2;
- if(Object.keys(s).length!==Object.keys(initial).length||s.schemaVersion!==initial.schemaVersion||s.operationId!==initial.operationId||s.productName!==initial.productName||s.referenceId!==initial.referenceId||s.budgetedCost!==initial.budgetedCost||!Number.isSafeInteger(s.revision)||s.revision<1||(s.deliveryClosure!==initial.deliveryClosure&&!(s.deliveryClosure==='DELIVERED_EMULATOR'&&s.logisticsState==='DELIVERED_EMULATOR'&&deliveryEnabled()))||!providerStates.includes(s.providerState)||!['PENDIENTE_RETIRO','RETIRADO','RECIBIDO','VIAJE_PROGRAMADO','ENTREGA_PROGRAMADA','EN_CUSTODIA_POR_RECHAZO','DELIVERED_EMULATOR'].includes(s.logisticsState)||!Array.isArray(s.incidents))throw new FulfillmentError('Seguimiento inconsistente.');
+ if(Object.keys(s).length!==Object.keys(initial).length||s.schemaVersion!==initial.schemaVersion||s.operationId!==initial.operationId||s.productName!==initial.productName||s.referenceId!==initial.referenceId||s.budgetedCost!==initial.budgetedCost||!Number.isSafeInteger(s.revision)||s.revision<1||(s.deliveryClosure!==initial.deliveryClosure&&!(s.deliveryClosure==='DELIVERED_EMULATOR'&&s.logisticsState==='DELIVERED_EMULATOR'&&deliveryEnabled()||s.deliveryClosure==='DELIVERED'&&s.logisticsState==='DELIVERED'))||!providerStates.includes(s.providerState)||!['PENDIENTE_RETIRO','RETIRADO','RECIBIDO','VIAJE_PROGRAMADO','ENTREGA_PROGRAMADA','EN_CUSTODIA_POR_RECHAZO','DELIVERED_EMULATOR','DELIVERED'].includes(s.logisticsState)||!Array.isArray(s.incidents))throw new FulfillmentError('Seguimiento inconsistente.');
  costDifference(s);return s;
 }
 export async function readFulfillment(db:Firestore,id:string,v:number,before?:number) {
@@ -31,6 +31,7 @@ export async function readFulfillment(db:Firestore,id:string,v:number,before?:nu
   const source=await fulfillmentOrigin(db,tx,id,v),snap=await tx.get(ref);
   if(snap.exists&&!source.registered)throw new FulfillmentError('Falta identidad operativa registrada.');
   const state=snap.exists?storedFulfillment(snap.data(),source.initial):source.initial;
+  if(state.deliveryClosure==='DELIVERED'){const {operationRuntime,productionDeliveryProof}=await import('./productionV2/gates');const runtime=await operationRuntime(db,tx,id,v);if(!runtime)throw new FulfillmentError('Entrega no acreditada.');await productionDeliveryProof(runtime,tx,id,v,'DELIVERY',false);}
   let query=ref.collection('events').orderBy('revision','desc').limit(30);if(before!==undefined)query=query.startAfter(before);
   const events=await tx.get(query);
   return {available:source.registered,identity:source.identity,state,costDifference:costDifference(state),nextStep:fulfillmentNextStep(state),
@@ -51,7 +52,7 @@ export async function fulfillmentCommand(db:Firestore,id:string,v:number,input:u
    if(prior.data()!.digest!==digest)throw new FulfillmentError('Conflicto de commandId.');
    return {state:storedFulfillment(prior.data()!.result,source.initial),replay:true};
   }
-  if(current.deliveryClosure==='DELIVERED_EMULATOR')throw new FulfillmentError('Entrega cerrada en Emulator. No se modifica el producto entregado.');
+  if(['DELIVERED_EMULATOR','DELIVERED'].includes(current.deliveryClosure))throw new FulfillmentError('Entrega cerrada en Emulator. No se modifica el producto entregado.');
   const now=new Date().toISOString(),next=nextFulfillment(current,c,actor,now);
   tx.set(ref,next);tx.create(command,{digest,result:next,actor,createdAt:now});
   tx.create(ref.collection('events').doc(c.commandId),{commandId:c.commandId,operationId:c.operationId,action:c.action,actor,at:now,expectedRevision:c.expectedRevision,revision:next.revision,data:c.data,
