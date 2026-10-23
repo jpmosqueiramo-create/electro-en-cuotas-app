@@ -1,0 +1,927 @@
+{
+  "results": {
+    "NO_MANDATE_SIGNATURE_NO_FINANCE": {
+      "result": "PASS"
+    },
+    "NO_PAGARE_SIGNATURE_NO_FINANCE": {
+      "result": "PASS"
+    },
+    "NO_REMITO_SIGNATURE_NO_FINANCE": {
+      "result": "PASS"
+    },
+    "NO_ORIGINALS_NO_FINANCE": {
+      "result": "PASS"
+    },
+    "DIFFERENT_ORIGINAL_VERSION_NO_FINANCE": {
+      "result": "PASS"
+    },
+    "INCONSISTENT_SIGNATURE_NO_FINANCE": {
+      "result": "PASS"
+    },
+    "NO_EFFECTIVE_DELIVERY_NO_FINANCE": {
+      "result": "PASS"
+    },
+    "OPEN_REJECTION_NO_FINANCE": {
+      "result": "PASS"
+    },
+    "NO_MANDATE_SIGNATURE_NO_DELIVERY": {
+      "result": "PASS"
+    },
+    "NO_PAGARE_SIGNATURE_NO_DELIVERY": {
+      "result": "PASS"
+    },
+    "NO_REMITO_SIGNATURE_NO_DELIVERY": {
+      "result": "PASS"
+    },
+    "SINGLE_ORIGINATION_REPLAY_SECOND_ACTIVATION_BLOCKED": {
+      "result": "PASS"
+    },
+    "SNAPSHOT_12_INSTALLMENTS_EXACT": {
+      "result": "PASS",
+      "totalCents": 174000000,
+      "installments": [
+        {
+          "number": 1,
+          "dueDate": "2026-12-15",
+          "amountCents": 14500000
+        },
+        {
+          "number": 2,
+          "dueDate": "2027-01-30",
+          "amountCents": 14500000
+        },
+        {
+          "number": 3,
+          "dueDate": "2027-02-28",
+          "amountCents": 14500000
+        },
+        {
+          "number": 4,
+          "dueDate": "2027-03-30",
+          "amountCents": 14500000
+        },
+        {
+          "number": 5,
+          "dueDate": "2027-04-30",
+          "amountCents": 14500000
+        },
+        {
+          "number": 6,
+          "dueDate": "2027-05-30",
+          "amountCents": 14500000
+        },
+        {
+          "number": 7,
+          "dueDate": "2027-06-30",
+          "amountCents": 14500000
+        },
+        {
+          "number": 8,
+          "dueDate": "2027-07-30",
+          "amountCents": 14500000
+        },
+        {
+          "number": 9,
+          "dueDate": "2027-08-30",
+          "amountCents": 14500000
+        },
+        {
+          "number": 10,
+          "dueDate": "2027-09-30",
+          "amountCents": 14500000
+        },
+        {
+          "number": 11,
+          "dueDate": "2027-10-30",
+          "amountCents": 14500000
+        },
+        {
+          "number": 12,
+          "dueDate": "2027-11-30",
+          "amountCents": 14500000
+        }
+      ]
+    },
+    "PARTIAL_FULL_REVERSAL_AUDIT": {
+      "result": "PASS"
+    },
+    "AFFILIATE_CONSISTENT_READ_ONLY_VIEW": {
+      "result": "PASS"
+    },
+    "CLIENT_CONSISTENT_READ_ONLY_VIEW": {
+      "result": "PASS"
+    },
+    "UNASSIGNED_B_CROSS_CLIENT_DENIED": {
+      "result": "PASS"
+    },
+    "DEACTIVATED_AFFILIATE_DENIED": {
+      "result": "PASS"
+    },
+    "REVOKED_OR_UNACTIVATED_CLIENT_DENIED": {
+      "result": "PASS"
+    },
+    "AFFILIATE_CREDIT_REVERSE_HTTP_403": {
+      "result": "PASS"
+    },
+    "CONTRACT_SCHEDULE_SNAPSHOT_IMMUTABLE": {
+      "result": "PASS"
+    }
+  },
+  "views": [
+    {
+      "active": true,
+      "mutationEnabled": true,
+      "operationId": "op_ea633556681c5a173ee0573e948b0b52222e7565ee8189f13b710c20b48aecf0",
+      "revision": 1,
+      "contractNumber": "CH-000001",
+      "executionMode": "EMULATOR_ONLY",
+      "snapshotHash": "eb8911ba72015f6bb8479f1cabdd49515f1789d4a04175fb891817cecb8a3901",
+      "activatedAt": "2026-10-23T00:05:26.981Z",
+      "totalCents": 174000000,
+      "paidCents": 0,
+      "balanceCents": 174000000,
+      "installments": [
+        {
+          "number": 1,
+          "dueDate": "2026-12-15",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 2,
+          "dueDate": "2027-01-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 3,
+          "dueDate": "2027-02-28",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 4,
+          "dueDate": "2027-03-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 5,
+          "dueDate": "2027-04-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 6,
+          "dueDate": "2027-05-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 7,
+          "dueDate": "2027-06-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 8,
+          "dueDate": "2027-07-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 9,
+          "dueDate": "2027-08-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 10,
+          "dueDate": "2027-09-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 11,
+          "dueDate": "2027-10-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 12,
+          "dueDate": "2027-11-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        }
+      ],
+      "paidInstallmentCount": 0,
+      "pendingInstallmentCount": 12,
+      "nextDueAmountCents": 14500000,
+      "overdueCount": 0,
+      "nextDueDate": "2026-12-15",
+      "status": "PENDIENTE",
+      "lateChargesCents": 0,
+      "nextCursor": null,
+      "receipts": [],
+      "capitalCents": 58000000,
+      "serviceCents": 116000000,
+      "history": [],
+      "blockReason": "Demostración en Emulator. Cobranza productiva deshabilitada; revisión jurídica pendiente."
+    },
+    {
+      "active": true,
+      "mutationEnabled": true,
+      "operationId": "op_ea633556681c5a173ee0573e948b0b52222e7565ee8189f13b710c20b48aecf0",
+      "revision": 2,
+      "contractNumber": "CH-000001",
+      "executionMode": "EMULATOR_ONLY",
+      "snapshotHash": "eb8911ba72015f6bb8479f1cabdd49515f1789d4a04175fb891817cecb8a3901",
+      "activatedAt": "2026-10-23T00:05:26.981Z",
+      "totalCents": 174000000,
+      "paidCents": 7250000,
+      "balanceCents": 166750000,
+      "installments": [
+        {
+          "number": 1,
+          "dueDate": "2026-12-15",
+          "amountCents": 14500000,
+          "paidCents": 7250000,
+          "balanceCents": 7250000,
+          "status": "PARCIAL",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 2,
+          "dueDate": "2027-01-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 3,
+          "dueDate": "2027-02-28",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 4,
+          "dueDate": "2027-03-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 5,
+          "dueDate": "2027-04-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 6,
+          "dueDate": "2027-05-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 7,
+          "dueDate": "2027-06-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 8,
+          "dueDate": "2027-07-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 9,
+          "dueDate": "2027-08-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 10,
+          "dueDate": "2027-09-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 11,
+          "dueDate": "2027-10-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 12,
+          "dueDate": "2027-11-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        }
+      ],
+      "paidInstallmentCount": 0,
+      "pendingInstallmentCount": 12,
+      "nextDueAmountCents": 7250000,
+      "overdueCount": 0,
+      "nextDueDate": "2026-12-15",
+      "status": "PARCIAL",
+      "lateChargesCents": 0,
+      "nextCursor": null,
+      "receipts": [
+        {
+          "receiptId": "receipt_f6602c98-50f9-4d92-8322-41373ef15a98",
+          "paymentId": "f6602c98-50f9-4d92-8322-41373ef15a98",
+          "operationId": "op_ea633556681c5a173ee0573e948b0b52222e7565ee8189f13b710c20b48aecf0",
+          "contractNumber": "CH-000001",
+          "snapshotHash": "eb8911ba72015f6bb8479f1cabdd49515f1789d4a04175fb891817cecb8a3901",
+          "amountCents": 7250000,
+          "effectiveDate": "2026-10-23",
+          "issuedAt": "2026-10-23T00:05:27.752Z",
+          "method": "TRANSFERENCIA",
+          "allocations": [
+            {
+              "installmentNumber": 1,
+              "amountCents": 7250000
+            }
+          ],
+          "status": "ACREDITADO",
+          "reversedAt": null,
+          "executionMode": "EMULATOR_ONLY"
+        }
+      ],
+      "capitalCents": 58000000,
+      "serviceCents": 116000000,
+      "history": [
+        {
+          "id": "f6602c98-50f9-4d92-8322-41373ef15a98",
+          "amountCents": 7250000,
+          "effectiveDate": "2026-10-23",
+          "recordedAt": "2026-10-23T00:05:27.752Z",
+          "actor": "admin-55e2e8d4-ff27-42b1-b313-453ee0693c5b",
+          "method": "TRANSFERENCIA",
+          "reference": "SYNTHETIC-ONLY",
+          "allocations": [
+            {
+              "installmentNumber": 1,
+              "amountCents": 7250000
+            }
+          ],
+          "reversedAt": null,
+          "reversedBy": null,
+          "reversalReason": null,
+          "receiptId": "receipt_f6602c98-50f9-4d92-8322-41373ef15a98"
+        }
+      ],
+      "blockReason": "Demostración en Emulator. Cobranza productiva deshabilitada; revisión jurídica pendiente."
+    },
+    {
+      "active": true,
+      "mutationEnabled": true,
+      "operationId": "op_ea633556681c5a173ee0573e948b0b52222e7565ee8189f13b710c20b48aecf0",
+      "revision": 3,
+      "contractNumber": "CH-000001",
+      "executionMode": "EMULATOR_ONLY",
+      "snapshotHash": "eb8911ba72015f6bb8479f1cabdd49515f1789d4a04175fb891817cecb8a3901",
+      "activatedAt": "2026-10-23T00:05:26.981Z",
+      "totalCents": 174000000,
+      "paidCents": 14500000,
+      "balanceCents": 159500000,
+      "installments": [
+        {
+          "number": 1,
+          "dueDate": "2026-12-15",
+          "amountCents": 14500000,
+          "paidCents": 14500000,
+          "balanceCents": 0,
+          "status": "PAGADA",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 2,
+          "dueDate": "2027-01-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 3,
+          "dueDate": "2027-02-28",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 4,
+          "dueDate": "2027-03-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 5,
+          "dueDate": "2027-04-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 6,
+          "dueDate": "2027-05-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 7,
+          "dueDate": "2027-06-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 8,
+          "dueDate": "2027-07-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 9,
+          "dueDate": "2027-08-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 10,
+          "dueDate": "2027-09-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 11,
+          "dueDate": "2027-10-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 12,
+          "dueDate": "2027-11-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        }
+      ],
+      "paidInstallmentCount": 1,
+      "pendingInstallmentCount": 11,
+      "nextDueAmountCents": 14500000,
+      "overdueCount": 0,
+      "nextDueDate": "2027-01-30",
+      "status": "PARCIAL",
+      "lateChargesCents": 0,
+      "nextCursor": null,
+      "receipts": [
+        {
+          "receiptId": "receipt_f1188001-a1b8-4721-b0bf-c4ebf0a04d92",
+          "paymentId": "f1188001-a1b8-4721-b0bf-c4ebf0a04d92",
+          "operationId": "op_ea633556681c5a173ee0573e948b0b52222e7565ee8189f13b710c20b48aecf0",
+          "contractNumber": "CH-000001",
+          "snapshotHash": "eb8911ba72015f6bb8479f1cabdd49515f1789d4a04175fb891817cecb8a3901",
+          "amountCents": 7250000,
+          "effectiveDate": "2026-10-23",
+          "issuedAt": "2026-10-23T00:05:27.871Z",
+          "method": "EFECTIVO",
+          "allocations": [
+            {
+              "installmentNumber": 1,
+              "amountCents": 7250000
+            }
+          ],
+          "status": "ACREDITADO",
+          "reversedAt": null,
+          "executionMode": "EMULATOR_ONLY"
+        },
+        {
+          "receiptId": "receipt_f6602c98-50f9-4d92-8322-41373ef15a98",
+          "paymentId": "f6602c98-50f9-4d92-8322-41373ef15a98",
+          "operationId": "op_ea633556681c5a173ee0573e948b0b52222e7565ee8189f13b710c20b48aecf0",
+          "contractNumber": "CH-000001",
+          "snapshotHash": "eb8911ba72015f6bb8479f1cabdd49515f1789d4a04175fb891817cecb8a3901",
+          "amountCents": 7250000,
+          "effectiveDate": "2026-10-23",
+          "issuedAt": "2026-10-23T00:05:27.752Z",
+          "method": "TRANSFERENCIA",
+          "allocations": [
+            {
+              "installmentNumber": 1,
+              "amountCents": 7250000
+            }
+          ],
+          "status": "ACREDITADO",
+          "reversedAt": null,
+          "executionMode": "EMULATOR_ONLY"
+        }
+      ],
+      "capitalCents": 58000000,
+      "serviceCents": 116000000,
+      "history": [
+        {
+          "id": "f1188001-a1b8-4721-b0bf-c4ebf0a04d92",
+          "amountCents": 7250000,
+          "effectiveDate": "2026-10-23",
+          "recordedAt": "2026-10-23T00:05:27.871Z",
+          "actor": "admin-55e2e8d4-ff27-42b1-b313-453ee0693c5b",
+          "method": "EFECTIVO",
+          "reference": "SYNTHETIC-ONLY",
+          "allocations": [
+            {
+              "installmentNumber": 1,
+              "amountCents": 7250000
+            }
+          ],
+          "reversedAt": null,
+          "reversedBy": null,
+          "reversalReason": null,
+          "receiptId": "receipt_f1188001-a1b8-4721-b0bf-c4ebf0a04d92"
+        },
+        {
+          "id": "f6602c98-50f9-4d92-8322-41373ef15a98",
+          "amountCents": 7250000,
+          "effectiveDate": "2026-10-23",
+          "recordedAt": "2026-10-23T00:05:27.752Z",
+          "actor": "admin-55e2e8d4-ff27-42b1-b313-453ee0693c5b",
+          "method": "TRANSFERENCIA",
+          "reference": "SYNTHETIC-ONLY",
+          "allocations": [
+            {
+              "installmentNumber": 1,
+              "amountCents": 7250000
+            }
+          ],
+          "reversedAt": null,
+          "reversedBy": null,
+          "reversalReason": null,
+          "receiptId": "receipt_f6602c98-50f9-4d92-8322-41373ef15a98"
+        }
+      ],
+      "blockReason": "Demostración en Emulator. Cobranza productiva deshabilitada; revisión jurídica pendiente."
+    },
+    {
+      "active": true,
+      "mutationEnabled": true,
+      "operationId": "op_ea633556681c5a173ee0573e948b0b52222e7565ee8189f13b710c20b48aecf0",
+      "revision": 4,
+      "contractNumber": "CH-000001",
+      "executionMode": "EMULATOR_ONLY",
+      "snapshotHash": "eb8911ba72015f6bb8479f1cabdd49515f1789d4a04175fb891817cecb8a3901",
+      "activatedAt": "2026-10-23T00:05:26.981Z",
+      "totalCents": 174000000,
+      "paidCents": 7250000,
+      "balanceCents": 166750000,
+      "installments": [
+        {
+          "number": 1,
+          "dueDate": "2026-12-15",
+          "amountCents": 14500000,
+          "paidCents": 7250000,
+          "balanceCents": 7250000,
+          "status": "PARCIAL",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 2,
+          "dueDate": "2027-01-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 3,
+          "dueDate": "2027-02-28",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 4,
+          "dueDate": "2027-03-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 5,
+          "dueDate": "2027-04-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 6,
+          "dueDate": "2027-05-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 7,
+          "dueDate": "2027-06-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 8,
+          "dueDate": "2027-07-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 9,
+          "dueDate": "2027-08-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 10,
+          "dueDate": "2027-09-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 11,
+          "dueDate": "2027-10-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        },
+        {
+          "number": 12,
+          "dueDate": "2027-11-30",
+          "amountCents": 14500000,
+          "paidCents": 0,
+          "balanceCents": 14500000,
+          "status": "PENDIENTE",
+          "daysPastDue": 0,
+          "overdue": false
+        }
+      ],
+      "paidInstallmentCount": 0,
+      "pendingInstallmentCount": 12,
+      "nextDueAmountCents": 7250000,
+      "overdueCount": 0,
+      "nextDueDate": "2026-12-15",
+      "status": "PARCIAL",
+      "lateChargesCents": 0,
+      "nextCursor": null,
+      "receipts": [
+        {
+          "receiptId": "receipt_f1188001-a1b8-4721-b0bf-c4ebf0a04d92",
+          "paymentId": "f1188001-a1b8-4721-b0bf-c4ebf0a04d92",
+          "operationId": "op_ea633556681c5a173ee0573e948b0b52222e7565ee8189f13b710c20b48aecf0",
+          "contractNumber": "CH-000001",
+          "snapshotHash": "eb8911ba72015f6bb8479f1cabdd49515f1789d4a04175fb891817cecb8a3901",
+          "amountCents": 7250000,
+          "effectiveDate": "2026-10-23",
+          "issuedAt": "2026-10-23T00:05:27.871Z",
+          "method": "EFECTIVO",
+          "allocations": [
+            {
+              "installmentNumber": 1,
+              "amountCents": 7250000
+            }
+          ],
+          "status": "ACREDITADO",
+          "reversedAt": null,
+          "executionMode": "EMULATOR_ONLY"
+        },
+        {
+          "receiptId": "receipt_f6602c98-50f9-4d92-8322-41373ef15a98",
+          "paymentId": "f6602c98-50f9-4d92-8322-41373ef15a98",
+          "operationId": "op_ea633556681c5a173ee0573e948b0b52222e7565ee8189f13b710c20b48aecf0",
+          "contractNumber": "CH-000001",
+          "snapshotHash": "eb8911ba72015f6bb8479f1cabdd49515f1789d4a04175fb891817cecb8a3901",
+          "amountCents": 7250000,
+          "effectiveDate": "2026-10-23",
+          "issuedAt": "2026-10-23T00:05:27.752Z",
+          "method": "TRANSFERENCIA",
+          "allocations": [
+            {
+              "installmentNumber": 1,
+              "amountCents": 7250000
+            }
+          ],
+          "status": "REVERSADO",
+          "reversedAt": "2026-10-23T00:05:27.994Z",
+          "executionMode": "EMULATOR_ONLY"
+        }
+      ],
+      "capitalCents": 58000000,
+      "serviceCents": 116000000,
+      "history": [
+        {
+          "id": "f1188001-a1b8-4721-b0bf-c4ebf0a04d92",
+          "amountCents": 7250000,
+          "effectiveDate": "2026-10-23",
+          "recordedAt": "2026-10-23T00:05:27.871Z",
+          "actor": "admin-55e2e8d4-ff27-42b1-b313-453ee0693c5b",
+          "method": "EFECTIVO",
+          "reference": "SYNTHETIC-ONLY",
+          "allocations": [
+            {
+              "installmentNumber": 1,
+              "amountCents": 7250000
+            }
+          ],
+          "reversedAt": null,
+          "reversedBy": null,
+          "reversalReason": null,
+          "receiptId": "receipt_f1188001-a1b8-4721-b0bf-c4ebf0a04d92"
+        },
+        {
+          "id": "f6602c98-50f9-4d92-8322-41373ef15a98",
+          "amountCents": 7250000,
+          "effectiveDate": "2026-10-23",
+          "recordedAt": "2026-10-23T00:05:27.752Z",
+          "actor": "admin-55e2e8d4-ff27-42b1-b313-453ee0693c5b",
+          "method": "TRANSFERENCIA",
+          "reference": "SYNTHETIC-ONLY",
+          "allocations": [
+            {
+              "installmentNumber": 1,
+              "amountCents": 7250000
+            }
+          ],
+          "reversedAt": "2026-10-23T00:05:27.994Z",
+          "reversedBy": "admin-55e2e8d4-ff27-42b1-b313-453ee0693c5b",
+          "reversalReason": "Reversa de prueba sin efecto real",
+          "receiptId": "receipt_f6602c98-50f9-4d92-8322-41373ef15a98"
+        }
+      ],
+      "blockReason": "Demostración en Emulator. Cobranza productiva deshabilitada; revisión jurídica pendiente."
+    }
+  ],
+  "operationId": "op_ea633556681c5a173ee0573e948b0b52222e7565ee8189f13b710c20b48aecf0",
+  "productionWrites": 0
+}
