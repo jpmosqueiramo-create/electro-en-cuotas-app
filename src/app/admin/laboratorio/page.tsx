@@ -3,10 +3,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import OperationsLabCircuit from '@/components/operations/OperationsLabCircuit';
 import { LAB_WATERMARK } from '@/lib/operationsLabPolicy';
+import { AdminEmailVerification } from '@/components/admin/AdminEmailVerification';
 type Session = { id: string; createdAt: string; state: string };
 export default function OperationsLabPage() {
   const { user } = useAuth();
   const [sessions, setSessions] = useState<Session[]>([]), [available, setAvailable] = useState(false), [busy, setBusy] = useState(false), [message, setMessage] = useState('Verificando acceso…');
+  const [verificationRevision, setVerificationRevision] = useState(0);
   const [selected,setSelected]=useState<string|null>(null);
   const [viewUid, setViewUid] = useState<string | null>(null);
   const authorized = available && viewUid === user?.uid;
@@ -26,7 +28,7 @@ export default function OperationsLabPage() {
       } catch (error) { if (generation.current === seq) setMessage(error instanceof Error ? error.message : 'No se pudo verificar el acceso.'); }
     })();
     return () => { generation.current = seq + 1; };
-  }, [user]);
+  }, [user, verificationRevision]);
   async function start() {
     if (!user || !authorized || flight.current) return;
     const seq = generation.current;
@@ -48,6 +50,7 @@ export default function OperationsLabPage() {
   }
   return <main className="mx-auto max-w-3xl space-y-5 p-4">
     <h1 className="font-heading text-2xl font-bold">Laboratorio de operaciones</h1>
+    {user && <AdminEmailVerification key={user.uid} user={user} onVerified={() => setVerificationRevision(revision => revision + 1)} />}
     <p className="rounded border border-yellow-500 bg-yellow-50 p-4 font-bold text-black">Sólo datos sintéticos · {LAB_WATERMARK}</p>
     <p role="status">{message}</p>
     <section className="space-y-3 rounded border p-4"><h2 className="text-xl font-semibold">Preparación del laboratorio</h2>
