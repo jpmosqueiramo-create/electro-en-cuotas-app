@@ -1,0 +1,661 @@
+{
+  "results": {
+    "01_PUBLIC_QUERY": "PASS",
+    "02_ADMIN_INBOX": "PASS",
+    "03_BUDGET_ISSUE_ACCEPTANCE": "PASS",
+    "04_PERSONAL_EMPLOYMENT_REVIEW_APPLY": "PASS",
+    "05_DOCUMENTS_MANUAL_CREDIT": "PASS",
+    "06_ECONOMICS_CONFORMITY_READY": "PASS",
+    "07_RECURRENT_REUSE_INDEPENDENT_REVIEW": "PASS",
+    "07B_STALE_CREDIT_BLOCKS_FREEZE": "PASS",
+    "07C_RETURN_DRAFT_CURRENT_PDFS_SAME_PERSISTED_REVISION": "PASS",
+    "08_REVIEW_PDF_ARCHIVE": "PASS",
+    "09_PROVIDER_LOGISTICS": "PASS",
+    "10_AFFILIATE_CUSTODY": "PASS",
+    "11_THREE_SIGNATURES_DELIVERY_SIMULATION": "PASS",
+    "12_CLIENT_ACTIVATION_EMULATOR_BRIDGE": "PASS",
+    "12B_FISCAL_MOCK_SNAPSHOT_SUPPLIER_BUYER": "PASS",
+    "12B_MISSING_COMMISSION_CONFIG_ABORTS_WITHOUT_PAYMENT": "PASS",
+    "13_PARTIAL_FULL_PAYMENTS_RECEIPTS": "PASS",
+    "13B_REVERSAL_BALANCE_RECEIPTS_ORIGINAL_SCHEDULE": "PASS",
+    "13C_FINANCIAL_REVERSAL_DOES_NOT_CHANGE_FISCAL_INVOICE": "PASS",
+    "14_UID_AUTHORIZATION_ISOLATION": "PASS",
+    "15_VISUAL_GUARDS_INTEGRITY": "PASS",
+    "16_HISTORICAL_DIGEST_UPDATETIME_UNCHANGED": "PASS"
+  },
+  "http": [
+    {
+      "method": "POST",
+      "path": "/api/public/solicitudes",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/acceptance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/acceptance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/credit-review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/credit-review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/credit-review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/credit-review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/credit-review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/credit-review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/contract",
+      "status": 409
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/solicitudes",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-4139daaa-44ef-4075-9426-c916258061f9/versions/1/acceptance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-4139daaa-44ef-4075-9426-c916258061f9/versions/1/acceptance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-4139daaa-44ef-4075-9426-c916258061f9/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-4139daaa-44ef-4075-9426-c916258061f9/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-4139daaa-44ef-4075-9426-c916258061f9/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-4139daaa-44ef-4075-9426-c916258061f9/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-4139daaa-44ef-4075-9426-c916258061f9/versions/1/credit-review",
+      "status": 409
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-4139daaa-44ef-4075-9426-c916258061f9/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-4139daaa-44ef-4075-9426-c916258061f9/versions/1/credit-review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-4139daaa-44ef-4075-9426-c916258061f9/versions/1/credit-review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-4139daaa-44ef-4075-9426-c916258061f9/versions/1/credit-review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-4139daaa-44ef-4075-9426-c916258061f9/versions/1/credit-review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-4139daaa-44ef-4075-9426-c916258061f9/versions/1/credit-review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/credit-review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/credit-review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/credit-review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/credit-review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/credit-review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/contract",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/fulfillment",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/fulfillment",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/fulfillment",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/fulfillment",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/fulfillment",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/fulfillment",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/fulfillment",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/fulfillment",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/custody",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/custody",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/custodia-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/1",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/custodia-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/1",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/delivery",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/custodia-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/1/delivery",
+      "status": 403
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/delivery",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/delivery",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/delivery",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/delivery",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/delivery",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/custodia-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/1/delivery",
+      "status": 403
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/delivery",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/delivery",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/custodia-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/1/delivery",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/fiscal",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/fiscal",
+      "status": 403
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/financial",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/financial",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/financial",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/financial",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/financial",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/financial",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/financial",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/financial",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/financial",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/financial",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/cliente/servicios-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/1/financial",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/cliente/servicios-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/1/financial",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/afiliado/operaciones-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/1/financial",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/afiliado/operaciones-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/1/financial",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/credit-review",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/credit-review",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/contract",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/presupuestos-v2/integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360/versions/1/credit-review",
+      "status": 401
+    }
+  ],
+  "ux": [
+    {
+      "label": "03-aceptacion-ficha",
+      "width": 1280,
+      "inputs": 0,
+      "buttons": 6,
+      "scrollHeight": 1229,
+      "nextAction": "Próxima acción: Preparar datos contractuales\n\nResponsable: Administración"
+    },
+    {
+      "label": "05-datos-recibidos",
+      "width": 1280,
+      "inputs": 38,
+      "buttons": 34,
+      "scrollHeight": 4594,
+      "nextAction": "Próxima acción: Registrar conformidad del cliente\n\nResponsable: Administración"
+    },
+    {
+      "label": "06-documentos-verificados",
+      "width": 1280,
+      "inputs": 36,
+      "buttons": 37,
+      "scrollHeight": 4937,
+      "nextAction": "Próxima acción: Registrar conformidad del cliente\n\nResponsable: Administración"
+    },
+    {
+      "label": "07-ready",
+      "width": 1280,
+      "inputs": 36,
+      "buttons": 31,
+      "scrollHeight": 4652,
+      "nextAction": "Próxima acción: Consultar seguimiento del producto\n\nResponsable: Administración"
+    },
+    {
+      "label": "14-recurrente-actualizacion",
+      "width": 1280,
+      "inputs": 35,
+      "buttons": 37,
+      "scrollHeight": 5025,
+      "nextAction": "Próxima acción: Completar revisión contractual\n\nResponsable: Administración"
+    },
+    {
+      "label": "08-proveedor-logistica",
+      "width": 1280,
+      "inputs": 0,
+      "buttons": 9,
+      "scrollHeight": 1223,
+      "nextAction": "Próxima acción: Revisar documentación contractual\n\nResponsable: Administración"
+    },
+    {
+      "label": "09-pago-parcial",
+      "width": 1280,
+      "inputs": 5,
+      "buttons": 12,
+      "scrollHeight": 3771,
+      "nextAction": "Próxima acción: Consultar cuotas y pagos\n\nResponsable: Administración"
+    },
+    {
+      "label": "final-presupuesto-1280",
+      "width": 1280,
+      "inputs": 0,
+      "buttons": 7,
+      "scrollHeight": 1271,
+      "nextAction": "Próxima acción: Consultar cuotas y pagos\n\nResponsable: Administración"
+    },
+    {
+      "label": "final-documentacion-1280",
+      "width": 1280,
+      "inputs": 42,
+      "buttons": 39,
+      "scrollHeight": 4116,
+      "nextAction": "Próxima acción: Consultar cuotas y pagos\n\nResponsable: Administración"
+    },
+    {
+      "label": "final-logistica-1280",
+      "width": 1280,
+      "inputs": 11,
+      "buttons": 18,
+      "scrollHeight": 2960,
+      "nextAction": "Próxima acción: Consultar cuotas y pagos\n\nResponsable: Administración"
+    },
+    {
+      "label": "final-afiliado-1280",
+      "width": 1280,
+      "inputs": 3,
+      "buttons": 9,
+      "scrollHeight": 1579,
+      "nextAction": "Próxima acción: Consultar cuotas y pagos\n\nResponsable: Administración"
+    },
+    {
+      "label": "final-finanzas-1280",
+      "width": 1280,
+      "inputs": 11,
+      "buttons": 16,
+      "scrollHeight": 4550,
+      "nextAction": "Próxima acción: Consultar cuotas y pagos\n\nResponsable: Administración"
+    },
+    {
+      "label": "final-recurrente-1280",
+      "width": 1280,
+      "inputs": 35,
+      "buttons": 37,
+      "scrollHeight": 5067,
+      "nextAction": "Próxima acción: Completar revisión contractual\n\nResponsable: Administración"
+    },
+    {
+      "label": "final-presupuesto-390",
+      "width": 390,
+      "inputs": 0,
+      "buttons": 7,
+      "scrollHeight": 1695,
+      "nextAction": "Próxima acción: Consultar cuotas y pagos\n\nResponsable: Administración"
+    },
+    {
+      "label": "final-documentacion-390",
+      "width": 390,
+      "inputs": 42,
+      "buttons": 39,
+      "scrollHeight": 5709,
+      "nextAction": "Próxima acción: Consultar cuotas y pagos\n\nResponsable: Administración"
+    },
+    {
+      "label": "final-logistica-390",
+      "width": 390,
+      "inputs": 11,
+      "buttons": 18,
+      "scrollHeight": 4389,
+      "nextAction": "Próxima acción: Consultar cuotas y pagos\n\nResponsable: Administración"
+    },
+    {
+      "label": "final-afiliado-390",
+      "width": 390,
+      "inputs": 3,
+      "buttons": 9,
+      "scrollHeight": 2306,
+      "nextAction": "Próxima acción: Consultar cuotas y pagos\n\nResponsable: Administración"
+    },
+    {
+      "label": "final-finanzas-390",
+      "width": 390,
+      "inputs": 11,
+      "buttons": 16,
+      "scrollHeight": 5603,
+      "nextAction": "Próxima acción: Consultar cuotas y pagos\n\nResponsable: Administración"
+    },
+    {
+      "label": "final-recurrente-390",
+      "width": 390,
+      "inputs": 35,
+      "buttons": 37,
+      "scrollHeight": 6986,
+      "nextAction": "Próxima acción: Completar revisión contractual\n\nResponsable: Administración"
+    }
+  ],
+  "first": {
+    "budgetId": "integral-792bab62-94a1-4bbc-964f-3b6c1fe5d360",
+    "sourceId": "web_32a14ecd-1f26-4d3c-9a99-aee96cfe5f02",
+    "operationId": "op_d250c37ffbac000755513b648ad58e65c5420647dc5d93b3a6caaea7118a16d6",
+    "snapshotId": "cv2_e5ab64a9b3ac7ee7aa2a2275e8a5b91f59f232ed07c7f507fda23313b3c3a123_s1"
+  },
+  "second": {
+    "budgetId": "integral-4139daaa-44ef-4075-9426-c916258061f9",
+    "sourceId": "web_a58086b9-4db1-4495-b25c-7371bb727b98",
+    "operationId": "op_ec3ca5e1b9af35a70249f28189371af071abd3866614cca12046fbb3c661d8a3"
+  },
+  "productionWrites": 0,
+  "legalApproval": "PENDING",
+  "syntheticBridges": [
+    "EMULATOR_FREEZE_DEPENDENCIES",
+    "CLIENT_ACTIVATION_FIXTURE",
+    "FINANCIAL_APPROVAL_FIXTURE"
+  ],
+  "externalFirebase": []
+}
