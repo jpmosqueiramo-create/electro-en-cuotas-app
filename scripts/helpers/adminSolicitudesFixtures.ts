@@ -2,7 +2,7 @@ import "./requireSafeEmulatorEnvironment";
 import assert from "node:assert/strict";
 import { admin } from "../../src/lib/firebaseAdmin";
 
-export const adminEmail = "jpmosqueiramo@gmail.com";
+export const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@example.test";
 export const adminPassword = "Password123!";
 export const duplicateId = "solicitudes_v1_same_id";
 export async function setupAdminSolicitudesFixtures() {
