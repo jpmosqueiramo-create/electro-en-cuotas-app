@@ -1,0 +1,2 @@
+# PDF byte hashes are audited in manifest.json; never normalize their bytes.
+*.pdf binary

@@ -1,3 +1,5 @@
+import { originalFormalFields, originalFormalParameters } from './originalBindings';
+import type { ContractDraftV2 } from '../contractV2';
 import { assertFinalRenderer } from './pdf';
 import { argentinaBusinessDate, ISSUE_DATE_POLICY, ISSUE_DATE_TIME_ZONE } from './businessDate';
 import type { Transaction } from 'firebase-admin/firestore';
@@ -81,12 +83,13 @@ export async function approvedPackage(runtime: ProductionRuntime, tx: Transactio
         throw Error('FINAL_PACKAGE_APPROVAL_REVOKED');
     return { package: p, approval: a, approvalHash: contractValueHash(a) };
 }
-function legalContext(p: FinalPackage, approvalId: string, formal: unknown) {
-    const f = exact(formal, ['contractIssueDate', 'contractIssuePlace', 'promissoryNoteIssueDate', 'promissoryNoteIssuePlace']);
+function legalContext(p: FinalPackage, approvalId: string, formal: unknown, draft: ContractDraftV2) {
+    const f = exact(formal, ['contractIssueDate', 'contractIssuePlace', 'promissoryNoteIssueDate', 'promissoryNoteIssuePlace', ...(p.originalsPolicy ? originalFormalFields : [])]);
     calendarDate(f.contractIssueDate);
     calendarDate(f.promissoryNoteIssueDate);
+    const originalParams = originalFormalParameters(p, Object.fromEntries(originalFormalFields.map(k=>[k,f[k]])), draft.economicTerms!.contractTotal, draft.paymentScheduleDraft);
     const def = (kind: 'MANDATE' | 'PAGARE') => ({ templateId: p.templates[kind].id, templateVersion: p.templates[kind].version, templateHash: p.templates[kind].sha256, rendererBundleId: p.id, rendererBundleHash: p.rendererHash, resourcesManifestHash: p.resourcesHash, legalApprovalId: approvalId });
-    const value = { issuer: p.issuer, documentContext: { policyVersion: 'PRODUCTION_FORMAL_CONTEXT_V1', contractIssueDate: String(f.contractIssueDate), contractIssuePlace: text(f.contractIssuePlace), promissoryNoteIssueDate: String(f.promissoryNoteIssueDate), promissoryNoteIssuePlace: text(f.promissoryNoteIssuePlace), parameterSchemaId: p.id, parameters: { jurisdiction: p.jurisdiction, issuanceDatePolicy: ISSUE_DATE_POLICY, issuanceTimeZone: ISSUE_DATE_TIME_ZONE } }, documentDefinitions: { contract: def('MANDATE'), promissoryNote: def('PAGARE') } };
+    const value = { issuer: p.issuer, documentContext: { policyVersion: 'PRODUCTION_FORMAL_CONTEXT_V1', contractIssueDate: String(f.contractIssueDate), contractIssuePlace: text(f.contractIssuePlace), promissoryNoteIssueDate: String(f.promissoryNoteIssueDate), promissoryNoteIssuePlace: text(f.promissoryNoteIssuePlace), parameterSchemaId: p.id, parameters: { ...originalParams, jurisdiction: p.jurisdiction, issuanceDatePolicy: ISSUE_DATE_POLICY, issuanceTimeZone: ISSUE_DATE_TIME_ZONE } }, documentDefinitions: { contract: def('MANDATE'), promissoryNote: def('PAGARE') } };
     validateContractLegalContext(value);
     return value;
 }
@@ -115,7 +118,7 @@ export async function authorizeOperation(runtime: ProductionRuntime, id: string,
             throw Error('PRODUCTION_OPERATION_MISMATCH');
         const approved = await approvedPackage(runtime, tx, String(c.packageId), String(c.approvalId));
         assertFinalRenderer(approved.package);
-        const at = new Date().toISOString(), authorization = { schemaVersion: 'PRODUCTION_OPERATION_AUTHORIZATION_V1' as const, id: commandId, operationId: source.identity.operationId, budgetId: id, version: v, readyRevision: Number(c.expectedRevision), packageId: approved.package.id, packageHash: approved.package.sha256, approvalId: String(c.approvalId), approvalHash: approved.approvalHash, sourceHash: source.sourceHash, scopes: [...(c.scopes as ProductionScope[])].sort() as ProductionScope[], legalContext: legalContext(approved.package, String(c.approvalId), c.formal), reason, actor, at, expiresAt, digest };
+        const at = new Date().toISOString(), authorization = { schemaVersion: 'PRODUCTION_OPERATION_AUTHORIZATION_V1' as const, id: commandId, operationId: source.identity.operationId, budgetId: id, version: v, readyRevision: Number(c.expectedRevision), packageId: approved.package.id, packageHash: approved.package.sha256, approvalId: String(c.approvalId), approvalHash: approved.approvalHash, sourceHash: source.sourceHash, scopes: [...(c.scopes as ProductionScope[])].sort() as ProductionScope[], legalContext: legalContext(approved.package, String(c.approvalId), c.formal, source.draft), reason, actor, at, expiresAt, digest };
         const hash = contractValueHash(authorization);
         tx.create(ref, { ...authorization, hash });
         return { id: commandId, hash, replay: false };

@@ -13,7 +13,7 @@ async function main() {
     const probe = createServer(); probe.once("error", reject); probe.listen(3000, "localhost", () => probe.close(() => resolve()));
   });
   const env: NodeJS.ProcessEnv = { ...process.env, NODE_ENV: "development", NEXT_PUBLIC_ADMIN_EMAIL:adminEmail, GCLOUD_PROJECT: "demo-cuenta-hogar", NEXT_PUBLIC_FIREBASE_PROJECT_ID: "demo-cuenta-hogar", NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "demo-cuenta-hogar.firebaseapp.com", NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "demo-cuenta-hogar.appspot.com", NEXT_PUBLIC_FIREBASE_API_KEY: "demo-key", NEXT_PUBLIC_FIREBASE_APP_ID: "demo-app", NEXT_PUBLIC_E2E_TEST_MODE: "1", NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099" };
-  const server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "dev", "--hostname", "localhost", "--port", "3000"], { env, stdio: "inherit" });
+  const server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "dev", ...(process.env.LOCAL_BROWSER_WEBPACK === "1" ? ["--webpack"] : []), "--hostname", "localhost", "--port", "3000"], { env, stdio: "inherit" });
   const stop = () => { server.kill("SIGTERM"); };
   process.once("SIGINT", stop); process.once("SIGTERM", stop);
   try {

@@ -1,0 +1,46 @@
+import './helpers/requireSafeEmulatorEnvironment';
+import assert from 'node:assert/strict';
+import { randomUUID, createHash } from 'node:crypto';
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { admin } from '../src/lib/firebaseAdmin';
+import { productionReadyFixture, syntheticOriginalPackage, syntheticOriginalFormal } from './helpers/productionAdapterFixtures';
+import { originalFormalParameters } from '../src/lib/productionV2/originalBindings';
+import { assertFinalRenderer, FINAL_RENDERER_HASH, FINAL_RESOURCES_HASH } from '../src/lib/productionV2/pdf';
+import { packageHash, approvedFinalPackages } from '../src/lib/productionV2/catalog';
+import { productionRuntimeForEmulator } from '../src/lib/productionV2/runtime';
+import { authorizeOperation, recordFinalPackageApproval } from '../src/lib/productionV2/authorization';
+import { argentinaBusinessDate } from '../src/lib/productionV2/businessDate';
+import { readOperationDraftDocuments } from '../src/lib/contractDocuments/operationDraftServer';
+import { contractValueHash } from '../src/lib/contractIntegrityV2';
+import candidate from '../src/lib/productionV2/proposedPackages/originals-v1.json';
+const checks:string[]=[];const pass=(name:string)=>{checks.push(name);console.log(name+' = PASS');};
+async function run(){
+ const db=admin.firestore();assert.equal(process.env.GCLOUD_PROJECT,'demo-cuenta-hogar');assert.deepEqual(approvedFinalPackages,[]);
+ const actor=(await admin.auth().createUser({email:process.env.NEXT_PUBLIC_ADMIN_EMAIL,emailVerified:true,password:'Only-Emulator-123'})).uid;
+ const f=await productionReadyFixture(actor,true), p=syntheticOriginalPackage(), runtime=productionRuntimeForEmulator(db,admin.auth(),[p],[actor]);
+ const sourceBefore=contractValueHash({b:(await f.r.budget.get()).data(),a:(await f.r.acceptance.get()).data(),d:(await f.r.draft.get()).data()}),time=(await f.r.draft.get()).updateTime!.toMillis();
+ const result=await readOperationDraftDocuments(db,f.id,1);assert(result.available);const repeat=await readOperationDraftDocuments(db,f.id,1);assert.deepEqual(result,repeat);
+ assert.equal(contractValueHash({b:(await f.r.budget.get()).data(),a:(await f.r.acceptance.get()).data(),d:(await f.r.draft.get()).data()}),sourceBefore);assert.equal((await f.r.draft.get()).updateTime!.toMillis(),time);
+ assert.equal((await db.collection('contractNumbersV2').get()).size,0);assert.equal((await db.collection('contractSnapshotsV2').get()).size,0);pass('READ_ONLY_PREVIEW_THREE_DOCUMENTS_REPRODUCIBLE_NO_NUMBER_NO_WRITES');
+ const schedule=result.projection.schedule,total=result.projection.economics!.total;
+ assert.deepEqual(originalFormalParameters(p,syntheticOriginalFormal,total,schedule),syntheticOriginalFormal);
+ for(const bad of [{...syntheticOriginalFormal,originalCft:1},{...syntheticOriginalFormal,originalCft:-1},{...syntheticOriginalFormal,originalCft:NaN},{...syntheticOriginalFormal,originalAllocationConformity:''},{...syntheticOriginalFormal,extra:1}]) assert.throws(()=>originalFormalParameters(p,bad,total,schedule));
+ assert.throws(()=>originalFormalParameters(p,syntheticOriginalFormal,total,schedule.map((r,i)=>({...r,dueDate:i?'2027-01-30':r.dueDate}))),/SCHEDULE_OUTSIDE/);pass('ALLOCATION_CONCILIATION_CONFORMITY_AND_ORIGINAL_DATE_RANGE_REQUIRED');
+ assertFinalRenderer(p);
+ const bad={...p,originalsPolicy:{...p.originalsPolicy!,noteJurisdiction:''}};const {sha256:_,...body}=bad;void _;assert.throws(()=>assertFinalRenderer({...body,sha256:packageHash(body)}),/POLICY_REQUIRED/);pass('NOTE_POLICY_SEPARATE_AND_EXACT_PACKAGE_REQUIRED');
+ const approvalId=randomUUID();await recordFinalPackageApproval(runtime,{commandId:approvalId,packageId:p.id,packageHash:p.sha256,approvalDate:argentinaBusinessDate(),professional:'SINTÉTICO NO REAL',validationReference:'ONLY_EMULATOR',sourceReference:'ONLY_EMULATOR',confirmed:true},actor);
+ const formal={contractIssueDate:argentinaBusinessDate(),contractIssuePlace:'Ciudad de ejemplo',promissoryNoteIssueDate:argentinaBusinessDate(),promissoryNoteIssuePlace:'Ciudad de ejemplo'};
+ const grant={commandId:randomUUID(),operationId:f.identity.operationId,expectedRevision:f.ready.revision,packageId:p.id,approvalId,formal,scopes:['ISSUANCE'],expiresAt:new Date(Date.now()+86400000).toISOString(),reason:'Prueba sintética, sin autorización real',confirmed:true};
+ await assert.rejects(authorizeOperation(runtime,f.id,1,grant,actor));
+ const complete={...grant,formal:{...formal,...syntheticOriginalFormal}};const authorized=await authorizeOperation(runtime,f.id,1,complete,actor);assert(!authorized.replay);assert((await authorizeOperation(runtime,f.id,1,complete,actor)).replay);
+ await assert.rejects(authorizeOperation(runtime,f.id,1,{...complete,formal:{...complete.formal,originalCft:0}},actor));pass('API_AUTHORIZATION_MISSING_FIELDS_REJECTED_REPLAY_AND_CONFLICT');
+ const normal=(s:string)=>s.replace(/PÁGINA \d+/g,'').replace(/\s+/g,' ').trim();
+ for(const kind of ['MANDATE','PAGARE'] as const){const src=normal(readFileSync(candidate.sources[kind].textPath,'utf8'));assert.equal(normal(candidate.documents[kind].blocks.map(b=>b.originalText).join(' ')),src.slice(candidate.documents[kind].title.length).trim());}
+ pass('ALL_ORIGINAL_CLAUSES_PRESERVED_IN_SOURCE_ORDER');
+ const folder='output/pdf/document-review-v1';mkdirSync(folder,{recursive:true});
+ const pdfs=Object.fromEntries(([['MANDATE','mandate','mandato-propuesto-revision.pdf'],['PAGARE','promissoryNote','pagare-propuesto-revision.pdf'],['REMITO','remito','remito-propuesto-revision.pdf']] as const).map(([kind,key,path])=>{const a=result[key],bytes=Buffer.from(a.base64,'base64');assert.equal(createHash('sha256').update(bytes).digest('hex'),a.sha256);writeFileSync(folder+'/'+path,bytes);return [kind,{path,sha256:a.sha256,pages:a.pages}];}));
+ pass('ARTIFACTS_FROM_REAL_READ_ONLY_SERVER_PROJECTION');
+ writeFileSync(folder+'/manifest.json',JSON.stringify({candidateHash:contractValueHash(candidate),sourceDocuments:candidate.sources,templateVersions:Object.fromEntries(Object.entries(p.templates).map(([kind,t])=>[kind,{version:t.version,sha256:t.sha256}])),status:'PROPOSED_NOT_APPROVED',installable:false,source:'Existing readOperationDraftDocuments / production shared renderer',productionWrites:0,rendererHash:FINAL_RENDERER_HASH,resourcesHash:FINAL_RESOURCES_HASH,templateHash:result.templateHash,projection:result.projection,pdfs,checks},null,2)+'\n');
+ console.log(JSON.stringify({status:'PASS',groups:checks.length,productionWrites:0,checks}));
+}
+run().then(()=>admin.app().delete()).catch(e=>{console.error(e);process.exitCode=1;});

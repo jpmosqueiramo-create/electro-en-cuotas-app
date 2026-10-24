@@ -1,0 +1,34 @@
+{
+  "browser": "PASS",
+  "recovery": "PASS_EXPIRED_AUTHORIZATION_HTTP_UI",
+  "mode": "REAL_ADAPTER_ON_LOCAL_EMULATORS",
+  "http": "existing route exports in shared isolated test process",
+  "screens": [
+    "authorization-pending-desktop",
+    "issued-documents-desktop",
+    "issued-documents-mobile",
+    "three-signatures-mobile",
+    "delivery-affiliate-mobile",
+    "admin-paid-mobile",
+    "admin-paid-desktop",
+    "client-paid-desktop",
+    "client-paid-mobile",
+    "affiliate-paid-mobile",
+    "affiliate-paid-desktop",
+    "reversal-admin-desktop",
+    "cliente-reversed-desktop",
+    "afiliado-reversed-desktop",
+    "recovery-pending-desktop",
+    "recovery-pending-mobile",
+    "recovery-completed-mobile"
+  ],
+  "productionWrites": 0,
+  "total": 1740000,
+  "paid": 145000,
+  "balanceAfterPayment": 1595000,
+  "balanceAfterReversal": 1740000,
+  "requestsByStatus": {
+    "200": 171,
+    "403": 2
+  }
+}

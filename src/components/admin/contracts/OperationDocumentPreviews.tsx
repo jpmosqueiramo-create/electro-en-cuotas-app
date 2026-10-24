@@ -6,9 +6,9 @@ import { goToContractSection,type ContractSectionTarget } from './contractSectio
 import { btn } from './ContractDataFields';
 import { documentPreviewMessages,type DocumentPreviewCode } from '@/lib/contractDocuments/previewErrors';
 type Artifact={base64:string;sha256:string;pages:number};
-type Payload={projection:OperationDraftProjection;available:boolean;code?:DocumentPreviewCode|null;templateVersion?:string;mandate?:Artifact;promissoryNote?:Artifact};
+type Payload={projection:OperationDraftProjection;available:boolean;code?:DocumentPreviewCode|null;templateVersion?:string;mandate?:Artifact;promissoryNote?:Artifact;remito?:Artifact};
 export function OperationDocumentPreviews({budgetId,version,revision}:{budgetId:string;version:number;revision:number}){
- const {user}=useAuth(),[loaded,setLoaded]=useState<{key:string;value:Payload}|null>(null),[failure,setFailure]=useState<{key:string;text:string}|null>(null),[attempt,setAttempt]=useState(0),[view,setView]=useState<{key:string;kind:'mandate'|'promissoryNote';url:string}|null>(null);
+ const {user}=useAuth(),[loaded,setLoaded]=useState<{key:string;value:Payload}|null>(null),[failure,setFailure]=useState<{key:string;text:string}|null>(null),[attempt,setAttempt]=useState(0),[view,setView]=useState<{key:string;kind:'mandate'|'promissoryNote'|'remito';url:string}|null>(null);
  const selection=useRef({value:0}),urls=useRef<string[]>([]),key=JSON.stringify([budgetId,version,revision,attempt,user?.uid]);
  useEffect(()=>{
   const controller=new AbortController();
@@ -25,7 +25,7 @@ export function OperationDocumentPreviews({budgetId,version,revision}:{budgetId:
   return()=>{currentSelection.value++;controller.abort();currentUrls.splice(0).forEach(url=>URL.revokeObjectURL(url));};
  },[budgetId,version,revision,user,key]);
  const value=loaded?.key===key?loaded.value:null,error=failure?.key===key?failure.text:'';
- async function open(kind:'mandate'|'promissoryNote'){
+ async function open(kind:'mandate'|'promissoryNote'|'remito'){
   if(!value?.available)return;const artifact=value[kind];if(!artifact)return;const selected=++selection.current.value;
   try{
    const bytes=Uint8Array.from(atob(artifact.base64),c=>c.charCodeAt(0));
@@ -37,12 +37,12 @@ export function OperationDocumentPreviews({budgetId,version,revision}:{budgetId:
  function close(){selection.current.value++;urls.current.splice(0).forEach(url=>URL.revokeObjectURL(url));setView(null);}
  function go(section:ContractSectionTarget|'legal'){if(section!=='legal')goToContractSection(section);}
  return <section className="min-w-0 space-y-3 rounded-xl border border-border-color bg-surface p-4" data-testid="operation-document-previews"><h3 className="font-heading text-xl font-bold">Documentos de la operación</h3>
-  <p className="font-bold text-warning">BORRADOR — NO VÁLIDO PARA FIRMA</p><p>Vistas previas de los datos guardados. No asignan número contractual, no acreditan firmas y no habilitan emisión definitiva. Aprobación jurídica pendiente.</p>
+  <p className="font-bold text-warning">BORRADOR — NO VÁLIDO PARA FIRMA</p><p>Propuestas basadas en los modelos originales, con los datos guardados. CFT, punitorios y datos formales pendientes se identifican sin completar valores supuestos. No asignan número contractual, no acreditan firmas y no habilitan emisión definitiva. Aprobación jurídica pendiente.</p>
   {error&&<p role="alert">{error}</p>}
   {!value&&!error&&<p>Consultando la versión guardada…</p>}
-  <div className="flex flex-col gap-3 sm:flex-row">{(['mandate','promissoryNote'] as const).map(kind=><button key={kind} className={btn} disabled={!value?.available||!!error} onClick={()=>void open(kind)}>{kind==='mandate'?'Contrato de mandato':'Pagaré'} — Ver vista previa</button>)}</div>
+  <div className="flex flex-col gap-3 sm:flex-row">{(['mandate','promissoryNote','remito'] as const).map(kind=><button key={kind} className={btn} disabled={!value?.available||!!error} onClick={()=>void open(kind)}>{kind==='mandate'?'Contrato de mandato':kind==='promissoryNote'?'Pagaré':'Remito'} — Ver vista previa</button>)}</div>
   <button className={btn} onClick={()=>setAttempt(n=>n+1)}>Actualizar vistas previas guardadas</button>
-  {value&&<>{value.code&&<p role={value.available?'status':'alert'}>{documentPreviewMessages[value.code]}</p>}<p>Versión guardada del borrador: {value.projection.draftRevision}. {value.available?'Ambos documentos usan los mismos datos persistidos.':'Revisá la identidad o la conformidad pendiente antes de generar documentos.'}</p><h4 className="font-bold">Pendientes de revisión</h4><ul className="space-y-2">{value.projection.pending.map(item=><li key={item.label} className="break-words">{item.label}{item.section!=='legal'&&<button className="ml-2 min-h-11 underline" onClick={()=>go(item.section)}>Revisar sección</button>}</li>)}</ul></>}
-  {view?.key===key&&!error&&<div className="min-w-0 space-y-2" data-testid="operation-document-open"><button className={btn} onClick={close}>Cerrar vista previa</button><h4 className="font-bold">{view.kind==='mandate'?'Contrato de mandato':'Pagaré'} · Borrador</h4><a className={`${btn} inline-flex`} href={view.url} target="_blank" rel="noreferrer">Abrir PDF para revisión e impresión</a><p className="sm:hidden">En celular, abrí el PDF para verlo completo o imprimirlo con el visor de tu dispositivo.</p><p className="hidden text-sm sm:block">Si el visor no muestra el documento, usá el enlace para abrir el PDF completo.</p><iframe title="Documento de la operación en borrador" src={view.url} className="hidden h-[560px] w-full rounded border border-border-color sm:block"/></div>}
+  {value&&<>{value.code&&<p role={value.available?'status':'alert'}>{documentPreviewMessages[value.code]}</p>}<p>Versión guardada del borrador: {value.projection.draftRevision}. {value.available?'Los tres documentos usan los mismos datos persistidos.':'Revisá la identidad o la conformidad pendiente antes de generar documentos.'}</p><h4 className="font-bold">Pendientes de revisión</h4><ul className="space-y-2">{value.projection.pending.map(item=><li key={item.label} className="break-words">{item.label}{item.section!=='legal'&&<button className="ml-2 min-h-11 underline" onClick={()=>go(item.section)}>Revisar sección</button>}</li>)}</ul></>}
+  {view?.key===key&&!error&&<div className="min-w-0 space-y-2" data-testid="operation-document-open"><button className={btn} onClick={close}>Cerrar vista previa</button><h4 className="font-bold">{view.kind==='mandate'?'Contrato de mandato':view.kind==='promissoryNote'?'Pagaré':'Remito'} · Borrador</h4><a className={`${btn} inline-flex`} href={view.url} target="_blank" rel="noreferrer">Abrir PDF para revisión e impresión</a><p className="sm:hidden">En celular, abrí el PDF para verlo completo o imprimirlo con el visor de tu dispositivo.</p><p className="hidden text-sm sm:block">Si el visor no muestra el documento, usá el enlace para abrir el PDF completo.</p><iframe title="Documento de la operación en borrador" src={view.url} className="hidden h-[560px] w-full rounded border border-border-color sm:block"/></div>}
  </section>;
 }

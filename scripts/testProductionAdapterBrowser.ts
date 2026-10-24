@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { argentinaBusinessDate } from '../src/lib/productionV2/businessDate';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { admin } from '../src/lib/firebaseAdmin';
-import { productionReadyFixture, syntheticFinalPackage } from './helpers/productionAdapterFixtures';
+import { productionReadyFixture, syntheticFinalPackage, syntheticOriginalPackage, syntheticOriginalFormal } from './helpers/productionAdapterFixtures';
 import { productionRuntimeForEmulator } from '../src/lib/productionV2/runtime';
 import { freezeOperation, productionPaths } from '../src/lib/productionV2/freeze';
 import { authorizeOperation, scopes } from '../src/lib/productionV2/authorization';
@@ -21,8 +21,8 @@ const scope = (test: string) => `document.querySelector('[data-testid=${test}]')
 async function run() {
     const db = admin.firestore(), email = process.env.NEXT_PUBLIC_ADMIN_EMAIL!;
     assert.equal(email, 'production-review-admin@example.test');
-    const actor = (await admin.auth().createUser({ email, password, emailVerified: true })).uid, p = syntheticFinalPackage(), runtime = productionRuntimeForEmulator(db, admin.auth(), [p], [actor]);
-    const f = await productionReadyFixture(actor), clientEmail = 'production-browser-client@example.test', client = (await admin.auth().createUser({ email: clientEmail, password, emailVerified: true })).uid;
+    const actor = (await admin.auth().createUser({ email, password, emailVerified: true })).uid, p = process.env.SYNTHETIC_ORIGINALS_SUITE === '1' ? syntheticOriginalPackage() : syntheticFinalPackage(), runtime = productionRuntimeForEmulator(db, admin.auth(), [p], [actor]);
+    const f = await productionReadyFixture(actor, process.env.SYNTHETIC_ORIGINALS_SUITE === '1'), clientEmail = 'production-browser-client@example.test', client = (await admin.auth().createUser({ email: clientEmail, password, emailVerified: true })).uid;
     await db.doc(productionPaths.counter).create({ schemaVersion: 'CONTRACT_NUMBER_COUNTER_V1', policyId: 'CONTRACT_NUMBERING_V1', executionMode: 'PRODUCTION', active: true, lastAllocatedSequence: '0', initializationAuthorizationReference: 'SYNTHETIC_BROWSER_COUNTER_ONLY' });
     mkdirSync(out, { recursive: true });
     writeFileSync(out + '/signature-synthetic.png', syntheticPng);
@@ -68,6 +68,7 @@ async function run() {
         await select('[data-testid=production-operation] select[name=approval]', approved.id);
         for (const [name, value] of Object.entries({ issueDate: argentinaBusinessDate(), issuePlace: 'Lugar sintético', noteDate: argentinaBusinessDate(), notePlace: 'Lugar sintético', expires: new Date(Date.now() + 86400000 - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16), reason: 'AUTORIZACIÓN SINTÉTICA DE PRUEBA, SIN EFECTOS REALES' }))
             await browser.change(`[data-testid=production-operation] input[name=${name}]`, value);
+        if(p.originalsPolicy) for(const [name,value] of Object.entries(syntheticOriginalFormal)) await browser.change(`[data-testid=production-operation] input[name=${name}]`,String(value));
         await browser.evaluate(`${prod}.querySelectorAll('input[name=scope]').forEach(x=>x.click())`);
         await browser.click('[data-testid=production-operation] form input[type=checkbox]:not([name])');
         await browser.clickText('Registrar autorización de esta operación', prod);
@@ -135,7 +136,7 @@ async function run() {
         await browser.until("!!document.querySelector('[data-testid=client-activation-link]')", 'invitation prepared');
         const invite = await browser.evaluate<string>("document.querySelector('[data-testid=client-activation-link]').href");
         await browser.change('[aria-label="Importe acreditado"]', '145000');
-        await browser.change('[aria-label="Fecha efectiva"]', argentinaBusinessDate());
+        await browser.change('[aria-label="Fecha efectiva"]', new Date().toISOString().slice(0,10));
         await browser.change('[aria-label="Referencia de acreditación"]', 'SYNTHETIC PAYMENT NO REAL MONEY');
         await browser.clickText('Confirmar pago acreditado', finance);
         await browser.until(`${finance}?.textContent.replace(/\\s/g,'').includes('Saldopendiente:$1.595.000,00')`, 'admin balance');
@@ -190,10 +191,10 @@ async function run() {
         // A second, entirely synthetic fixture starts from an interrupted frozen issue.
         // Only seeding/interruption is programmatic; recovery is completed through the actual UI/API.
         await logout(); await login(email);
-        const interrupted=await productionReadyFixture(actor), bucket=await getBudgetDocumentationBucket();
+        const interrupted=await productionReadyFixture(actor, process.env.SYNTHETIC_ORIGINALS_SUITE === '1'), bucket=await getBudgetDocumentationBucket();
         const expiry=Date.now()+15000;
         const recoveryGrant=await authorizeOperation(runtime,interrupted.id,1,{commandId:randomUUID(),operationId:interrupted.identity.operationId,expectedRevision:interrupted.ready.revision,packageId:p.id,approvalId:approved.id,
-            formal:{contractIssueDate:argentinaBusinessDate(),promissoryNoteIssueDate:argentinaBusinessDate(),contractIssuePlace:'Lugar sintético',promissoryNoteIssuePlace:'Lugar sintético'},scopes:[...scopes],expiresAt:new Date(expiry).toISOString(),reason:'Autorización sintética para interrupción controlada',confirmed:true},actor);
+            formal:{...(p.originalsPolicy?syntheticOriginalFormal:{}),contractIssueDate:argentinaBusinessDate(),promissoryNoteIssueDate:argentinaBusinessDate(),contractIssuePlace:'Lugar sintético',promissoryNoteIssuePlace:'Lugar sintético'},scopes:[...scopes],expiresAt:new Date(expiry).toISOString(),reason:'Autorización sintética para interrupción controlada',confirmed:true},actor);
         await freezeOperation(runtime,interrupted.id,1,{commandId:randomUUID(),authorizationId:recoveryGrant.id,expectedRevision:interrupted.ready.revision,confirmed:true},actor);
         const unavailable=new Proxy(bucket,{get(target,key){if(key==='file')return (...args:Parameters<typeof bucket.file>)=>{const file=target.file(...args);return new Proxy(file,{get(f,k){if(k==='save')return async()=>{throw Error('SYNTHETIC_INTERRUPTION');};const value=Reflect.get(f,k);return typeof value==='function'?value.bind(f):value;}});};const value=Reflect.get(target,key);return typeof value==='function'?value.bind(target):value;}});
         await assert.rejects(issueDocuments(runtime,unavailable,interrupted.id,1,actor),/SYNTHETIC_INTERRUPTION/);

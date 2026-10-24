@@ -1,0 +1,197 @@
+{
+  "candidateHash": "3cbdc3f30fc20291fef597c68cd49817e082478fba2344010475ea9641f2d34d",
+  "sourceDocuments": {
+    "MANDATE": {
+      "name": "Contrato de Mandato Comercial - Cuenta Hogar SRL V3.pdf",
+      "sha256": "8e23a3734506a63920de1b75a3fdcb4f0c6fe88c13c1941b3357ebd9e1a3b4d6",
+      "textPath": "docs/production-readiness/legal-package/mandate-original.txt"
+    },
+    "PAGARE": {
+      "name": "Pagaré a la Vista (Sin Garante) - Cuenta Hogar SRL.pdf",
+      "sha256": "6f22b6f9bae6fd75f989ed9fb33ef53052832a43fff5d3f52fd30db56c3253b6",
+      "textPath": "docs/production-readiness/legal-package/pagare-original.txt"
+    },
+    "REMITO": {
+      "name": "renderRemitoModelo",
+      "reference": "src/lib/pdfGenerator.ts#renderRemitoModelo",
+      "sha256": "851708304b61d6e278303bb15e11bc79cc53edc4d276145ec0bd1a80207d30b5",
+      "textPath": "docs/production-readiness/legal-package/remito-existing-renderer.txt"
+    }
+  },
+  "templateVersions": {
+    "MANDATE": {
+      "version": "OWNER_ORIGINALS_INTEGRATION_V1",
+      "sha256": "0e9282dd81c70a178d02d9222018a793bf13a8b35388502bcd2647c10c340224"
+    },
+    "PAGARE": {
+      "version": "OWNER_ORIGINALS_INTEGRATION_V1",
+      "sha256": "19bebbe8405a7521710d329d76730d439934b159eb66d2d330a0958c20934ccb"
+    },
+    "REMITO": {
+      "version": "OWNER_ORIGINALS_INTEGRATION_V1",
+      "sha256": "5df4e2b263d428fa3dd338c6f6bfb74869419617f93f62567006c979d69a15d0"
+    }
+  },
+  "status": "PROPOSED_NOT_APPROVED",
+  "installable": false,
+  "source": "Existing readOperationDraftDocuments / production shared renderer",
+  "productionWrites": 0,
+  "rendererHash": "186bbb45f0f9fcfe29589cc3ba7a09f32d1854963daf88d719b2e747df9c8154",
+  "resourcesHash": "403b7a9a2915f3886a8f76385757a092072dd61d0337a01ebc4bb4d0045dfcd3",
+  "templateHash": "6b0b2029fb27928f183609a28b3bb2be26a9ac2a49481f4fafacb6b74fdc8ec0",
+  "projection": {
+    "version": "OPERATION_DRAFT_REVIEW_V2",
+    "operationId": "op_4e2f634ebc463c84604044f8c0e31baaac62d00ab09ec657376bb366ea77a643",
+    "budgetId": "custody-9a87d0d8-2106-4195-9e14-4c9748334930",
+    "budgetVersion": 1,
+    "acceptedOptionId": "option-1",
+    "draftRevision": 8,
+    "updatedAt": "2026-10-24T01:44:58.389Z",
+    "issuer": {
+      "version": "LOOP_LEGAL_ENTITY_OWNER_CONFIRMED_V1",
+      "legalName": "LOOP GESTIÓN INTEGRAL S.R.L.",
+      "tradeName": "Cuenta Hogar",
+      "taxId": "30-71962686-2",
+      "legalAddress": "Caracas 1101, Ciudad Autónoma de Buenos Aires, CP 1431"
+    },
+    "customer": {
+      "fullName": "Cliente demo",
+      "dni": "12345678",
+      "address": "Domicilio demo",
+      "locality": "Lincoln",
+      "province": "Buenos Aires",
+      "postalCode": "6070",
+      "email": "demo@example.test",
+      "whatsapp": "5491100000000",
+      "cuil": "20123456786"
+    },
+    "product": {
+      "name": "Referencia 2",
+      "description": "Gestión de compra",
+      "quantity": 1,
+      "condition": "NEW"
+    },
+    "economics": {
+      "capital": 580000,
+      "service": 1160000,
+      "total": 1740000,
+      "count": 12,
+      "installment": 145000
+    },
+    "schedule": [
+      {
+        "installmentNumber": 1,
+        "dueDate": "2026-12-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 2,
+        "dueDate": "2027-01-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 3,
+        "dueDate": "2027-02-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 4,
+        "dueDate": "2027-03-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 5,
+        "dueDate": "2027-04-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 6,
+        "dueDate": "2027-05-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 7,
+        "dueDate": "2027-06-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 8,
+        "dueDate": "2027-07-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 9,
+        "dueDate": "2027-08-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 10,
+        "dueDate": "2027-09-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 11,
+        "dueDate": "2027-10-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 12,
+        "dueDate": "2027-11-05",
+        "amount": 145000
+      }
+    ],
+    "pending": [
+      {
+        "label": "Desglose individual de gestión y logística no disponible: se conserva Servicios de Cuenta Hogar",
+        "section": "legal"
+      },
+      {
+        "label": "Representación societaria y facultades de firma pendientes de validación",
+        "section": "legal"
+      },
+      {
+        "label": "Lugar, fecha de emisión y jurisdicción pendientes de revisión jurídica",
+        "section": "legal"
+      },
+      {
+        "label": "Aprobación jurídica del mandato y de la exigibilidad del pagaré",
+        "section": "legal"
+      },
+      {
+        "label": "Snapshot contractual definitivo pendiente; vista previa de borrador persistido",
+        "section": "legal"
+      }
+    ],
+    "canPreview": true,
+    "number": null,
+    "legalApproval": "PENDING",
+    "issuance": "DRAFT_REVIEW_ONLY",
+    "sourceHash": "0c445136784f6ff948d66864653cf68ba895dd66bbe2e06ec837b741e6efbdd4",
+    "projectionHash": "0c41a9d028df4db11123b5962468354c557b0e05b9820f2bc2fc0b143c38b9be"
+  },
+  "pdfs": {
+    "MANDATE": {
+      "path": "mandato-propuesto-revision.pdf",
+      "sha256": "6ad79c11ac18550c5f22b3aaa0dbe80601c5309bb2bdc6d5ce85b29bb3d2a76b",
+      "pages": 3
+    },
+    "PAGARE": {
+      "path": "pagare-propuesto-revision.pdf",
+      "sha256": "60618bef483fc2625773a11281260bb30bfdbf223c7860a2ca44237a5afe1aaf",
+      "pages": 1
+    },
+    "REMITO": {
+      "path": "remito-propuesto-revision.pdf",
+      "sha256": "c494552ee598aba3136d492f78d0c9cd4810b7c6f426ec3443bb6af2fc80821b",
+      "pages": 1
+    }
+  },
+  "checks": [
+    "READ_ONLY_PREVIEW_THREE_DOCUMENTS_REPRODUCIBLE_NO_NUMBER_NO_WRITES",
+    "ALLOCATION_CONCILIATION_CONFORMITY_AND_ORIGINAL_DATE_RANGE_REQUIRED",
+    "NOTE_POLICY_SEPARATE_AND_EXACT_PACKAGE_REQUIRED",
+    "API_AUTHORIZATION_MISSING_FIELDS_REJECTED_REPLAY_AND_CONFLICT",
+    "ALL_ORIGINAL_CLAUSES_PRESERVED_IN_SOURCE_ORDER",
+    "ARTIFACTS_FROM_REAL_READ_ONLY_SERVER_PROJECTION"
+  ]
+}

@@ -29,7 +29,7 @@ export async function startProductionBrowserServer(runtime: ProductionRuntime) {
         path: string;
         status: number;
     }[] = [];
-    const next = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', '--hostname', 'localhost', '--port', '3001'], { env: { ...process.env, NODE_ENV: 'development', NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: 'demo-cuenta-hogar.firebaseapp.com', NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: 'demo-cuenta-hogar.appspot.com', NEXT_PUBLIC_FIREBASE_API_KEY: 'demo-key', NEXT_PUBLIC_FIREBASE_APP_ID: 'demo-app', NEXT_PUBLIC_E2E_TEST_MODE: '1', NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099' }, stdio: 'inherit' });
+    const next = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', ...(process.env.LOCAL_BROWSER_WEBPACK === '1' ? ['--webpack'] : []), '--hostname', 'localhost', '--port', '3001'], { env: { ...process.env, NODE_ENV: 'development', NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: 'demo-cuenta-hogar.firebaseapp.com', NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: 'demo-cuenta-hogar.appspot.com', NEXT_PUBLIC_FIREBASE_API_KEY: 'demo-key', NEXT_PUBLIC_FIREBASE_APP_ID: 'demo-app', NEXT_PUBLIC_E2E_TEST_MODE: '1', NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099' }, stdio: 'inherit' });
     const server = createServer(async (req, res) => {
         try {
             assert(runtimeData(runtime).test);
