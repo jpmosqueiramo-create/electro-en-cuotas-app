@@ -87,9 +87,8 @@ export function renderOriginalFinal(s:FinalSnapshot,p:FinalPackage,kind:FinalDoc
     return render(p.templates[kind],kind,{issuer:s.issuer,customer:{...s.personalData,cuil:s.employmentData.cuil,province:s.addressInterpretation.provinceDisplayName},product:{name:s.acceptedReference.nombre,description:s.acceptedReference.descripcion,quantity:s.productDetails!.quantity,condition:s.productDetails!.condition},economics:{capital:s.economicTerms.capitalAmount,service:s.economicTerms.serviceAmount,total:s.economicTerms.contractTotal,count:s.economicTerms.contractPlanCuotas,installment:s.economicTerms.contractInstallmentAmount},schedule:s.paymentSchedule.installments,context:s.documentContext,parameters:s.documentContext.parameters,policy:p.originalsPolicy,at:s.freeze.termsFrozenAt,sourceHash:s.integrity.payloadHash,revision:s.sourceDraft.revision,number:s.contractNumber},test?'TEST':'FINAL');
 }
 /** Never emits a final artifact, even when called with complete data. */
-export function renderOriginalReview(p:OperationDraftProjection){
+export function renderOriginalReview(p:OperationDraftProjection, templates:Record<FinalDocumentKind,FinalTemplate>=originalTemplates()){
     if(!p.canPreview)throw Error('ORIGINAL_REVIEW_BLOCKED');
-    const templates=originalTemplates();
     const d:Data={issuer:originalIssuer(),customer:p.customer,product:p.product,economics:p.economics,schedule:p.schedule,context:{},parameters:{},at:p.updatedAt,sourceHash:p.sourceHash,revision:p.draftRevision,number:null};
     const result=(kind:FinalDocumentKind)=>{const {bytes,...meta}=render(templates[kind],kind,d,'REVIEW');return {...meta,base64:bytes.toString('base64')};};
     return {projection:p,templateVersion:templates.MANDATE.version,templateHash:contractValueHash(templates),mandate:result('MANDATE'),promissoryNote:result('PAGARE'),remito:result('REMITO')};
