@@ -5,7 +5,7 @@ import { contractLegalEntity } from '../contractDocuments/legalEntity';
 import { contractValueHash } from '../contractIntegrityV2';
 import { templateHash, finalDocumentKinds, type FinalTemplate, type OriginalBlock } from './catalog';
 export const ORIGINALS_VERSION = 'OWNER_ORIGINALS_INTEGRATION_V1';
-export const originalTokenNames = ['issuer.legalName','issuer.taxId','issuer.legalAddress','representative.capacity','representative.fullName','client.fullName','client.dni','client.cuil','client.address','client.locality','client.province','client.email','client.phone','issue.contract.place','issue.contract.day','issue.contract.month','issue.contract.year','issue.note.place','issue.note.day','issue.note.month','issue.note.year','economy.totalDisplay','economy.totalWordsWithoutCurrency','policy.penaltyMonthlyPercent','policy.notePaymentPlace','policy.noteJurisdiction'] as const;
+export const originalTokenNames = ['issuer.legalName','issuer.taxId','issuer.legalAddress','representative.capacity','representative.fullName','client.fullName','client.dni','client.cuil','client.address','client.locality','client.province','client.paymentAddress','client.email','client.phone','issue.contract.place','issue.contract.day','issue.contract.month','issue.contract.year','issue.note.place','issue.note.day','issue.note.month','issue.note.year','economy.totalDisplay','economy.totalWordsWithoutCurrency','policy.penaltyMonthlyPercent','policy.notePaymentPlace','policy.noteJurisdiction'] as const;
 export function originalTemplates(): Record<typeof finalDocumentKinds[number], FinalTemplate> {
     return Object.fromEntries(finalDocumentKinds.map(kind => {
         const source = candidate.documents[kind];

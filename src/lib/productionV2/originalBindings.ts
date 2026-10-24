@@ -1,5 +1,7 @@
 import { exact } from '../contractV2';
-import type { FinalPackage, FinalSnapshot } from './catalog';
+import { assertPaymentAddressConformity } from '../contractPaymentAddress';
+import type { FinalPackage, FinalSnapshot, FinalTemplate } from './catalog';
+export const usesClientPaymentAddress = (template: FinalTemplate) => template.blocks?.some(b => b.text.includes('{{client.paymentAddress}}')) ?? false;
 export const originalFormalFields = ['originalNetManagementLogistics', 'originalCft', 'originalAllocationConformity', 'dispatchOrigin', 'productSerial'] as const;
 /** Explicit presentation classification only: never updates terms, debt or taxes. */
 export function originalFormalParameters(p: FinalPackage, formal: Record<string, unknown>, total: number, schedule: readonly { dueDate: string }[]) {
@@ -18,6 +20,9 @@ export function originalFormalParameters(p: FinalPackage, formal: Record<string,
     return Object.fromEntries(originalFormalFields.map(k => [k, f[k]])) as Record<string, string | number>;
 }
 export function assertOriginalSnapshot(s: FinalSnapshot, p: FinalPackage) {
+    if (usesClientPaymentAddress(p.templates.PAGARE)) assertPaymentAddressConformity(s.personalData, {
+        confirmedPaymentAddressHash: s.documentContext.parameters.notePaymentAddressHash as string | undefined,
+    });
     if (!p.originalsPolicy) return;
     const params = s.documentContext.parameters;
     originalFormalParameters(p, Object.fromEntries(originalFormalFields.map(k => [k, params[k]])), s.economicTerms.contractTotal, s.paymentSchedule.installments);

@@ -1,0 +1,195 @@
+{
+  "baseline": "ca3ff4006ff87963249f64419b14c3ec61d0a872",
+  "previousPr82Head": "3222427364c2a0c4647882b97f0b0e44afa488ed",
+  "status": "TECHNICAL_PASS_LEGAL_VALIDATION_PENDING",
+  "scope": "Preparación documental V3; no instalación ni emisión. Misma rama y PR #82.",
+  "checks": [
+    {
+      "command": "npx tsc --noEmit",
+      "result": "PASS"
+    },
+    {
+      "command": "npx eslint <14 archivos TypeScript/TSX modificados>",
+      "result": "PASS",
+      "diagnostics": 0
+    },
+    {
+      "command": "npm run build",
+      "result": "PASS",
+      "bundler": "Turbopack"
+    },
+    {
+      "command": "npm run test:safe",
+      "result": "PASS"
+    },
+    {
+      "command": "npx tsx scripts/testClientPaymentPlaceProposal.ts",
+      "result": "PASS",
+      "groups": 7
+    },
+    {
+      "command": "npx tsx scripts/testZeroPenaltyDocumentProposal.ts",
+      "result": "PASS",
+      "groups": 10
+    },
+    {
+      "command": "npx tsx scripts/testProductionRendererManifest.ts",
+      "result": "PASS"
+    },
+    {
+      "command": "python3 scripts/verifyZeroPenaltyDocumentPdfs.py --client-payment-place",
+      "result": "PASS",
+      "assertions": 71
+    },
+    {
+      "command": "python3 scripts/verifyZeroPenaltyDocumentPdfs.py",
+      "result": "PASS",
+      "assertions": 66
+    },
+    {
+      "command": "python3 scripts/testOriginalDocumentReview.py",
+      "result": "PASS",
+      "assertions": 63
+    },
+    {
+      "command": "tsx scripts/testClientPaymentPlaceEmulator.ts",
+      "result": "PASS",
+      "groups": 7,
+      "environment": "Firebase Emulators; demo-cuenta-hogar"
+    },
+    {
+      "command": "tsx scripts/testContractProductPreparationEmulator.ts",
+      "result": "PASS",
+      "environment": "Firebase Emulators; demo-cuenta-hogar"
+    },
+    {
+      "command": "tsx scripts/testOperationWorkspaceV2Emulator.ts",
+      "result": "PASS",
+      "environment": "Firebase Emulators; demo-cuenta-hogar; admin sintético @example.invalid"
+    },
+    {
+      "command": "tsx scripts/runOperationDraftDocumentsBrowser.ts",
+      "result": "PASS",
+      "environment": "Next localhost:3000 --webpack + Firebase Emulators; Chrome headless",
+      "viewports": [
+        "1280x900",
+        "390x844"
+      ],
+      "checks": [
+        "Tres PDF y campos pendientes",
+        "Cambios no guardados excluidos",
+        "Invalidación de preview por revisión, identidad y conformidad",
+        "Conformidad histórica con acceso explícito a revisión de domicilio",
+        "Conformidad bloqueada con edición no guardada",
+        "Doble clic: un único comando persistido",
+        "Domicilio guardado y nueva conformidad",
+        "Importes y fechas intactos",
+        "Sin desbordamiento horizontal",
+        "Cero solicitudes a Firebase productivo; sin números ni snapshots"
+      ]
+    },
+    {
+      "method": "Poppler y revisión visual de todas las páginas",
+      "result": "PASS",
+      "pages": 5,
+      "screenshotsReviewed": 4
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS"
+    }
+  ],
+  "emulatorCommand": "firebase emulators:exec --project demo-cuenta-hogar --config firebase.operations-lab.emulator.json --only auth,firestore,storage <runner>",
+  "emulatorEnvironment": {
+    "GCLOUD_PROJECT": "demo-cuenta-hogar",
+    "GOOGLE_CLOUD_PROJECT": "demo-cuenta-hogar",
+    "NEXT_PUBLIC_FIREBASE_PROJECT_ID": "demo-cuenta-hogar",
+    "FIRESTORE_EMULATOR_HOST": "127.0.0.1:8080",
+    "FIREBASE_AUTH_EMULATOR_HOST": "127.0.0.1:9099",
+    "FIREBASE_STORAGE_EMULATOR_HOST": "127.0.0.1:9199",
+    "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET": "demo-cuenta-hogar.appspot.com",
+    "credentials": "Ninguna credencial de producción; guardas fail-closed"
+  },
+  "dataModel": [
+    {
+      "path": "presupuestos_v2/{budgetId}/contracts/v{version}/conformity/current.confirmedPaymentAddressHash",
+      "type": "optional string SHA-256 | null",
+      "write": "Sólo RECORD_CLIENT_CONFORMITY explícito, misma transacción/revisión/comando vigente",
+      "source": "personalData del borrador persistido: address, locality, provincia normalizada mediante catálogo vigente y postalCode; política CLIENT_PAYMENT_ADDRESS_V1",
+      "compatibility": "Ausente en históricos: se conservan digest, fecha, hash y comportamiento previo de lectura. No acredita domicilio para la plantilla V3; requiere nueva conformidad explícita. null no acredita domicilio completo. Sin migración."
+    },
+    {
+      "path": "presupuestos_v2/{budgetId}/contracts/v{version}/events/{commandId}.paymentAddressHash",
+      "type": "optional string SHA-256 | null",
+      "write": "Auditoría del mismo comando de conformidad; evento create inmutable",
+      "compatibility": "No reescribe eventos anteriores"
+    },
+    {
+      "path": "authorization.legalContext.documentContext.parameters.notePaymentAddressHash -> snapshot.documentContext.parameters.notePaymentAddressHash",
+      "type": "optional string SHA-256",
+      "write": "Sólo para paquete exacto que use client.paymentAddress; se deriva y valida en servidor contra la conformidad vigente. Se incorpora al hash de autorización y snapshot existente",
+      "compatibility": "No se agrega a paquetes anteriores. No duplica dirección ni consulta una ficha mutable al renderizar el snapshot. La preparación de este PR no congela ni emite."
+    },
+    {
+      "path": "GET contract: clientConformity.paymentAddressConfirmed",
+      "type": "boolean derivado, no persistido",
+      "consumer": "Composer administrativo; habilita el registro explícito de nueva conformidad para domicilio histórico sin reescribirlo al abrir"
+    }
+  ],
+  "documentChanges": {
+    "PAGARE": [
+      {
+        "kind": "PAGARE",
+        "blockId": "promise",
+        "previousProposal": "A LA VISTA , pagaré sin protesto (Art. 50 Dec. Ley 5965/63) a la orden de {{issuer.legalName}} (CUIT N° {{issuer.taxId}}), o a quien ésta designe, en el domicilio de {{policy.notePaymentPlace}}, o donde la acreedora lo indique, la suma de PESOS {{economy.totalWordsWithoutCurrency}} (Monto en letras), por igual valor recibido en servicios de gestión y financiación a mi entera satisfacción.",
+        "proposedText": "A LA VISTA , pagaré sin protesto (Art. 50 Dec. Ley 5965/63) a la orden de {{issuer.legalName}} (CUIT N° {{issuer.taxId}}), o a quien ésta designe, en el domicilio del suscriptor situado en {{client.paymentAddress}}, la suma de PESOS {{economy.totalWordsWithoutCurrency}} (Monto en letras), por igual valor recibido en servicios de gestión y financiación a mi entera satisfacción."
+      }
+    ],
+    "MANDATE": "Misma plantilla V2 de punitorios cero, misma jurisdicción de domicilio del cliente y mismos bytes que PR #82 anterior",
+    "REMITO": "Sin cambios de texto, plantilla o bytes",
+    "jurisdiction": "Separada del lugar de pago; no se rellena ni valida por inferencia. Artículos 36/37 Ley 24.240 y 101/102 Decreto-Ley 5965/63 identificados en manifest.json para revisión profesional."
+  },
+  "economics": {
+    "synthetic": true,
+    "capital": 580000,
+    "grossServicesIncludingVat": 1160000,
+    "contractTotal": 1740000,
+    "promissoryNoteTotal": 1740000,
+    "installments": 12,
+    "installmentAmount": 145000,
+    "additionalLateCharges": 0,
+    "penaltyCapitalization": false,
+    "cft": "Pendiente, sin inferir tasa ni equipararlo a servicios"
+  },
+  "preservation": {
+    "historicalV1AndV2PdfBytes": "IDENTICAL",
+    "historicalDigestsAndUpdateTimes": "NO_AUTOMATIC_REWRITE",
+    "finalPackages": [],
+    "productionBusinessWrites": 0,
+    "productionConfigurationChanges": 0,
+    "chProductionCounter": "UNTOUCHED; no lectura, reinicialización ni consumo",
+    "testCounterAndSnapshots": "No creación en los runners afectados",
+    "rulesAuthIamSecrets": "UNMODIFIED",
+    "mergeOrDeploy": false,
+    "protectedLocalScriptSha256": "09fb398ff9c634f7c5ca32a3769518dbde67d8ebca3f1f59a930ccdfe6340881"
+  },
+  "executionNotes": [
+    "Primer intento de navegador: timeout con HTTP 409 de preview del fixture; no se reprodujo en los siguientes dos recorridos. Se añadió diagnóstico seguro de respuesta al runner; no se modificó el endpoint para sortearlo.",
+    "El nuevo caso browser esperaba innerText dentro de details cerrado: corregido abriendo la sección antes de leerla. Todas las assertions se conservan.",
+    "La suite Workspace exige correo sintético @example.invalid: el primer comando la lanzó con @example.test y su guarda rechazó el entorno. Reejecutada sin cambios de código con el dominio exigido: PASS.",
+    "El navegador registra una denegación del listener de alertas de Hoy para el administrador sintético; Rules vigentes no se ampliaron. No afecta el circuito contractual comprobado.",
+    "El nuevo PDF V3 se genera con la misma proyección sintética versionada y consentimiento de prueba explícito. Los endpoints actuales mantienen su plantilla por defecto hasta la instalación revisada de un paquete aprobado."
+  ],
+  "pending": [
+    "Validación profesional identificable de versiones y hashes exactos, incluida la supresión de la alternativa unilateral del lugar de pago.",
+    "Competencia judicial del pagaré y renuncia de fueros del original: revisión separada para relaciones de consumo.",
+    "Demás evidencias societarias y representación económica/CFT del paquete previo.",
+    "Instalación revisada de catálogo, configuración y autorización independiente antes de cualquier emisión real."
+  ],
+  "screenshots": {
+    "payment-address-confirmed-1280.png": "1954fb287aef2ad24054a4888512949748beabc621511403d64ce124f2f47c59",
+    "payment-address-confirmed-390.png": "82cd635b43eb478c459adfa7eeebc14112824df1e51566be7a5dee7e4358c538",
+    "payment-address-pending-1280.png": "40173c80a5749352ac3e00fe2fef6f44d4413e1084f2391bf12b58ca7beaafd8",
+    "payment-address-pending-390.png": "f7388229108aad3d72d6e1779ac0a2e0164a32303aa3238b86332eba45e07a36"
+  }
+}

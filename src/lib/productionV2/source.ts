@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
-import { contractRefs, clientTermsDigest } from '../contractV2Server';
+import { contractRefs, clientConformityIsCurrent } from '../contractV2Server';
 import { stable, opaque, type ContractDraftV2 } from '../contractV2';
 import type { BudgetV2 } from '../budgetV2';
 import type { BudgetAcceptanceV2 } from '../budgetAcceptanceV2';
@@ -28,7 +28,7 @@ export async function readySource(db: Firestore, tx: Transaction, id: string, v:
         throw Error('PRODUCTION_CREDIT_APPROVAL_REQUIRED');
     await assertCreditPreparation(db, tx, id, v);
     const consent = cs.data();
-    if (!consent || consent.confirmedDigest !== clientTermsDigest(draft) || !consent.confirmedAt || !consent.confirmedBy || !consent.evidence)
+    if (!consent || !clientConformityIsCurrent(draft,consent) || !consent.confirmedAt || !consent.confirmedBy || !consent.evidence)
         throw Error('PRODUCTION_CONFORMITY_REQUIRED');
     const es = await tx.get(r.draft.collection('readyReviews').doc(opaque(draft.readyEvidenceId)));
     if (!es.exists)

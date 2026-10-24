@@ -7,7 +7,8 @@ import { contractValueHash } from '../contractIntegrityV2';
 import type { OperationDraftProjection } from '../contractDocuments/operationDraft';
 import type { FinalTemplate, FinalPackage, FinalSnapshot, FinalDocumentKind, OriginalsPolicy } from './catalog';
 import { originalIssuer, originalTemplates, originalTokenNames } from './originals';
-import { assertOriginalSnapshot } from './originalBindings';
+import { assertOriginalSnapshot, usesClientPaymentAddress } from './originalBindings';
+import { assertPaymentAddressConformity, contractPaymentAddress, type PaymentAddressConformity } from '../contractPaymentAddress';
 const pending = '[PENDIENTE DE VALIDACIÓN]';
 function display(s: string) {
     const text=s.normalize('NFC').replace(/\r\n?/g,'\n').replace(/\t/g,'    ').replace(/\u25cf/g,'•');
@@ -22,7 +23,7 @@ export function assertOriginalTemplate(t: FinalTemplate) {
     }
 }
 type Data = {
-    issuer: FinalPackage['issuer']; customer: {fullName:string;dni:string;cuil:string;address:string;locality:string;province:string;email:string;whatsapp:string};
+    issuer: FinalPackage['issuer']; customer: {fullName:string;dni:string;cuil:string;address:string;locality:string;province:string;postalCode?:string;email:string;whatsapp:string};
     product: {name:string;description?:string;quantity:number|null;condition:'NEW'|'USED'|null};
     economics: {capital:number;service:number;total:number;count:number;installment:number}|null;
     schedule: readonly {installmentNumber:number;dueDate:string;amount:number}[];
@@ -51,6 +52,7 @@ function render(t: FinalTemplate, kind: FinalDocumentKind, d: Data, mode: 'REVIE
         'economy.totalDisplay':e?money(e.total):null,'economy.totalWordsWithoutCurrency':e?amountWords(e.total).replace(/ PESOS(?= CON)/,''):null,
         'policy.penaltyMonthlyPercent':d.policy?.penaltyMonthlyPercent,'policy.notePaymentPlace':d.policy?.notePaymentPlace,'policy.noteJurisdiction':d.policy?.noteJurisdiction
     };
+    if(usesClientPaymentAddress(t)) values['client.paymentAddress']=contractPaymentAddress(d.customer).display;
     function space(height:number){if(y+height>267){doc.addPage();y=28;}}
     function line(text:string,bold=false,size=10){doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);doc.setTextColor(28,40,38);const lines=doc.splitTextToSize(display(text),174) as string[];for(const l of lines){space(size*.45);doc.text(l,18,y);y+=size*.45;}y+=3;}
     function table(head:string[],body:string[][]){space(18);autoTable(doc,{startY:y,head:[head.map(display)],body:body.map(r=>r.map(display)),margin:{left:18,right:18,top:28,bottom:30},styles:{font:'helvetica',fontSize:9,cellPadding:2.5,overflow:'linebreak'},headStyles:{fillColor:[23,62,59]},rowPageBreak:'avoid'});y=(doc as jsPDF&{lastAutoTable:{finalY:number}}).lastAutoTable.finalY+6;}
@@ -87,8 +89,9 @@ export function renderOriginalFinal(s:FinalSnapshot,p:FinalPackage,kind:FinalDoc
     return render(p.templates[kind],kind,{issuer:s.issuer,customer:{...s.personalData,cuil:s.employmentData.cuil,province:s.addressInterpretation.provinceDisplayName},product:{name:s.acceptedReference.nombre,description:s.acceptedReference.descripcion,quantity:s.productDetails!.quantity,condition:s.productDetails!.condition},economics:{capital:s.economicTerms.capitalAmount,service:s.economicTerms.serviceAmount,total:s.economicTerms.contractTotal,count:s.economicTerms.contractPlanCuotas,installment:s.economicTerms.contractInstallmentAmount},schedule:s.paymentSchedule.installments,context:s.documentContext,parameters:s.documentContext.parameters,policy:p.originalsPolicy,at:s.freeze.termsFrozenAt,sourceHash:s.integrity.payloadHash,revision:s.sourceDraft.revision,number:s.contractNumber},test?'TEST':'FINAL');
 }
 /** Never emits a final artifact, even when called with complete data. */
-export function renderOriginalReview(p:OperationDraftProjection, templates:Record<FinalDocumentKind,FinalTemplate>=originalTemplates()){
+export function renderOriginalReview(p:OperationDraftProjection, templates:Record<FinalDocumentKind,FinalTemplate>=originalTemplates(), conformity?:PaymentAddressConformity){
     if(!p.canPreview)throw Error('ORIGINAL_REVIEW_BLOCKED');
+    if(usesClientPaymentAddress(templates.PAGARE))assertPaymentAddressConformity(p.customer,conformity);
     const d:Data={issuer:originalIssuer(),customer:p.customer,product:p.product,economics:p.economics,schedule:p.schedule,context:{},parameters:{},at:p.updatedAt,sourceHash:p.sourceHash,revision:p.draftRevision,number:null};
     const result=(kind:FinalDocumentKind)=>{const {bytes,...meta}=render(templates[kind],kind,d,'REVIEW');return {...meta,base64:bytes.toString('base64')};};
     return {projection:p,templateVersion:templates.MANDATE.version,templateHash:contractValueHash(templates),mandate:result('MANDATE'),promissoryNote:result('PAGARE'),remito:result('REMITO')};

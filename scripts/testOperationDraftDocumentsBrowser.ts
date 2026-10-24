@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import { mkdirSync,writeFileSync } from 'node:fs';
 import { admin } from '../src/lib/firebaseAdmin';
 import { pendingBulletPreviewFixture } from './helpers/operationPreviewFixtures';
-import { contractRefs } from '../src/lib/contractV2Server';
+import { contractRefs, contractCommand } from '../src/lib/contractV2Server';
+import { productionReadyFixture } from './helpers/productionAdapterFixtures';
+import { randomUUID } from 'node:crypto';
+import { contractPaymentAddress } from '../src/lib/contractPaymentAddress';
 import { CatalogBrowser } from './helpers/catalogBrowser';
 import { adminEmail,adminPassword } from './helpers/adminSolicitudesFixtures';
 import { createDocumentationCase } from '../src/lib/budgetAcceptanceV2';
@@ -17,7 +20,7 @@ export async function testOperationDraftDocumentsBrowser(){
  const before=await Promise.all([r.budget.get(),r.acceptance.get(),r.draft.get()]);
  const browser=await CatalogBrowser.open(),dir='/tmp/cuenta-hogar-operation-documents';mkdirSync(dir,{recursive:true});const root="document.querySelector('[data-testid=operation-document-previews]')";
  try{
-  await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`const original=window.fetch;window.fetch=async(...args)=>{const r=await original(...args);if(String(args[0]).endsWith('/contract/documents/preview')&&r.ok)r.clone().json().then(v=>{window.__DOCUMENT_PREVIEW__=v.projection});return r;};`});
+  await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`const original=window.fetch;window.fetch=async(...args)=>{const r=await original(...args);if(String(args[0]).endsWith('/contract/documents/preview'))r.clone().json().then(v=>{if(r.ok)window.__DOCUMENT_PREVIEW__=v.projection;else window.__DOCUMENT_PREVIEW_ERROR__={status:r.status,code:v.code,error:v.error}});return r;};`});
   await browser.navigate('/login');await browser.until("typeof window.__FIREBASE_SIGN_IN__==='function'",'auth');await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(email)},${JSON.stringify(password)}).then(()=>true)`);
   await browser.navigate(`/admin/operaciones/${id}/1`);await browser.until("!!document.querySelector('[data-testid=operation-unified-workspace]')",'operation');await browser.clickText('Contrato');await browser.until("!!document.querySelector('[data-testid=contract-composer]')",'composer');await browser.evaluate("[...document.querySelectorAll('details')].find(d=>d.querySelector('summary')?.textContent==='Documentación contractual').open=true");
   await browser.until(`${root}?.innerText.includes('Los tres documentos usan los mismos datos persistidos.')`,'persisted preview');
@@ -74,6 +77,37 @@ export async function testOperationDraftDocumentsBrowser(){
   }
   assert.deepEqual((await Promise.all([r.budget.get(),r.acceptance.get()])).map(s=>s.updateTime),before.slice(0,2).map(s=>s.updateTime));
   assert.equal((await db.collection('contractNumberingV2').get()).size,infrastructureBefore.numbering);assert.equal((await db.collection('contractSnapshotsV2').get()).size,infrastructureBefore.snapshots);assert.deepEqual(browser.externalFirebase,[]);assert.equal(browser.storageWrites,0);
+  const actor=(await admin.auth().getUserByEmail(email)).uid, payment=await productionReadyFixture(actor,true);
+  await contractCommand(db,payment.id,1,{action:'RETURN_TO_DRAFT',commandId:randomUUID(),expectedRevision:payment.ready.revision,reason:'Revisar domicilio sintético'},actor);
+  const conformityRef=payment.r.draft.collection('conformity').doc('current'),proof=(await conformityRef.get()).data()!;
+  const {confirmedPaymentAddressHash:oldAddress,...legacy}=proof;void oldAddress;await conformityRef.set(legacy);
+  await browser.navigate(`/admin/operaciones/${payment.id}/1`);await browser.until("!!document.querySelector('[data-testid=operation-unified-workspace]')",'payment operation');await browser.clickText('Contrato');
+  const review="document.querySelector('[data-testid=contract-review]')";
+  await browser.until(`!!${review}`,'payment review section');await browser.evaluate(`${review}.open=true`);
+  await browser.until(`${review}?.innerText.includes('Conformidad histórica conservada')`,'legacy address consent pending');
+  await browser.evaluate(`${review}.open=true`);await browser.change('[aria-label="Referencia de la evidencia de conformidad"]','Conformidad sintética con condiciones y domicilio completo, sólo Emulator');
+  await browser.evaluate("document.querySelector('[data-testid=contract-personal]').open=true");await browser.field('Dirección','Calle de prueba 456');
+  assert.equal(await browser.evaluate(`[...${review}.querySelectorAll('button')].find(b=>b.textContent==='Registrar conformidad recibida').disabled`),true,'Unsaved address cannot be confirmed');
+  await browser.clickText('Guardar datos personales');await browser.until("document.body.innerText.includes('Cambios guardados.')",'saved payment address');
+  assert.deepEqual((await conformityRef.get()).data(),legacy);
+  for(const [width,height] of [[1280,900],[390,844]]){
+   await browser.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width===390});
+   await browser.evaluate(`${review}.scrollIntoView({block:'start'})`);await browser.overflow('payment address conformity');
+   const shot=await browser.command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(`${dir}/payment-address-pending-${width}.png`,Buffer.from(shot.data as string,'base64'));
+  }
+  const commandsBefore=(await payment.r.draft.collection('commands').get()).size;
+  await browser.evaluate(`(()=>{const b=[...${review}.querySelectorAll('button')].find(b=>b.textContent==='Registrar conformidad recibida');b.click();b.click();})()`);
+  await browser.until(`${review}?.innerText.includes('Conformidad registrada para las condiciones y el domicilio vigentes.')`,'explicit address consent');
+  assert.equal((await payment.r.draft.collection('commands').get()).size,commandsBefore+1);
+  const current=(await payment.r.draft.get()).data()!;assert.equal((await conformityRef.get()).data()!.confirmedPaymentAddressHash,contractPaymentAddress(current.personalData).hash);
+  assert.deepEqual(current.economicTerms,payment.ready.economicTerms);assert.deepEqual(current.paymentScheduleDraft,payment.ready.paymentScheduleDraft);
+  for(const [width,height] of [[1280,900],[390,844]]){
+   await browser.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width===390});await browser.evaluate(`${review}.scrollIntoView({block:'start'})`);await browser.overflow('confirmed payment address');
+   const shot=await browser.command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(`${dir}/payment-address-confirmed-${width}.png`,Buffer.from(shot.data as string,'base64'));
+  }
+  assert.deepEqual(browser.externalFirebase,[]);assert.equal(browser.storageWrites,0);
+  assert.equal((await db.collection('contractNumberingV2').get()).size,infrastructureBefore.numbering);assert.equal((await db.collection('contractSnapshotsV2').get()).size,infrastructureBefore.snapshots);
+  console.log('CLIENT_PAYMENT_ADDRESS_BROWSER=PASS; LEGACY_REVIEW; UNSAVED_DISABLED; EXPLICIT_CONFORMITY; DOUBLE_CLICK_ONE_COMMAND; DESKTOP_MOBILE; NO_CH_OR_PRODUCTION_WRITES');
   console.log('OPERATION_DOCUMENT_BROWSER=PASS; DESKTOP_MOBILE; THREE_PDFS; UNSAVED_FIELDS_NOT_PERSISTED; REFRESH_AFTER_SAVED_REVISION; IDENTITY_BLOCK; ZERO_PRODUCTION_REQUESTS; NO_DOCUMENT_WRITES');
- }finally{await browser.close();}
+ }catch(error){console.error('SYNTHETIC_PREVIEW_FAILURE',await browser.evaluate('window.__DOCUMENT_PREVIEW_ERROR__??null'));throw error;}finally{await browser.close();}
 }

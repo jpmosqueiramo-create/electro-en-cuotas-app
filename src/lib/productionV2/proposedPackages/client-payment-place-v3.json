@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "DOCUMENT_REVIEW_AMENDMENT_V1",
+  "id": "LOOP_CLIENT_PAYMENT_PLACE_REVIEW",
+  "version": "3.0.0",
+  "templateVersion": "OWNER_CLIENT_PAYMENT_PLACE_V3",
+  "status": "PROPOSED_NOT_APPROVED",
+  "installable": false,
+  "professionalValidation": null,
+  "baseTemplateHash": "4429925fbcc6d179595ac2f71b8a66fdc45e785fe9bf3a4bcbf715051e38f18a",
+  "blockId": "promise",
+  "text": "A LA VISTA , pagaré sin protesto (Art. 50 Dec. Ley 5965/63) a la orden de {{issuer.legalName}} (CUIT N° {{issuer.taxId}}), o a quien ésta designe, en el domicilio del suscriptor situado en {{client.paymentAddress}}, la suma de PESOS {{economy.totalWordsWithoutCurrency}} (Monto en letras), por igual valor recibido en servicios de gestión y financiación a mi entera satisfacción.",
+  "ownerDecision": {
+    "notePaymentPlace": "CLIENT_CONFORMED_ADDRESS_V1",
+    "source": "validated draft personalData / immutable contractual snapshot personalData and addressInterpretation",
+    "fields": ["address", "locality", "province", "postalCode"],
+    "issuerAddressFallback": false,
+    "unilateralCreditorRelocation": false,
+    "requiresCompleteAddress": true,
+    "requiresCurrentAddressConformity": true,
+    "mandateJurisdiction": "CLIENT_DOMICILE_COMPETENT_COURTS",
+    "noteJurisdiction": "PENDING_SEPARATE_LEGAL_VALIDATION",
+    "penaltyMonthlyPercent": "0",
+    "penaltyCapitalization": "DISABLED",
+    "legalValidation": "PENDING"
+  },
+  "legalReview": [
+    {
+      "source": "https://www.argentina.gob.ar/normativa/nacional/decreto_ley-5965-1963-69687/actualizacion",
+      "articles": ["101 inciso d", "102"],
+      "note": "El lugar de pago es un dato del pagaré. Su elección no constituye aprobación profesional ni determina por sí sola la competencia judicial."
+    },
+    {
+      "source": "https://www.argentina.gob.ar/normativa/nacional/ley-24240-638/actualizacion",
+      "articles": ["36", "37"],
+      "note": "Revisar la aplicabilidad al pagaré de consumo y las normas imperativas: el artículo 36 distingue las acciones iniciadas por consumidor y proveedor y prevé el domicilio real del consumidor para las de este último; el artículo 37 trata las restricciones de derechos. La cláusula original de renuncia de fueros y competencia queda pendiente, sin completar ciudad ni copiar la jurisdicción del mandato."
+    }
+  ],
+  "adaptationForProfessionalReview": "Se sustituye el lugar de pago pendiente por el domicilio completo conformado del cliente y se retira la alternativa original 'o donde la acreedora lo indique', incompatible con fijar exclusivamente ese domicilio. No se altera la cláusula de competencia del pagaré; debe revisarse separadamente.",
+  "pending": [
+    "Aprobación profesional identificable de estas versiones y hashes, incluyendo la adaptación del lugar de pago y la competencia judicial en relaciones de consumo.",
+    "Facultades societarias, evidencia del domicilio social y representación económica/CFT según el expediente previo.",
+    "No instalar el catálogo ni habilitar emisión hasta completar sus aprobaciones. CH ya inicializada: no volver a inicializar ni consumir números en la revisión."
+  ]
+}

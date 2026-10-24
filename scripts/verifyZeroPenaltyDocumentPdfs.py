@@ -2,13 +2,17 @@
 import hashlib
 import json
 import re
+import sys
 from pathlib import Path
 
 import pdfplumber
 from pypdf import PdfReader
 
 ROOT = Path(__file__).resolve().parents[1]
-folder = ROOT / 'output/pdf/document-review-zero-penalties-v2'
+assert sys.argv[1:] in ([], ['--client-payment-place'])
+client_payment_place = bool(sys.argv[1:])
+folder = ROOT / ('output/pdf/document-review-client-payment-place-v3' if client_payment_place
+                 else 'output/pdf/document-review-zero-penalties-v2')
 manifest = json.loads((folder / 'manifest.json').read_text())
 count = 0
 
@@ -70,7 +74,17 @@ for row in p['schedule']:
     check(norm(f"{row['installmentNumber']} {money(row['amount'])} {row['dueDate']}") in texts['MANDATE'], 'saved installment ' + str(row['installmentNumber']))
 check('Costo Financiero Total (CFT) [PENDIENTE DE VALIDACIÓN]' in texts['MANDATE'], 'no invented CFT')
 check('Tribunales Ordinarios de la ciudad de [PENDIENTE DE VALIDACIÓN]' in texts['PAGARE'], 'note jurisdiction independently pending')
-check('en el domicilio de [PENDIENTE DE VALIDACIÓN]' in texts['PAGARE'], 'note payment place still pending')
+if client_payment_place:
+    check('en el domicilio del suscriptor situado en ' + manifest['paymentAddress']['display'] in texts['PAGARE'], 'payment place exactly client address, locality, province and postal code')
+    check('o donde la acreedora lo indique' not in texts['PAGARE'], 'no unilateral payment place replacement')
+    check('en el domicilio del suscriptor situado en Caracas 1101' not in texts['PAGARE'], 'no issuer address payment fallback')
+    check(manifest['syntheticConformity']['confirmedPaymentAddressHash'] == manifest['paymentAddress']['hash'], 'explicit synthetic address conformity')
+    previous = json.loads((ROOT / 'output/pdf/document-review-zero-penalties-v2/manifest.json').read_text())
+    for kind in ['MANDATE', 'REMITO']:
+        check(manifest['templates'][kind] == previous['templates'][kind]
+              and manifest['pdfs'][kind]['sha256'] == previous['pdfs'][kind]['sha256'], kind + ' prior proposal unchanged')
+else:
+    check('en el domicilio de [PENDIENTE DE VALIDACIÓN]' in texts['PAGARE'], 'note payment place still pending')
 baseline = json.loads((ROOT / 'output/pdf/document-review-v1/manifest.json').read_text())
 check(manifest['templates']['REMITO']['sha256'] == baseline['templateVersions']['REMITO']['sha256']
       and manifest['pdfs']['REMITO']['sha256'] == baseline['pdfs']['REMITO']['sha256'], 'remito text and bytes unchanged')
