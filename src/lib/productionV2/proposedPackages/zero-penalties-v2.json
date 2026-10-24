@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "DOCUMENT_REVIEW_AMENDMENT_V1",
+  "id": "LOOP_OWNER_ORIGINALS_ZERO_PENALTIES_REVIEW",
+  "version": "2.0.0",
+  "templateVersion": "OWNER_ORIGINALS_ZERO_PENALTIES_V2",
+  "status": "PROPOSED_NOT_APPROVED",
+  "installable": false,
+  "professionalValidation": null,
+  "baseCandidate": {
+    "path": "src/lib/productionV2/proposedPackages/originals-v1.json",
+    "sha256": "137c625d4dd9020cf26bcc09b63b97b2d6181c708580035c03f27638482cdc18"
+  },
+  "ownerDecision": {
+    "reference": "DECISIÓN DEFINITIVA SOBRE PUNITORIOS",
+    "penaltyInterestPolicy": "ZERO",
+    "penaltyMonthlyPercent": "0",
+    "automaticLateSurcharges": false,
+    "penaltyCapitalization": "DISABLED",
+    "retroactiveChanges": false,
+    "legalValidation": "PENDING"
+  },
+  "amendments": [
+    {
+      "kind": "MANDATE",
+      "baseTemplateHash": "0e9282dd81c70a178d02d9222018a793bf13a8b35388502bcd2647c10c340224",
+      "blockId": "default",
+      "text": "La mora se producirá de pleno derecho. La falta de pago de una (1) cuota facultará a la EMPRESA a exigir el pago íntegro del saldo adeudado. No se cobrarán intereses punitorios ni recargos adicionales por atraso, ni se capitalizarán intereses punitorios."
+    },
+    {
+      "kind": "PAGARE",
+      "baseTemplateHash": "19bebbe8405a7521710d329d76730d439934b159eb66d2d330a0958c20934ccb",
+      "blockId": "default-capitalization",
+      "text": "No se cobrarán intereses punitorios ni recargos adicionales por atraso, ni se capitalizarán intereses punitorios. La falta de pago de cualquier obligación derivada del contrato de mandato al cual este título accede, producirá la mora de pleno derecho y la caducidad de todos los plazos, haciéndose exigible la presentación y cobro del presente documento."
+    }
+  ],
+  "unchanged": ["REMITO", "capital", "grossServicesIncludingVat", "contractTotal", "promissoryNoteTotal", "acceptedSchedule", "otherDefaultConsequences", "historicalDocuments"],
+  "pending": [
+    "Validación profesional identificable de las versiones y hashes propuestos, incluidas las dos cláusulas modificadas; la decisión comercial no equivale a aprobación jurídica.",
+    "Las demás consecuencias de mora se conservan; no se declara validada su exigibilidad.",
+    "Lugar de pago y competencia del pagaré, separados de la jurisdicción del mandato.",
+    "Representación, facultades societarias y evidencia del domicilio según el expediente documental previo.",
+    "Representación de CFT y desglose original, sin equipararlo automáticamente con servicios brutos ni inventar tasas.",
+    "CH ya inicializada: no reinicializar. Instalación del catálogo, habilitación y emisión real requieren sus aprobaciones independientes."
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "baseline": "ca3ff4006ff87963249f64419b14c3ec61d0a872",
+  "status": "TECHNICAL_PASS_LEGAL_VALIDATION_PENDING",
+  "scope": "Preparación documental sin instalación, migración ni emisión",
+  "checks": [
+    { "command": "npx tsc --noEmit", "result": "PASS" },
+    { "command": "npx eslint src/lib/productionV2/originalPdf.ts src/lib/productionV2/zeroPenaltyProposal.ts scripts/testZeroPenaltyDocumentProposal.ts", "result": "PASS", "diagnostics": 0 },
+    { "command": "npm run build", "result": "PASS" },
+    { "command": "npm run test:safe", "result": "PASS", "environment": "demo-cuenta-hogar y hosts Firebase localhost explícitos" },
+    { "command": "npx tsx scripts/testZeroPenaltyDocumentProposal.ts --write", "result": "PASS", "groups": 10 },
+    { "command": "npx tsx scripts/testZeroPenaltyDocumentProposal.ts", "result": "PASS", "groups": 10, "note": "Reproducción de bytes y hashes sin regenerar archivos" },
+    { "command": "npx tsx scripts/testProductionRendererManifest.ts", "result": "PASS" },
+    { "command": "python3 scripts/verifyZeroPenaltyDocumentPdfs.py", "result": "PASS", "assertions": 66 },
+    { "command": "python3 scripts/testOriginalDocumentReview.py", "result": "PASS", "assertions": 63 },
+    { "command": "git diff --check", "result": "PASS" },
+    { "method": "Poppler PNG de las cinco páginas, inspección visual individual", "result": "PASS", "pages": 5 }
+  ],
+  "economics": {
+    "synthetic": true,
+    "capital": 580000,
+    "grossServicesIncludingVat": 1160000,
+    "contractTotal": 1740000,
+    "promissoryNoteTotal": 1740000,
+    "installments": 12,
+    "installmentAmount": 145000,
+    "lateCharges": 0,
+    "capitalization": false,
+    "cft": "PENDIENTE DE VALIDACIÓN; no se infiere de servicios ni de punitorios cero"
+  },
+  "preservation": {
+    "historicalTemplatesAndPdfBytes": "IDENTICAL",
+    "remitoTemplateAndPdfBytes": "IDENTICAL",
+    "otherOriginalClauses": "UNCHANGED",
+    "acceptedAmountsAndDates": "UNCHANGED",
+    "finalPackages": [],
+    "chNumbering": "UNTOUCHED; no se consulta ni se inicializa en estas pruebas",
+    "productionBusinessWrites": 0,
+    "productionConfigurationChanges": 0,
+    "mergeOrDeploy": false,
+    "protectedLocalScriptSha256": "09fb398ff9c634f7c5ca32a3769518dbde67d8ebca3f1f59a930ccdfe6340881"
+  },
+  "limits": [
+    "La decisión del propietario autoriza punitorios cero; no acredita aprobación profesional de las versiones modificadas.",
+    "El catálogo definitivo continúa vacío. Los endpoints actuales conservan sus plantillas por defecto; la nueva propuesta se genera únicamente mediante el runner local.",
+    "No se repitieron recorridos Emulator o navegador de operaciones, porque no cambian rutas, persistencia, permisos ni motores. La regresión financiera utiliza el motor puro vigente y la proyección sintética existente.",
+    "El manifiesto del renderer cambia por admitir plantillas de revisión explícitas; ninguna aprobación anterior se traslada a este hash nuevo. Los hashes V1 de plantilla y los bytes históricos permanecen intactos."
+  ]
+}
