@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "OFFLINE_DOCUMENT_REVIEW_FIXTURE_V1",
+  "synthetic": true,
+  "operationId": "REVIEW-EXAMPLE-001",
+  "revision": 1,
+  "client": {
+    "fullName": "Alex Ejemplo Sintético",
+    "dni": "00000000",
+    "cuil": "00-00000000-0",
+    "address": "Calle de Prueba 123",
+    "locality": "Lincoln",
+    "province": "Buenos Aires",
+    "postalCode": "6070",
+    "email": "cliente@example.invalid",
+    "phone": "0000000000"
+  },
+  "product": {
+    "name": "Lavarropas Ejemplo Modelo DEMO-12, blanco",
+    "quantity": 1,
+    "condition": "NUEVO",
+    "serial": "SERIE-SINTETICA-001"
+  },
+  "economy": {
+    "capital": 580000,
+    "servicesGrossIncludingVat": 1160000,
+    "total": 1740000,
+    "installmentCount": 12,
+    "installmentAmount": 145000,
+    "advance": null
+  },
+  "schedule": [
+    {
+      "number": 1,
+      "dueDate": "2026-12-05",
+      "amount": 145000
+    },
+    {
+      "number": 2,
+      "dueDate": "2027-01-05",
+      "amount": 145000
+    },
+    {
+      "number": 3,
+      "dueDate": "2027-02-05",
+      "amount": 145000
+    },
+    {
+      "number": 4,
+      "dueDate": "2027-03-05",
+      "amount": 145000
+    },
+    {
+      "number": 5,
+      "dueDate": "2027-04-05",
+      "amount": 145000
+    },
+    {
+      "number": 6,
+      "dueDate": "2027-05-05",
+      "amount": 145000
+    },
+    {
+      "number": 7,
+      "dueDate": "2027-06-05",
+      "amount": 145000
+    },
+    {
+      "number": 8,
+      "dueDate": "2027-07-05",
+      "amount": 145000
+    },
+    {
+      "number": 9,
+      "dueDate": "2027-08-05",
+      "amount": 145000
+    },
+    {
+      "number": 10,
+      "dueDate": "2027-09-05",
+      "amount": 145000
+    },
+    {
+      "number": 11,
+      "dueDate": "2027-10-05",
+      "amount": 145000
+    },
+    {
+      "number": 12,
+      "dueDate": "2027-11-05",
+      "amount": 145000
+    }
+  ],
+  "issue": {
+    "contract": {
+      "place": "Lincoln (ejemplo sintético)",
+      "day": "23",
+      "month": "octubre",
+      "year": "2026"
+    },
+    "note": {
+      "place": "Lincoln (ejemplo sintético)",
+      "day": "23",
+      "month": "octubre",
+      "year": "2026"
+    },
+    "delivery": {
+      "place": "Lincoln (ejemplo sintético)",
+      "date": "2026-10-23"
+    }
+  },
+  "logistics": {
+    "origin": "Depósito de ejemplo, sin movimiento real",
+    "destination": "Lincoln",
+    "address": "Calle de Prueba 123, Lincoln",
+    "dispatchResponsible": "Responsable sintético, sin firma"
+  },
+  "contractNumber": null,
+  "remitoNumber": null,
+  "acceptance": null,
+  "signatures": [],
+  "deliveryOccurred": false,
+  "professionalApproval": null
+}

@@ -1,0 +1,53 @@
+{
+  "status": "PROPOSED_NOT_APPROVED",
+  "installable": false,
+  "reportlabVersion": "4.4.9",
+  "digests": {
+    "algorithm": "SHA-256",
+    "canonicalization": "UTF-8 JSON recursively sorted keys, compact separators, no newline; byte hashes explicitly named",
+    "candidate": "95f7455d356bc3d9afb81fd8bebb2f9fb2802864bce9c1674603fd2957e9165d",
+    "fixture": "0e394611bcb41c2fb47800170658595ae22820a130c4f780757be9c5f2f32d15",
+    "documents": {
+      "MANDATE": {
+        "version": "MANDATE_ORIGINAL_V3_PROPOSED_1",
+        "canonicalTextSha256": "54a1c687dd042f90fea34e9c923b1cdbe794da612c5fd7aab983861d86433aa4"
+      },
+      "PAGARE": {
+        "version": "PAGARE_ORIGINAL_PROPOSED_1",
+        "canonicalTextSha256": "4486b4010edd51b8c18ae53186efa9c3e5c793e3c887a8fcadf220c7a71a36a2"
+      },
+      "REMITO": {
+        "version": "REMITO_EXISTING_PROPOSED_1",
+        "canonicalTextSha256": "36ade9e533e1a955879fb6da94a02acb63425bdbe4922ebd3036499cd9ff3ae6"
+      }
+    },
+    "sourceTextByteHashes": {
+      "docs/production-readiness/legal-package/mandate-original.txt": "9f4f6dcac1229486efc9a4ee9f50ec40ad4c0a608f6ede101b404be2c19a4b62",
+      "docs/production-readiness/legal-package/pagare-original.txt": "ed06f518941c854ab4082e0944b11ee3b25ab0ec853e7905bb5833671db17371",
+      "docs/production-readiness/legal-package/remito-existing-renderer.txt": "851708304b61d6e278303bb15e11bc79cc53edc4d276145ec0bd1a80207d30b5"
+    },
+    "brandPng": "f4da4d3be0517fa40e169d771590ca450c8b2c5824a77b11f5333c619188647b",
+    "legalEntity": "8f396cfe8ac58840469776d1f92a6571c4db33cd82317236c448711d872ae335",
+    "authoringSources": {
+      "scripts/prepareOriginalDocumentReview.ts": "598dbcb78aa1c78a268c75241d717b4e96544ed3181824d72cc5ca0833550882",
+      "scripts/renderOriginalDocumentReview.py": "8f6467ac6670de4ebbc028ac6825cc26b5900dd3c5d0a939c18ef5dbed1c4940"
+    }
+  },
+  "pdfs": {
+    "MANDATE": {
+      "path": "mandato-propuesto-revision.pdf",
+      "sha256": "6746b0fe08415eafbf2c9d866e43ee105fc0a6c88190d42dbc21bc7f2c237b0b",
+      "pages": 4
+    },
+    "PAGARE": {
+      "path": "pagare-propuesto-revision.pdf",
+      "sha256": "efca6ff809ddae46b19800bf222b655b3a657820197544a3c4b4c9446543f87c",
+      "pages": 1
+    },
+    "REMITO": {
+      "path": "remito-propuesto-revision.pdf",
+      "sha256": "2b3beb8acb5905169e4422062449a7f96705bd76d2646c921f847028e9b3e521",
+      "pages": 1
+    }
+  }
+}
