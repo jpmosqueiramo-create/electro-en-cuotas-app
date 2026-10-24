@@ -8,7 +8,7 @@ import { operationRef } from '../src/lib/operationV2';
 import { randomUUID, randomBytes } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { admin } from '../src/lib/firebaseAdmin';
-import { productionReadyFixture, syntheticFinalPackage } from './helpers/productionAdapterFixtures';
+import { productionReadyFixture, syntheticFinalPackage, syntheticOriginalPackage, syntheticOriginalFormal } from './helpers/productionAdapterFixtures';
 import { productionRuntimeForEmulator, productionRuntime, runtimeData } from '../src/lib/productionV2/runtime';
 import { recordFinalPackageApproval, authorizeOperation, productionRef, scopes, revokeAuthorization, approvedPackage, packageApprovalRef } from '../src/lib/productionV2/authorization';
 import { freezeOperation, productionPaths, frozenOperation } from '../src/lib/productionV2/freeze';
@@ -29,7 +29,7 @@ export async function test() {
     assert.equal(process.env.GCLOUD_PROJECT, 'demo-cuenta-hogar');
     assert.equal(process.env.FIREBASE_STORAGE_EMULATOR_HOST, '127.0.0.1:9199');
     assert.equal((await db.collection('contractSnapshotsV2').get()).size, 0, 'Fresh emulator');
-    const actor = (await admin.auth().createUser({ email: process.env.NEXT_PUBLIC_ADMIN_EMAIL, emailVerified: true, password: 'Emulator-only-123' })).uid, p = syntheticFinalPackage(), runtime = productionRuntimeForEmulator(db, admin.auth(), [p], [actor]), bucket = await getBudgetDocumentationBucket();
+    const actor = (await admin.auth().createUser({ email: process.env.NEXT_PUBLIC_ADMIN_EMAIL, emailVerified: true, password: 'Emulator-only-123' })).uid, p = process.env.SYNTHETIC_ORIGINALS_SUITE === '1' ? syntheticOriginalPackage() : syntheticFinalPackage(), runtime = productionRuntimeForEmulator(db, admin.auth(), [p], [actor]), bucket = await getBudgetDocumentationBucket();
     assert.throws(() => productionRuntime(db, admin.auth()), /PRODUCTION_RUNTIME_INVALID/);
     assert.throws(() => runtimeData({} as never), /SERVER_PRODUCTION_CONTEXT_REQUIRED/);
     const original = process.env.GCLOUD_PROJECT;
@@ -67,13 +67,13 @@ export async function test() {
     pass('PACKAGE_REVOCATION_BLOCKS_WRITES_PRESERVES_IMMUTABLE_READ');
     productionRuntimeForEmulator(db, admin.auth(), [p], [actor]);
 
-    const f = await productionReadyFixture(actor), id = f.id, v = 1, sourceBefore = contractValueHash({ b: (await f.r.budget.get()).data(), a: (await f.r.acceptance.get()).data() });
-    const grant = { commandId: randomUUID(), operationId: f.identity.operationId, expectedRevision: f.ready.revision, packageId: p.id, approvalId, formal: { contractIssueDate: argentinaBusinessDate(), contractIssuePlace: 'Lugar ficticio', promissoryNoteIssueDate: argentinaBusinessDate(), promissoryNoteIssuePlace: 'Lugar ficticio' }, scopes: [...scopes], expiresAt: new Date(Date.now() + 86400000).toISOString(), reason: 'Autorización sintética de prueba, sin efectos reales', confirmed: true };
+    const f = await productionReadyFixture(actor, process.env.SYNTHETIC_ORIGINALS_SUITE === '1'), id = f.id, v = 1, sourceBefore = contractValueHash({ b: (await f.r.budget.get()).data(), a: (await f.r.acceptance.get()).data() });
+    const grant = { commandId: randomUUID(), operationId: f.identity.operationId, expectedRevision: f.ready.revision, packageId: p.id, approvalId, formal: { ...(p.originalsPolicy ? syntheticOriginalFormal : {}), contractIssueDate: argentinaBusinessDate(), contractIssuePlace: 'Lugar ficticio', promissoryNoteIssueDate: argentinaBusinessDate(), promissoryNoteIssuePlace: 'Lugar ficticio' }, scopes: [...scopes], expiresAt: new Date(Date.now() + 86400000).toISOString(), reason: 'Autorización sintética de prueba, sin efectos reales', confirmed: true };
     await assert.rejects(authorizeOperation(runtime, id, v, grant, f.uid));
     await admin.auth().updateUser(actor, { emailVerified: false });
     await assert.rejects(authorizeOperation(runtime, id, v, grant, actor));
     await admin.auth().updateUser(actor, { emailVerified: true });
-    const denied = await productionReadyFixture(actor);
+    const denied = await productionReadyFixture(actor, process.env.SYNTHETIC_ORIGINALS_SUITE === '1');
     const consent = denied.r.draft.collection('conformity').doc('current'), saved = (await consent.get()).data()!;
     await consent.update({ confirmedDigest: '0'.repeat(64) });
     await assert.rejects(authorizeOperation(runtime, denied.id, 1, { ...grant, commandId: randomUUID(), operationId: denied.identity.operationId, expectedRevision: denied.ready.revision }, actor));
@@ -277,7 +277,8 @@ export async function test() {
     pass('INVITATION_HTTP_AUTH_CONCURRENT_REPLAY_AND_NO_SECOND_ACTIVATION');
     assert.equal((await listClientServices(db, client)).length, 1);
     pass('EXPLICIT_CLIENT_UID_INVITATION_AFTER_DELIVERY');
-    const payment = await input('CREDIT_PAYMENT', { paymentId: randomUUID(), amountCents: 14500000, effectiveDate: argentinaBusinessDate(), method: 'TRANSFERENCIA', reference: 'SYNTHETIC TEST PAYMENT' }), pays = await Promise.all([financialCommand(db, id, v, payment, f.root), financialCommand(db, id, v, payment, f.root)]);
+    // Financial effectiveDate follows the existing ledger UTC calendar, unlike instrument issue dates.
+    const payment = await input('CREDIT_PAYMENT', { paymentId: randomUUID(), amountCents: 14500000, effectiveDate: new Date().toISOString().slice(0,10), method: 'TRANSFERENCIA', reference: 'SYNTHETIC TEST PAYMENT' }), pays = await Promise.all([financialCommand(db, id, v, payment, f.root), financialCommand(db, id, v, payment, f.root)]);
     assert.equal(pays.filter(x => !x.replay).length, 1);
     assert.equal((await financialRef(db, id, v).collection('payments').get()).size, 1);
     for (const [role, uid] of [['ADMIN', actor], ['AFFILIATE', f.uid], ['CLIENT', client]] as const) {

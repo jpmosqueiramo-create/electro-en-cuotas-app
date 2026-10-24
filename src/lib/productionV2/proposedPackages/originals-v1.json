@@ -10,7 +10,11 @@
     "fullName": "Juan Pablo Mosqueira Morales",
     "capacity": "Socio Gerente",
     "ownerConfirmed": true,
-    "corporateEvidence": null
+    "corporateEvidence": {
+      "status": "APPOINTMENT_SEEN_IN_PARTIAL_PHOTOGRAPHS",
+      "reference": "docs/production-readiness/document-review-v1/CORPORATE_EVIDENCE.md",
+      "powersVerified": false
+    }
   },
   "jurisdiction": {
     "mandatePolicy": "CLIENT_DOMICILE_COMPETENT_COURTS",
@@ -252,7 +256,8 @@
     }
   },
   "pending": [
-    "Evidencia de designación vigente y facultades de representación del Socio Gerente de LOOP.",
+    "Escritura completa: cláusula de administración y representación, firma individual y limitaciones; la designación y aceptación se observan en IMG_1358.HEIC.",
+    "Instrumento posterior de modificación de domicilio: se mantiene Caracas 1101 por confirmación del titular; la fotografía del original dice Charcas 1101.",
     "Validación profesional de estas versiones exactas, incluida la jurisdicción del mandato según domicilio del cliente.",
     "Competencia judicial y lugar de pago del pagaré; no heredarlos del mandato ni del domicilio social.",
     "Compatibilidad del desglose original Valor Neto + Gestión/Logística y CFT con capital y servicios brutos con IVA incluido, sin inventar importes ni sumar IVA.",

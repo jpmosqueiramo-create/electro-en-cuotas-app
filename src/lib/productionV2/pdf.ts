@@ -1,3 +1,4 @@
+import { assertOriginalTemplate, renderOriginalFinal } from './originalPdf';
 import { jsPDF } from 'jspdf';
 import rendererManifest from './rendererManifest.json';
 import autoTable from 'jspdf-autotable';
@@ -24,6 +25,7 @@ export function assertFinalRenderer(p: FinalPackage) { validateFinalPackage(p); 
     throw Error('FINAL_RENDERER_DEPENDENCY_MISMATCH'); if (p.rendererHash !== FINAL_RENDERER_HASH || p.resourcesHash !== FINAL_RESOURCES_HASH)
     throw Error('APPROVED_RENDERER_VERSION_MISMATCH'); for (const t of Object.values(p.templates)) {
     display(t.title);
+    if (t.layout === 'OWNER_ORIGINALS_V1') { assertOriginalTemplate(t); continue; }
     for (const paragraph of t.paragraphs) {
         display(paragraph);
         for (const m of paragraph.matchAll(/\{\{([^}]+)\}\}/g))
@@ -36,6 +38,7 @@ export function renderFinalDocument(snapshot: FinalSnapshot, p: FinalPackage, ki
     assertFinalRenderer(p);
     if (snapshot.freeze.legalPackageHash !== p.sha256 || snapshot.freeze.executionMode !== 'PRODUCTION' || !snapshot.productDetails?.quantity || !snapshot.productDetails.condition)
         throw Error('FINAL_DOCUMENT_CONTEXT_MISMATCH');
+    if (p.templates[kind].layout === 'OWNER_ORIGINALS_V1') return renderOriginalFinal(snapshot,p,kind,test);
     const t = p.templates[kind], values = variables(snapshot, kind), doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true, putOnlyUsedFonts: true });
     let y = 31;
     doc.setCreationDate('D:' + snapshot.freeze.termsFrozenAt.slice(0, 19).replace(/\D/g, '') + "+00'00'");

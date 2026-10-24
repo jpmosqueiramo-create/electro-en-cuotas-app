@@ -108,7 +108,7 @@ export async function productionOverview(runtime: ProductionRuntime, id: string,
         }
         const cursor = (s: typeof approvals) => s.size > 20 ? s.docs[19].id : null;
         const pagination = { approvalAfter: cursor(approvals), authorizationAfter: cursor(grants), recoveryAfter: cursor(recoveries) };
-        return { approvalHistory, recoveryAuthorizations, pagination, issueDate: argentinaBusinessDate(), issueTimeZone: ISSUE_DATE_TIME_ZONE, operationId: identity.operationId, revision: ds.data()?.revision ?? 0, administratorAuthorized, deploymentEnabled, test, counterReady, readyValid, blockers, packages: packages.map(p => ({ id: p.id, version: p.version, hash: p.sha256, templates: Object.values(p.templates).map(t => ({ kind: t.kind, title: t.title, version: t.version, hash: t.sha256 })) })), approvals: validApprovals, authorizations, frozen, issued, arcaEnabled: false as const };
+        return { approvalHistory, recoveryAuthorizations, pagination, issueDate: argentinaBusinessDate(), issueTimeZone: ISSUE_DATE_TIME_ZONE, operationId: identity.operationId, revision: ds.data()?.revision ?? 0, administratorAuthorized, deploymentEnabled, test, counterReady, readyValid, blockers, packages: packages.map(p => ({ id: p.id, version: p.version, hash: p.sha256, originalsBindingsRequired: !!p.originalsPolicy, templates: Object.values(p.templates).map(t => ({ kind: t.kind, title: t.title, version: t.version, hash: t.sha256 })) })), approvals: validApprovals, authorizations, frozen, issued, arcaEnabled: false as const };
     });
 }
 export type ProductionOverview = Awaited<ReturnType<typeof productionOverview>>;
