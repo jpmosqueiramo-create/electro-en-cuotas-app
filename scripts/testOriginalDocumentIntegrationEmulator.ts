@@ -12,6 +12,7 @@ import { authorizeOperation, recordFinalPackageApproval } from '../src/lib/produ
 import { argentinaBusinessDate } from '../src/lib/productionV2/businessDate';
 import { readOperationDraftDocuments } from '../src/lib/contractDocuments/operationDraftServer';
 import { contractValueHash } from '../src/lib/contractIntegrityV2';
+import { clientPaymentPlaceReviewTemplates } from '../src/lib/productionV2/clientPaymentPlaceProposal';
 import candidate from '../src/lib/productionV2/proposedPackages/originals-v1.json';
 const checks:string[]=[];const pass=(name:string)=>{checks.push(name);console.log(name+' = PASS');};
 async function run(){
@@ -37,10 +38,10 @@ async function run(){
  const normal=(s:string)=>s.replace(/PÁGINA \d+/g,'').replace(/\s+/g,' ').trim();
  for(const kind of ['MANDATE','PAGARE'] as const){const src=normal(readFileSync(candidate.sources[kind].textPath,'utf8'));assert.equal(normal(candidate.documents[kind].blocks.map(b=>b.originalText).join(' ')),src.slice(candidate.documents[kind].title.length).trim());}
  pass('ALL_ORIGINAL_CLAUSES_PRESERVED_IN_SOURCE_ORDER');
- const folder='output/pdf/document-review-v1';mkdirSync(folder,{recursive:true});
+ const folder='/tmp/cuenta-hogar-original-integration-v3';mkdirSync(folder,{recursive:true});
  const pdfs=Object.fromEntries(([['MANDATE','mandate','mandato-propuesto-revision.pdf'],['PAGARE','promissoryNote','pagare-propuesto-revision.pdf'],['REMITO','remito','remito-propuesto-revision.pdf']] as const).map(([kind,key,path])=>{const a=result[key],bytes=Buffer.from(a.base64,'base64');assert.equal(createHash('sha256').update(bytes).digest('hex'),a.sha256);writeFileSync(folder+'/'+path,bytes);return [kind,{path,sha256:a.sha256,pages:a.pages}];}));
  pass('ARTIFACTS_FROM_REAL_READ_ONLY_SERVER_PROJECTION');
- writeFileSync(folder+'/manifest.json',JSON.stringify({candidateHash:contractValueHash(candidate),sourceDocuments:candidate.sources,templateVersions:Object.fromEntries(Object.entries(p.templates).map(([kind,t])=>[kind,{version:t.version,sha256:t.sha256}])),status:'PROPOSED_NOT_APPROVED',installable:false,source:'Existing readOperationDraftDocuments / production shared renderer',productionWrites:0,rendererHash:FINAL_RENDERER_HASH,resourcesHash:FINAL_RESOURCES_HASH,templateHash:result.templateHash,projection:result.projection,pdfs,checks},null,2)+'\n');
+ writeFileSync(folder+'/manifest.json',JSON.stringify({candidateHash:contractValueHash(candidate),sourceDocuments:candidate.sources,templateVersions:Object.fromEntries(Object.entries(clientPaymentPlaceReviewTemplates()).map(([kind,t])=>[kind,{version:t.version,sha256:t.sha256}])),status:'PROPOSED_NOT_APPROVED',installable:false,source:'Existing readOperationDraftDocuments / production shared renderer',productionWrites:0,rendererHash:FINAL_RENDERER_HASH,resourcesHash:FINAL_RESOURCES_HASH,templateHash:result.templateHash,projection:result.projection,pdfs,checks},null,2)+'\n');
  console.log(JSON.stringify({status:'PASS',groups:checks.length,productionWrites:0,checks}));
 }
 run().then(()=>admin.app().delete()).catch(e=>{console.error(e);process.exitCode=1;});

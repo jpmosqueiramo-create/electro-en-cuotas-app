@@ -1,4 +1,5 @@
 import './helpers/requireSafeEmulatorEnvironment';
+import { syntheticPreviewConformity } from './helpers/previewConformityFixture';
 import assert from 'node:assert/strict';
 import { NextRequest } from 'next/server';
 import { admin } from '../src/lib/firebaseAdmin';
@@ -13,11 +14,14 @@ async function main(){
  d.personalData.fullName=b.clienteSnapshot.nombre;d.personalData.dni=b.clienteSnapshot.dni||'12345678';
  await r.budget.create(b);await r.acceptance.create(a);await r.draft.create(d);
  const before=await Promise.all([r.budget.get(),r.acceptance.get(),r.draft.get()]);
+ assert.equal((await readOperationDraftDocuments(db,id,1)).available,false);
+ await r.draft.collection('conformity').doc('current').create(syntheticPreviewConformity(d));
  const pair=await readOperationDraftDocuments(db,id,1);assert.equal(pair.available,true);assert.equal(pair.projection.budgetId,id);
  assert.deepEqual((await Promise.all([r.budget.get(),r.acceptance.get(),r.draft.get()])).map(s=>s.updateTime),before.map(s=>s.updateTime));
- assert.equal((await r.draft.listCollections()).length,0);assert.equal((await db.collection('contractNumberingV2').get()).size,0);assert.equal((await db.collection('contractSnapshotsV2').get()).size,0);
- await r.draft.collection('conformity').doc('current').create({confirmedDigest:null});assert.equal((await readOperationDraftDocuments(db,id,1)).available,false);
- await r.draft.collection('conformity').doc('current').set({confirmedDigest:clientTermsDigest(d)});assert.equal((await readOperationDraftDocuments(db,id,1)).available,true);
+ assert.deepEqual((await r.draft.listCollections()).map(c=>c.id),['conformity']);assert.equal((await db.collection('contractNumberingV2').get()).size,0);assert.equal((await db.collection('contractSnapshotsV2').get()).size,0);
+ await r.draft.collection('conformity').doc('current').set({confirmedDigest:null});assert.equal((await readOperationDraftDocuments(db,id,1)).available,false);
+ await r.draft.collection('conformity').doc('current').set({confirmedDigest:clientTermsDigest(d)});assert.equal((await readOperationDraftDocuments(db,id,1)).available,false);
+ await r.draft.collection('conformity').doc('current').set(syntheticPreviewConformity(d));assert.equal((await readOperationDraftDocuments(db,id,1)).available,true);
  await r.draft.update({'personalData.fullName':'Otra identidad ficticia'});assert.equal((await readOperationDraftDocuments(db,id,1)).available,false);
  await r.draft.update({personalData:d.personalData});
  // Explicitly linked verified profile, as a recurrent customer; no name-based linking.

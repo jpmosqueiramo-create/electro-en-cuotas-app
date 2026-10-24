@@ -37,13 +37,18 @@ async function run(){
   formal:{...syntheticOriginalFormal,contractIssueDate:argentinaBusinessDate(),contractIssuePlace:'Ciudad sintética',promissoryNoteIssueDate:argentinaBusinessDate(),promissoryNoteIssuePlace:'Ciudad sintética'},
   scopes:['ISSUANCE'],expiresAt:new Date(Date.now()+86400000).toISOString(),reason:'Sólo Emulator, sin efectos jurídicos',confirmed:true};
  pass('NEW_CONFORMITY_HAS_ADDRESS_PROOF_WITHOUT_CHANGING_TERMS_DIGEST');
+ for(const field of ['address','locality','province','postalCode']){
+  await f.r.draft.update({['personalData.'+field]:''});const blocked=await readOperationDraftDocuments(db,f.id,1);assert.equal(blocked.available,false);assert.equal(blocked.code,'DOCUMENT_CONFORMITY_PENDING');assert(!('promissoryNote' in blocked));
+  await f.r.draft.update({personalData:f.ready.personalData});
+ }
+ pass('INCOMPLETE_PAYMENT_ADDRESS_BLOCKS_WEB_PREVIEW_WITHOUT_PDF');
 
  // A synthetic legacy record, not an automatic migration of a real consent.
  const {confirmedPaymentAddressHash:oldAddress,...legacy}=initial;void oldAddress;
  await consentRef.set(legacy);const legacyBefore=await consentRef.get();
  const legacyView=await getContract(db,f.id,1);
  assert(legacyView.clientConformity?.confirmed);assert.equal(legacyView.clientConformity.paymentAddressConfirmed,false);
- assert((await readOperationDraftDocuments(db,f.id,1)).available);
+ const legacyPreview=await readOperationDraftDocuments(db,f.id,1);assert.equal(legacyPreview.available,false);assert.equal(legacyPreview.code,'DOCUMENT_CONFORMITY_PENDING');
  await assert.rejects(authorizeOperation(runtime,f.id,1,grant,actor),/ADDRESS_CONFORMITY_REQUIRED/);
  const legacyAfter=await consentRef.get();assert.deepEqual(legacyAfter.data(),legacyBefore.data());assert(legacyAfter.updateTime!.isEqual(legacyBefore.updateTime!));
  assert.equal((await productionRef(db,f.id,1).collection('authorizations').get()).size,0);
@@ -77,6 +82,7 @@ async function run(){
 
  const preview=await readOperationDraftDocuments(db,f.id,1);assert(preview.available);
  const proposed=renderOriginalReview(preview.projection,p.templates,proof);
+ assert.equal(preview.templateHash,proposed.templateHash);assert.deepEqual(preview.mandate,proposed.mandate);assert.deepEqual(preview.promissoryNote,proposed.promissoryNote);assert.deepEqual(preview.remito,proposed.remito);
  assert.equal(proposed.projection.customer.address,changedAddress.address);
  assert.equal(proposed.projection.economics!.total,f.ready.economicTerms!.contractTotal);
  await reviewCommand(f.id,'DECIDE',{state:'IN_REVIEW',resolution:'Revisar datos sintéticos actualizados',notes:'Sólo Emulator'});

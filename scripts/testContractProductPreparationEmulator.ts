@@ -22,7 +22,7 @@ async function main(){
  assert.equal(Object.hasOwn(reviewedTerms(d),'productDetails'),false);
  const evidence=buildReadyEvidence(b,a,d,'synthetic-admin',d.updatedAt,'old-review');
  verifyReadyEvidence(b,a,{...d,status:'READY_TO_FORMALIZE',readyEvidenceId:'old-review',revision:2},evidence);
- const old=await readOperationDraftDocuments(db,id,1);assert.equal(old.available,true);assert.equal(old.projection.product.quantity,null);assert.equal(old.projection.product.condition,null);
+ const old=await readOperationDraftDocuments(db,id,1);assert.equal(old.available,false);assert.equal(old.code,'DOCUMENT_CONFORMITY_PENDING');assert.equal(old.projection.product.quantity,null);assert.equal(old.projection.product.condition,null);
  assert.equal(old.projection.pending.some(p=>p.section==='data'),false);
  const missingPersonal=structuredClone(d);missingPersonal.personalData.email='';
  assert.ok(projectOperationDraft(b,a,missingPersonal,false,false).pending.some(p=>p.section==='data'&&p.label==='Correo electrónico'));
