@@ -1,3 +1,4 @@
+import {externalDeliveryPolicy,externalDeliveryMissing} from '../externalDeliveryDocumentV2';
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
 import { admin } from '../firebaseAdmin';
 import { contractRefs } from '../contractV2Server';
@@ -8,7 +9,7 @@ import type { DeliveryV2 } from '../operationDeliveryV2';
 import { verifyEvidenceObject, assertVerifiedEvidence, type EvidenceMetadata, type VerifiedEvidence } from '../operationEvidenceV2';
 import { runtimeForDatabase, runtimeData, requireProductionActor, type ProductionRuntime } from './runtime';
 import { issuedOperation } from './documents';
-import { finalDocumentKinds } from './catalog';
+import { issuedDocumentKinds } from './catalog';
 import type { ProductionScope } from './authorization';
 export async function operationRuntime(db: Firestore, tx: Transaction, id: string, v: number): Promise<ProductionRuntime | null> {
     const d = (await tx.get(contractRefs(db, id, v).draft)).data();
@@ -48,7 +49,7 @@ export async function productionDeliveryProof(runtime: ProductionRuntime, tx: Tr
     // A transfer pending after delivery is readable so its two participants can
     // complete it. New activation/payment/invitation proofs still require settled custody.
     const files = new Map<string, EvidenceMetadata>();
-    for (const k of finalDocumentKinds) {
+    for (const k of issuedDocumentKinds(issued.package)) {
         const doc = d.documents[k], emitted = issued.manifest.documents[k];
         if (!doc.prepared || !doc.signature?.clientSigned || !doc.signature.legible || !doc.signature.identityChecked || doc.prepared.photoId !== emitted.photoId || doc.prepared.sha256 !== emitted.sha256 || d.originals.documentHashes[k] !== emitted.sha256 || contractValueHash(doc) !== contractValueHash(d.event.documents[k]))
             throw Error('PRODUCTION_SIGNATURES_REQUIRED');
@@ -59,6 +60,17 @@ export async function productionDeliveryProof(runtime: ProductionRuntime, tx: Tr
             files.set(photo.path, photo as EvidenceMetadata);
             if (verified)
                 assertVerifiedEvidence(photo as EvidenceMetadata, verified.get(photo.path));
+        }
+    }
+    if(d.documentPolicy!==issued.package.deliveryDocumentPolicy) throw Error('PRODUCTION_DELIVERY_POLICY_MISMATCH');
+    if(issued.package.deliveryDocumentPolicy===externalDeliveryPolicy){
+        const x=d.externalTransfer,r=d.externalReceipt;
+        if(externalDeliveryMissing(d).length||!x||!r||x.snapshotHash!==issued.snapshot.integrity.payloadHash||x.customerHash!==contractValueHash(issued.snapshot.personalData)||x.productHash!==contractValueHash({reference:issued.snapshot.acceptedReference,details:issued.snapshot.productDetails})||contractValueHash(x)!==contractValueHash(d.event.externalTransfer)||contractValueHash(r)!==contractValueHash(d.event.externalReceipt)||d.event.documentPolicy!==d.documentPolicy||r.receivedAt>d.event.occurredAt)throw Error('PRODUCTION_EXTERNAL_DELIVERY_REQUIRED');
+        for(const [doc,slot,related] of [[x,'EXTERNAL_TRANSFER',issued.snapshot.integrity.payloadHash],[r,'DELIVERY_RECEIPT',x.photoId]] as const){
+            const photo=(await tx.get(ref.collection('photos').doc(doc.photoId))).data();
+            if(!photo||photo.state!=='COMMITTED'||photo.sha256!==doc.sha256||photo.slot!==slot||photo.relatedId!==related||photo.path!==`operation-delivery-v2/${id}/v${v}/${doc.photoId}`||!photo.generation)throw Error('PRODUCTION_EXTERNAL_EVIDENCE_REQUIRED');
+            files.set(photo.path,photo as EvidenceMetadata);
+            if(verified)assertVerifiedEvidence(photo as EvidenceMetadata,verified.get(photo.path));
         }
     }
     return { ...issued, delivery: d, files };

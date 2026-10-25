@@ -1,6 +1,6 @@
 import { renderFinalDocument } from './pdf';
 import { assertCurrentIssueDates } from './businessDate';
-import { finalDocumentKinds } from './catalog';
+import { issuedDocumentKinds } from './catalog';
 import type { Transaction } from 'firebase-admin/firestore';
 import { exact, opaque, type ContractDraftV2 } from '../contractV2';
 import { contractRefs } from '../contractV2Server';
@@ -103,7 +103,7 @@ export async function freezeOperation(runtime: ProductionRuntime, id: string, v:
             acceptedReference: d.acceptedReferenceSnapshot, productDetails: d.productDetails, personalDataVersion: PERSONAL_ADDRESS_VERSION, personalData: d.personalData as Required<typeof d.personalData>, addressInterpretation: { jurisdictionCatalogVersion: PERSONAL_ADDRESS_VERSION, provinceDisplayName: provinceLabel(d.personalData.province!), postalPolicyVersion: 'AR_POSTAL_STRUCTURE_V1' }, employmentData: d.employmentData, economicTerms: d.economicTerms!, calculationPolicyVersion: 'P5C_SHARED_C1_V1', roundingPolicy: 'NEXT_90_V1', paymentSchedule: { calendarPolicyVersion: 'P5C_EXPLICIT_MONTH_CLAMP_V1', firstInstallmentDueDate: d.firstInstallmentDueDate!, preferredMonthlyDueDay: d.preferredMonthlyDueDay!, installments: d.paymentScheduleDraft }, ...a.legalContext,
             freeze: { state: 'TERMS_FROZEN', preparedAt: d.preparedAt, readyAt: e.reviewedAt, readyBy: e.reviewedBy, termsFrozenAt: now, termsFrozenBy: actor, commandId: cid, readinessPolicyVersion: 'CONTRACT_PRODUCTION_APPROVAL_V1', integrationPolicyVersion: 'READY_FREEZE_PRODUCTION_V1', executionMode: 'PRODUCTION', readyEvidenceId: d.readyEvidenceId!, readyEvidenceHash: contractValueHash(e), dependenciesHash: contractValueHash(a.legalContext), legalTemplateReviewRequired: true, authorizationId: aid, authorizationHash: a.hash, legalPackageHash: a.packageHash, legalApprovalsHash: a.approvalHash, provenanceManifestHash: a.sourceHash } });
         // Validate all document values before reserving any number. Pure in-memory rendering; no Storage I/O.
-        for (const kind of finalDocumentKinds)
+        for (const kind of issuedDocumentKinds(grant.package))
             renderFinalDocument(snapshot as FinalSnapshot, grant.package, kind, runtimeData(runtime).test);
         const receipt = { contractId: idc, snapshotId: sid, contractNumber: number, snapshotHash: snapshot.integrity.payloadHash };
         tx.create(sr, snapshot);

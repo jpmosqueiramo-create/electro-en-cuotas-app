@@ -1,0 +1,414 @@
+{
+  "status": "PROPOSED_NOT_APPROVED",
+  "professionalValidation": null,
+  "installable": false,
+  "proposal": {
+    "version": "OWNER_CREDITOR_PAYMENT_EXTERNAL_DELIVERY_V4",
+    "deliveryDocumentPolicy": "EXTERNAL_TRANSFER_AND_RECEIPT_V1",
+    "status": "PROPOSED_NOT_APPROVED",
+    "installable": false,
+    "professionalValidation": null,
+    "paymentPlace": "Caracas 1101, Ciudad Autónoma de Buenos Aires, CP 1431",
+    "acceleration": "TWO_CONSECUTIVE_UNPAID_MONTHLY_INSTALLMENTS",
+    "notePresentment": "AT_SIGHT_WITHOUT_TWO_INSTALLMENT_PRECONDITION",
+    "internalRemito": false
+  },
+  "issuer": {
+    "profileId": "loop-owner-confirmed",
+    "profileVersion": "LOOP_GERENTE_TITULAR_REVIEW_V4",
+    "legalName": "LOOP GESTIÓN INTEGRAL S.R.L.",
+    "tradeName": "Cuenta Hogar",
+    "taxId": "30-71962686-2",
+    "legalAddress": "Caracas 1101, Ciudad Autónoma de Buenos Aires, CP 1431",
+    "representative": {
+      "fullName": "Juan Pablo Mosqueira Morales",
+      "capacity": "Gerente Titular"
+    },
+    "profileHash": "9f338c802ca49759345c440b004c3d21a5b8f32b05c23573ca231203dd09a758"
+  },
+  "sourceDocuments": {
+    "MANDATE": {
+      "name": "Contrato de Mandato Comercial - Cuenta Hogar SRL V3.pdf",
+      "sha256": "8e23a3734506a63920de1b75a3fdcb4f0c6fe88c13c1941b3357ebd9e1a3b4d6",
+      "textPath": "docs/production-readiness/legal-package/mandate-original.txt"
+    },
+    "PAGARE": {
+      "name": "Pagaré a la Vista (Sin Garante) - Cuenta Hogar SRL.pdf",
+      "sha256": "6f22b6f9bae6fd75f989ed9fb33ef53052832a43fff5d3f52fd30db56c3253b6",
+      "textPath": "docs/production-readiness/legal-package/pagare-original.txt"
+    },
+    "REMITO": {
+      "name": "renderRemitoModelo",
+      "reference": "src/lib/pdfGenerator.ts#renderRemitoModelo",
+      "sha256": "851708304b61d6e278303bb15e11bc79cc53edc4d276145ec0bd1a80207d30b5",
+      "textPath": "docs/production-readiness/legal-package/remito-existing-renderer.txt"
+    }
+  },
+  "templates": {
+    "MANDATE": {
+      "kind": "MANDATE",
+      "id": "loop-original-mandate",
+      "version": "OWNER_CREDITOR_PAYMENT_EXTERNAL_DELIVERY_V4",
+      "title": "CONTRATO DE MANDATO COMERCIAL Y GESTIÓN DE COMPRA",
+      "layout": "OWNER_ORIGINALS_V1",
+      "blocks": [
+        {
+          "id": "parties",
+          "type": "paragraph",
+          "text": "Entre {{issuer.legalName}} , CUIT N° {{issuer.taxId}}, con domicilio legal en {{issuer.legalAddress}}, representada en este acto por su {{representative.capacity}}, Sr. {{representative.fullName}}, en adelante denominado el \"MANDATARIO\" o la \"EMPRESA\" , por una parte; y por la otra el/la Sr./Sra. {{client.fullName}} , D.N.I. N° {{client.dni}}, CUIT/CUIL N° {{client.cuil}}, con domicilio en la calle {{client.address}}, de la localidad de {{client.locality}}, provincia de {{client.province}}, correo electrónico {{client.email}}, teléfono {{client.phone}}, en adelante denominado el \"MANDANTE\" o el \"CLIENTE\" , convienen en celebrar el presente Contrato de Mandato Comercial, sujeto a las disposiciones del Código Civil y Comercial de la Nación y a las siguientes cláusulas y condiciones:"
+        },
+        {
+          "id": "clause-1-heading",
+          "type": "heading",
+          "text": "PRIMERA: Objeto del Contrato y Documentación de Compra"
+        },
+        {
+          "id": "object",
+          "type": "paragraph",
+          "text": "El MANDANTE encomienda a la EMPRESA, y esta acepta, el mandato irrevocable para gestionar, adquirir y abonar por cuenta y orden del MANDANTE los siguientes bienes muebles (en adelante, los \"Bienes\"):"
+        },
+        {
+          "id": "product-table",
+          "type": "productTable",
+          "text": "Cantidad Descripción del Bien (Marca, Modelo, Color) Estado (Nuevo/Usado) [CANTIDAD] [DESCRIPCIÓN DETALLADA DEL PRODUCTO] [ESTADO]"
+        },
+        {
+          "id": "invoicing",
+          "type": "paragraph",
+          "text": "La EMPRESA actuará exclusivamente en calidad de intermediario y gestor de compra. ACLARACIÓN SOBRE FACTURACIÓN: El MANDANTE acepta y declara conocer que la adquisición de los Bienes puede ser realizada a distintos proveedores (humanos o jurídicos). Por lo tanto, la provisión de una factura de compra original emitida por el proveedor tercero estará supeditada exclusivamente a la disponibilidad de la misma según el origen y la condición del Bien (nuevo o usado). En ningún caso la falta de factura del proveedor original eximirá al MANDANTE de sus obligaciones de pago frente a la EMPRESA por el servicio de gestión y financiación aquí pactado."
+        },
+        {
+          "id": "clause-2-heading",
+          "type": "heading",
+          "text": "SEGUNDA: Liquidación de Costos, Honorarios y Financiación"
+        },
+        {
+          "id": "costs",
+          "type": "paragraph",
+          "text": "El costo total de la operación, que incluye el valor del Bien, los honorarios por la gestión del mandato, los gastos logísticos y el costo financiero por el otorgamiento de facilidades de pago con capital propio de la EMPRESA, se detalla a continuación:"
+        },
+        {
+          "id": "original-economy",
+          "type": "originalEconomy",
+          "text": "● Valor Neto del Bien + Gastos de Gestión y Logística: $[MONTO] ● Costo Financiero Total (CFT): $ [MONTO] ● VALOR TOTAL A FINANCIAR: $ [MONTO TOTAL]"
+        },
+        {
+          "id": "clause-3-heading",
+          "type": "heading",
+          "text": "TERCERA: Forma de Pago y Garantía de Cumplimiento (Pagaré)"
+        },
+        {
+          "id": "payment-plan",
+          "type": "paragraph",
+          "text": "El MANDANTE se compromete a abonar a la EMPRESA el Valor Total indicado en la Cláusula Segunda, mediante el siguiente plan de pagos:"
+        },
+        {
+          "id": "original-schedule",
+          "type": "originalSchedule",
+          "text": "Anticipo / Cuota N° Monto ($) Fecha de Vencimiento Anticipo (si lo hubiere) $ [MONTO ANTICIPO] [FECHA] Cuota 1 $ [MONTO CUOTA 1] [FECHA] Cuota 2 a [N] $ [MONTO CUOTA] Del 1 al 10 de cada mes."
+        },
+        {
+          "id": "one-note",
+          "type": "paragraph",
+          "text": "Como garantía del fiel cumplimiento de las obligaciones de pago aquí asumidas, el MANDANTE suscribe en este acto, a favor de \"{{issuer.legalName}}\", un (1) Pagaré \"Sin Protesto\" por la suma total financiada."
+        },
+        {
+          "id": "clause-4-heading",
+          "type": "heading",
+          "text": "CUARTA: Mora e Incumplimiento"
+        },
+        {
+          "id": "default",
+          "type": "paragraph",
+          "text": "La mora se producirá de pleno derecho. La falta de pago de dos (2) cuotas mensuales consecutivas facultará a la EMPRESA a exigir el pago íntegro del saldo adeudado. No se cobrarán intereses punitorios ni recargos adicionales por atraso, ni se capitalizarán intereses punitorios."
+        },
+        {
+          "id": "clause-5-heading",
+          "type": "heading",
+          "text": "QUINTA: Entregas, Logística y Aceptación"
+        },
+        {
+          "id": "delivery",
+          "type": "paragraph",
+          "text": "La firma del remito o acuse de recibo implicará la total conformidad con el estado exterior y funcionamiento inicial del Bien."
+        },
+        {
+          "id": "clause-6-heading",
+          "type": "heading",
+          "text": "SEXTA: Limitación de Responsabilidad, Garantía Técnica y Roturas"
+        },
+        {
+          "id": "warranty",
+          "type": "paragraph",
+          "text": "La garantía por defectos de fabricación es otorgada exclusivamente por el fabricante y/o proveedor original del producto. La EMPRESA brindará únicamente asistencia administrativa en la gestión del reclamo. En bienes usados, el MANDANTE acepta el estado del bien \"tal como está\" al momento de la entrega, salvo pacto en contrario. Se deja expresa constancia de que cualquier rotura, desperfecto, hurto, robo, pérdida o inutilización del Bien ocurrida con posterioridad a su entrega, por cualquier causa que fuere, no exime, suspende ni extingue bajo ninguna circunstancia la obligación del MANDANTE de cancelar la totalidad de las cuotas adeudadas a la EMPRESA por el servicio de gestión y financiación brindado."
+        },
+        {
+          "id": "clause-7-heading",
+          "type": "heading",
+          "text": "SÉPTIMA: Jurisdicción y Competencia"
+        },
+        {
+          "id": "mandate-jurisdiction",
+          "type": "paragraph",
+          "text": "Las partes se someten a la jurisdicción de los tribunales competentes correspondientes al domicilio del cliente."
+        },
+        {
+          "id": "execution",
+          "type": "paragraph",
+          "text": "En prueba de conformidad, se firman dos (2) ejemplares de un mismo tenor en la ciudad de {{issue.contract.place}}, a los {{issue.contract.day}} días del mes de {{issue.contract.month}} de {{issue.contract.year}}."
+        },
+        {
+          "id": "signatures",
+          "type": "mandateSignatures",
+          "text": "___________________________ Firma y Aclaración MANDANTE ___________________________ Firma por {{issuer.legalName}}"
+        }
+      ],
+      "paragraphs": [
+        "Entre {{issuer.legalName}} , CUIT N° {{issuer.taxId}}, con domicilio legal en {{issuer.legalAddress}}, representada en este acto por su {{representative.capacity}}, Sr. {{representative.fullName}}, en adelante denominado el \"MANDATARIO\" o la \"EMPRESA\" , por una parte; y por la otra el/la Sr./Sra. {{client.fullName}} , D.N.I. N° {{client.dni}}, CUIT/CUIL N° {{client.cuil}}, con domicilio en la calle {{client.address}}, de la localidad de {{client.locality}}, provincia de {{client.province}}, correo electrónico {{client.email}}, teléfono {{client.phone}}, en adelante denominado el \"MANDANTE\" o el \"CLIENTE\" , convienen en celebrar el presente Contrato de Mandato Comercial, sujeto a las disposiciones del Código Civil y Comercial de la Nación y a las siguientes cláusulas y condiciones:",
+        "PRIMERA: Objeto del Contrato y Documentación de Compra",
+        "El MANDANTE encomienda a la EMPRESA, y esta acepta, el mandato irrevocable para gestionar, adquirir y abonar por cuenta y orden del MANDANTE los siguientes bienes muebles (en adelante, los \"Bienes\"):",
+        "Cantidad Descripción del Bien (Marca, Modelo, Color) Estado (Nuevo/Usado) [CANTIDAD] [DESCRIPCIÓN DETALLADA DEL PRODUCTO] [ESTADO]",
+        "La EMPRESA actuará exclusivamente en calidad de intermediario y gestor de compra. ACLARACIÓN SOBRE FACTURACIÓN: El MANDANTE acepta y declara conocer que la adquisición de los Bienes puede ser realizada a distintos proveedores (humanos o jurídicos). Por lo tanto, la provisión de una factura de compra original emitida por el proveedor tercero estará supeditada exclusivamente a la disponibilidad de la misma según el origen y la condición del Bien (nuevo o usado). En ningún caso la falta de factura del proveedor original eximirá al MANDANTE de sus obligaciones de pago frente a la EMPRESA por el servicio de gestión y financiación aquí pactado.",
+        "SEGUNDA: Liquidación de Costos, Honorarios y Financiación",
+        "El costo total de la operación, que incluye el valor del Bien, los honorarios por la gestión del mandato, los gastos logísticos y el costo financiero por el otorgamiento de facilidades de pago con capital propio de la EMPRESA, se detalla a continuación:",
+        "● Valor Neto del Bien + Gastos de Gestión y Logística: $[MONTO] ● Costo Financiero Total (CFT): $ [MONTO] ● VALOR TOTAL A FINANCIAR: $ [MONTO TOTAL]",
+        "TERCERA: Forma de Pago y Garantía de Cumplimiento (Pagaré)",
+        "El MANDANTE se compromete a abonar a la EMPRESA el Valor Total indicado en la Cláusula Segunda, mediante el siguiente plan de pagos:",
+        "Anticipo / Cuota N° Monto ($) Fecha de Vencimiento Anticipo (si lo hubiere) $ [MONTO ANTICIPO] [FECHA] Cuota 1 $ [MONTO CUOTA 1] [FECHA] Cuota 2 a [N] $ [MONTO CUOTA] Del 1 al 10 de cada mes.",
+        "Como garantía del fiel cumplimiento de las obligaciones de pago aquí asumidas, el MANDANTE suscribe en este acto, a favor de \"{{issuer.legalName}}\", un (1) Pagaré \"Sin Protesto\" por la suma total financiada.",
+        "CUARTA: Mora e Incumplimiento",
+        "La mora se producirá de pleno derecho. La falta de pago de dos (2) cuotas mensuales consecutivas facultará a la EMPRESA a exigir el pago íntegro del saldo adeudado. No se cobrarán intereses punitorios ni recargos adicionales por atraso, ni se capitalizarán intereses punitorios.",
+        "QUINTA: Entregas, Logística y Aceptación",
+        "La firma del remito o acuse de recibo implicará la total conformidad con el estado exterior y funcionamiento inicial del Bien.",
+        "SEXTA: Limitación de Responsabilidad, Garantía Técnica y Roturas",
+        "La garantía por defectos de fabricación es otorgada exclusivamente por el fabricante y/o proveedor original del producto. La EMPRESA brindará únicamente asistencia administrativa en la gestión del reclamo. En bienes usados, el MANDANTE acepta el estado del bien \"tal como está\" al momento de la entrega, salvo pacto en contrario. Se deja expresa constancia de que cualquier rotura, desperfecto, hurto, robo, pérdida o inutilización del Bien ocurrida con posterioridad a su entrega, por cualquier causa que fuere, no exime, suspende ni extingue bajo ninguna circunstancia la obligación del MANDANTE de cancelar la totalidad de las cuotas adeudadas a la EMPRESA por el servicio de gestión y financiación brindado.",
+        "SÉPTIMA: Jurisdicción y Competencia",
+        "Las partes se someten a la jurisdicción de los tribunales competentes correspondientes al domicilio del cliente.",
+        "En prueba de conformidad, se firman dos (2) ejemplares de un mismo tenor en la ciudad de {{issue.contract.place}}, a los {{issue.contract.day}} días del mes de {{issue.contract.month}} de {{issue.contract.year}}.",
+        "___________________________ Firma y Aclaración MANDANTE ___________________________ Firma por {{issuer.legalName}}"
+      ],
+      "sha256": "92e009ac5b290c04345ab84726ca9c07d6fd98ef231d5fd67101b545e442e2a5"
+    },
+    "PAGARE": {
+      "kind": "PAGARE",
+      "id": "loop-original-pagare",
+      "version": "OWNER_CREDITOR_PAYMENT_EXTERNAL_DELIVERY_V4",
+      "title": "PAGARÉ A LA VISTA SIN PROTESTO",
+      "layout": "OWNER_ORIGINALS_V1",
+      "blocks": [
+        {
+          "id": "amount",
+          "type": "paragraph",
+          "text": "Por {{economy.totalDisplay}} (Monto en números)"
+        },
+        {
+          "id": "issue",
+          "type": "paragraph",
+          "text": "En la ciudad de {{issue.note.place}}, a los {{issue.note.day}} días del mes de {{issue.note.month}} de {{issue.note.year}}."
+        },
+        {
+          "id": "promise",
+          "type": "paragraph",
+          "text": "A LA VISTA , pagaré sin protesto (Art. 50 Dec. Ley 5965/63) a la orden de {{issuer.legalName}} (CUIT N° {{issuer.taxId}}), o a quien ésta designe, en el domicilio de Caracas 1101, Ciudad Autónoma de Buenos Aires, CP 1431, la suma de PESOS {{economy.totalWordsWithoutCurrency}} (Monto en letras), por igual valor recibido en servicios de gestión y financiación a mi entera satisfacción."
+        },
+        {
+          "id": "default-capitalization",
+          "type": "paragraph",
+          "text": "No se cobrarán intereses punitorios ni recargos adicionales por atraso, ni se capitalizarán intereses punitorios. La falta de pago de cualquier obligación derivada del contrato de mandato al cual este título accede, producirá la mora de pleno derecho y la caducidad de todos los plazos, haciéndose exigible la presentación y cobro del presente documento."
+        },
+        {
+          "id": "note-jurisdiction",
+          "type": "paragraph",
+          "text": "Para todos los efectos legales, el suscripto se somete a la jurisdicción de los Tribunales Ordinarios de la ciudad de {{policy.noteJurisdiction}}, renunciando a cualquier otro fuero o jurisdicción, inclusive el Federal, fijando domicilio especial en el indicado al pie de este documento."
+        },
+        {
+          "id": "debtor",
+          "type": "debtorAndSignature",
+          "text": "DATOS DEL DEUDOR: Nombre y Apellido: _______________________ D.N.I. / CUIT: ___________________________ Domicilio: ______________________________ ___________________________ FIRMA DEL DEUDOR Localidad: ______________________________ Teléfono: _______________________________"
+        },
+        {
+          "id": "accessory-note",
+          "type": "paragraph",
+          "text": "Nota: Este pagaré se firma como garantía del cumplimiento del Contrato de Mandato Comercial y Gestión de Compra suscrito entre las partes."
+        }
+      ],
+      "paragraphs": [
+        "Por {{economy.totalDisplay}} (Monto en números)",
+        "En la ciudad de {{issue.note.place}}, a los {{issue.note.day}} días del mes de {{issue.note.month}} de {{issue.note.year}}.",
+        "A LA VISTA , pagaré sin protesto (Art. 50 Dec. Ley 5965/63) a la orden de {{issuer.legalName}} (CUIT N° {{issuer.taxId}}), o a quien ésta designe, en el domicilio de Caracas 1101, Ciudad Autónoma de Buenos Aires, CP 1431, la suma de PESOS {{economy.totalWordsWithoutCurrency}} (Monto en letras), por igual valor recibido en servicios de gestión y financiación a mi entera satisfacción.",
+        "No se cobrarán intereses punitorios ni recargos adicionales por atraso, ni se capitalizarán intereses punitorios. La falta de pago de cualquier obligación derivada del contrato de mandato al cual este título accede, producirá la mora de pleno derecho y la caducidad de todos los plazos, haciéndose exigible la presentación y cobro del presente documento.",
+        "Para todos los efectos legales, el suscripto se somete a la jurisdicción de los Tribunales Ordinarios de la ciudad de {{policy.noteJurisdiction}}, renunciando a cualquier otro fuero o jurisdicción, inclusive el Federal, fijando domicilio especial en el indicado al pie de este documento.",
+        "DATOS DEL DEUDOR: Nombre y Apellido: _______________________ D.N.I. / CUIT: ___________________________ Domicilio: ______________________________ ___________________________ FIRMA DEL DEUDOR Localidad: ______________________________ Teléfono: _______________________________",
+        "Nota: Este pagaré se firma como garantía del cumplimiento del Contrato de Mandato Comercial y Gestión de Compra suscrito entre las partes."
+      ],
+      "sha256": "8267f7b81dafaf2e2f67a394bbf7b35894dcc1fff6220a8376b82df7abdfbf95"
+    },
+    "REMITO": {
+      "kind": "REMITO",
+      "id": "loop-original-remito",
+      "version": "OWNER_ORIGINALS_INTEGRATION_V1",
+      "title": "REMITO DE TRASLADO / ENTREGA DE MERCADERÍA",
+      "layout": "OWNER_ORIGINALS_V1",
+      "blocks": [
+        {
+          "id": "delivery",
+          "type": "paragraph",
+          "text": "El presente documento certifica el traslado y entrega del producto detallado."
+        },
+        {
+          "id": "transport",
+          "type": "paragraph",
+          "text": "La mercadería viaja por cuenta y orden de la empresa para ser entregada al cliente."
+        }
+      ],
+      "paragraphs": [
+        "El presente documento certifica el traslado y entrega del producto detallado.",
+        "La mercadería viaja por cuenta y orden de la empresa para ser entregada al cliente."
+      ],
+      "sha256": "5df4e2b263d428fa3dd338c6f6bfb74869419617f93f62567006c979d69a15d0"
+    }
+  },
+  "projection": {
+    "version": "OPERATION_DRAFT_REVIEW_V2",
+    "operationId": "op_4e2f634ebc463c84604044f8c0e31baaac62d00ab09ec657376bb366ea77a643",
+    "budgetId": "custody-9a87d0d8-2106-4195-9e14-4c9748334930",
+    "budgetVersion": 1,
+    "acceptedOptionId": "option-1",
+    "draftRevision": 8,
+    "updatedAt": "2026-10-24T01:44:58.389Z",
+    "issuer": {
+      "version": "LOOP_LEGAL_ENTITY_OWNER_CONFIRMED_V1",
+      "legalName": "LOOP GESTIÓN INTEGRAL S.R.L.",
+      "tradeName": "Cuenta Hogar",
+      "taxId": "30-71962686-2",
+      "legalAddress": "Caracas 1101, Ciudad Autónoma de Buenos Aires, CP 1431"
+    },
+    "customer": {
+      "fullName": "Cliente demo",
+      "dni": "12345678",
+      "address": "Domicilio demo",
+      "locality": "Lincoln",
+      "province": "Buenos Aires",
+      "postalCode": "6070",
+      "email": "demo@example.test",
+      "whatsapp": "5491100000000",
+      "cuil": "20123456786"
+    },
+    "product": {
+      "name": "Referencia 2",
+      "description": "Gestión de compra",
+      "quantity": 1,
+      "condition": "NEW"
+    },
+    "economics": {
+      "capital": 580000,
+      "service": 1160000,
+      "total": 1740000,
+      "count": 12,
+      "installment": 145000
+    },
+    "schedule": [
+      {
+        "installmentNumber": 1,
+        "dueDate": "2026-12-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 2,
+        "dueDate": "2027-01-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 3,
+        "dueDate": "2027-02-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 4,
+        "dueDate": "2027-03-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 5,
+        "dueDate": "2027-04-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 6,
+        "dueDate": "2027-05-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 7,
+        "dueDate": "2027-06-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 8,
+        "dueDate": "2027-07-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 9,
+        "dueDate": "2027-08-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 10,
+        "dueDate": "2027-09-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 11,
+        "dueDate": "2027-10-05",
+        "amount": 145000
+      },
+      {
+        "installmentNumber": 12,
+        "dueDate": "2027-11-05",
+        "amount": 145000
+      }
+    ],
+    "pending": [
+      {
+        "label": "Desglose individual de gestión y logística no disponible: se conserva Servicios de Cuenta Hogar",
+        "section": "legal"
+      },
+      {
+        "label": "Representación societaria y facultades de firma pendientes de validación",
+        "section": "legal"
+      },
+      {
+        "label": "Lugar, fecha de emisión y jurisdicción pendientes de revisión jurídica",
+        "section": "legal"
+      },
+      {
+        "label": "Aprobación jurídica del mandato y de la exigibilidad del pagaré",
+        "section": "legal"
+      },
+      {
+        "label": "Snapshot contractual definitivo pendiente; vista previa de borrador persistido",
+        "section": "legal"
+      }
+    ],
+    "canPreview": true,
+    "number": null,
+    "legalApproval": "PENDING",
+    "issuance": "DRAFT_REVIEW_ONLY",
+    "sourceHash": "0c445136784f6ff948d66864653cf68ba895dd66bbe2e06ec837b741e6efbdd4",
+    "projectionHash": "0c41a9d028df4db11123b5962468354c557b0e05b9820f2bc2fc0b143c38b9be"
+  },
+  "pdfs": {
+    "MANDATE": {
+      "path": "mandato-propuesto.pdf",
+      "sha256": "d8d7f34973994ed404e7cb70776626edd71e9b692a01f71d269baca03a1fd847",
+      "pages": 3
+    },
+    "PAGARE": {
+      "path": "pagare-propuesto.pdf",
+      "sha256": "f0d5da6cf5395a188c6cf325efc20c78604983351a5845ebab93852e482feecf",
+      "pages": 1
+    }
+  },
+  "productionWrites": 0
+}

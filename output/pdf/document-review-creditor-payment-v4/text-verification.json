@@ -1,0 +1,14 @@
+{
+  "mandato-propuesto.pdf": {
+    "pages": 3,
+    "nativeTextCharacters": 5675,
+    "images": 3,
+    "status": "PASS"
+  },
+  "pagare-propuesto.pdf": {
+    "pages": 1,
+    "nativeTextCharacters": 1933,
+    "images": 0,
+    "status": "PASS"
+  }
+}

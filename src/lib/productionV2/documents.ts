@@ -10,7 +10,7 @@ import { productionRef, type ProductionScope } from './authorization';
 import { frozenOperation } from './freeze';
 import { issuanceProof } from './issuanceRecovery';
 import { requireProductionActor, runtimeData, type ProductionRuntime } from './runtime';
-import { finalDocumentKinds, type FinalDocumentKind } from './catalog';
+import { finalDocumentKinds, issuedDocumentKinds, type FinalDocumentKind } from './catalog';
 import { renderFinalDocument } from './pdf';
 export interface IssuedDocument extends EvidenceMetadata {
     photoId: string;
@@ -40,13 +40,14 @@ export async function issuedOperation(runtime: ProductionRuntime, tx: Transactio
     if (!m || m.schemaVersion !== 'PRODUCTION_DOCUMENT_MANIFEST_V1' || m.executionMode !== 'PRODUCTION' || m.operationId !== proof.identity.operationId || m.snapshotId !== proof.snapshot.contractSnapshotId || m.snapshotHash !== proof.snapshot.integrity.payloadHash || m.packageHash !== proof.package.sha256)
         throw Error('ISSUED_DOCUMENTS_REQUIRED');
     const { hash, ...payload } = m;
+    if (Object.keys(m.documents).sort().join(',') !== [...issuedDocumentKinds(proof.package)].sort().join(',')) throw Error('ISSUED_DOCUMENT_SET_MISMATCH');
     if (hash !== contractValueHash(payload))
         throw Error('ISSUED_DOCUMENTS_INTEGRITY');
     if (m.recoveryAuthorization) {
         const recovered = await issuanceProof(runtime, tx, id, v, m.recoveryAuthorization.id, false);
         if (recovered.recovery?.hash !== m.recoveryAuthorization.hash) throw Error('ISSUED_RECOVERY_INTEGRITY');
     }
-    for (const k of finalDocumentKinds) {
+    for (const k of issuedDocumentKinds(proof.package)) {
         const p = m.documents[k], expectedId = 'issued_' + contractValueHash({ snapshot: m.snapshotHash, kind: k });
         if (!p || p.photoId !== expectedId || p.kind !== k || p.path !== `operation-delivery-v2/${id}/v${v}/${expectedId}` || p.state !== 'COMMITTED' || !p.generation || p.templateHash !== proof.package.templates[k].sha256 || p.templateVersion !== proof.package.templates[k].version || p.templateId !== proof.package.templates[k].id)
             throw Error('ISSUED_DOCUMENT_IDENTITY');
@@ -73,7 +74,7 @@ export async function issueDocuments(runtime: ProductionRuntime, bucket: Bucket,
     // Rendering and all Storage reads/writes occur outside transactions. Deterministic
     // bytes + create-only object paths recover interruptions without issuing a second note.
     const documents = {} as Record<FinalDocumentKind, IssuedDocument>;
-    for (const k of finalDocumentKinds) {
+    for (const k of issuedDocumentKinds(proof.package)) {
         const pdf = renderFinalDocument(proof.snapshot, proof.package, k, test), photoId = 'issued_' + contractValueHash({ snapshot: proof.snapshot.integrity.payloadHash, kind: k }), path = `operation-delivery-v2/${id}/v${v}/${photoId}`, file = bucket.file(path);
         const ref = operationRef(db, id, v).parent.doc('delivery').collection('photos').doc(photoId), base = { photoId, kind: k, path, sha256: pdf.sha256, size: pdf.bytes.length, mime: 'application/pdf' as const, templateId: proof.package.templates[k].id, templateVersion: proof.package.templates[k].version, templateHash: proof.package.templates[k].sha256, slot: `${k}_PREPARED`, relatedId: '', actor: proof.snapshot.freeze.termsFrozenBy, createdAt: proof.snapshot.freeze.termsFrozenAt, snapshotHash: proof.snapshot.integrity.payloadHash };
         const allowed = async (tx: Transaction) => { const current = await issuanceProof(runtime, tx, id, v, recoveryId); if (current.snapshot.integrity.payloadHash !== proof.snapshot.integrity.payloadHash)
@@ -139,10 +140,11 @@ export async function issueDocuments(runtime: ProductionRuntime, bucket: Bucket,
                 throw Error('ISSUED_DOCUMENTS_CHANGED');
             return { manifestHash: issued.manifest.hash, replay: true };
         }
-        const refs = finalDocumentKinds.map(k => operationRef(db, id, v).parent.doc('delivery').collection('photos').doc(documents[k].photoId));
+        const kinds = issuedDocumentKinds(current.package);
+        const refs = kinds.map(k => operationRef(db, id, v).parent.doc('delivery').collection('photos').doc(documents[k].photoId));
         const existing = await Promise.all(refs.map(ref => tx.get(ref)));
         for (let i = 0; i < existing.length; i++) {
-            const p = existing[i].data(), expected = documents[finalDocumentKinds[i]];
+            const p = existing[i].data(), expected = documents[kinds[i]];
             if (!p || p.state !== 'COMMITTED' || p.generation !== expected.generation || p.sha256 !== expected.sha256)
                 throw Error('ISSUED_DOCUMENT_COLLISION');
         }
@@ -157,6 +159,7 @@ export async function readIssuedDocument(runtime: ProductionRuntime, bucket: Buc
     if (!finalDocumentKinds.includes(kind))
         throw Error('DOCUMENT_KIND_INVALID');
     const p = await db.runTransaction(async (tx) => (await issuedOperation(runtime, tx, id, v, 'ISSUANCE', false)).manifest.documents[kind]);
+    if (!p) throw Error('DOCUMENT_NOT_ISSUED');
     opaque(p.photoId);
     const result = await readVerifiedEvidenceObject(bucket, p);
     if (createHash('sha256').update(result.bytes).digest('hex') !== p.sha256)

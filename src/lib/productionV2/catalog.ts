@@ -25,7 +25,13 @@ export interface FinalTemplate {
     paragraphs: readonly string[];
     sha256: string;
 }
+export const EXTERNAL_DELIVERY_POLICY = 'EXTERNAL_TRANSFER_AND_RECEIPT_V1' as const;
+export function issuedDocumentKinds(p: FinalPackage): readonly FinalDocumentKind[] {
+    return p.deliveryDocumentPolicy === EXTERNAL_DELIVERY_POLICY ? ['MANDATE', 'PAGARE'] : finalDocumentKinds;
+}
 export interface FinalPackage {
+    /** Missing means the immutable historical three-document package. */
+    deliveryDocumentPolicy?: typeof EXTERNAL_DELIVERY_POLICY;
     id: string;
     version: string;
     issuer: ContractLegalContextV2['issuer'];
@@ -40,6 +46,7 @@ export function templateHash(t: Omit<FinalTemplate, 'sha256'>) { return contract
 export function packageHash(p: Omit<FinalPackage, 'sha256'>) { return contractValueHash(p); }
 export function validateFinalPackage(p: FinalPackage) {
     const { sha256, ...payload } = p;
+    if (p.deliveryDocumentPolicy !== undefined && p.deliveryDocumentPolicy !== EXTERNAL_DELIVERY_POLICY) throw Error('FINAL_DELIVERY_POLICY_INVALID');
     if (!p.jurisdiction?.trim() || !p.issuer?.representative.fullName.trim() || !p.issuer.representative.capacity.trim())
         throw Error('FINAL_FORMAL_DATA_REQUIRED');
     if (!/^[a-f0-9]{64}$/.test(sha256) || sha256 !== packageHash(payload) || !p.id || !p.version || !/^[a-f0-9]{64}$/.test(p.rendererHash) || !/^[a-f0-9]{64}$/.test(p.resourcesHash))

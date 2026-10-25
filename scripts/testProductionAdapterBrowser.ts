@@ -1,4 +1,5 @@
 import './helpers/requireSafeEmulatorEnvironment';
+import {issuedDocumentKinds,packageHash} from '../src/lib/productionV2/catalog';
 import assert from 'node:assert/strict';
 import { argentinaBusinessDate } from '../src/lib/productionV2/businessDate';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -16,12 +17,13 @@ import { readFinancial } from '../src/lib/operationFinancialV2Server';
 import { syntheticPng } from './testOperationDeliveryV2Emulator';
 import { startProductionBrowserServer } from './helpers/productionAdapterBrowserServer';
 import { CatalogBrowser } from './helpers/catalogBrowser';
+const external=process.env.SYNTHETIC_EXTERNAL_DELIVERY_SUITE==='1';
 const out = '/tmp/ch-production-browser', password = 'Emulator-only-123';
 const scope = (test: string) => `document.querySelector('[data-testid=${test}]')`;
 async function run() {
     const db = admin.firestore(), email = process.env.NEXT_PUBLIC_ADMIN_EMAIL!;
     assert.equal(email, 'production-review-admin@example.test');
-    const actor = (await admin.auth().createUser({ email, password, emailVerified: true })).uid, p = process.env.SYNTHETIC_ORIGINALS_SUITE === '1' ? syntheticOriginalPackage() : syntheticFinalPackage(), runtime = productionRuntimeForEmulator(db, admin.auth(), [p], [actor]);
+    const actor = (await admin.auth().createUser({ email, password, emailVerified: true })).uid, basePackage = process.env.SYNTHETIC_ORIGINALS_SUITE === '1' ? syntheticOriginalPackage() : syntheticFinalPackage(), p=external?(()=>{const {sha256:old,...base}=basePackage;void old;const next={...base,deliveryDocumentPolicy:'EXTERNAL_TRANSFER_AND_RECEIPT_V1' as const};return {...next,sha256:packageHash(next)};})():basePackage, runtime = productionRuntimeForEmulator(db, admin.auth(), [p], [actor]);
     const f = await productionReadyFixture(actor, process.env.SYNTHETIC_ORIGINALS_SUITE === '1'), clientEmail = 'production-browser-client@example.test', client = (await admin.auth().createUser({ email: clientEmail, password, emailVerified: true })).uid;
     await db.doc(productionPaths.counter).create({ schemaVersion: 'CONTRACT_NUMBER_COUNTER_V1', policyId: 'CONTRACT_NUMBERING_V1', executionMode: 'PRODUCTION', active: true, lastAllocatedSequence: '0', initializationAuthorizationReference: 'SYNTHETIC_BROWSER_COUNTER_ONLY' });
     mkdirSync(out, { recursive: true });
@@ -44,7 +46,7 @@ async function run() {
     async function capture(name: string, test: string) { await browser.evaluate(`${scope(test)}.scrollIntoView({block:'start'})`); await browser.overflow(name); await browser.evaluate('document.fonts.ready.then(()=>true)'); const image = await browser.command('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }); writeFileSync(`${out}/${name}.png`, Buffer.from(image.data as string, 'base64')); screens.push(name); }
     async function action(name: string, fields: Record<string, string>) { const rev = (await readDelivery(db, f.id, 1, f.root)).state.revision; await select('[aria-label="Acción de entrega"]', name); for (const [label, value] of Object.entries(fields)) {
         const css = `[data-testid=delivery-v2] [aria-label=${JSON.stringify(label)}]`;
-        if (['Documento', 'Archivo privado', 'Firma de LOOP registrada (no bloqueante)', 'Rol físico'].includes(label))
+        if (['Documento', 'Archivo privado', 'Firma de LOOP registrada (no bloqueante)', 'Rol físico','Tipo de documento de traslado'].includes(label))
             await select(css, value);
         else
             await browser.change(css, value);
@@ -89,7 +91,7 @@ async function run() {
         await browser.clickText('Proveedor y logística');
         await browser.until(`${delivery}?.textContent.includes('Documentos emitidos para esta operación')`, 'delivery UI');
         await action('PREPARE_DELIVERY', { 'UID responsable': f.uid, 'Rol físico': 'AFFILIATE', 'Registro de vendedor afiliado (sólo si corresponde)': f.affiliateId });
-        for (const kind of ['MANDATE', 'PAGARE', 'REMITO']) {
+        for (const kind of issuedDocumentKinds(p)) {
             await action('PREPARE_DOCUMENT', { 'Documento': kind });
             assert.equal(await browser.evaluate(`${delivery}.querySelector('[aria-label="Versión de plantilla / documento"]')===null`), true);
             await select('[aria-label="Tipo de evidencia"]', kind + '_SIGNED');
@@ -102,12 +104,27 @@ async function run() {
             const photo = (await readDelivery(db, f.id, 1, f.root)).photos.find(p => p.slot === kind + '_SIGNED')!;
             await action('VERIFY_SIGNATURE', { 'Documento': kind, 'Archivo privado': photo.id, 'Fecha y hora real de firma': now(), 'Firma de LOOP registrada (no bloqueante)': 'false' });
         }
+        if(external){
+            for(const slot of ['EXTERNAL_TRANSFER','DELIVERY_RECEIPT']){
+                await select('[aria-label="Tipo de evidencia"]',slot);
+                const root=(await browser.command('DOM.getDocument')).root as {nodeId:number}, node=await browser.command('DOM.querySelector',{nodeId:root.nodeId,selector:'[data-testid=delivery-v2] input[type=file]'});
+                await browser.command('DOM.setFileInputFiles',{nodeId:node.nodeId,files:[out+'/signature-synthetic.png']});
+                await browser.clickText('Conservar evidencia privada',delivery);
+                await browser.until(`${delivery}?.textContent.includes('Ver ${slot}')`,'external evidence uploaded');
+                const photo=(await readDelivery(db,f.id,1,f.root)).photos.find(p=>p.slot===slot)!;
+                if(slot==='EXTERNAL_TRANSFER')await action('REGISTER_EXTERNAL_TRANSFER',{'Archivo privado':photo.id,'Número del documento externo':'TEST-EXT-001','Fecha del documento':argentinaBusinessDate(),'Emisor':'Emisor sintético','Tipo de documento de traslado':'REMITO','Fundamento o referencia del documento aplicable al traslado':'Referencia sintética, no comprobante fiscal real'});
+                else await action('VERIFY_DELIVERY_RECEIPT',{'Archivo privado':photo.id,'Fecha y hora real de recepción':now(),'Observaciones de recepción':'Entrega sintética sin efectos reales'});
+            }
+            await capture('external-document-mobile','delivery-v2');
+            await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
+            await capture('external-document-desktop','delivery-v2');
+        }
         await action('RECEIVE_ORIGINALS', { 'UID responsable': f.uid, 'Rol físico': 'AFFILIATE', 'Registro de vendedor afiliado (sólo si corresponde)': f.affiliateId, 'Ubicación física': 'Archivo sintético de originales', 'Fecha y hora real de recepción': now(), 'Referencia del documento / paquete físico': 'SYNTHETIC ORIGINALS', 'Referencia de evidencia alternativa (sin conversaciones)': 'SYNTHETIC ONLY' });
         await capture('three-signatures-mobile', 'delivery-v2');
         await logout();
         await login(`${f.uid}@example.test`);
         await browser.navigate(`/custodia-v2/${f.id}/1`);
-        await browser.until(`${delivery}?.textContent.includes('Remito: preparado')`, 'custodian identity');
+        await browser.until(`${delivery}?.textContent.includes('${external?'Pagaré':'Remito'}: preparado')`, 'custodian identity');
         await action('CONFIRM_DELIVERY', { 'Fecha y hora real': now() });
         await browser.until(`${delivery}?.textContent.includes('DELIVERED')`, 'delivery completed');
         await capture('delivery-affiliate-mobile', 'delivery-v2');

@@ -1,3 +1,4 @@
+import { issuedDocumentKinds } from './catalog';
 import { assertOriginalTemplate, renderOriginalFinal } from './originalPdf';
 import { jsPDF } from 'jspdf';
 import rendererManifest from './rendererManifest.json';
@@ -34,6 +35,7 @@ export function assertFinalRenderer(p: FinalPackage) { validateFinalPackage(p); 
     }
 } }
 export function renderFinalDocument(snapshot: FinalSnapshot, p: FinalPackage, kind: FinalDocumentKind, test: boolean) {
+    if (!issuedDocumentKinds(p).includes(kind)) throw Error('INTERNAL_REMITO_DISABLED');
     validateContractSnapshot(snapshot);
     assertFinalRenderer(p);
     if (snapshot.freeze.legalPackageHash !== p.sha256 || snapshot.freeze.executionMode !== 'PRODUCTION' || !snapshot.productDetails?.quantity || !snapshot.productDetails.condition)
