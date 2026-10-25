@@ -20,7 +20,7 @@
     "src/lib/logoBase64.ts": "0077cf4a7df0e29d9cc0de275888e6d6d8debef29be0c86549a74d323bb18c54",
     "src/lib/operationV2.ts": "01c45f13577383fe69bff75a408c6031fb14afb92561faaaff9559734dc200c8",
     "src/lib/pdfBranding.ts": "c3b5823bd92fc0a6be82f05b7a0e2e8704cae6d920548ca1c1259deefd8a4548",
-    "src/lib/productionV2/catalog.ts": "02c36dccc62bcd5e5fed6b3e3c2159e0e6832c0f7b65ea94b50f806c77687b8a",
+    "src/lib/productionV2/catalog.ts": "c7be4181a76667ff9dc1205baf764e3c76c436590c6cb1192d51efa1dfc97b81",
     "src/lib/productionV2/originalBindings.ts": "aabe5594ca0edb2c9c135f35b434b5be850258c9faa1bc1c5d4405f18a326b15",
     "src/lib/productionV2/originalPdf.ts": "9d938e2e9b29e477af9d048c82d29f40a9b7133bd23bef13674567ed99457500",
     "src/lib/productionV2/originals.ts": "c2fe94e50199d16899b5c140e4b9ecd52e1183a9fe48cc4d26ddc4cdf5fcb57c",

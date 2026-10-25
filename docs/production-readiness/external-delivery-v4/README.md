@@ -31,7 +31,7 @@ La competencia del pagaré no se deduce del lugar de pago: revisar [Ley 24.240, 
 
 ## Política versionada y compatibilidad
 
-`FinalPackage.deliveryDocumentPolicy = EXTERNAL_TRANSFER_AND_RECEIPT_V1` debe formar parte del hash del futuro paquete aprobado. En ese paquete sólo se emiten mandato y pagaré; el renderer rechaza la emisión interna de remito. La plantilla histórica de remito se conserva para reproducibilidad, no se emite ni requiere aprobación como instrumento nuevo. Un paquete histórico sin esta política conserva su validación y lectura de tres instrumentos. No se migran documentos ni se cambia su hash.
+`FinalPackage.deliveryDocumentPolicy = EXTERNAL_TRANSFER_AND_RECEIPT_V1` debe formar parte del hash del futuro paquete aprobado. En ese paquete sólo se emiten mandato y pagaré; el renderer rechaza la emisión interna de remito. La plantilla histórica de remito se conserva para reproducibilidad, no se emite ni requiere aprobación como instrumento nuevo. Un paquete histórico sin esta política conserva su validación y lectura de tres instrumentos. No se migran documentos ni se cambia su hash. Nuevos congelamientos y emisiones productivas rechazan paquetes históricos sin política externa; sólo las regresiones con contexto Emulator sellado pueden ejercitar el motor histórico. La lectura/replay de una emisión ya completa no regenera archivos.
 
 El servidor deriva la política del paquete congelado: no puede seleccionarse desde el navegador. El manifiesto exige exactamente los tipos emitidos; no admite archivos extra ni un segundo pagaré. Recuperación, vencimiento, revocación, creación exclusiva de objetos e idempotencia siguen vigentes.
 

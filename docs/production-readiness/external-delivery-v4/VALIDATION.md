@@ -13,6 +13,7 @@ Sólo datos sintéticos en `demo-cuenta-hogar`. No se hicieron lecturas ni escri
 | `testClientPaymentPlaceEmulator.ts` | PASS, 8 grupos: compatibilidad V3 histórica y conformidad vigente del preview actual |
 | `testProductionAdapterEmulator.ts`, política histórica | PASS, 30 grupos |
 | `testProductionAdapterEmulator.ts`, `SYNTHETIC_EXTERNAL_DELIVERY_SUITE=1` | PASS, 31 grupos |
+| `testOperationDeliveryV2Emulator.ts` | PASS: firmas, daños, devolución, custodia, concurrencia e historia |
 | `testProductionAdapterBrowser.ts`, `SYNTHETIC_EXTERNAL_DELIVERY_SUITE=1` | PASS: circuito HTTP/navegador desktop/mobile, tres perfiles, entrega, pago y reversa |
 | Inspección visual de todas las páginas PDF | PASS: mandato 3 páginas, pagaré 1; sin texto cortado ni superpuesto |
 | Extracción nativa de texto y conteo de imágenes | PASS; `output/pdf/document-review-creditor-payment-v4/text-verification.json` |
@@ -21,7 +22,7 @@ Sólo datos sintéticos en `demo-cuenta-hogar`. No se hicieron lecturas ni escri
 
 El recorrido externo verifica documento de otro snapshot rechazado, acceso no administrativo rechazado, ausencia de constancia o firma rechazada, custodia posterior, activación única, $145.000 acreditados y saldo $1.595.000 idéntico para los tres roles, reversa a $1.740.000, pagos parciales, recibos, revocación, idempotencia y sustitución de archivo bloqueada. Las pruebas históricas mantienen las tres firmas y su remito interno.
 
-La primera ejecución externa se detuvo en la expectativa antigua de tres archivos (se habían generado correctamente dos). La aserción se hizo dependiente de la política: exactamente dos para externa, exactamente tres para histórica; no se retiró la validación. Durante el cierre se corrigió un tipo demasiado estrecho del emisor versionado; TypeScript y build se repitieron después.
+La primera ejecución externa se detuvo en la expectativa antigua de tres archivos (se habían generado correctamente dos). La aserción se hizo dependiente de la política: exactamente dos para externa, exactamente tres para histórica; no se retiró la validación. Durante el cierre se corrigieron un tipo demasiado estrecho del emisor versionado y una importación faltante del test de restricción de paquetes históricos; TypeScript y build se repitieron después.
 
 ## Entorno reproducible
 

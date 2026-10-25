@@ -29,6 +29,10 @@ export const EXTERNAL_DELIVERY_POLICY = 'EXTERNAL_TRANSFER_AND_RECEIPT_V1' as co
 export function issuedDocumentKinds(p: FinalPackage): readonly FinalDocumentKind[] {
     return p.deliveryDocumentPolicy === EXTERNAL_DELIVERY_POLICY ? ['MANDATE', 'PAGARE'] : finalDocumentKinds;
 }
+/** New production issuance must not reactivate an archived internal-remito package. */
+export function assertExternalProductionPackage(p: FinalPackage) {
+    if (p.deliveryDocumentPolicy !== EXTERNAL_DELIVERY_POLICY) throw Error('EXTERNAL_DELIVERY_PACKAGE_REQUIRED');
+}
 export interface FinalPackage {
     /** Missing means the immutable historical three-document package. */
     deliveryDocumentPolicy?: typeof EXTERNAL_DELIVERY_POLICY;

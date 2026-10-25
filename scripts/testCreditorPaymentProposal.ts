@@ -7,8 +7,10 @@ import {creditorPaymentPlaceReviewTemplates,creditorPaymentReviewIssuer,creditor
 import {zeroPenaltyReviewTemplates} from '../src/lib/productionV2/zeroPenaltyProposal';
 import {clientPaymentPlaceReviewTemplates} from '../src/lib/productionV2/clientPaymentPlaceProposal';
 import {renderContractPairReview,renderOriginalReview} from '../src/lib/productionV2/originalPdf';
-import {approvedFinalPackages} from '../src/lib/productionV2/catalog';
+import {approvedFinalPackages,assertExternalProductionPackage,type FinalPackage} from '../src/lib/productionV2/catalog';
 import type {OperationDraftProjection} from '../src/lib/contractDocuments/operationDraft';
+assert.throws(()=>assertExternalProductionPackage({} as FinalPackage),/EXTERNAL_DELIVERY_PACKAGE_REQUIRED/);
+assertExternalProductionPackage({deliveryDocumentPolicy:'EXTERNAL_TRANSFER_AND_RECEIPT_V1'} as FinalPackage);
 const v2=zeroPenaltyReviewTemplates(),v3=clientPaymentPlaceReviewTemplates(),next=creditorPaymentPlaceReviewTemplates();
 assert.equal(v2.MANDATE.sha256,'ca1a5657f0023dff55ca9c0181571fe08d205f2b2e14bf7bc2a8c3b158b0f054');
 assert.equal(v2.PAGARE.sha256,'4429925fbcc6d179595ac2f71b8a66fdc45e785fe9bf3a4bcbf715051e38f18a');

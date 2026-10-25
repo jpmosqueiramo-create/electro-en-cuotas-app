@@ -10,7 +10,7 @@ import { productionRef, type ProductionScope } from './authorization';
 import { frozenOperation } from './freeze';
 import { issuanceProof } from './issuanceRecovery';
 import { requireProductionActor, runtimeData, type ProductionRuntime } from './runtime';
-import { finalDocumentKinds, issuedDocumentKinds, type FinalDocumentKind } from './catalog';
+import { finalDocumentKinds, issuedDocumentKinds, assertExternalProductionPackage, type FinalDocumentKind } from './catalog';
 import { renderFinalDocument } from './pdf';
 export interface IssuedDocument extends EvidenceMetadata {
     photoId: string;
@@ -71,6 +71,7 @@ export async function issueDocuments(runtime: ProductionRuntime, bucket: Bucket,
         return { manifestHash: completed.hash, replay: true };
     }
     const proof = await db.runTransaction(tx => issuanceProof(runtime, tx, id, v, recoveryId));
+    if (!test) assertExternalProductionPackage(proof.package);
     // Rendering and all Storage reads/writes occur outside transactions. Deterministic
     // bytes + create-only object paths recover interruptions without issuing a second note.
     const documents = {} as Record<FinalDocumentKind, IssuedDocument>;
