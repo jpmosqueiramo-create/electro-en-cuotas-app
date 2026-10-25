@@ -79,7 +79,7 @@ function ClientePortal() {
   
   // Archivos Formulario Nueva Solicitud
   const [producto, setProducto] = useState("");
-  const [productoId, setProductoId] = useState("");
+  const [productoId] = useState("");
   const [planElegido, setPlanElegido] = useState("");
 
   const [productoObj, setProductoObj] = useState<CatalogReferencePublic | null>(null);
@@ -110,25 +110,15 @@ function ClientePortal() {
   const publicPlan = productoObj?.planesPublicados.find(plan => String(plan.cuotas) === planElegido);
 
   useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        const mem = localStorage.getItem("datosPreliminares");
-        if (mem) {
-          const data = JSON.parse(mem);
-          if(data.productoNombre && !producto) setProducto(data.productoNombre);
-          if(data.productoId) setProductoId(data.productoId);
-          if(data.planElegido) setPlanElegido(data.planElegido);
-
-          if(data.producto && !producto) setProducto(data.producto);
-          if(data.nombreCompleto && !nombreCompleto) setNombreCompleto(data.nombreCompleto);
-          if(data.numeroDni && !numeroDni) setNumeroDni(data.numeroDni);
-          if(data.telefono && !telefono) setTelefono(data.telefono);
-          if(data.direccion && !direccion) setDireccion(data.direccion);
-          if(data.localidad && !localidad) setLocalidad(data.localidad);
-          setMostrarFormulario(true);
-        }
+    // This retired draft has no owner UID. Never hydrate personal data from it.
+    // Remove only this legacy key; preserve unrelated browser preferences.
+    const discardUnownedDraft = () => {
+      try { localStorage.removeItem("datosPreliminares"); } catch {
+        // Storage may be unavailable. It remains safe because we never read it.
       }
-    } catch(e) {}
+    };
+    discardUnownedDraft();
+    return discardUnownedDraft;
   }, []);
 
   useEffect(() => {
@@ -797,4 +787,5 @@ function ClientePortal() {
   );
 }
 
+// Remount all form/history state on logout or account change; never carry it across UIDs.
 export default function ClientePage(){const {user}=useAuth();return <ClientePortal key={user?.uid||'anonymous'}/>;}

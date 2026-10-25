@@ -1,0 +1,18 @@
+{
+  "result": "PASS",
+  "widths": [
+    1280,
+    390
+  ],
+  "cases": [
+    "legacy eviction",
+    "A logout B login",
+    "reload",
+    "direct UID switch",
+    "anonymous",
+    "unrelated key preserved",
+    "legitimate public form",
+    "no external Firebase"
+  ],
+  "firestoreWrites": 0
+}
