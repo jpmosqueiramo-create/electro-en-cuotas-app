@@ -4,13 +4,11 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, CircleHelp, LogOut } from "lucide-react";
+import { Bell, CircleHelp, LogOut, ShieldCheck } from "lucide-react";
 import { CuentaHogarLogo } from '@/components/CuentaHogarLogo';
 import { useAuth } from "@/components/AuthProvider";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
-import { AdminSidebar } from "./AdminSidebar";
-import { AdminMobileNav } from "./AdminMobileNav";
-import { ADMIN_DESTINATIONS, activeAdminDestination } from "./navigation";
+import { AdminHorizontalNav } from "./AdminHorizontalNav";
 
 export function AdminAppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -18,8 +16,6 @@ export function AdminAppShell({ children }: { children: ReactNode }) {
   const { logout } = useAuth();
   const [leaving, setLeaving] = useState(false);
   const [error, setError] = useState("");
-  const active = activeAdminDestination(pathname);
-  const label = ADMIN_DESTINATIONS.find(item => item.id === active)?.label || "Administración";
   const handleLogout = async () => {
     setLeaving(true);
     setError("");
@@ -31,28 +27,28 @@ export function AdminAppShell({ children }: { children: ReactNode }) {
   // impide mostrar el shell antes de resolver la misma autorización existente.
   return (
     <AdminProtectedRoute>
-      <div className="admin-shell min-h-screen bg-background-main text-text-primary lg:pl-60">
+      <div className="admin-shell min-h-screen bg-background-main text-text-primary" data-testid="admin-original-interface">
         <a href="#admin-content" className="admin-skip">Saltar al contenido</a>
-        <aside className="fixed inset-y-0 left-0 hidden w-60 overflow-y-auto border-r border-border-color bg-surface px-3 py-6 lg:block">
-          <Link href="/admin" className="admin-control mb-7 flex items-center gap-3 rounded-lg px-3">
-            <CuentaHogarLogo className="h-12" />
-            <span><span className="block font-heading text-lg font-extrabold text-brand-primary">Cuenta Hogar</span><span className="text-sm text-text-secondary">Administrador</span></span>
-          </Link>
-          <AdminSidebar pathname={pathname} />
-          <a href="/nosotros#contacto" className="admin-control mt-5 flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm hover:bg-background-main"><CircleHelp aria-hidden="true" className="size-5" />Ayuda</a>
-          <button type="button" onClick={handleLogout} disabled={leaving} className="admin-control flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm text-[#B42318] disabled:opacity-60"><LogOut aria-hidden="true" className="size-5" />{leaving ? "Cerrando sesión…" : "Salir"}</button>
-        </aside>
-        <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-border-color bg-surface px-4 py-3 sm:px-8">
-          <div><p className="flex items-center gap-2 font-heading text-sm font-bold text-brand-primary lg:hidden"><CuentaHogarLogo className="h-9" />Cuenta Hogar · Administrador</p><p className="text-sm text-text-secondary">Operación diaria <span aria-hidden="true">/</span> <span className="font-semibold text-brand-primary">{label}</span></p></div>
-          <div className="flex items-center gap-3">
-            <Link href="/admin#alertas" className="admin-control flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm"><Bell aria-hidden="true" className="size-4" />Alertas</Link>
-            <span className="hidden text-sm text-success sm:inline">Sesión activa</span>
-            <button type="button" onClick={handleLogout} disabled={leaving} className="admin-control flex min-h-11 items-center gap-2 rounded-lg border border-border-color px-3 text-sm font-heading font-semibold disabled:opacity-60"><LogOut aria-hidden="true" className="size-4" />{leaving ? "Saliendo…" : "Salir"}</button>
-          </div>
-        </header>
+        <div className="mx-auto max-w-7xl space-y-4 px-4 pt-4 sm:px-8 sm:pt-8">
+          <header className="flex flex-col gap-4 rounded-2xl border border-border-color bg-surface p-4 shadow-xs sm:p-5 md:flex-row md:items-center md:justify-between">
+            <Link href="/admin" className="admin-control flex min-w-0 items-center gap-3.5 rounded-xl">
+              <CuentaHogarLogo className="h-14 shrink-0" />
+              <span className="min-w-0 border-l border-border-color pl-3.5">
+                <span className="flex items-center gap-1.5 font-heading text-xs font-bold text-brand-secondary"><ShieldCheck aria-hidden="true" className="size-4 shrink-0" />Administración</span>
+                <span className="block font-heading text-xl font-extrabold leading-tight text-brand-primary sm:text-2xl">Cuenta Hogar</span>
+              </span>
+            </Link>
+            <div className="flex flex-wrap items-center gap-2 border-t border-border-color pt-3 md:border-0 md:pt-0">
+              <span className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border-color bg-background-main px-3 text-xs font-semibold text-brand-primary"><span aria-hidden="true" className="size-2 rounded-full bg-success" />Sesión activa</span>
+              <Link href="/admin#alertas" className="admin-control inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold"><Bell aria-hidden="true" className="size-4" />Alertas</Link>
+              <a href="/nosotros#contacto" className="admin-control inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold"><CircleHelp aria-hidden="true" className="size-4" />Ayuda</a>
+              <button type="button" onClick={handleLogout} disabled={leaving} className="admin-control inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border-color px-3 text-xs font-semibold text-[#B42318] disabled:opacity-60"><LogOut aria-hidden="true" className="size-4" />{leaving ? "Saliendo…" : "Salir"}</button>
+            </div>
+          </header>
+          <AdminHorizontalNav pathname={pathname} />
+        </div>
         {error && <p role="alert" className="px-4 py-3 text-[#B42318]">{error}</p>}
-        <main id="admin-content" tabIndex={-1} className="min-w-0 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</main>
-        <AdminMobileNav pathname={pathname} />
+        <main id="admin-content" tabIndex={-1} className="min-w-0 pb-[env(safe-area-inset-bottom)]">{children}</main>
       </div>
     </AdminProtectedRoute>
   );

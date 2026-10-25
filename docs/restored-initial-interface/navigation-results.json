@@ -1,0 +1,19 @@
+{
+  "result": "PASS",
+  "project": "demo-cuenta-hogar",
+  "widths": [
+    1280,
+    390
+  ],
+  "cases": [
+    "original header and horizontal navigation",
+    "ten current module cards",
+    "home to requests",
+    "current operation and origin",
+    "legacy redirects",
+    "history read only",
+    "client and affiliate denied admin",
+    "no navigation writes",
+    "no external Firebase"
+  ]
+}
