@@ -1,0 +1,25 @@
+{
+  "result": "PASS",
+  "project": "demo-cuenta-hogar",
+  "widths": [
+    1280,
+    390
+  ],
+  "operation": "simple-406504e5-815c-4a37-aa36-a53d55ef9bbc",
+  "cases": [
+    "first load without write",
+    "explicit draft",
+    "private form link",
+    "received submission applied",
+    "four steps",
+    "single primary action",
+    "unsaved data retained",
+    "credit gate",
+    "cross-step links",
+    "legacy URLs",
+    "secondary budget/affiliate/payments",
+    "no navigation writes",
+    "accepted snapshot unchanged",
+    "no external Firebase"
+  ]
+}

@@ -1,6 +1,6 @@
 import type { ContractDraftV2 } from './contractV2';
 import type { FulfillmentV2 } from './operationFulfillmentV2';
-export type OperationSection = 'budget' | 'contract' | 'logistics' | 'affiliate' | 'payments';
+export type OperationSection = 'documents' | 'client' | 'budget' | 'contract' | 'logistics' | 'affiliate' | 'payments';
 /** Read-only presentation. No persisted workflow, pricing or inferred identity. */
 export function operationNextAction({ draft, tracking, pendingSubmissions, conformityPending, creditState }: {creditState?:import('./creditReviewV2').CreditState; draft: ContractDraftV2 | null; tracking: FulfillmentV2 | null; pendingSubmissions: boolean; conformityPending: boolean }): { status: string; label: string; responsible: string; section: OperationSection } {
   const administrative = (status: string, label: string, section: OperationSection = 'contract') => ({ status, label, responsible: 'Administración', section });
