@@ -45,7 +45,7 @@ export async function productionOverview(runtime: ProductionRuntime, id: string,
         else if (!ds.data()?.productionFreeze)
             blockers.push('Completar y confirmar la revisión contractual READY.');
         if (!packages.length)
-            blockers.push('Falta instalar la versión final del mandato, pagaré y remito aprobada por hash. La declaración sobre los originales no aprueba una plantilla derivada.');
+            blockers.push('Falta instalar la versión final del mandato y pagaré aprobada por hash, con la política de documentación externa de traslado. La declaración sobre los originales no aprueba una plantilla derivada.');
         const validApprovals: {
             id: string;
             packageId: string;

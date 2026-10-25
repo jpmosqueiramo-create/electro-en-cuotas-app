@@ -21,15 +21,16 @@ import { syntheticPng } from './testOperationDeliveryV2Emulator';
 import { financialCommand, financialRef, readFinancial, readFinancialReceipt } from '../src/lib/operationFinancialV2Server';
 import { clientBindingCommand, readClientBinding, listClientServices } from '../src/lib/operationClientV2Server';
 import { financialReceiptPdf } from '../src/lib/operationFinancialReceiptPdf';
-import { finalDocumentKinds, packageHash } from '../src/lib/productionV2/catalog';
+import { issuedDocumentKinds, packageHash } from '../src/lib/productionV2/catalog';
 import { assertFinalRenderer } from '../src/lib/productionV2/pdf';
+const external = process.env.SYNTHETIC_EXTERNAL_DELIVERY_SUITE === '1';
 const db = admin.firestore(), results: Record<string, string> = {}, dir = '/tmp/ch-production-adapter';
 function pass(name: string) { results[name] = 'PASS'; console.log(name + ' = PASS'); }
 export async function test() {
     assert.equal(process.env.GCLOUD_PROJECT, 'demo-cuenta-hogar');
     assert.equal(process.env.FIREBASE_STORAGE_EMULATOR_HOST, '127.0.0.1:9199');
     assert.equal((await db.collection('contractSnapshotsV2').get()).size, 0, 'Fresh emulator');
-    const actor = (await admin.auth().createUser({ email: process.env.NEXT_PUBLIC_ADMIN_EMAIL, emailVerified: true, password: 'Emulator-only-123' })).uid, p = process.env.SYNTHETIC_ORIGINALS_SUITE === '1' ? syntheticOriginalPackage() : syntheticFinalPackage(), runtime = productionRuntimeForEmulator(db, admin.auth(), [p], [actor]), bucket = await getBudgetDocumentationBucket();
+    const actor = (await admin.auth().createUser({ email: process.env.NEXT_PUBLIC_ADMIN_EMAIL, emailVerified: true, password: 'Emulator-only-123' })).uid, basePackage = process.env.SYNTHETIC_ORIGINALS_SUITE === '1' ? syntheticOriginalPackage() : syntheticFinalPackage(), p = external ? (()=>{const {sha256: old,...b}=basePackage;void old;const next={...b,deliveryDocumentPolicy:'EXTERNAL_TRANSFER_AND_RECEIPT_V1' as const};return {...next,sha256:packageHash(next)};})() : basePackage, runtime = productionRuntimeForEmulator(db, admin.auth(), [p], [actor]), bucket = await getBudgetDocumentationBucket();
     assert.throws(() => productionRuntime(db, admin.auth()), /PRODUCTION_RUNTIME_INVALID/);
     assert.throws(() => runtimeData({} as never), /SERVER_PRODUCTION_CONTEXT_REQUIRED/);
     const original = process.env.GCLOUD_PROJECT;
@@ -169,22 +170,22 @@ export async function test() {
 
     const manifest = await db.runTransaction(tx => issuedOperation(runtime, tx, id, v, 'ISSUANCE'));
     const fileCount = (await bucket.getFiles({ prefix: `operation-delivery-v2/${id}/v1/issued_` }))[0].length;
-    assert.equal(fileCount, 3);
+    assert.equal(fileCount, external?2:3);
     await issueDocuments(runtime, bucket, id, v, actor);
-    assert.equal((await bucket.getFiles({ prefix: `operation-delivery-v2/${id}/v1/issued_` }))[0].length, 3);
+    assert.equal((await bucket.getFiles({ prefix: `operation-delivery-v2/${id}/v1/issued_` }))[0].length, external?2:3);
     mkdirSync(dir, { recursive: true });
-    for (const kind of finalDocumentKinds) {
+    for (const kind of issuedDocumentKinds(p)) {
         const bytes = await readIssuedDocument(runtime, bucket, id, v, kind, actor);
         writeFileSync(`${dir}/${kind}.pdf`, bytes);
         assert(bytes.subarray(0, 4).toString() === '%PDF');
         const p = manifest.manifest.documents[kind], meta = (await bucket.file(p.path).getMetadata())[0];
         assert.equal(meta.metadata?.firebaseStorageDownloadTokens, undefined);
     }
-    pass('THREE_PRIVATE_IMMUTABLE_DOCUMENTS_NO_DUPLICATE_NOTE');
+    pass(external?'TWO_PRIVATE_DOCUMENTS_INTERNAL_REMITO_DISABLED':'THREE_PRIVATE_IMMUTABLE_DOCUMENTS_NO_DUPLICATE_NOTE');
     const delivery = async (action: string, data: Record<string, unknown>, as = f.root) => { const s = (await readDelivery(db, id, v, as)).state; return deliveryCommand(db, id, v, { action, data, operationId: f.identity.operationId, expectedRevision: s.revision, commandId: randomUUID() }, as); };
     await assert.rejects(saveDeliveryPhoto(db, bucket, id, v, randomUUID(), 'MANDATE_PREPARED', '', syntheticPng, 'image/png', f.root));
     await delivery('PREPARE_DELIVERY', { responsible: f.holder });
-    for (const k of finalDocumentKinds) {
+    for (const k of issuedDocumentKinds(p)) {
         const doc = manifest.manifest.documents[k];
         await delivery('PREPARE_DOCUMENT', { kind: k, photoId: doc.photoId, reference: proof.snapshot.contractNumber, templateVersion: doc.templateVersion });
         if (k !== 'REMITO') {
@@ -194,14 +195,30 @@ export async function test() {
         }
     }
     await assert.rejects(delivery('CONFIRM_DELIVERY', { occurredAt: new Date().toISOString() }, { uid: f.uid, admin: false }));
+    if(external){
+        await assert.rejects(readIssuedDocument(runtime,bucket,id,v,'REMITO',actor),/NOT_ISSUED/);
+        const transfer=randomUUID(), receipt=randomUUID();
+        await assert.rejects(saveDeliveryPhoto(db,bucket,id,v,transfer,'EXTERNAL_TRANSFER','another-snapshot',syntheticPng,'image/png',f.root));
+        await saveDeliveryPhoto(db,bucket,id,v,transfer,'EXTERNAL_TRANSFER',proof.snapshot.integrity.payloadHash,syntheticPng,'image/png',f.root);
+        const register={photoId:transfer,number:'TEST-EXTERNAL-001',date:argentinaBusinessDate(),issuer:'Emisor externo sintético',documentType:'REMITO',applicabilityReference:'Documento de traslado sintético, no comprobante fiscal real',customerChecked:true,productChecked:true};
+        await assert.rejects(delivery('REGISTER_EXTERNAL_TRANSFER',{...register,customerChecked:false}));
+        await assert.rejects(delivery('REGISTER_EXTERNAL_TRANSFER',register,{uid:f.uid,admin:false}));
+        await delivery('REGISTER_EXTERNAL_TRANSFER',register);
+        await assert.rejects(delivery('CONFIRM_DELIVERY',{occurredAt:new Date().toISOString()},{uid:f.uid,admin:false}));
+        await saveDeliveryPhoto(db,bucket,id,v,receipt,'DELIVERY_RECEIPT',transfer,syntheticPng,'image/png',f.root);
+        await assert.rejects(delivery('VERIFY_DELIVERY_RECEIPT',{photoId:receipt,receivedAt:new Date().toISOString(),observations:'Sólo prueba',clientSigned:false,identityChecked:true,productChecked:true,legible:true}));
+        await delivery('VERIFY_DELIVERY_RECEIPT',{photoId:receipt,receivedAt:new Date().toISOString(),observations:'Recepción sintética, sin efectos reales',clientSigned:true,identityChecked:true,productChecked:true,legible:true});
+        pass('EXTERNAL_DOCUMENT_CONTEXT_ROLE_AND_SIGNED_RECEIPT_REQUIRED');
+    }else{
     const k = 'REMITO', signed = randomUUID(), doc = manifest.manifest.documents[k];
     await saveDeliveryPhoto(db, bucket, id, v, signed, `${k}_SIGNED`, doc.photoId, syntheticPng, 'image/png', f.root);
     await delivery('VERIFY_SIGNATURE', { kind: k, photoId: signed, clientSigned: true, legible: true, identityChecked: true, loopSigned: false, signedAt: new Date().toISOString() });
+    }
     await assert.rejects(delivery('CONFIRM_DELIVERY', { occurredAt: new Date().toISOString() }, { uid: f.uid, admin: false }));
     await delivery('RECEIVE_ORIGINALS', { holder: f.holder, location: 'Archivo físico sintético', receivedAt: new Date().toISOString(), reference: 'TEST', alternativeEvidence: 'SYNTHETIC ONLY' });
     await delivery('CONFIRM_DELIVERY', { occurredAt: new Date().toISOString() }, { uid: f.uid, admin: false });
     assert.equal((await readDelivery(db, id, v, f.root)).state.status, 'DELIVERED');
-    pass('THREE_SIGNATURES_ORIGINALS_CUSTODY_REQUIRED_BEFORE_DELIVERY');
+    pass(external?'TWO_SIGNATURES_EXTERNAL_RECEIPT_ORIGINALS_REQUIRED':'THREE_SIGNATURES_ORIGINALS_CUSTODY_REQUIRED_BEFORE_DELIVERY');
     const deliveredBefore = contractValueHash((await readDelivery(db,id,v,f.root)).state.event);
     await delivery('AUTHORIZE_ORIGINALS_TRANSFER', { to: { role: 'DEPOT', uid: actor, affiliateId: null }, occurredAt: new Date().toISOString(), location: 'Archivo administrativo sintético', reason: 'Retorno sintético de originales después de entrega' });
     const transfer = (await readDelivery(db,id,v,f.root)).state.originalsTransfer!;

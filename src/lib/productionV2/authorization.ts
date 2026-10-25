@@ -12,7 +12,7 @@ import { contractLegalEntity } from '../contractDocuments/legalEntity';
 import { validateContractLegalContext, type ContractLegalContextV2 } from '../contractSnapshotV2';
 import { exactPackage, requireProductionActor, runtimeData, type ProductionRuntime } from './runtime';
 import { readySource } from './source';
-import { finalDocumentKinds, type FinalPackage } from './catalog';
+import { issuedDocumentKinds, type FinalPackage } from './catalog';
 export const productionRef = (db: FirebaseFirestore.Firestore, id: string, v: number) => contractRefs(db, id, v).draft.collection('production').doc('current');
 export const packageApprovalRef = (db: FirebaseFirestore.Firestore, id: string) => legalRegistryRef(db).collection('finalPackageApprovals').doc(opaque(id));
 export const scopes = ['ISSUANCE', 'DELIVERY', 'FINANCE', 'CLIENT_ACTIVATION'] as const;
@@ -50,7 +50,7 @@ export async function recordFinalPackageApproval(runtime: ProductionRuntime, inp
     calendarDate(c.approvalDate);
     if (String(c.approvalDate) > argentinaBusinessDate())
         throw Error('APPROVAL_DATE_INVALID');
-    const data = { packageId: p.id, packageHash: p.sha256, templateHashes: Object.fromEntries(finalDocumentKinds.map(k => [k, p.templates[k].sha256])), rendererHash: p.rendererHash, resourcesHash: p.resourcesHash,
+    const data = { packageId: p.id, packageHash: p.sha256, templateHashes: Object.fromEntries(issuedDocumentKinds(p).map(k => [k, p.templates[k].sha256])), rendererHash: p.rendererHash, resourcesHash: p.resourcesHash,
         approvalDate: String(c.approvalDate), professional: text(c.professional), validationReference: text(c.validationReference), sourceReference: text(c.sourceReference), actor };
     const digest = contractValueHash(data), ref = packageApprovalRef(db, String(c.commandId));
     return db.runTransaction(async (tx) => {
@@ -66,7 +66,7 @@ export async function recordFinalPackageApproval(runtime: ProductionRuntime, inp
 }
 export async function approvedPackage(runtime: ProductionRuntime, tx: Transaction, packageId: string, approvalId: string, forWrite = true) {
     const { db, test } = runtimeData(runtime), p = exactPackage(runtime, packageId), saved = await tx.get(packageApprovalRef(db, approvalId)), a = saved.data();
-    if (!a || a.schemaVersion !== 'EXACT_FINAL_PACKAGE_APPROVAL_V1' || a.status !== 'PROFESSIONAL_VERSION_IDENTIFIED' || a.packageId !== p.id || a.packageHash !== p.sha256 || a.rendererHash !== p.rendererHash || a.resourcesHash !== p.resourcesHash || !a.professional || !a.validationReference || !a.sourceReference || !a.actor || !a.at || finalDocumentKinds.some(k => a.templateHashes?.[k] !== p.templates[k].sha256))
+    if (!a || a.schemaVersion !== 'EXACT_FINAL_PACKAGE_APPROVAL_V1' || a.status !== 'PROFESSIONAL_VERSION_IDENTIFIED' || a.packageId !== p.id || a.packageHash !== p.sha256 || a.rendererHash !== p.rendererHash || a.resourcesHash !== p.resourcesHash || !a.professional || !a.validationReference || !a.sourceReference || !a.actor || !a.at || issuedDocumentKinds(p).some(k => a.templateHashes?.[k] !== p.templates[k].sha256))
         throw Error('EXACT_FINAL_PACKAGE_APPROVAL_REQUIRED');
     // Historical proofs verify the installed immutable package and persisted hashes.
     // They never rerender bytes or require the current renderer. New issuance does.

@@ -1,4 +1,5 @@
 import './helpers/requireSafeEmulatorEnvironment';
+import { creditorPaymentPlaceReviewTemplates, creditorPaymentReviewIssuer } from '../src/lib/productionV2/creditorPaymentPlaceProposal';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { admin } from '../src/lib/firebaseAdmin';
@@ -8,7 +9,7 @@ import { contractPaymentAddress } from '../src/lib/contractPaymentAddress';
 import { contractCommand, getContract, clientTermsDigest } from '../src/lib/contractV2Server';
 import { contractValueHash } from '../src/lib/contractIntegrityV2';
 import { readOperationDraftDocuments } from '../src/lib/contractDocuments/operationDraftServer';
-import { renderOriginalReview } from '../src/lib/productionV2/originalPdf';
+import { renderContractPairReview } from '../src/lib/productionV2/originalPdf';
 import { packageHash, approvedFinalPackages, type FinalSnapshot } from '../src/lib/productionV2/catalog';
 import { assertOriginalSnapshot } from '../src/lib/productionV2/originalBindings';
 import { productionRuntimeForEmulator } from '../src/lib/productionV2/runtime';
@@ -81,8 +82,8 @@ async function run(){
  pass('EXPLICIT_RECONFORMITY_AUDIT_CONCURRENCY_REPLAY_NO_EXTRA_WRITES_AND_COMMAND_CONFLICT');
 
  const preview=await readOperationDraftDocuments(db,f.id,1);assert(preview.available);
- const proposed=renderOriginalReview(preview.projection,p.templates,proof);
- assert.equal(preview.templateHash,proposed.templateHash);assert.deepEqual(preview.mandate,proposed.mandate);assert.deepEqual(preview.promissoryNote,proposed.promissoryNote);assert.deepEqual(preview.remito,proposed.remito);
+ const proposed=renderContractPairReview(preview.projection,creditorPaymentPlaceReviewTemplates(),proof,creditorPaymentReviewIssuer());
+ assert.equal(preview.templateHash,proposed.templateHash);assert.deepEqual(preview.mandate,proposed.mandate);assert.deepEqual(preview.promissoryNote,proposed.promissoryNote);assert.equal('remito' in preview,false);
  assert.equal(proposed.projection.customer.address,changedAddress.address);
  assert.equal(proposed.projection.economics!.total,f.ready.economicTerms!.contractTotal);
  await reviewCommand(f.id,'DECIDE',{state:'IN_REVIEW',resolution:'Revisar datos sintéticos actualizados',notes:'Sólo Emulator'});

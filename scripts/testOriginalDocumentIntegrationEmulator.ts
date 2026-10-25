@@ -12,7 +12,7 @@ import { authorizeOperation, recordFinalPackageApproval } from '../src/lib/produ
 import { argentinaBusinessDate } from '../src/lib/productionV2/businessDate';
 import { readOperationDraftDocuments } from '../src/lib/contractDocuments/operationDraftServer';
 import { contractValueHash } from '../src/lib/contractIntegrityV2';
-import { clientPaymentPlaceReviewTemplates } from '../src/lib/productionV2/clientPaymentPlaceProposal';
+import { creditorPaymentPlaceReviewTemplates } from '../src/lib/productionV2/creditorPaymentPlaceProposal';
 import candidate from '../src/lib/productionV2/proposedPackages/originals-v1.json';
 const checks:string[]=[];const pass=(name:string)=>{checks.push(name);console.log(name+' = PASS');};
 async function run(){
@@ -22,7 +22,7 @@ async function run(){
  const sourceBefore=contractValueHash({b:(await f.r.budget.get()).data(),a:(await f.r.acceptance.get()).data(),d:(await f.r.draft.get()).data()}),time=(await f.r.draft.get()).updateTime!.toMillis();
  const result=await readOperationDraftDocuments(db,f.id,1);assert(result.available);const repeat=await readOperationDraftDocuments(db,f.id,1);assert.deepEqual(result,repeat);
  assert.equal(contractValueHash({b:(await f.r.budget.get()).data(),a:(await f.r.acceptance.get()).data(),d:(await f.r.draft.get()).data()}),sourceBefore);assert.equal((await f.r.draft.get()).updateTime!.toMillis(),time);
- assert.equal((await db.collection('contractNumbersV2').get()).size,0);assert.equal((await db.collection('contractSnapshotsV2').get()).size,0);pass('READ_ONLY_PREVIEW_THREE_DOCUMENTS_REPRODUCIBLE_NO_NUMBER_NO_WRITES');
+ assert.equal((await db.collection('contractNumbersV2').get()).size,0);assert.equal((await db.collection('contractSnapshotsV2').get()).size,0);pass('READ_ONLY_PREVIEW_TWO_DOCUMENTS_REPRODUCIBLE_NO_NUMBER_NO_WRITES');
  const schedule=result.projection.schedule,total=result.projection.economics!.total;
  assert.deepEqual(originalFormalParameters(p,syntheticOriginalFormal,total,schedule),syntheticOriginalFormal);
  for(const bad of [{...syntheticOriginalFormal,originalCft:1},{...syntheticOriginalFormal,originalCft:-1},{...syntheticOriginalFormal,originalCft:NaN},{...syntheticOriginalFormal,originalAllocationConformity:''},{...syntheticOriginalFormal,extra:1}]) assert.throws(()=>originalFormalParameters(p,bad,total,schedule));
@@ -39,9 +39,9 @@ async function run(){
  for(const kind of ['MANDATE','PAGARE'] as const){const src=normal(readFileSync(candidate.sources[kind].textPath,'utf8'));assert.equal(normal(candidate.documents[kind].blocks.map(b=>b.originalText).join(' ')),src.slice(candidate.documents[kind].title.length).trim());}
  pass('ALL_ORIGINAL_CLAUSES_PRESERVED_IN_SOURCE_ORDER');
  const folder='/tmp/cuenta-hogar-original-integration-v3';mkdirSync(folder,{recursive:true});
- const pdfs=Object.fromEntries(([['MANDATE','mandate','mandato-propuesto-revision.pdf'],['PAGARE','promissoryNote','pagare-propuesto-revision.pdf'],['REMITO','remito','remito-propuesto-revision.pdf']] as const).map(([kind,key,path])=>{const a=result[key],bytes=Buffer.from(a.base64,'base64');assert.equal(createHash('sha256').update(bytes).digest('hex'),a.sha256);writeFileSync(folder+'/'+path,bytes);return [kind,{path,sha256:a.sha256,pages:a.pages}];}));
- pass('ARTIFACTS_FROM_REAL_READ_ONLY_SERVER_PROJECTION');
- writeFileSync(folder+'/manifest.json',JSON.stringify({candidateHash:contractValueHash(candidate),sourceDocuments:candidate.sources,templateVersions:Object.fromEntries(Object.entries(clientPaymentPlaceReviewTemplates()).map(([kind,t])=>[kind,{version:t.version,sha256:t.sha256}])),status:'PROPOSED_NOT_APPROVED',installable:false,source:'Existing readOperationDraftDocuments / production shared renderer',productionWrites:0,rendererHash:FINAL_RENDERER_HASH,resourcesHash:FINAL_RESOURCES_HASH,templateHash:result.templateHash,projection:result.projection,pdfs,checks},null,2)+'\n');
+ const pdfs=Object.fromEntries(([['MANDATE','mandate','mandato-propuesto-revision.pdf'],['PAGARE','promissoryNote','pagare-propuesto-revision.pdf']] as const).map(([kind,key,path])=>{const a=result[key],bytes=Buffer.from(a.base64,'base64');assert.equal(createHash('sha256').update(bytes).digest('hex'),a.sha256);writeFileSync(folder+'/'+path,bytes);return [kind,{path,sha256:a.sha256,pages:a.pages}];}));
+ assert.equal('remito' in result,false);pass('PAIR_ONLY_FROM_REAL_READ_ONLY_SERVER_PROJECTION_INTERNAL_REMITO_ABSENT');
+ writeFileSync(folder+'/manifest.json',JSON.stringify({candidateHash:contractValueHash(candidate),sourceDocuments:candidate.sources,templateVersions:Object.fromEntries(Object.entries(creditorPaymentPlaceReviewTemplates()).map(([kind,t])=>[kind,{version:t.version,sha256:t.sha256}])),status:'PROPOSED_NOT_APPROVED',installable:false,source:'Existing readOperationDraftDocuments / production shared renderer',productionWrites:0,rendererHash:FINAL_RENDERER_HASH,resourcesHash:FINAL_RESOURCES_HASH,templateHash:result.templateHash,projection:result.projection,pdfs,checks},null,2)+'\n');
  console.log(JSON.stringify({status:'PASS',groups:checks.length,productionWrites:0,checks}));
 }
 run().then(()=>admin.app().delete()).catch(e=>{console.error(e);process.exitCode=1;});
