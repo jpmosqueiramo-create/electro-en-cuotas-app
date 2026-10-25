@@ -1,3 +1,4 @@
+import {readAdministrativeStatus,assertAdministrativeRecordActive} from './adminRecordRemovalServer';
 import { readOperationIdentity } from './operationIdentityReviewServer';
 import { assertCreditPreparation } from './creditReviewV2Server';
 import { operationFromAcceptance, operationRef, verifyOperation, type OperationViewV2 } from './operationV2';
@@ -24,6 +25,7 @@ export function contractRefs(db:Firestore,budgetId:string,version:number) {
 export async function getContract(db:Firestore,id:string,v:number){
   const r=contractRefs(db,id,v);
   return db.runTransaction(async tx=>{
+    const administrativeState=await readAdministrativeStatus(db,{kind:'CONTRACT',id,version:v},tx);
     const [snapshot, bs, as, os, docs] = await Promise.all([tx.get(r.draft), tx.get(r.budget), tx.get(r.acceptance), tx.get(operationRef(db,id,v)), tx.get(r.family.collection('documentation').doc(String(v)))]);
     let operation: OperationViewV2 | null = null;
     if (as.exists) {
@@ -40,7 +42,7 @@ export async function getContract(db:Firestore,id:string,v:number){
         pendingProcesses:['COBRANZA']};
     } else if (os.exists || snapshot.exists) reject('Falta aceptación de origen.');
     const identityReview=bs.exists?await readOperationIdentity(db,tx,id,v):null;
-    if(!snapshot.exists)return {identityReview,draft:null,budget:bs.data() as BudgetV2,requests:[],submissions:[],readiness:null,operation};
+    if(!snapshot.exists)return {administrativeState,identityReview,draft:null,budget:bs.data() as BudgetV2,requests:[],submissions:[],readiness:null,operation};
     const draft=snapshot.data() as ContractDraftV2;
     const consent=await tx.get(r.draft.collection('conformity').doc('current'));
     const addressHash=paymentAddressHashOrNull(draft.personalData);
@@ -53,7 +55,7 @@ export async function getContract(db:Firestore,id:string,v:number){
       readiness=e.data() as ContractReadyEvidenceV1;verifyReadyEvidence(b.data() as BudgetV2,a.data() as BudgetAcceptanceV2,draft,readiness);
     }
     const [requests,submissions]=await Promise.all([tx.get(r.draft.collection('requests')),tx.get(r.draft.collection('submissions'))]);
-    return {identityReview,draft,budget:bs.data() as BudgetV2,readiness,operation,clientConformity,requests:requests.docs.map(x=>{const {tokenHash:_hash,submissionDigest:_digest,...safe}=x.data();void _hash;void _digest;return safe;}),submissions:submissions.docs.map(x=>x.data() as ClientDataSubmissionV2)};
+    return {administrativeState,identityReview,draft,budget:bs.data() as BudgetV2,readiness,operation,clientConformity,requests:requests.docs.map(x=>{const {tokenHash:_hash,submissionDigest:_digest,...safe}=x.data();void _hash;void _digest;return safe;}),submissions:submissions.docs.map(x=>x.data() as ClientDataSubmissionV2)};
   });
 }
 const actionKeys:Record<string,string[]>={OPEN_OR_CREATE:[],RECORD_CLIENT_CONFORMITY:['evidence'],MARK_READY_TO_FORMALIZE:[],RETURN_TO_DRAFT:['reason'],UPDATE_PRODUCT_DETAILS:['productDetails'],UPDATE_PERSONAL_DATA:['personalData'],UPDATE_EMPLOYMENT_DATA:['employmentData'],SET_CONTRACT_PLAN:['contractPlanCuotas'],SET_PAYMENT_DATES:['firstInstallmentDueDate','preferredMonthlyDueDay'],CREATE_CLIENT_DATA_REQUEST:[],REVOKE_CLIENT_DATA_REQUEST:[],APPLY_CLIENT_SUBMISSION:['submissionId']};
@@ -66,6 +68,7 @@ export async function contractCommand(db:Firestore,id:string,v:number,input:unkn
   const secret=action==='CREATE_CLIENT_DATA_REQUEST'?randomBytes(32).toString('base64url'):null;
   const requestId=randomBytes(18).toString('base64url');
   return db.runTransaction(async tx=>{
+    await assertAdministrativeRecordActive(db,tx,{kind:'CONTRACT',id,version:v});
     const [old,cmd,b,a,documentation]=await Promise.all([tx.get(r.draft),tx.get(command),tx.get(r.budget),tx.get(r.acceptance),tx.get(r.family.collection('documentation').doc(String(v)))]);
     // P4 is optional context only; never copied to Draft or changed by contract commands.
     void documentation;
@@ -173,6 +176,7 @@ export async function publicContractData(db:Firestore,requestId:string,token:str
   const index=await db.collection('contractClientDataRequests').doc(requestId).get();if(!index.exists)reject(unavailable);
   const refs=contractRefs(db,index.data()!.budgetId,index.data()!.version),rr=refs.draft.collection('requests').doc(requestId);
   return db.runTransaction(async tx=>{
+    await assertAdministrativeRecordActive(db,tx,{kind:'CONTRACT',id:index.data()!.budgetId,version:index.data()!.version});
     const [rs,ds]=await Promise.all([tx.get(rr),tx.get(refs.draft)]);if(!rs.exists||!ds.exists)reject(unavailable);
     const r=rs.data() as ContractClientDataRequestV2,d=ds.data() as ContractDraftV2;
     const actual=Buffer.from(hash(token),'hex'),expected=Buffer.from(r.tokenHash,'hex');

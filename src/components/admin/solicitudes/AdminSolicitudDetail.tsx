@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import {AdminRecordRemoval} from "../AdminRecordRemoval";
 import { useEffect, useState, type ReactNode } from "react";
 import { ArrowLeft, FileText } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
@@ -30,8 +31,9 @@ export function AdminSolicitudDetail({ source, id, context }: { source: AdminSol
   const item = state?.item;
   const back = <Link href={`/admin/solicitudes?${context}`} className="admin-control inline-flex min-h-11 items-center gap-2 rounded-xl px-1 text-sm font-semibold text-brand-primary"><ArrowLeft aria-hidden="true" className="size-4" />Volver a Solicitudes</Link>;
   return <div className="mx-auto max-w-6xl space-y-5 p-4 sm:p-8" data-testid="solicitud-detail">
-    {back}
+    <div className="flex flex-wrap items-center justify-between gap-3">{back}{item&&<AdminRecordRemoval subject={{kind:'REQUEST',source,id}} removed={!!item.administrativeState&&item.administrativeState.state!=='ACTIVE'} onChanged={()=>setAttempt(v=>v+1)}/>}</div>
     {!state ? <p role="status" className="py-10 text-text-secondary">Cargando operación…</p> : state.error ? <Section title="No pudimos cargar esta operación"><p role="alert" className="text-sm text-text-secondary">No pudimos completar la consulta. Reintentá sin recargar la página; no se buscó en otra fuente.</p><button type="button" className="admin-control mt-4 min-h-11 rounded-xl border border-border-color px-4 text-sm font-semibold" onClick={() => { setState(null); setAttempt(value => value + 1); }}>Reintentar</button></Section> : !item ? <Section title="Operación no encontrada"><p className="text-sm text-text-secondary">No existe un registro disponible con esta referencia en la fuente indicada.</p></Section> : <>
+      {item?.administrativeState&&item.administrativeState.state!=='ACTIVE'&&<p role="status">Solicitud {item.administrativeState.state==='ARCHIVED'?'archivada':'eliminada'}. Los registros vinculados y el historial se conservan.</p>}
       <PageHeader title={item.nombreCliente ?? "Operación sin nombre registrado"} subtitle={`${item.tipoPresentacion} · ${presentAdminSolicitudStatus(item.estadoOriginal)}`} actions={<span className="rounded-lg border border-border-color bg-surface px-3 py-2 text-sm font-semibold">Sólo lectura</span>} />
       <SolicitudOperationLinks key={`${source}:${id}`} source={source} id={id} />
       <Section title="Resumen"><dl className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"><Field label="Tipo" value={item.tipoPresentacion} /><Field label="Origen" value={item.origenPresentacion} /><Field label="Referencia de catálogo" value={item.referenciaCatalogo} /><Field label="Plan preferido" value={item.planPreferido ? `${item.planPreferido} cuotas` : null} /><Field label="Cuota estimada al solicitar" value={item.cuotaCapturada !== null ? `$ ${item.cuotaCapturada.toLocaleString("es-AR")}` : null} /><Field label="Estado" value={presentAdminSolicitudStatus(item.estadoOriginal)} /><Field label="Fecha" value={formatAdminSolicitudDate(item.fechaCreacion)} /><Field label="Necesidad / bien" value={item.productoONecesidad} /><Field label="Referencia de operación" value={item.documentId} /><Field label="Próxima acción" value={adminSolicitudNextAction(item)} /></dl>

@@ -1,3 +1,4 @@
+import {assertAdministrativeRecordActive} from '../adminRecordRemovalServer';
 import { createHash } from 'node:crypto';
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
 import { contractRefs, clientConformityIsCurrent } from '../contractV2Server';
@@ -10,6 +11,7 @@ import { readOperationIdentity } from '../operationIdentityReviewServer';
 import { verifyReadyEvidence, type ContractReadyEvidenceV1 } from '../contractReadyV2';
 import { contractValueHash } from '../contractIntegrityV2';
 export async function readySource(db: Firestore, tx: Transaction, id: string, v: number, expectedRevision: number) {
+    await assertAdministrativeRecordActive(db,tx,{kind:'CONTRACT',id,version:v});
     const r = contractRefs(db, id, v);
     const [bs, as, ds, os, cr, cs] = await Promise.all([tx.get(r.budget), tx.get(r.acceptance), tx.get(r.draft), tx.get(operationRef(db, id, v)), tx.get(creditRefs(db, id, v).review), tx.get(r.draft.collection('conformity').doc('current'))]);
     if (!bs.exists || !as.exists || !ds.exists || !os.exists)

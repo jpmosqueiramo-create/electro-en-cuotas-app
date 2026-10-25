@@ -1,3 +1,4 @@
+import {assertAdministrativeRecordActive} from './adminRecordRemovalServer';
 import type { Firestore } from "firebase-admin/firestore";
 import { createHash } from "node:crypto";
 import { buildCatalogReferencePrivatePatch } from "./catalogReferenceEditor";
@@ -29,8 +30,10 @@ export async function persistBudgetV2(db:Firestore,input:unknown,actor:string):P
   const commandRef=family.collection("commands").doc(cmd.commandId);
   const digest=hash(cmd);
   return db.runTransaction(async tx=>{
+    await assertAdministrativeRecordActive(db,tx,{kind:'BUDGET',id:cmd.budget.id});
     if ((await tx.get(db.collection("budgetDeletionAuditV2").doc(cmd.budget.id))).exists) throw new BudgetV2DomainError("El presupuesto fue eliminado; no puede volver a guardarse.");
     const [familySnap,current,command,source]=await Promise.all([tx.get(family),tx.get(versionRef),tx.get(commandRef),tx.get(db.collection(cmd.budget.sourceCollection).doc(cmd.budget.solicitudId))]);
+    if(!familySnap.exists)await assertAdministrativeRecordActive(db,tx,{kind:'REQUEST',source:cmd.budget.sourceCollection,id:cmd.budget.solicitudId});
     if(command.exists){if(command.data()!.digest!==digest)throw new BudgetV2DomainError("Conflicto: commandId ya usado.");const result = command.data()!.result; validateBudgetV2(result, privateBudgetReferenceId); return result;}
     if(cmd.createManualSource && (source.exists || familySnap.exists)) throw new BudgetV2DomainError("El origen manual ya existe; reabrí el presupuesto.");
     if(!source.exists&&!cmd.createManualSource)throw new BudgetV2DomainError("La solicitud original no existe.");

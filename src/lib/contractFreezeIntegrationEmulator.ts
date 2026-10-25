@@ -1,3 +1,4 @@
+import {assertAdministrativeRecordActive} from './adminRecordRemovalServer';
 // Technical integration only. No route, Server Action or browser import is permitted.
 import { createHash } from 'node:crypto';
 import { Firestore, type Transaction } from 'firebase-admin/firestore';
@@ -83,6 +84,7 @@ export function createContractFreezeIntegrationEmulator(){
    const dg=contractValueHash({actor,command:c}),cmd=db.collection(p.commands).doc(c.commandId),refs=contractRefs(db,c.budgetId,c.budgetVersion);
    return db.runTransaction(async tx=>{
     assertContractInfrastructureEmulator();
+    await assertAdministrativeRecordActive(db,tx,{kind:'CONTRACT',id:c.budgetId,version:c.budgetVersion});
     const prior=await tx.get(cmd);
     if(prior.exists){if(prior.data()!.schemaVersion!=='READY_FREEZE_RECEIPT_V1'||prior.data()!.digest!==dg)fail('CONTRACT_COMMAND_CONFLICT');return verifyReceipt(tx,prior.data()!.receipt,c);}
     const [ds,b,a]=await Promise.all([tx.get(refs.draft),tx.get(refs.budget),tx.get(refs.acceptance)]);

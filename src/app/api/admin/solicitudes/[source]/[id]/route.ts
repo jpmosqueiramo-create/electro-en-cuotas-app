@@ -1,3 +1,4 @@
+import {readAdministrativeStatus} from '@/lib/adminRecordRemovalServer';
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminAuth } from '@/lib/adminAuth';
 import { admin } from '@/lib/firebaseAdmin';
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ source: str
   try {
     const snapshot = await admin.firestore().collection(source).doc(id).get();
     const map = source === 'solicitudes' ? mapSolicitudToAdminReadModel : mapSolicitudCuentaToAdminReadModel;
-    return NextResponse.json({ item: snapshot.exists ? map(snapshot.id, snapshot.data()!) : null }, { headers: contractHeaders });
+    return NextResponse.json({ item: snapshot.exists ? {...map(snapshot.id, snapshot.data()!),administrativeState:await readAdministrativeStatus(admin.firestore(),{kind:'REQUEST',source,id})} : null }, { headers: contractHeaders });
   } catch {
     return NextResponse.json({ error: 'No se pudo consultar la solicitud.' }, { status: 503, headers: contractHeaders });
   }

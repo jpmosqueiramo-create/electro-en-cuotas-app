@@ -1,3 +1,4 @@
+import {assertAdministrativeRecordActive} from '../adminRecordRemovalServer';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { BudgetV2 } from '../budgetV2';
 import type { BudgetAcceptanceV2 } from '../budgetAcceptanceV2';
@@ -13,6 +14,7 @@ export async function readOperationDraftDocuments(db:Firestore,id:string,v:numbe
  opaque(id);if(!Number.isSafeInteger(v)||v<1)throw new DocumentPreviewError('DOCUMENT_ORIGIN_INCONSISTENT','READ','INVALID_VERSION');
  const r=contractRefs(db,id,v);
  const {projection:p,conformity}=await db.runTransaction(async tx=>{
+  await assertAdministrativeRecordActive(db,tx,{kind:'CONTRACT',id,version:v});
   const [bs,as,ds,cs,identity]=await Promise.all([tx.get(r.budget),tx.get(r.acceptance),tx.get(r.draft),tx.get(r.draft.collection('conformity').doc('current')),readOperationIdentity(db,tx,id,v)]);
   if(!bs.exists||!as.exists||!ds.exists)throw new DocumentPreviewError('DOCUMENT_ORIGIN_INCONSISTENT','READ','MISSING_SOURCE');
   const d=ds.data() as ContractDraftV2;

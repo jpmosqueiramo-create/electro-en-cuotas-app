@@ -1,4 +1,5 @@
 'use client';
+import {AdminRecordRemoval} from '../AdminRecordRemoval';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import type { BudgetV2 } from '@/lib/budgetV2';
@@ -37,7 +38,8 @@ export function BudgetV2Deletion({budget, onClose, onDeleted}: {budget: BudgetV2
     <div className="max-h-[90dvh] w-full max-w-2xl space-y-4 overflow-y-auto rounded-2xl border border-border-color bg-surface p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="budget-delete-title" className="text-xl font-bold">{testMode?'Eliminar expediente de prueba':'Eliminar presupuesto'}</h2><button ref={close} className={button} disabled={busy} onClick={onClose}>Cancelar</button></div>
       <p className="font-semibold">{budget.clienteSnapshot.nombre}</p><p>{budget.options.map(o => o.referenceSnapshot.nombre).join(' · ')}</p><p className="break-all text-sm">Presupuesto {budget.id} · Versión consultada {budget.version}</p>
-      <p>Se eliminará la familia completa, {testMode?'incluidos los registros técnicos expresamente identificados en el manifiesto.':'incluidas todas sus versiones y comandos propios.'} La solicitud de origen y los archivos se conservarán. Esta acción no se puede deshacer.</p>
+      <div className="space-y-3 rounded-xl border border-border-color p-3"><p>Para retirarlo del historial sin perder los datos vinculados, usá la eliminación recuperable.</p><AdminRecordRemoval inline label="Eliminar de la bandeja" subject={{kind:'BUDGET',id:budget.id}} onChanged={onDeleted}/></div>
+      <h3 className="font-bold">Limpieza definitiva (opcional)</h3><p>Se eliminará la familia completa, {testMode?'incluidos los registros técnicos expresamente identificados en el manifiesto.':'incluidas todas sus versiones y comandos propios.'} La solicitud de origen y los archivos se conservarán. Esta acción no se puede deshacer.</p>
       <button className={button} disabled={busy} onClick={()=>{setTestMode(!testMode);setPreview(null);setConfirmed(false);setDeclared(false);setReason('');setError('');pending.current=null;}}>{testMode?'Volver a eliminación de presupuesto':'Eliminar expediente de prueba'}</button>
       {testMode&&<p className="rounded-xl border border-border-color p-3">Sólo para expedientes íntegramente ficticios. Se incluirán la aceptación y los registros técnicos compatibles. Se bloquearán documentos, firmas, pagos, entregas, movimientos físicos y relaciones no verificables. La auditoría permanecerá.</p>}
       {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-red-800">{error}</p>}
