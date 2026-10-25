@@ -25,19 +25,16 @@ export function CreditReviewWorkspace({budget,onUpdated,refreshKey=0}:{budget:Bu
  async function command(action:string,extra:Record<string,unknown>){if(!view)return;const payload={action,expectedRevision:view.review?.revision??0,expectedProfileRevision:view.profile?.revision??0,...extra},key=JSON.stringify(payload);if(pending.current?.key!==key)pending.current={key,commandId:crypto.randomUUID()};await request('credit-review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,commandId:pending.current.commandId})});pending.current=null;await load();}
  const statuses:Record<string,string>={MISSING:'Pendiente de carga',VERIFIED:'Verificado y vigente',OBSERVED:'Observado: solicitar actualización',EXPIRED:'Vencido: solicitar actualización'};
  return <section data-testid="credit-review" className="min-w-0 space-y-4 rounded-xl border border-border-color p-4">
- <h3 className="font-heading text-xl font-bold">Documentación y evaluación crediticia</h3>
- <p className="text-sm">Cada operación requiere una resolución administrativa propia.</p>
+ <h3 className="font-heading text-xl font-bold">Documentos del cliente</h3>
  {error&&<p role="alert" className="break-words text-red-700">{error}</p>}
  <button className={btn} disabled={busy} onClick={()=>void act(load)}>Actualizar evaluación</button>
  {!view?<p role="status">Consultando evaluación…</p>:<>
- {view.identityReview&&<OperationIdentityNotice review={view.identityReview}/>}
+ {view.identityReview?.requiresClarification&&<OperationIdentityNotice review={view.identityReview}/>}
  <p role="status" className="font-semibold">{creditLabels[view.state]}</p><p>Próxima acción: {creditNextAction[view.state]} · Responsable: Administración</p>
  {view.identityMismatch&&<p role="alert">Los datos de identidad no coinciden con la carpeta. Solicitá aclaración o actualización del formulario; no se reutiliza documentación ni se fusionan personas.</p>}
  {view.requiresFreshReview&&<p role="alert">Los datos o documentos cambiaron. Revisá nuevamente antes de preparar el contrato.</p>}
- <p>Documentos pendientes: {view.documents.filter(d=>d.required&&d.status!=='VERIFIED').length}</p><p>Resolución: {view.review?.resolution||'Sin resolución registrada'}</p>
- {view.review?.notes&&<p className="whitespace-pre-wrap text-sm">Observaciones internas: {view.review.notes}</p>}
- {view.review&&<p className="text-sm">Revisado: {new Date(view.review.reviewedAt).toLocaleString('es-AR')} · Administración</p>}
- <fieldset disabled={busy} className="min-w-0 space-y-3"><legend className="font-semibold">Identidad y carpeta del cliente</legend>
+ <p>Documentos pendientes: {view.documents.filter(d=>d.required&&d.status!=='VERIFIED').length}</p> <details open><summary className="min-h-11 cursor-pointer font-semibold">Cargar documentos e imágenes</summary><BudgetAcceptanceDocumentation budget={budget} documentationOnly onChanged={load}/><p>Después de cargar, revisá el archivo; la evaluación se actualiza automáticamente.</p></details>
+ <details><summary className="min-h-11 cursor-pointer font-semibold">Verificar identidad y carpeta del cliente</summary><fieldset disabled={busy} className="min-w-0 space-y-3"><legend className="font-semibold">Identidad y carpeta del cliente</legend>{view.identityReview&&!view.identityReview.requiresClarification&&<OperationIdentityNotice review={view.identityReview}/>}
  {view.profile?<p>Carpeta vinculada mediante verificación administrativa. Los archivos se reutilizan por referencia, sin copiarlos.</p>:<>
  <label className="block">Evidencia de verificación de identidad<textarea className={control} maxLength={1000} value={evidence} onChange={e=>setEvidence(e.target.value)} placeholder="Referencia interna de la verificación, sin repetir DNI ni datos sensibles"/></label>
  <button className={btn} disabled={!evidence.trim()} onClick={()=>void act(()=>command('VERIFY_IDENTITY',{evidence}))}>Verificar identidad y crear carpeta</button>
@@ -46,7 +43,7 @@ export function CreditReviewWorkspace({budget,onUpdated,refreshKey=0}:{budget:Bu
  <label className="block">Carpeta verificada<select className={control} value={selected} onChange={e=>setSelected(e.target.value)}><option value="">Seleccionar después de verificar identidad</option>{profiles.map((p,i)=><option key={p.budgetId+':'+p.version} value={i}>{p.name} · verificada {new Date(p.verifiedAt).toLocaleDateString('es-AR')}</option>)}</select></label>
  <button className={btn} disabled={!evidence.trim()||selected===''} onClick={()=>void act(()=>{const p=profiles[Number(selected)];return command('LINK_PROFILE',{originBudgetId:p.budgetId,originVersion:p.version,evidence});})}>Confirmar vínculo verificado</button></details>
  </>}
- </fieldset>
+ </fieldset></details>
  <div className="grid min-w-0 gap-3 sm:grid-cols-2">{view.documents.map(d=>{const form=reviews[d.type]??{attachmentId:d.attachmentId??'',status:'VERIFIED',validUntil:d.validUntil??'',note:''};const change=(patch:Partial<typeof form>)=>setReviews({...reviews,[d.type]:{...form,...patch}});return <article key={d.type} className="min-w-0 space-y-2 rounded-xl border border-border-color p-3">
  <h4 className="font-semibold">{d.type==='PAYSLIP'?'Recibo de sueldo o comprobante de ingresos':DOCUMENT_LABELS[d.type]} {d.required?'· Obligatorio':'· Opcional'}</h4><p>{statuses[d.status]}</p>{d.validUntil&&<p>Vigencia registrada: {d.validUntil}</p>}
  {d.originalName&&<button disabled={busy||view.identityMismatch||view.identityReview.requiresClarification} className={btn} onClick={()=>void act(async()=>{const response=await request('credit-document/'+d.type),url=URL.createObjectURL(await response.blob()),a=document.createElement('a');a.href=url;a.download='documento';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);})}>Consultar documento privado</button>}
@@ -57,8 +54,11 @@ export function CreditReviewWorkspace({budget,onUpdated,refreshKey=0}:{budget:Bu
  <label className="block">Observación interna<textarea className={control} maxLength={1000} value={form.note} onChange={e=>change({note:e.target.value})}/></label>
  <button className={btn} disabled={!form.attachmentId||(form.status==='VERIFIED'&&!form.validUntil)||!form.note.trim()} onClick={()=>void act(()=>command('REVIEW_DOCUMENT',{type:d.type,...form,validUntil:form.validUntil||null}))}>Guardar revisión documental</button></fieldset></details>
  </article>;})}</div>
- <details><summary className="min-h-11 cursor-pointer">Cargar o consultar archivos de esta operación</summary><BudgetAcceptanceDocumentation budget={budget} documentationOnly onChanged={load}/><p>Después de cargar, revisá el archivo; la evaluación se actualiza automáticamente.</p></details>
- <details open={!view.approved}><summary className="min-h-11 cursor-pointer font-semibold">Registrar o revisar resolución crediticia</summary><fieldset disabled={busy} className="min-w-0 space-y-3"><legend className="font-semibold">Resolución crediticia manual</legend>
+
+ <details><summary className="min-h-11 cursor-pointer font-semibold">Registrar o revisar resolución crediticia</summary><p>Resolución: {view.review?.resolution||'Sin resolución registrada'}</p>
+ {view.review?.notes&&<p className="whitespace-pre-wrap text-sm">Observaciones internas: {view.review.notes}</p>}
+ {view.review&&<p className="text-sm">Revisado: {new Date(view.review.reviewedAt).toLocaleString('es-AR')} · Administración</p>}
+<fieldset disabled={busy} className="min-w-0 space-y-3"><legend className="font-semibold">Resolución crediticia manual</legend>
  <label className="block">Estado<select className={control} value={decision} onChange={e=>setDecision(e.target.value as CreditState)}>{creditStates.map(s=><option key={s} value={s}>{creditLabels[s]}</option>)}</select></label>
  <label className="block">Resolución<textarea className={control} maxLength={1000} value={resolution} onChange={e=>setResolution(e.target.value)}/></label>
  <label className="block">Observaciones internas<textarea className={control} maxLength={1000} value={notes} onChange={e=>setNotes(e.target.value)}/></label>

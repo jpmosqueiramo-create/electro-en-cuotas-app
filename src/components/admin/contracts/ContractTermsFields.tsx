@@ -1,13 +1,15 @@
 'use client';
-import { useRef,useState } from 'react';
+import { useContext,useRef,useState } from 'react';
 import { contractEconomics,contractSchedule,type ContractDraftV2 } from '@/lib/contractV2';
 import { creditLabels,creditNextAction,type CreditState } from '@/lib/creditReviewV2';
+import { ContractNavigationContext } from './contractSectionNavigation';
 import { btn,control } from './ContractDataFields';
 const money=(value:number)=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(value);
 export function ContractTermsFields({draft,allowed,creditState,requiresFreshReview,busy,locked,onDraftChange,onCommand}:{
  draft:ContractDraftV2;allowed:boolean;creditState:CreditState|null;requiresFreshReview:boolean;busy:boolean;locked:boolean;
  onDraftChange:(draft:ContractDraftV2)=>void;onCommand:(action:string,extra:Record<string,unknown>)=>Promise<void>;
 }){
+ const goToSection=useContext(ContractNavigationContext);
  const flight=useRef(false),[saving,setSaving]=useState(false);
  const definitiveDisabled=busy||locked||saving;
  async function save(action:string,extra:Record<string,unknown>){if(!allowed||busy||locked||flight.current)return;flight.current=true;setSaving(true);try{await onCommand(action,extra);}finally{flight.current=false;setSaving(false);}}
@@ -16,10 +18,10 @@ export function ContractTermsFields({draft,allowed,creditState,requiresFreshRevi
  try{if(plan)simulated=contractEconomics({...draft.acceptedReferenceSnapshot,imagenUrls:[]},Number(plan));if(simulated&&first&&day)schedule=contractSchedule(simulated,first,Number(day));}catch(error){simulationError=error instanceof Error?error.message:'Revisá el plazo y las fechas.';}
  const panel='min-w-0 space-y-4 rounded-xl border border-border-color bg-surface p-4';
  const e=allowed?draft.economicTerms:simulated,rows=allowed?draft.paymentScheduleDraft:schedule;
- function navigate(){const selector=creditState==='PENDING_DATA'?'[data-testid=contract-personal]':'[data-testid=credit-review]';const target=document.querySelector(selector);if(target instanceof HTMLDetailsElement)target.open=true;target?.scrollIntoView({block:'start',behavior:'smooth'});(target?.querySelector('input,button') as HTMLElement|null)?.focus({preventScroll:true});}
+ function navigate(){goToSection(creditState==='PENDING_DATA'?'data':'identity');}
  const notice=<div className="space-y-2" data-testid="contract-credit-gate">{locked?<p>{draft.status==='READY_TO_FORMALIZE'?'La preparación técnica está cerrada. Usá «Volver a borrador» y registrá un motivo para editar.':'Los términos están congelados. No se permite editar estas condiciones.'}</p>:allowed&&(busy||saving)?<p>Hay un guardado en curso. Esperá a que termine antes de editar las condiciones.</p>:!allowed?<><p className="font-semibold">{creditState?creditLabels[creditState]:'Consultando aprobación crediticia…'}</p><p>{requiresFreshReview?'La aprobación anterior ya no está vigente: cambiaron datos o documentos. Se requiere una nueva revisión.':creditState?creditNextAction[creditState]:'Esperá la verificación antes de guardar condiciones.'}</p><button type="button" className={btn} onClick={navigate}>{creditState==='PENDING_DATA'?'Revisar datos pendientes':'Ir a documentación y evaluación'}</button></>:<p>{creditState==='APPROVED'?'Aprobación crediticia vigente.':'Operación histórica sin evaluación incorporada: se conserva su régimen de preparación; no acredita una nueva aprobación.'} La preparación contractual no habilita formalización ni cobranza productiva.</p>}</div>;
  return <>
- <details className={panel} data-testid="contract-economics"><summary className="min-h-11 cursor-pointer font-bold">4. Condiciones económicas</summary><div className="space-y-4 pt-3">{notice}
+ <details className={panel} data-testid="contract-economics"><summary className="min-h-11 cursor-pointer font-bold">Condiciones económicas</summary><div className="space-y-4 pt-3">{notice}
  {!allowed&&<p className="text-sm">Simulación informativa. La operación requiere aprobación crediticia antes de confirmar las condiciones contractuales</p>}
  <label className="block space-y-1"><span>{allowed?'Plan contractual definitivo':'Cantidad de cuotas (simulación)'}</span><select aria-label={allowed?'Plan contractual definitivo':'Cantidad de cuotas (simulación)'} className={control} disabled={allowed&&definitiveDisabled} value={allowed?draft.economicTerms?.contractPlanCuotas??'':plan} onChange={event=>{if(allowed){if(!definitiveDisabled&&event.target.value)void save('SET_CONTRACT_PLAN',{contractPlanCuotas:Number(event.target.value)});}else setPlan(event.target.value);}}><option value="">Elegir explícitamente</option>{Array.from({length:18},(_,i)=><option key={i} value={i+1}>{i+1} cuotas</option>)}</select></label>
  {e&&<dl data-testid="contract-economic-values" className="grid gap-2 sm:grid-cols-2">{[['Capital aplicado a la compra',e.capitalAmount],['Servicio de Cuenta Hogar',e.serviceAmount],[allowed?'Total contractual':'Total estimado',e.contractTotal],['Cantidad de cuotas',e.contractPlanCuotas],[allowed?'Valor de cuota':'Importe estimado por cuota',e.contractInstallmentAmount]].map(([label,value])=><div key={label}><dt>{label}</dt><dd className="font-semibold">{label==='Cantidad de cuotas'?value:money(Number(value))}</dd></div>)}</dl>}
@@ -27,8 +29,8 @@ export function ContractTermsFields({draft,allowed,creditState,requiresFreshRevi
  {!allowed&&draft.economicTerms&&<p className="text-sm">Plan guardado anteriormente: {draft.economicTerms.contractPlanCuotas} cuotas de {money(draft.economicTerms.contractInstallmentAmount)}. La simulación no modifica esas condiciones.</p>}
  {simulationError&&!allowed&&<p role="alert">{simulationError}</p>}
  </div></details>
- <details className={panel} data-testid="contract-schedule"><summary className="min-h-11 cursor-pointer font-bold">5. Plan de pagos</summary><div className="space-y-4 pt-3">{notice}
- {!allowed&&<p className="text-sm">Cronograma estimado: no se guarda ni genera obligaciones de pago. Elegí primero las cuotas en la sección 4.</p>}
+ <details className={panel} data-testid="contract-schedule"><summary className="min-h-11 cursor-pointer font-bold">Plan de pagos</summary><div className="space-y-4 pt-3">{notice}
+ {!allowed&&<p className="text-sm">Cronograma estimado: no se guarda ni genera obligaciones de pago. Elegí primero las cuotas en Condiciones económicas.</p>}
  <label className="block"><span>{allowed?'Primera cuota':'Primera cuota estimada'}</span><input aria-label={allowed?'Primera cuota':'Primera cuota estimada'} className={control} disabled={allowed&&definitiveDisabled} type="date" value={allowed?draft.firstInstallmentDueDate??'':first} onChange={event=>{if(allowed){if(!definitiveDisabled&&!flight.current)onDraftChange({...draft,firstInstallmentDueDate:event.target.value||null});}else setFirst(event.target.value);}}/></label>
  <label className="block"><span>{allowed?'Día habitual':'Día habitual estimado'}</span><select aria-label={allowed?'Día habitual':'Día habitual estimado'} className={control} disabled={allowed&&definitiveDisabled} value={allowed?draft.preferredMonthlyDueDay??'':day} onChange={event=>{if(allowed){if(!definitiveDisabled&&!flight.current)onDraftChange({...draft,preferredMonthlyDueDay:event.target.value?Number(event.target.value):null});}else setDay(event.target.value);}}><option value="">Seleccionar</option>{Array.from({length:31},(_,i)=><option key={i} value={i+1}>{i+1}</option>)}</select></label>
  {allowed&&<button className={btn} disabled={definitiveDisabled||!draft.economicTerms} onClick={()=>{if(draft.economicTerms)void save('SET_PAYMENT_DATES',{firstInstallmentDueDate:draft.firstInstallmentDueDate,preferredMonthlyDueDay:draft.preferredMonthlyDueDay});}}>Guardar fechas y revisar cronograma</button>}
