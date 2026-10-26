@@ -1,3 +1,4 @@
+import {assertOwnerFinalCatalog} from './helpers/assertOwnerFinalCatalog';
 // Offline: exact proposal comparison and synthetic PDF generation. No Firebase.
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
@@ -23,7 +24,7 @@ const note=next.PAGARE.paragraphs.join(' ');
 assert(note.includes('A LA VISTA'));assert(note.includes('sin protesto'));assert(note.includes(creditorPaymentProposal.paymentPlace));
 assert(!note.includes('client.paymentAddress'));assert(!note.includes('dos (2)'));assert(!note.includes('o donde la acreedora'));
 assert.deepEqual(next.PAGARE.blocks!.find(b=>b.id==='jurisdiction'),v2.PAGARE.blocks!.find(b=>b.id==='jurisdiction'));
-assert.deepEqual(next.REMITO,v2.REMITO);assert.deepEqual(approvedFinalPackages,[]);assert.equal(creditorPaymentProposal.installable,false);
+assert.deepEqual(next.REMITO,v2.REMITO);assertOwnerFinalCatalog(approvedFinalPackages);assert.equal(creditorPaymentProposal.installable,false);
 const p=structuredClone(source.projection) as OperationDraftProjection,before=structuredClone(p);
 const result=renderContractPairReview(p,next,undefined,creditorPaymentReviewIssuer());
 assert.equal('remito' in result,false);assert.deepEqual(result,renderContractPairReview(p,next,undefined,creditorPaymentReviewIssuer()));assert.deepEqual(p,before);
@@ -35,4 +36,4 @@ const pdfs=Object.fromEntries(([['MANDATE','mandate','mandato-propuesto.pdf'],['
  const artifact=result[key],bytes=Buffer.from(artifact.base64,'base64');assert.equal(createHash('sha256').update(bytes).digest('hex'),artifact.sha256);writeFileSync(folder+'/'+path,bytes);return [kind,{path,sha256:artifact.sha256,pages:artifact.pages}];
 }));
 writeFileSync(folder+'/manifest.json',JSON.stringify({status:'PROPOSED_NOT_APPROVED',professionalValidation:null,installable:false,proposal:creditorPaymentProposal,issuer:creditorPaymentReviewIssuer(),sourceDocuments:source.sourceDocuments,templates:next,projection:p,pdfs,productionWrites:0},null,2)+'\n');
-console.log('PASS: original hashes, two exact amendments, creditor address, separate note jurisdiction, zero penalties, no two-installment note restriction, immutable historical PDFs, no internal remito, conformity gate, deterministic PDFs, unchanged economics/schedule, empty final catalog');
+console.log('PASS: original hashes, two exact amendments, creditor address, separate note jurisdiction, zero penalties, no two-installment note restriction, immutable historical PDFs, no internal remito, conformity gate, deterministic PDFs, unchanged economics/schedule, only exact owner final package installed; archived V4 proposal excluded');

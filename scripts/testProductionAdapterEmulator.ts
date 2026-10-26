@@ -1,3 +1,4 @@
+import {approvedFinalPackages} from '../src/lib/productionV2/catalog';
 import './helpers/requireSafeEmulatorEnvironment';
 import assert from 'node:assert/strict';
 import { mock } from 'node:test';
@@ -30,7 +31,7 @@ export async function test() {
     assert.equal(process.env.GCLOUD_PROJECT, 'demo-cuenta-hogar');
     assert.equal(process.env.FIREBASE_STORAGE_EMULATOR_HOST, '127.0.0.1:9199');
     assert.equal((await db.collection('contractSnapshotsV2').get()).size, 0, 'Fresh emulator');
-    const actor = (await admin.auth().createUser({ email: process.env.NEXT_PUBLIC_ADMIN_EMAIL, emailVerified: true, password: 'Emulator-only-123' })).uid, basePackage = process.env.SYNTHETIC_ORIGINALS_SUITE === '1' ? syntheticOriginalPackage() : syntheticFinalPackage(), p = external ? (()=>{const {sha256: old,...b}=basePackage;void old;const next={...b,deliveryDocumentPolicy:'EXTERNAL_TRANSFER_AND_RECEIPT_V1' as const};return {...next,sha256:packageHash(next)};})() : basePackage, runtime = productionRuntimeForEmulator(db, admin.auth(), [p], [actor]), bucket = await getBudgetDocumentationBucket();
+    const actor = (await admin.auth().createUser({ email: process.env.NEXT_PUBLIC_ADMIN_EMAIL, emailVerified: true, password: 'Emulator-only-123' })).uid, basePackage = process.env.SYNTHETIC_INSTALLED_OWNER_PACKAGE_SUITE === '1' ? structuredClone(approvedFinalPackages[0]) : process.env.SYNTHETIC_ORIGINALS_SUITE === '1' ? syntheticOriginalPackage() : syntheticFinalPackage(), p = external ? (()=>{const {sha256: old,...b}=basePackage;void old;const next={...b,deliveryDocumentPolicy:'EXTERNAL_TRANSFER_AND_RECEIPT_V1' as const};return {...next,sha256:packageHash(next)};})() : basePackage, runtime = productionRuntimeForEmulator(db, admin.auth(), [p], [actor]), bucket = await getBudgetDocumentationBucket();
     assert.throws(() => productionRuntime(db, admin.auth()), /PRODUCTION_RUNTIME_INVALID/);
     assert.throws(() => runtimeData({} as never), /SERVER_PRODUCTION_CONTEXT_REQUIRED/);
     const original = process.env.GCLOUD_PROJECT;

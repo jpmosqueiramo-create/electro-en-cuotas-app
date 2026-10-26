@@ -1,0 +1,113 @@
+{
+  "suite": "PRODUCTION_ADAPTER_ON_EMULATOR",
+  "results": {
+    "OPAQUE_CONTEXT_AND_NO_PRODUCTIVE_TEST_OVERRIDE": "PASS",
+    "EXACT_PACKAGE_APPROVAL_IDEMPOTENCY": "PASS",
+    "OWNER_ONLY_APPROVAL_NO_PROFESSIONAL_REPLAY_NEXT_DAY_CONCURRENT_ROLE_TAMPER_AND_NO_UPGRADE": "PASS",
+    "ARCHIVED_PACKAGE_READS_PRESERVE_HASHES_AND_NEW_ISSUANCE_REJECTS_OLD_RENDERER": "PASS",
+    "PACKAGE_REVOCATION_BLOCKS_WRITES_PRESERVES_IMMUTABLE_READ": "PASS",
+    "ROLE_EMAIL_AND_CURRENT_CONFORMITY_REQUIRED": "PASS",
+    "ATOMIC_FREEZE_NUMBERING_CONCURRENT_REPLAY": "PASS",
+    "PERSISTED_ECONOMICS_12_INSTALLMENTS_NO_ADDITIONAL_VAT": "PASS",
+    "ALTERED_SNAPSHOT_AND_SECOND_FREEZE_REJECTED": "PASS",
+    "INTERRUPTED_ISSUANCE_RETAINS_RESERVATION_WITHOUT_PARTIAL_MANIFEST": "PASS",
+    "P1_EXPIRY_REQUIRES_EXPLICIT_HASH_BOUND_RECOVERY_ADMIN_AND_CONCURRENT_IDEMPOTENCY": "PASS",
+    "P1_RECOVERY_REVOCATION_AND_EXPIRY_FAIL_CLOSED": "PASS",
+    "P1_RECOVERED_CONCURRENT_SINGLE_NOTE_REPLAY_IMMUTABLE_DATES_HASHES_AND_NUMBER": "PASS",
+    "TWO_PRIVATE_DOCUMENTS_INTERNAL_REMITO_DISABLED": "PASS",
+    "EXTERNAL_DOCUMENT_CONTEXT_ROLE_AND_SIGNED_RECEIPT_REQUIRED": "PASS",
+    "TWO_SIGNATURES_EXTERNAL_RECEIPT_ORIGINALS_REQUIRED": "PASS",
+    "POST_DELIVERY_ORIGINALS_TRANSFER_READABLE_CONFIRMABLE_WITH_FINANCE_GATED": "PASS",
+    "UNIQUE_FINANCIAL_ACTIVATION": "PASS",
+    "INVITATION_HTTP_BOUNDARY_EXPLICIT_UID_VERIFIED_AUTH_AND_DELIVERY": "PASS",
+    "RECOVERY_HTTP_ADMIN_ONLY_STRICT_IDS_AND_HISTORY_QUERY_VALIDATION": "PASS",
+    "INVITATION_HTTP_AUTH_CONCURRENT_REPLAY_AND_NO_SECOND_ACTIVATION": "PASS",
+    "EXPLICIT_CLIENT_UID_INVITATION_AFTER_DELIVERY": "PASS",
+    "ONE_PAYMENT_SAME_BALANCE_THREE_ROLES": "PASS",
+    "PRIVATE_RECEIPTS_AND_DISABLED_ACCOUNT_DENIED": "PASS",
+    "CROSS_ROLE_AND_CROSS_ACCOUNT_DENIED": "PASS",
+    "AUDITED_REVERSAL_RESTORES_ORIGINAL_BALANCE": "PASS",
+    "PARTIAL_PAYMENTS_FIFO_AND_EXACT_REVERSALS": "PASS",
+    "CLIENT_REVOCATION_RECHECKED": "PASS",
+    "REVOKED_WRITE_AUTHORIZATION_PRESERVES_READ_HISTORY": "PASS",
+    "NO_LAB_MIGRATION_OR_ACCEPTANCE_REWRITE": "PASS",
+    "BOUNDED_HISTORY_ALL_APPROVALS_AND_AUTHORIZATIONS_ACCESSIBLE_NO_DUPLICATES": "PASS",
+    "REPLACED_DOCUMENT_GENERATION_BLOCKED": "PASS"
+  },
+  "productionWrites": 0,
+  "operationId": "op_1d01bc83b96f68e37fb16072735637cb84559543cdb6d2c520e57194fd417d89",
+  "snapshotHash": "49cc747c5bac3464e10da1bfee475d0ccbf28d0024d43a637fd83f43777757ae",
+  "manifestHash": "938d90087e2475f61ded49ec78577a0c7fe1715557d9316709f7face3c0f3f36",
+  "economics": {
+    "capitalAmount": 580000,
+    "contractPlanCuotas": 12,
+    "factorSnapshot": 3,
+    "factorComputedTotal": 1740000,
+    "roundingAdjustment": 0,
+    "serviceAmount": 1160000,
+    "contractInstallmentAmount": 145000,
+    "contractTotal": 1740000
+  },
+  "schedule": [
+    {
+      "installmentNumber": 1,
+      "dueDate": "2026-12-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 2,
+      "dueDate": "2027-01-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 3,
+      "dueDate": "2027-02-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 4,
+      "dueDate": "2027-03-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 5,
+      "dueDate": "2027-04-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 6,
+      "dueDate": "2027-05-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 7,
+      "dueDate": "2027-06-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 8,
+      "dueDate": "2027-07-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 9,
+      "dueDate": "2027-08-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 10,
+      "dueDate": "2027-09-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 11,
+      "dueDate": "2027-10-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 12,
+      "dueDate": "2027-11-05",
+      "amount": 145000
+    }
+  ]
+}
