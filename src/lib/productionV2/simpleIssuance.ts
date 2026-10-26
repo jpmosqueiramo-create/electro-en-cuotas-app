@@ -1,3 +1,6 @@
+import {validateContractCommercial} from '../contractCommercialPreparation';
+import {argentinaBusinessDate} from './businessDate';
+import {OWNER_FINAL_PACKAGE_ID} from './ownerFinalDocuments';
 /** Server-only orchestration of existing engines; no parallel numbering or debt. */
 import type {Bucket} from '@google-cloud/storage';
 import {exact,opaque,type ContractDraftV2} from '../contractV2';
@@ -49,4 +52,18 @@ export async function issuePreparedOperation(runtime:ProductionRuntime,bucket:Bu
  const result={contractNumber:receipt.contractNumber,snapshotHash:receipt.snapshotHash,snapshotId:receipt.snapshotId,manifestHash:documents.manifestHash};
  const replay=await db.runTransaction(async tx=>{const saved=await tx.get(ref);if(saved.data()?.digest!==digest)throw Error('PRODUCTION_COMMAND_CONFLICT');if(saved.data()?.result&&contractValueHash(saved.data()!.result)!==contractValueHash(result))throw Error('SIMPLE_ISSUANCE_RESULT_CONFLICT');if(saved.data()?.result)return true;tx.update(ref,{status:'COMPLETED',result,completedAt:new Date().toISOString()});return false;});
  return {...result,replay};
+}
+
+/** The explicit Emit button is the owner confirmation; no technical version or extra checkbox. */
+export async function issueContractEditor(runtime:ProductionRuntime,bucket:Bucket,id:string,v:number,input:unknown,actor:string){
+ const {db,packages,test}=await requireProductionActor(runtime,actor),c=exact(input,['commandId','expectedRevision','confirmed']);
+ if(c.confirmed!==true)throw Error('EXPLICIT_ISSUANCE_CONFIRMATION_REQUIRED');
+ const candidates=packages.filter(p=>{try{assertFinalRenderer(p);return true;}catch{return false;}});
+ const p=candidates.find(p=>p.id===OWNER_FINAL_PACKAGE_ID)??(test&&candidates.length===1?candidates[0]:undefined);
+ if(!p)throw Error('APPROVED_FINAL_PACKAGE_NOT_INSTALLED');
+ const cid=opaque(c.commandId),[ds,consent,prior]=await Promise.all([contractRefs(db,id,v).draft.get(),contractRefs(db,id,v).draft.collection('conformity').doc('current').get(),productionRef(db,id,v).collection('simpleIssuanceCommands').doc(cid).get()]);
+ const d=ds.data() as ContractDraftV2;if(!d?.economicTerms||!d.commercialPreparation)throw Error('CONTRACT_EDITOR_SAVE_REQUIRED');
+ const x=validateContractCommercial(d.commercialPreparation,d.economicTerms),date=argentinaBusinessDate();
+ const formal=prior.exists?prior.data()!.formal:{contractIssueDate:date,contractIssuePlace:x.issuePlace,promissoryNoteIssueDate:date,promissoryNoteIssuePlace:x.issuePlace,...(p.originalsPolicy?{originalNetManagementLogistics:(x.capitalCents+x.serviceGrossCents)/100,originalCft:x.financeGrossCents/100,originalAllocationConformity:consent.data()?.evidence??'',dispatchOrigin:'NO APLICA: DOCUMENTACION EXTERNA',productSerial:'NO APLICA: DOCUMENTACION EXTERNA'}:{})};
+ return issuePreparedOperation(runtime,bucket,id,v,{...c,packageId:p.id,packageHash:p.sha256,formal},actor);
 }

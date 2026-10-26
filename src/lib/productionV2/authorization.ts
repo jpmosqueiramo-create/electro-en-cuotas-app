@@ -1,3 +1,4 @@
+import {validateContractCommercial} from '../contractCommercialPreparation';
 import { originalFormalFields, originalFormalParameters, usesClientPaymentAddress } from './originalBindings';
 import { assertPaymentAddressConformity, contractPaymentAddress } from '../contractPaymentAddress';
 import type { ContractDraftV2 } from '../contractV2';
@@ -99,8 +100,10 @@ export function legalContext(p: FinalPackage, approvalId: string, formal: unknow
     calendarDate(f.promissoryNoteIssueDate);
     const originalParams = originalFormalParameters(p, Object.fromEntries(originalFormalFields.map(k=>[k,f[k]])), draft.economicTerms!.contractTotal, draft.paymentScheduleDraft);
     if (usesClientPaymentAddress(p.templates.PAGARE)) originalParams.notePaymentAddressHash = contractPaymentAddress(draft.personalData).hash;
+    const commercial=draft.commercialPreparation?validateContractCommercial(draft.commercialPreparation,draft.economicTerms!):undefined;
+    if(commercial&&p.originalsPolicy&&(Number(f.originalNetManagementLogistics)!==(commercial.capitalCents+commercial.serviceGrossCents)/100||Number(f.originalCft)!==commercial.financeGrossCents/100))throw Error('CONTRACT_COMMERCIAL_INTEGRITY');
     const def = (kind: 'MANDATE' | 'PAGARE') => ({ templateId: p.templates[kind].id, templateVersion: p.templates[kind].version, templateHash: p.templates[kind].sha256, rendererBundleId: p.id, rendererBundleHash: p.rendererHash, resourcesManifestHash: p.resourcesHash, legalApprovalId: approvalId });
-    const value = { issuer: p.issuer, documentContext: { policyVersion: 'PRODUCTION_FORMAL_CONTEXT_V1', contractIssueDate: String(f.contractIssueDate), contractIssuePlace: text(f.contractIssuePlace), promissoryNoteIssueDate: String(f.promissoryNoteIssueDate), promissoryNoteIssuePlace: text(f.promissoryNoteIssuePlace), parameterSchemaId: p.id, parameters: { ...originalParams, jurisdiction: p.jurisdiction, issuanceDatePolicy: ISSUE_DATE_POLICY, issuanceTimeZone: ISSUE_DATE_TIME_ZONE } }, documentDefinitions: { contract: def('MANDATE'), promissoryNote: def('PAGARE') } };
+    const value = { issuer: p.issuer, documentContext: { policyVersion: 'PRODUCTION_FORMAL_CONTEXT_V1', contractIssueDate: String(f.contractIssueDate), contractIssuePlace: text(f.contractIssuePlace), promissoryNoteIssueDate: String(f.promissoryNoteIssueDate), promissoryNoteIssuePlace: text(f.promissoryNoteIssuePlace), parameterSchemaId: p.id, parameters: { ...originalParams, ...(commercial?{commercialPreparationJson:JSON.stringify(commercial)}:{}), jurisdiction: p.jurisdiction, issuanceDatePolicy: ISSUE_DATE_POLICY, issuanceTimeZone: ISSUE_DATE_TIME_ZONE } }, documentDefinitions: { contract: def('MANDATE'), promissoryNote: def('PAGARE') } };
     validateContractLegalContext(value);
     return value;
 }

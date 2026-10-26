@@ -1,3 +1,4 @@
+import type {ContractCommercialPreparation} from './contractCommercialPreparation';
 import { PERSONAL_ADDRESS_VERSION, validProvince, postalCodePattern } from './contractAddress';
 import { calcularPlanReferenciaCatalogo } from './catalogReference';
 import type { BudgetReferenceSnapshotV2 } from './budgetReferenceV2';
@@ -83,6 +84,7 @@ export interface ContractDraftV2 {
   schemaVersion:'CONTRACT_DRAFT_V2'; contractDraftId:string;budgetId:string;budgetVersion:number;acceptedOptionId:string;revision:number;status:'DRAFT'|'READY_TO_FORMALIZE';readyEvidenceId?:string|null;
   acceptedReferenceSnapshot:Omit<BudgetReferenceSnapshotV2,'imagenUrls'>; acceptedAt:string;preferredPlanCuotas:number|null;
   productDetails?:ContractProductDetailsV2;
+  commercialPreparation?:ContractCommercialPreparation;
   personalDataVersion?:PersonalDataVersion;personalData:ContractPersonalDataV2;employmentData:ContractEmploymentDataV2;economicTerms:ContractEconomicTermsV2|null;
   firstInstallmentDueDate:string|null;preferredMonthlyDueDay:number|null;paymentScheduleDraft:ContractPaymentScheduleV2;
   activeClientDataRequestId:string|null;lastClientSubmissionId:string|null;lastClientSubmissionAppliedAt:string|null;lastClientSubmissionAppliedBy:string|null;
