@@ -7,7 +7,7 @@ import { admin } from '../src/lib/firebaseAdmin';
 import { productionReadyFixture, syntheticFinalPackage, syntheticOriginalPackage, syntheticOriginalFormal } from './helpers/productionAdapterFixtures';
 import { productionRuntimeForEmulator } from '../src/lib/productionV2/runtime';
 import { freezeOperation, productionPaths } from '../src/lib/productionV2/freeze';
-import { authorizeOperation, scopes } from '../src/lib/productionV2/authorization';
+import { authorizeOperation, scopes, packageApprovalRef } from '../src/lib/productionV2/authorization';
 import { issueDocuments } from '../src/lib/productionV2/documents';
 import { getBudgetDocumentationBucket } from '../src/lib/budgetDocumentationStorage';
 import { randomUUID } from 'node:crypto';
@@ -56,13 +56,22 @@ async function run() {
         await login(email);
         await browser.navigate(operation + '?section=contract');
         await browser.until(`${prod}?.textContent.includes('PRUEBA LOCAL')`, 'isolated adapter UI');
+        await detail('Autorizaciones y preparación para emisión');
         await capture('authorization-pending-desktop', 'production-operation');
-        await detail('Registro jurídico del paquete final');
+        await detail('Aprobación del paquete por el titular');
         await select('[data-testid=production-operation] select[name=package]', p.id);
-        for (const [name, value] of Object.entries({ date: argentinaBusinessDate(), professional: 'Profesional ficticio de prueba', reference: 'SYNTHETIC_APPROVAL_ONLY', source: 'Fixture sintético, no documento jurídico real' }))
-            await browser.change(`[data-testid=production-operation] input[name=${name}]`, value);
-        await browser.click('[data-testid=production-operation] input[name=confirmed]');
-        await browser.clickText('Registrar aprobación identificada', prod);
+        for (const [name, value] of Object.entries({ reason: 'Aprobación del titular SINTÉTICA, sin efectos reales' }))
+            await browser.change(`[data-testid=owner-package-approval] input[name=${name}]`, value);
+        await browser.click('[data-testid=owner-package-approval] input[name=confirmed]');
+        assert.equal(await browser.evaluate("document.querySelector('[data-testid=owner-package-approval] input[name=professional]')"),null,'No professional requested');
+        await browser.change('[data-testid=owner-package-approval] input[name=reason]','Aprobación SINTÉTICA actualizada');
+        assert.equal(await browser.evaluate("document.querySelector('[data-testid=owner-package-approval] input[name=confirmed]').checked"),false,'Editing invalidates owner confirmation');
+        await browser.click('[data-testid=owner-package-approval] input[name=confirmed]');
+        await capture('owner-approval-desktop','owner-package-approval');
+        await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+        await capture('owner-approval-mobile','owner-package-approval');
+        await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
+        await browser.evaluate("(()=>{const button=document.querySelector('[data-testid=owner-package-approval] button');button.click();button.click();return true})()");
         await browser.until(`${prod}?.querySelector('select[name=approval]')?.options.length===2`, 'approval saved by HTTP');
         const approved = (await productionOverview(runtime, f.id, 1, actor)).approvals[0];
         assert(approved);
@@ -88,6 +97,13 @@ async function run() {
         await capture('issued-documents-desktop', 'production-operation');
         await browser.command('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
         await capture('issued-documents-mobile', 'production-operation');
+        if(process.env.SYNTHETIC_OWNER_APPROVAL_FOCUS==='1'){
+            const approvals=await packageApprovalRef(db,'probe').parent.get();assert.equal(approvals.size,1);assert.equal(approvals.docs[0].data().status,'OWNER_AUTHORIZED');assert.equal('professional' in approvals.docs[0].data(),false);
+            assert.deepEqual(browser.externalFirebase,[]);
+            writeFileSync(out+'/owner-approval-results.json',JSON.stringify({result:'PASS',project:'demo-cuenta-hogar',widths:[1280,390],cases:['real Next UI and route handlers','owner approval without professional fields','exact package recorded','operation authorization','unique CH freeze','mandate and note issued','desktop/mobile'],productionWrites:0},null,2));
+            console.log('OWNER_APPROVAL_ISSUANCE_BROWSER = PASS');return;
+        }
+
         await browser.clickText('Proveedor y logística');
         await browser.until(`${delivery}?.textContent.includes('Documentos emitidos para esta operación')`, 'delivery UI');
         await action('PREPARE_DELIVERY', { 'UID responsable': f.uid, 'Rol físico': 'AFFILIATE', 'Registro de vendedor afiliado (sólo si corresponde)': f.affiliateId });
