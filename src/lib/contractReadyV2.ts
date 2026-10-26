@@ -1,3 +1,4 @@
+import {validateContractCommercial} from './contractCommercialPreparation';
 // Server-only technical review. No numbering, freezing or legal approval.
 import type { BudgetV2 } from './budgetV2';
 import type { BudgetAcceptanceV2 } from './budgetAcceptanceV2';
@@ -20,7 +21,7 @@ export function reviewedTerms(d: ContractDraftV2) {
     acceptedReferenceSnapshot:d.acceptedReferenceSnapshot,acceptedAt:d.acceptedAt,preferredPlanCuotas:d.preferredPlanCuotas,
     personalDataVersion:d.personalDataVersion ?? 'LEGACY_SIX',personalData:d.personalData,employmentData:d.employmentData,
     economicTerms:d.economicTerms,firstInstallmentDueDate:d.firstInstallmentDueDate,preferredMonthlyDueDay:d.preferredMonthlyDueDay,
-    paymentScheduleDraft:d.paymentScheduleDraft,preparedAt:d.preparedAt,...(d.productDetails===undefined?{}:{productDetails:d.productDetails}),
+    paymentScheduleDraft:d.paymentScheduleDraft,preparedAt:d.preparedAt,...(d.commercialPreparation===undefined?{}:{commercialPreparation:d.commercialPreparation}),...(d.productDetails===undefined?{}:{productDetails:d.productDetails}),
   };
 }
 export function validateReadySource(budget: BudgetV2, acceptance: BudgetAcceptanceV2, draft: ContractDraftV2): void {
@@ -34,8 +35,9 @@ export function validateReadySource(budget: BudgetV2, acceptance: BudgetAcceptan
     if (!draft.firstInstallmentDueDate || !draft.preferredMonthlyDueDay) reject('Completá primera fecha y día mensual.');
     same(contractSchedule(draft.economicTerms,draft.firstInstallmentDueDate,draft.preferredMonthlyDueDay),draft.paymentScheduleDraft,'El cronograma no coincide con las condiciones revisadas.');
     if (draft.paymentScheduleDraft.reduce((sum,row)=>sum+row.amount,0)!==draft.economicTerms.contractTotal) reject('La suma del cronograma no coincide con el total.');
+    if(draft.commercialPreparation)validateContractCommercial(draft.commercialPreparation,draft.economicTerms);
     // Existing exact schema and accepted-origin validator, without changing its Emulator policy.
-    const { readyEvidenceId: _review, productDetails: product, ...source } = draft; void _review;
+    const { readyEvidenceId: _review, productDetails: product, commercialPreparation: _commercial, ...source } = draft; void _review;void _commercial;
     // The historical source validator covers the immutable origin and economic/calendar fields.
     // Product details are reviewed separately and included in this revision's evidence above.
     if(product!==undefined)same(productDetails(product),product,'Revisá los datos del producto.');

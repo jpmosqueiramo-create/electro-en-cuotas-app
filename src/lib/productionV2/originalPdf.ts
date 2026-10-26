@@ -1,3 +1,4 @@
+import {snapshotCommercial,contractServiceInstallmentParts} from '../contractCommercialPreparation';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { createHash } from 'node:crypto';
@@ -69,10 +70,20 @@ function render(t: FinalTemplate, kind: FinalDocumentKind, d: Data, mode: 'REVIE
         else if(b.type==='productTable')table(['Cantidad','Descripción del Bien (Marca, Modelo, Color)','Estado (Nuevo/Usado)'],[[value(d.product.quantity),value(productDescription),d.product.condition==='NEW'?'NUEVO':d.product.condition==='USED'?'USADO':value(null)]]);
         else if(b.type==='originalEconomy'){
             table(['Concepto original','Importe'],[['Valor Neto del Bien + Gastos de Gestión y Logística',money(d.parameters.originalNetManagementLogistics)],['Costo Financiero Total (CFT)',money(d.parameters.originalCft)],['VALOR TOTAL A FINANCIAR',money(e?.total)]]);
-            line(`Importes guardados: Capital aplicado ${money(e?.capital)} · Servicios brutos con IVA incluido ${money(e?.service)} · Total contractual ${money(e?.total)}.`,false,9);
+            if(e&&d.parameters.commercialPreparationJson){
+              const x=snapshotCommercial(d.parameters as Record<string,string|number|boolean|null>,{capitalAmount:e.capital,serviceAmount:e.service,contractTotal:e.total} as import('../contractV2').ContractEconomicTermsV2)!;
+              table(['Desglose de importes incluidos','Importe'],[['Capital aplicado al producto',money(x.capitalCents/100)],['Servicios y logística: neto',money(x.serviceNetCents/100)],['IVA incluido en servicios (21%)',money(x.serviceVatCents/100)],['Financiación: intereses netos',money(x.financeNetCents/100)],['IVA incluido en financiación (21%)',money(x.financeVatCents/100)],['Total contractual y pagaré',money(x.totalCents/100)]]);
+              line('Distribución del excedente sobre el capital: 40% servicios y logística; 60% financiación. Estos porcentajes no son tasas anuales. Servicios y traslados para asistencia técnica previstos durante 12 meses. Los impuestos están incluidos en el total y no incrementan las cuotas.',false,9);
+            }
+
+            line(`Importes guardados: Capital aplicado ${money(e?.capital)} · ${d.parameters.commercialPreparationJson?"Servicios y financiación con IVA incluido":"Servicios brutos con IVA incluido"} ${money(e?.service)} · Total contractual ${money(e?.total)}.`,false,9);
         } else if(b.type==='originalSchedule'){
             table(['Anticipo / Cuota N°','Monto ($)','Fecha de Vencimiento'],[['Anticipo (si lo hubiere)','No previsto en el plan guardado','No corresponde'],['Cuota 1',money(d.schedule[0]?.amount),value(d.schedule[0]?.dueDate)],[`Cuota 2 a ${value(e?.count)}`,money(e?.installment),'Del 1 al 10 de cada mes.']]);
-            if(d.schedule.length)table(['Cuota','Importe guardado','Vencimiento guardado'],d.schedule.map(r=>[String(r.installmentNumber),money(r.amount),r.dueDate]));
+            if(d.schedule.length){
+              const x=e?snapshotCommercial(d.parameters as Record<string,string|number|boolean|null>,{capitalAmount:e.capital,serviceAmount:e.service,contractTotal:e.total} as import('../contractV2').ContractEconomicTermsV2):undefined;
+              const parts=x?contractServiceInstallmentParts(x,d.schedule):undefined;
+              table(['Cuota','Importe guardado','Vencimiento guardado',...(parts?['Servicio incluido en cuota']:[])],d.schedule.map((r,index)=>[String(r.installmentNumber),money(r.amount),r.dueDate,...(parts?[money(parts[index]/100)]:[])]));
+            }
             else line('Cronograma: '+pending);
             if(mode==='REVIEW'&&d.schedule.slice(1).some(r=>Number(r.dueDate.slice(8,10))>10))line('PENDIENTE: el cronograma guardado difiere del rango 1 al 10 del original. La emisión con esta versión permanece bloqueada.',true,9);
         } else if(b.type==='mandateSignatures')signatures(['Firma y aclaración MANDANTE',`Firma por ${d.issuer.legalName}`]);

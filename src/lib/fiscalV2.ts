@@ -1,3 +1,4 @@
+import {includedVatAmounts} from './includedVat';
 import { createHash } from 'node:crypto';
 import { stable } from './contractV2';
 export const fiscalOwnerDeclaration={issuer:'LOOP GESTIÓN INTEGRAL S.R.L.',taxId:'30-71962686-2',vatStatus:'RESPONSABLE_INSCRIPTO',source:'OWNER_CONFIRMED',arcaRegistrationVerified:false,treatmentConfirmed:false} as const;
@@ -21,10 +22,8 @@ export function fiscalProjection(r:FiscalRequest) {
   if(c.treatment!=='TAXED'&&c.rateBps!==0||r.documentClass==='C'&&c.treatment==='TAXED')fail('FISCAL_TREATMENT_INCONSISTENT');
   if(c.basis==='GROSS_INCLUDED'){
    if(l.baseCents!==undefined||l.grossCents===undefined)fail('FISCAL_BASIS_MISMATCH');
-   const grossCents=cents(l.grossCents),denominator=BigInt(10000+c.rateBps);
-   // Round the net to cents, then retain the exact gross by taking the remainder as VAT.
-   const baseCents=cents(Number((BigInt(grossCents)*BigInt(10000)+denominator/BigInt(2))/denominator));
-   return {concept:l.concept,baseCents,taxCents:grossCents-baseCents,totalCents:grossCents,policyReference:c.reference,treatment:c.treatment,rateBps:c.rateBps,basis:c.basis};
+   const amounts=includedVatAmounts(cents(l.grossCents),c.rateBps);
+   return {concept:l.concept,...amounts,policyReference:c.reference,treatment:c.treatment,rateBps:c.rateBps,basis:c.basis};
   }
   if(l.grossCents!==undefined||l.baseCents===undefined||l.concept==='CONTRACT_SERVICES')fail('FISCAL_BASIS_MISMATCH');
   const baseCents=cents(l.baseCents),taxCents=cents(Number((BigInt(baseCents)*BigInt(c.rateBps)+BigInt(5000))/BigInt(10000)));

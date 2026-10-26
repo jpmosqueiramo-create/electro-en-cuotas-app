@@ -1,3 +1,4 @@
+import {prepareContractCommercial} from './contractCommercialPreparation';
 import {readAdministrativeStatus,assertAdministrativeRecordActive} from './adminRecordRemovalServer';
 import { readOperationIdentity } from './operationIdentityReviewServer';
 import { operationFromAcceptance, operationRef, verifyOperation, type OperationViewV2 } from './operationV2';
@@ -11,7 +12,7 @@ import { validateBudgetV2 } from './budgetV2';
 import { privateBudgetReferenceId } from './budgetV2Persistence';
 import type { BudgetAcceptanceV2 } from './budgetAcceptanceV2';
 import { productDetails,personalVersion,calendarDate,contractEconomics,contractSchedule,dataFields,dueDay,employmentFields,exact,newContractDraft,opaque,personalFields,reject,submissionPayload,type ClientDataSubmissionV2,type ContractClientDataRequestV2,type ContractDraftV2,stable } from './contractV2';
-export function clientTermsDigest(d:ContractDraftV2){return digest({economicTerms:d.economicTerms,firstInstallmentDueDate:d.firstInstallmentDueDate,preferredMonthlyDueDay:d.preferredMonthlyDueDay,paymentScheduleDraft:d.paymentScheduleDraft,...(d.productDetails===undefined?{}:{productDetails:d.productDetails})});}
+export function clientTermsDigest(d:ContractDraftV2){return digest({economicTerms:d.economicTerms,firstInstallmentDueDate:d.firstInstallmentDueDate,preferredMonthlyDueDay:d.preferredMonthlyDueDay,paymentScheduleDraft:d.paymentScheduleDraft,...(d.commercialPreparation===undefined?{}:{commercialPreparation:d.commercialPreparation}),...(d.productDetails===undefined?{}:{productDetails:d.productDetails})});}
 export function clientConformityIsCurrent(d:ContractDraftV2,c:PaymentAddressConformity & {confirmedDigest?:string|null}){return c.confirmedDigest===clientTermsDigest(d)&&recordedPaymentAddressIsCurrent(d.personalData,c);}
 function submissionBody(s:ClientDataSubmissionV2){return {personalData:s.personalData,employmentData:s.employmentData,...(s.preferredMonthlyDueDay===undefined?{}:{preferredMonthlyDueDay:s.preferredMonthlyDueDay})};}
 const digest=(o:unknown)=>createHash('sha256').update(stable(o)).digest('hex');
@@ -57,7 +58,7 @@ export async function getContract(db:Firestore,id:string,v:number){
     return {administrativeState,identityReview,draft,budget:bs.data() as BudgetV2,readiness,operation,clientConformity,requests:requests.docs.map(x=>{const {tokenHash:_hash,submissionDigest:_digest,...safe}=x.data();void _hash;void _digest;return safe;}),submissions:submissions.docs.map(x=>x.data() as ClientDataSubmissionV2)};
   });
 }
-const actionKeys:Record<string,string[]>={OPEN_OR_CREATE:[],RECORD_CLIENT_CONFORMITY:['evidence'],MARK_READY_TO_FORMALIZE:[],RETURN_TO_DRAFT:['reason'],UPDATE_PRODUCT_DETAILS:['productDetails'],UPDATE_PERSONAL_DATA:['personalData'],UPDATE_EMPLOYMENT_DATA:['employmentData'],SET_CONTRACT_PLAN:['contractPlanCuotas'],SET_PAYMENT_DATES:['firstInstallmentDueDate','preferredMonthlyDueDay'],CREATE_CLIENT_DATA_REQUEST:[],REVOKE_CLIENT_DATA_REQUEST:[],APPLY_CLIENT_SUBMISSION:['submissionId']};
+const actionKeys:Record<string,string[]>={SAVE_CONTRACT_EDITOR:['personalData','employmentData','productDetails','contractPlanCuotas','firstInstallmentDueDate','preferredMonthlyDueDay','issuePlace'],OPEN_OR_CREATE:[],RECORD_CLIENT_CONFORMITY:['evidence'],MARK_READY_TO_FORMALIZE:[],RETURN_TO_DRAFT:['reason'],UPDATE_PRODUCT_DETAILS:['productDetails'],UPDATE_PERSONAL_DATA:['personalData'],UPDATE_EMPLOYMENT_DATA:['employmentData'],SET_CONTRACT_PLAN:['contractPlanCuotas'],SET_PAYMENT_DATES:['firstInstallmentDueDate','preferredMonthlyDueDay'],CREATE_CLIENT_DATA_REQUEST:[],REVOKE_CLIENT_DATA_REQUEST:[],APPLY_CLIENT_SUBMISSION:['submissionId']};
 export async function contractCommand(db:Firestore,id:string,v:number,input:unknown,actor:string) {
   const raw=input as Record<string,unknown>,action=raw?.action;
   if(typeof action!=='string'||!Object.hasOwn(actionKeys,action))reject('NEW_PROPOSAL_REQUIRED: operación no permitida.');
@@ -127,9 +128,16 @@ export async function contractCommand(db:Firestore,id:string,v:number,input:unkn
       if(typeof o.reason!=='string'||!o.reason.trim()||o.reason.trim().length>300||/[<>\x00-\x1f\x7f]/.test(o.reason))reject('Indicá un motivo breve sin datos personales.');
       d={...d,status:'DRAFT',readyEvidenceId:null};
     }
+    if(action==='SAVE_CONTRACT_EDITOR'){
+      if(typeof o.contractPlanCuotas!=='number')reject();
+      const economicTerms=contractEconomics({...d.acceptedReferenceSnapshot,imagenUrls:[]},Number(o.contractPlanCuotas));
+      const firstInstallmentDueDate=calendarDate(o.firstInstallmentDueDate),preferredMonthlyDueDay=dueDay(o.preferredMonthlyDueDay);
+      d={...d,personalDataVersion:PERSONAL_ADDRESS_VERSION,personalData:dataFields(o.personalData,personalFields),employmentData:dataFields(o.employmentData,employmentFields),productDetails:productDetails(o.productDetails),economicTerms,firstInstallmentDueDate,preferredMonthlyDueDay,paymentScheduleDraft:contractSchedule(economicTerms,firstInstallmentDueDate,preferredMonthlyDueDay),commercialPreparation:prepareContractCommercial(economicTerms,o.issuePlace as string)};
+    }
     if(action==='UPDATE_PRODUCT_DETAILS')d={...d,productDetails:productDetails(o.productDetails)};
     if(action==='UPDATE_PERSONAL_DATA')d={...d,personalDataVersion:PERSONAL_ADDRESS_VERSION,personalData:dataFields(o.personalData,personalFields)};
     if(action==='UPDATE_EMPLOYMENT_DATA')d={...d,employmentData:dataFields(o.employmentData,employmentFields)};
+    if(action==='SET_CONTRACT_PLAN'&&d.commercialPreparation){const {commercialPreparation:_old,...rest}=d;void _old;d=rest;}
     if(action==='SET_CONTRACT_PLAN') {
       if(typeof o.contractPlanCuotas!=='number')reject();
       d={...d,economicTerms:contractEconomics({...d.acceptedReferenceSnapshot,imagenUrls:[]},o.contractPlanCuotas)};

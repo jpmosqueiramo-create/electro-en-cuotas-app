@@ -1,0 +1,87 @@
+{
+  "economics": {
+    "capitalAmount": 580000,
+    "contractPlanCuotas": 12,
+    "factorSnapshot": 3,
+    "factorComputedTotal": 1740000,
+    "roundingAdjustment": 0,
+    "serviceAmount": 1160000,
+    "contractInstallmentAmount": 145000,
+    "contractTotal": 1740000
+  },
+  "schedule": [
+    {
+      "installmentNumber": 1,
+      "dueDate": "2026-12-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 2,
+      "dueDate": "2027-01-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 3,
+      "dueDate": "2027-02-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 4,
+      "dueDate": "2027-03-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 5,
+      "dueDate": "2027-04-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 6,
+      "dueDate": "2027-05-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 7,
+      "dueDate": "2027-06-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 8,
+      "dueDate": "2027-07-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 9,
+      "dueDate": "2027-08-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 10,
+      "dueDate": "2027-09-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 11,
+      "dueDate": "2027-10-05",
+      "amount": 145000
+    },
+    {
+      "installmentNumber": 12,
+      "dueDate": "2027-11-05",
+      "amount": 145000
+    }
+  ],
+  "parameters": {
+    "originalNetManagementLogistics": 1044000,
+    "originalCft": 696000,
+    "originalAllocationConformity": "Conformidad sintética sobre desglose, datos y cuotas; sin efecto real",
+    "dispatchOrigin": "NO APLICA: DOCUMENTACION EXTERNA",
+    "productSerial": "NO APLICA: DOCUMENTACION EXTERNA",
+    "commercialPreparationJson": "{\"schemaVersion\":\"CONTRACT_COMMERCIAL_PREPARATION_V1\",\"policy\":{\"version\":\"OWNER_SERVICE40_FINANCE60_INCLUDED_VAT21_V1\",\"servicePeriodMonths\":12,\"serviceShareBps\":4000,\"serviceVatRateBps\":2100,\"financeVatRateBps\":2100},\"issuePlace\":\"Ciudad sintética\",\"capitalCents\":58000000,\"serviceGrossCents\":46400000,\"serviceNetCents\":38347107,\"serviceVatCents\":8052893,\"financeGrossCents\":69600000,\"financeNetCents\":57520661,\"financeVatCents\":12079339,\"totalCents\":174000000}",
+    "jurisdiction": "Tribunales del domicilio validado del cliente; campos del original proporcionado por el titular",
+    "issuanceDatePolicy": "AR_LOCAL_ISSUE_DATE_V1",
+    "issuanceTimeZone": "America/Argentina/Buenos_Aires"
+  },
+  "snapshotHash": "2992947c65431849ccf366c160ca66e670c19e3e977f6eb5dc610b241bc1e111",
+  "contractNumber": "CH-000002"
+}
