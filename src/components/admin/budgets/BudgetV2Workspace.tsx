@@ -12,6 +12,8 @@ import { uploadCatalogReferenceImage } from "@/lib/catalogReferenceImages";
 import { budgetClientLines, duplicateBudgetOption, referenceSnapshotToDraft, replaceBudgetOption, toClientBudgetV2, type BudgetV2 } from "@/lib/budgetV2";
 import { downloadBudgetPdfV2 } from "@/lib/budgetV2Pdf";
 
+import {AdminRecordRemoval} from '../AdminRecordRemoval';
+import type {AdminRecordStatus} from '@/lib/adminRecordRemoval';
 import { BudgetV2Deletion } from "./BudgetV2Deletion";
 import { BudgetAcceptanceDocumentation } from "./BudgetAcceptanceDocumentation";
 
@@ -21,6 +23,7 @@ const button="min-h-11 rounded-xl border border-border-color bg-surface px-4 py-
 const input="min-h-11 w-full min-w-0 rounded-xl border border-border-color bg-surface px-3 py-2";
 export function BudgetV2Workspace(){
   const {user}=useAuth();const params=useSearchParams();
+  const [administrativeStates,setAdministrativeStates]=useState<Record<string,AdminRecordStatus>>({}),[showRemoved,setShowRemoved]=useState(false);
   const [sources,setSources]=useState<Source[]>([]),[references,setReferences]=useState<Reference[]>([]),[budgets,setBudgets]=useState<BudgetV2[]>([]);
   const [budget,setBudget]=useState<BudgetV2|null>(null),[draft,setDraft]=useState<CatalogReferenceDraft|null>(null);
   const [optionId,setOptionId]=useState(""),[referenceId,setReferenceId]=useState<string|null>(null),[optionSource,setOptionSource]=useState<"EXISTING_REFERENCE"|"NEW_REFERENCE">("NEW_REFERENCE");
@@ -35,9 +38,9 @@ export function BudgetV2Workspace(){
     const response=await fetch("/api/admin/presupuestos-v2",{method:body?"POST":"GET",cache:"no-store",headers:{Authorization:`Bearer ${await user.getIdToken()}`,"Content-Type":"application/json"},...(body?{body}:{})});
     const data=await response.json();if(!response.ok)throw new Error(data.error??"No se pudo completar la operación.");return data;
   },[user]);
-  const refresh=useCallback(async()=>{const data=await request();setBudgets(data.budgets as BudgetV2[]);},[request]);
+  const refresh=useCallback(async()=>{const data=await request();setBudgets(data.budgets as BudgetV2[]);setAdministrativeStates(data.administrativeStates??{});},[request]);
   useEffect(()=>{
-    setSources([]);setReferences([]);setBudgets([]);setBudget(null);setDraft(null);setLoading(true);
+    setSources([]);setReferences([]);setBudgets([]);setAdministrativeStates({});setBudget(null);setDraft(null);setLoading(true);
     if(!user)return;let current=true;const abort=new AbortController();
     const report=(label:string)=>{if(current)setError(previous=>previous?previous+' '+label:label);};setError('');
     async function loadSources(){
@@ -63,7 +66,7 @@ export function BudgetV2Workspace(){
     void Promise.allSettled([
       loadSources().catch(()=>report('No se pudieron consultar las solicitudes.')),
       loadReferences().catch(()=>report('No se pudieron consultar las referencias del catálogo.')),
-      request().then(data=>{if(current)setBudgets(data.budgets);}).catch(()=>report('No se pudo consultar el historial de presupuestos.')),
+      request().then(data=>{if(current){setBudgets(data.budgets);setAdministrativeStates(data.administrativeStates??{});}}).catch(()=>report('No se pudo consultar el historial de presupuestos.')),
     ]).finally(()=>{if(current)setLoading(false);});
     return()=>{current=false;abort.abort();};
   },[user,request]);
@@ -104,12 +107,12 @@ export function BudgetV2Workspace(){
     }catch(e){setError((e as Error).message);}finally{flight.current=false;setBusy(false);}
   }
   const emitted=budget?.estado==="EMITIDO";
-  const visible=budgets.filter(b=>(stateFilter==="TODOS"||b.estado===stateFilter)&&`${b.id} ${b.clienteSnapshot.nombre} ${b.clienteSnapshot.dni} ${b.options.map(o=>o.referenceSnapshot.nombre).join(" ")}`.toLocaleLowerCase().includes(q.toLocaleLowerCase()));
+  const visible=budgets.filter(b=>(showRemoved||!administrativeStates[b.id]||administrativeStates[b.id].state==='ACTIVE')&&(stateFilter==="TODOS"||b.estado===stateFilter)&&`${b.id} ${b.clienteSnapshot.nombre} ${b.clienteSnapshot.dni} ${b.options.map(o=>o.referenceSnapshot.nombre).join(" ")}`.toLocaleLowerCase().includes(q.toLocaleLowerCase()));
   return <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-7">
     {deleting&&<BudgetV2Deletion budget={deleting} onClose={()=>setDeleting(null)} onDeleted={async()=>{if(budget?.id===deleting.id){setBudget(null);setDraft(null);pending.current=null;}setDeleting(null);setMessage("Familia de presupuesto eliminada. La solicitud de origen se conservó.");await refresh();}}/>}
     <PageHeader title="Presupuestos" subtitle="Propuestas de gestión de compra · Opciones alternativas y cuotas estimadas" actions={<button data-new-budget-v2 className={button} disabled={busy||loading} onClick={()=>newBudget()}>Nuevo presupuesto V2</button>}/>
     {error&&<p role="alert" className="rounded-xl bg-red-50 p-4 text-red-800">{error}</p>}{message&&<p role="status" className="rounded-xl border border-border-color p-4">{message}</p>}
-    {budget&&<section data-testid="budget-v2-editor" className="min-w-0 space-y-4 rounded-2xl border border-border-color bg-surface p-4 sm:p-6">
+    {budget&&(!administrativeStates[budget.id]||administrativeStates[budget.id].state==='ACTIVE')&&<section data-testid="budget-v2-editor" className="min-w-0 space-y-4 rounded-2xl border border-border-color bg-surface p-4 sm:p-6">
       <div className="flex flex-wrap justify-between gap-3"><h2 className="font-heading text-xl font-bold">Presupuesto V2 · Versión {budget.version} · {budget.estado}</h2><div className="flex flex-wrap gap-3"><button data-testid="budget-editor-delete" className={button} disabled={busy||budget.revision===0} title={budget.revision===0?"Guardá el presupuesto antes de eliminarlo.":undefined} onClick={()=>setDeleting(budget)}>Eliminar presupuesto</button><button className={button} disabled={busy} onClick={()=>{setBudget(null);setDraft(null);}}>Cerrar presupuesto</button></div></div>
       <p className="break-all text-xs text-text-secondary">{budget.id}</p>
       <fieldset disabled={busy||emitted} className="grid min-w-0 gap-4 sm:grid-cols-2">
@@ -131,6 +134,8 @@ export function BudgetV2Workspace(){
       {emitted&&<BudgetAcceptanceDocumentation key={`${budget.id}:${budget.version}`} budget={budget}/>}
       {whatsapp&&emitted&&<div className="space-y-3"><pre data-testid="budget-whatsapp" className="whitespace-pre-wrap break-words rounded-xl bg-background-main p-4 text-sm">{whatsapp}</pre><a className={button} target="_blank" rel="noopener noreferrer" href={`https://wa.me/${budget.clienteSnapshot.whatsapp.replace(/\D/g,"")}?text=${encodeURIComponent(whatsapp)}`}>Abrir WhatsApp con esta propuesta</a></div>}
     </section>}
-    <section className="space-y-3"><h2 className="font-heading text-xl font-bold">Historial V2</h2><div className="grid gap-3 sm:grid-cols-2"><Field label="Buscar presupuesto V2"><input className={input} value={q} onChange={e=>setQ(e.target.value)}/></Field><Field label="Estado V2"><select className={input} value={stateFilter} onChange={e=>setStateFilter(e.target.value)}><option>TODOS</option><option>GENERADO</option><option>EMITIDO</option></select></Field></div>{visible.map(b=><article className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-border-color bg-surface p-4" key={`${b.id}:${b.version}`}><div><h3 className="font-semibold">{b.clienteSnapshot.nombre} · V2 · Versión {b.version}</h3><p>{b.estado} · {b.options.length} opciones alternativas</p></div><button className={button} disabled={busy} onClick={()=>{setBudget(structuredClone(b));setDraft(null);setPrivateIds([]);setWhatsapp("");setMessage("");setError("");pending.current=null;}}>Abrir versión {b.version}</button><button data-testid="budget-history-delete" className={button} disabled={busy} onClick={()=>setDeleting(b)}>Eliminar presupuesto</button></article>)}</section>
+    {budget&&administrativeStates[budget.id]&&administrativeStates[budget.id].state!=='ACTIVE'&&<section className="space-y-3 rounded-xl border p-4"><p>Este presupuesto está retirado de la bandeja. Sus registros originales se conservan.</p><AdminRecordRemoval subject={{kind:'BUDGET',id:budget.id}} removed onChanged={refresh}/></section>}
+    <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={showRemoved} onChange={e=>setShowRemoved(e.target.checked)}/>Mostrar eliminados y archivados</label>
+    <section className="space-y-3"><h2 className="font-heading text-xl font-bold">Historial V2</h2><div className="grid gap-3 sm:grid-cols-2"><Field label="Buscar presupuesto V2"><input className={input} value={q} onChange={e=>setQ(e.target.value)}/></Field><Field label="Estado V2"><select className={input} value={stateFilter} onChange={e=>setStateFilter(e.target.value)}><option>TODOS</option><option>GENERADO</option><option>EMITIDO</option></select></Field></div>{visible.map(b=><article className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-border-color bg-surface p-4" key={`${b.id}:${b.version}`}><div><h3 className="font-semibold">{b.clienteSnapshot.nombre} · V2 · Versión {b.version}</h3><p>{administrativeStates[b.id]?.state&&administrativeStates[b.id].state!=='ACTIVE'?'Retirado · ':''}{b.estado} · {b.options.length} opciones alternativas</p></div><button className={button} disabled={busy||!!administrativeStates[b.id]&&administrativeStates[b.id].state!=='ACTIVE'} onClick={()=>{setBudget(structuredClone(b));setDraft(null);setPrivateIds([]);setWhatsapp("");setMessage("");setError("");pending.current=null;}}>Abrir versión {b.version}</button>{administrativeStates[b.id]&&administrativeStates[b.id].state!=='ACTIVE'?<AdminRecordRemoval subject={{kind:'BUDGET',id:b.id}} removed onChanged={refresh}/>:<button data-testid="budget-history-delete" className={button} disabled={busy} onClick={()=>setDeleting(b)}>Eliminar presupuesto</button>}</article>)}</section>
   </div>;
 }

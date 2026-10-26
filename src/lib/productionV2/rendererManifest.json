@@ -1,11 +1,13 @@
 {
   "schemaVersion": "PRODUCTION_RENDERER_SOURCE_MANIFEST_V1",
   "sources": {
+    "src/lib/adminRecordRemoval.ts": "fd0a9e70f0739559076f3687fded8900963293c10ee506c9fc835aa341838e99",
+    "src/lib/adminRecordRemovalServer.ts": "6cd8a31ab55de8a965c172d0976ddbcb66764c259807f7a95ffa175ec205c0d7",
     "src/lib/brand.ts": "7694c48700da62c07cb08eac530de33696dfe5276f947e723a4e9ff6b42b6a42",
     "src/lib/budgetAcceptanceV2.ts": "c1e525375099e52bbcefbd956e652c01957ad8e419e9a2056a49a4cb319a863e",
     "src/lib/budgetReferenceV2.ts": "274ae26df819558d177b6c40314444194a4875c54fc699235d86736f5d9e95b2",
     "src/lib/budgetV2.ts": "7f0ffa7c9656a30a7e915d2d020d8320107d273fb495fc0df25ca7a4c7edf73a",
-    "src/lib/budgetV2Persistence.ts": "cc7421c95bdf010325d69ac88597c2d7b714d5e568acd3b6b0356fa8e7b1514b",
+    "src/lib/budgetV2Persistence.ts": "36204bc35271ea88c3d4a38c548fb7a1e5df411ae113b9bcf7f93d045b809e1c",
     "src/lib/catalogReference.ts": "61f89bc616e2afb728ad7b61379f03ba2a32e974c1a6bbd65af90ac4f15ad505",
     "src/lib/catalogReferenceEditor.ts": "d7a9f107f2d44606ff419e06a126ad6eafe41d4fd581b12bff12caaac06994cf",
     "src/lib/contractAddress.ts": "9037c7f74b5ee71902fc46d5db5211238959beb799fb9bbb35983e6d402964f8",

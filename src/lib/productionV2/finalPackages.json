@@ -1,7 +1,7 @@
 [
   {
-    "id": "loop-owner-final-20261025-v1",
-    "version": "OWNER_FINAL_UPLOADED_20261025_V1",
+    "id": "loop-owner-final-20261025-v2",
+    "version": "OWNER_FINAL_UPLOADED_20261025_V2",
     "issuer": {
       "profileId": "loop-owner-confirmed",
       "profileVersion": "LOOP_OWNER_FINAL_UPLOADED_20261025",
@@ -251,8 +251,8 @@
         "sha256": "5df4e2b263d428fa3dd338c6f6bfb74869419617f93f62567006c979d69a15d0"
       }
     },
-    "rendererHash": "d8869178425dc27acee44a2fdf33fb109a741f3dbc67e9795261789adb8d3062",
+    "rendererHash": "eda68073f591c54f45a8daced08503d1f42e8b777c42dfebd16040e3781acce3",
     "resourcesHash": "403b7a9a2915f3886a8f76385757a092072dd61d0337a01ebc4bb4d0045dfcd3",
-    "sha256": "e10550ef23e324c9972eb5a6a3a361a70483f4c855b3b8f0ea8d46d9086f548c"
+    "sha256": "5a7649a57cdc4353c11c55f66c8b99b321c1f841c165c752f1423c7c52b069ce"
   }
 ]

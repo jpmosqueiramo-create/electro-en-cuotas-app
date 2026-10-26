@@ -16,7 +16,7 @@ def check(ok,label):
 def norm(text):return re.sub(r'\s+',' ',text).strip()
 def images(page):return sum(v.get_object().get('/Subtype')=='/Image' for v in page['/Resources'].get_object().get('/XObject',{}).values())
 check(manifest['status']=='PROPOSED_NOT_APPROVED' and not manifest['installable'],'not approved or installable')
-check([p['version'] for p in json.loads((ROOT/'src/lib/productionV2/finalPackages.json').read_text())]==['OWNER_FINAL_UPLOADED_20261025_V1'],'only exact owner final package installed; historical proposals excluded')
+check([p['version'] for p in json.loads((ROOT/'src/lib/productionV2/finalPackages.json').read_text())]==['OWNER_FINAL_UPLOADED_20261025_V2'],'only exact owner final package installed; historical proposals excluded')
 p=manifest['projection'];texts={}
 for kind,info in manifest['pdfs'].items():
  path=folder/info['path'];reader=PdfReader(path);text=norm(' '.join(page.extract_text() for page in reader.pages));texts[kind]=text

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import {AdminRecordRemoval} from "../AdminRecordRemoval";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Search, ClipboardList, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
@@ -12,6 +13,7 @@ import { presentAdminSolicitudStatus } from "./presentation";
 
 const control = "admin-control min-h-11 w-full rounded-xl border border-border-color bg-surface px-3 text-sm text-text-primary";
 export function AdminSolicitudesInbox({ initialFilters }: { initialFilters: AdminSolicitudFilters }) {
+  const [showRemoved,setShowRemoved]=useState(false);
   const [filters, setFilters] = useState(initialFilters);
   const {user}=useAuth();
   const [loaded, setLoaded] = useState<{uid:string;data:AuthorizedRequestPage}|null>(null);
@@ -41,7 +43,7 @@ export function AdminSolicitudesInbox({ initialFilters }: { initialFilters: Admi
   function retry() { setLoaded(null); setAttempt(value => value + 1); }
   const failed = result ? Object.keys(result.errors).length : 0;
   const totalError = result?.loadedSources.length === 0;
-  const rows = filterAdminSolicitudes(result?.items ?? [], filters);
+  const rows = filterAdminSolicitudes((result?.items ?? []).filter(item=>showRemoved||!item.administrativeState||item.administrativeState.state==='ACTIVE'), filters);
   const states = Array.from(new Set(result?.items.map(item => item.estadoOriginal) ?? [])).sort((a, b) => (a ?? "").localeCompare(b ?? ""));
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-8" data-testid="solicitudes-inbox">
@@ -68,6 +70,7 @@ export function AdminSolicitudesInbox({ initialFilters }: { initialFilters: Admi
           {([['pending', 'Pendientes'], ['all', 'Todas']] as const).map(([view, label]) => <button key={view} type="button" aria-pressed={filters.view === view} onClick={() => updateFilters({ ...filters, view })} className={`admin-control min-h-11 rounded-xl px-5 text-sm font-semibold ${filters.view === view ? "bg-brand-primary text-white" : "text-text-secondary hover:bg-background-main"}`}>{label}</button>)}
         </div>
       </section>
+      <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={showRemoved} onChange={e=>setShowRemoved(e.target.checked)}/>Mostrar eliminadas y archivadas</label>
       {!result ? <p role="status" className="py-10 text-center text-text-secondary">Cargando solicitudes…</p> : <>
         {failed > 0 && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border-color bg-surface p-4">
           <div><p className="font-semibold text-brand-primary">{totalError ? "No pudimos cargar solicitudes" : "La bandeja está incompleta"}</p><p className="mt-1 text-sm text-text-secondary">{totalError ? "Falló la carga de las dos fuentes. Intentá nuevamente." : `No pudimos cargar ${result.errors.solicitudes ? "los registros de solicitud" : "los registros de consulta"}. Conservamos los registros disponibles.`}</p></div>
@@ -83,7 +86,7 @@ export function AdminSolicitudesInbox({ initialFilters }: { initialFilters: Admi
                 <div className="min-w-0"><h2 className="break-words font-heading font-bold text-brand-primary">{item.nombreCliente ?? "Nombre no registrado"}</h2><p className="mt-1 text-sm text-text-secondary">{item.origenPresentacion}</p><p className="mt-1 text-xs text-text-secondary">Localidad: {item.localidad ?? "No registrada"}</p></div>
                 <div className="min-w-0 break-words text-sm"><p>{item.productoONecesidad ?? "Necesidad no registrada"}</p>{item.planPreferido && <p className="mt-1 text-xs text-text-secondary">Preferencia: {item.planPreferido} cuotas · {item.cuotaCapturada !== null ? `$ ${item.cuotaCapturada.toLocaleString("es-AR")} por cuota al solicitar` : "Importe no registrado"}</p>}</div>
                 <div className="min-w-0"><span className="inline-block max-w-full break-words rounded-lg border border-border-color bg-background-main px-2.5 py-1 text-xs font-semibold">{presentAdminSolicitudStatus(item.estadoOriginal)}</span><p className="mt-2 text-sm text-text-secondary">{formatAdminSolicitudDate(item.fechaCreacion)}</p></div>
-                <div className="min-w-0"><p className="mb-2 text-sm text-text-secondary">{adminSolicitudNextAction(item)}</p><Link aria-label={`Ver detalle de ${item.nombreCliente ?? item.documentId}, ${item.tipoPresentacion}`} href={`/admin/solicitudes/${item.sourceCollection}/${encodeURIComponent(item.documentId)}?${adminSolicitudesContext(filters)}`} className="admin-control inline-flex min-h-11 items-center gap-2 rounded-xl border border-border-color px-3 text-sm font-semibold text-brand-primary hover:bg-background-main">Ver detalle<ArrowRight aria-hidden="true" className="size-4" /></Link></div>
+                <div className="min-w-0 space-y-2">{item.administrativeState&&item.administrativeState.state!=='ACTIVE'&&<p className="font-semibold">{item.administrativeState.state==='ARCHIVED'?'Archivada':'Eliminada'}</p>}<p className="mb-2 text-sm text-text-secondary">{adminSolicitudNextAction(item)}</p><Link aria-label={`Ver detalle de ${item.nombreCliente ?? item.documentId}, ${item.tipoPresentacion}`} href={`/admin/solicitudes/${item.sourceCollection}/${encodeURIComponent(item.documentId)}?${adminSolicitudesContext(filters)}`} className="admin-control inline-flex min-h-11 items-center gap-2 rounded-xl border border-border-color px-3 text-sm font-semibold text-brand-primary hover:bg-background-main">Ver detalle<ArrowRight aria-hidden="true" className="size-4" /></Link><AdminRecordRemoval subject={{kind:'REQUEST',source:item.sourceCollection,id:item.documentId}} removed={!!item.administrativeState&&item.administrativeState.state!=='ACTIVE'} onChanged={retry}/></div>
               </li>)}
             </ul>
           </section>}

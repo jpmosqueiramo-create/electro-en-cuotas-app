@@ -1,0 +1,17 @@
+{
+  "result": "PASS",
+  "project": "demo-cuenta-hogar",
+  "widths": [
+    1280,
+    390
+  ],
+  "cases": [
+    "requests remove and restore",
+    "budget shared deletion dialog",
+    "contract remove and restore",
+    "double click",
+    "canonical updateTimes unchanged",
+    "no external Firebase"
+  ],
+  "operation": "removal-browser-56ec7050-ed2f-4fce-85e0-7c145bd1e982"
+}

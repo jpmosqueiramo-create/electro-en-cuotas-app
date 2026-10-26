@@ -25,6 +25,10 @@ for(const kind of ['MANDATE','PAGARE'] as const){
   }
  }
 }
+const archived=JSON.parse(readFileSync('docs/admin-record-removal/catalog-before-integration.json','utf8'))[0];
+assert.deepEqual(approvedFinalPackages[0].templates,archived.templates,'Original templates remain byte/hash identical');
+assert.notEqual(approvedFinalPackages[0].sha256,archived.sha256,'New technical package cannot reuse prior approval');
+assert.notEqual(approvedFinalPackages[0].id,archived.id);
 const templates=ownerFinalTemplates(),text=templates.MANDATE.paragraphs.join(' '),note=templates.PAGARE.paragraphs.join(' ');
 assert(text.includes('una (2) cuotas'));assert(note.includes('o donde la acreedora lo indique'));
 assert(!/capitalizará mensualmente|interés punitorio del/.test(text+note));

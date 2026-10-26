@@ -52,7 +52,8 @@ async function main(){
   await page.evaluate("document.querySelector('[data-testid=contract-economics]').open=true");
   await page.until("document.querySelector('[data-testid=contract-credit-gate]')?.innerText.includes('Pendiente')",'credit gate');
   assert.equal(await page.evaluate("document.querySelector('[aria-label=\"Plan contractual definitivo\"]')"),null,'No definitive terms before approval');
-  await page.clickText('Ir a documentación y evaluación');await page.until("document.querySelector('[data-testid=operation-step-documents]').getAttribute('aria-current')==='step'",'cross-step pending link');
+  const pendingData=await page.evaluate<boolean>("document.querySelector('[data-testid=contract-credit-gate]')?.innerText.includes('Revisar datos pendientes')===true");
+  await page.clickText(pendingData?'Revisar datos pendientes':'Ir a documentación y evaluación');await page.until("document.querySelector('[data-testid=operation-step-"+(pendingData?'client':'documents')+"]').getAttribute('aria-current')==='step'",'cross-step pending link matches missing data');
   await step('client');
   assert.equal(await page.evaluate("document.querySelector('[data-testid=contract-personal] input[name=address]').value"),'BORRADOR LOCAL SIN GUARDAR');
   for(const width of [1280,390]){
@@ -64,7 +65,7 @@ async function main(){
     await page.overflow(`${key}-${width}`);await capture(`${key}-${width}`);
     await page.evaluate("document.querySelector('[data-testid=operation-unified-workspace] > section').scrollIntoView({block:'start'})");const panelShot=await page.command('Page.captureScreenshot',{format:'png'});writeFileSync(`${dir}/${key}-panel-${width}.png`,Buffer.from(panelShot.data as string,'base64'));
     assert.equal(await page.evaluate("document.querySelectorAll('[aria-label=\"Pasos de la operación\"] button').length"),4);
-    assert.equal(await page.evaluate("document.querySelectorAll('[data-testid=operation-header-actions] > button').length"),1,'single primary header action');
+    assert.equal(await page.evaluate("document.querySelectorAll('[data-testid=operation-header-actions] > button.btn-primary').length"),1,'single primary header action');
     if(key==='client')assert.equal(await page.evaluate("[...document.querySelectorAll('[data-testid=contract-request]')].filter(e=>e.getClientRects().length).length"),1);
     if(key==='contract')assert.equal(await page.evaluate("[...document.querySelectorAll('details')].find(e=>e.querySelector('summary')?.textContent==='Autorizaciones y preparación para emisión').open"),false);
    }
