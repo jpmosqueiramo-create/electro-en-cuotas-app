@@ -65,15 +65,23 @@ async function main(){
  await bucket.file(proof.manifest.documents.PAGARE.path).save(Buffer.from('PDF sustituido sintético'),{resumable:false});
  await assert.rejects(verifiedProductionClientDocuments(runtime,f.id,1));pass('SUBSTITUTED_DOCUMENT_BLOCKS_PORTAL_ACTIVATION');
  // Run the real Next UI against the actual route exports, using the opaque local-only runtime.
- const ui=await productionReadyFixture(actor,originals,true);await contractCommand(db,ui.id,1,{action:'RETURN_TO_DRAFT',reason:'Edición sintética UI',commandId:randomUUID(),expectedRevision:(await ui.r.draft.get()).data()!.revision},actor);
+ const ui=await productionReadyFixture(actor,originals,true),uiInitialRevision=(await ui.r.draft.get()).data()!.revision;
  const server=await startProductionBrowserServer(runtime),browser=await CatalogBrowser.open();
  try{
   await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
   await browser.navigate('/login');await browser.until("typeof window.__FIREBASE_SIGN_IN__==='function'",'Auth hook');await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(process.env.NEXT_PUBLIC_ADMIN_EMAIL)},${JSON.stringify(password)}).then(()=>true)`);
-  await browser.navigate(`/admin/operaciones/${ui.id}/1?section=contract`);await browser.until("!!document.querySelector('[data-testid=contract-unified-editor] input[name=fullName]')",'prefilled editor');
+  await browser.navigate(`/admin/operaciones/${ui.id}/1?section=contract`);await browser.until("!!document.querySelector('[data-testid=open-editor-from-issuance]')",'reviewed operation offers direct editor');
+  assert.equal((await ui.r.draft.get()).data()!.revision,uiInitialRevision,'Page load does not change reviewed operation');
+  assert.equal(await browser.evaluate("document.querySelector('[data-testid=optional-contract-preview]').open"),false);
+  await browser.evaluate("document.querySelector('[data-testid=simple-contract-issuance]').scrollIntoView({block:'start'})");await browser.screenshot('ch95-ready-desktop.png');
+  await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await browser.screenshot('ch95-ready-mobile.png');await browser.overflow('ready mobile direct editor');
+  await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
+  assert.equal(await browser.evaluate("!!document.querySelector('[data-testid=contract-unified-editor]')"),false);
+  await browser.click('[data-testid=open-editor-from-issuance]');await browser.until("!!document.querySelector('[data-testid=contract-unified-editor] input[name=fullName]')",'direct editor opens reviewed data');
+  assert.equal((await ui.r.draft.get()).data()!.revision,uiInitialRevision+1);assert.equal((await ui.r.draft.get()).data()!.status,'DRAFT');assert.equal((await db.doc(productionPaths.counter).get()).data()!.lastAllocatedSequence,'1');pass('READY_EXISTING_OPERATION_DIRECT_EDITOR_EXPLICIT_ONLY_NO_CH');
   assert.equal(await browser.evaluate("document.querySelector('[data-testid=contract-unified-editor] input[name=fullName]').value"),ui.b.clienteSnapshot.nombre);
   assert.equal(await browser.evaluate("document.querySelector('[data-testid=simple-contract-issuance] select')===null&&document.querySelector('[data-testid=simple-contract-issuance] input[type=checkbox]')===null"),true);
-  await browser.until("!!document.querySelector('[data-testid=simple-contract-issuance] button')",'issuance controls loaded');
+  await browser.until("!!document.querySelector('[data-testid=emit-contract-pair]')",'issuance controls loaded');
   const initial=(await ui.r.draft.get()).data()!;
   const originalPlan=initial.economicTerms.contractPlanCuotas,alternative=Object.keys(initial.acceptedReferenceSnapshot.factoresSnapshot).map(Number).find(n=>n!==originalPlan);assert(alternative);
   const selectPlan=async(value:number)=>browser.evaluate(`(()=>{const element=document.querySelector('[aria-label="Plan de cuotas"]');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(element,${JSON.stringify(String(value))});element.dispatchEvent(new Event('change',{bubbles:true}));})()`);
@@ -81,7 +89,7 @@ async function main(){
   assert.equal((await ui.r.draft.get()).data()!.revision,initial.revision);
   await selectPlan(originalPlan);
   await browser.change('[data-testid=contract-unified-editor] input[aria-label="Lugar de emisión"]','Ciudad sintética');
-  assert.equal(await browser.evaluate("document.querySelector('[data-testid=simple-contract-issuance] button').disabled"),true);
+  assert.equal(await browser.evaluate("document.querySelector('[data-testid=emit-contract-pair]').disabled"),true);
   assert.equal((await ui.r.draft.get()).data()!.revision,initial.revision,'Unsaved edits do not persist');
   await browser.clickText('Guardar datos del contrato');await browser.until("document.body.innerText.includes('Cambios guardados.')",'atomic editor save');
   const saved=(await ui.r.draft.get()).data()!;assert.equal(saved.revision,initial.revision+1);assert.equal(saved.commercialPreparation.serviceGrossCents+saved.commercialPreparation.financeGrossCents,Math.round(saved.economicTerms.serviceAmount*100));
@@ -91,11 +99,11 @@ async function main(){
   pass('EDITOR_REJECTS_TAMPERED_AMOUNTS_AND_STALE_REVISION');
   await browser.evaluate("(()=>{document.querySelector('[data-testid=contract-review]').open=true;})()");
   await browser.change('[aria-label="Referencia de la evidencia de conformidad"]','Conformidad sintética sobre desglose, datos y cuotas; sin efecto real');await browser.clickText('Registrar conformidad recibida');
-  await browser.until("!document.querySelector('[data-testid=simple-contract-issuance] button').disabled",'saved current consent and issuance');
+  await browser.until("!document.querySelector('[data-testid=emit-contract-pair]').disabled",'saved current consent and issuance');
   await browser.evaluate("document.querySelector('[data-testid=contract-editor-economics]').scrollIntoView({block:'start'})");
   await browser.screenshot('ch94-editor-desktop.png');await browser.overflow('desktop');
   await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await browser.evaluate("document.querySelector('[data-testid=contract-editor-economics]').scrollIntoView({block:'start'})");await browser.screenshot('ch94-editor-mobile.png');await browser.overflow('mobile');
-  await browser.click('[data-testid=simple-contract-issuance] button');
+  await browser.click('[data-testid=emit-contract-pair]');
   await browser.until("document.body.innerText.includes('Abrir mandato emitido')",'issued documents');assert.equal((await db.doc(productionPaths.counter).get()).data()!.lastAllocatedSequence,'2');
   await browser.evaluate("document.querySelector('[data-testid=production-operation]').scrollIntoView({block:'start'})");
   await browser.screenshot('ch94-issued-mobile.png');assert.deepEqual(browser.externalFirebase,[]);pass('BROWSER_DESKTOP_MOBILE_SINGLE_BUTTON_REAL_ROUTES');

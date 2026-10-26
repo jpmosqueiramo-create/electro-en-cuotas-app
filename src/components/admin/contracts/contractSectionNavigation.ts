@@ -1,6 +1,6 @@
 import { createContext } from 'react';
-export type ContractSectionTarget='data'|'employment'|'product'|'terms'|'schedule'|'identity'|'conformity';
-const targets:Record<ContractSectionTarget,string>={data:'contract-personal',employment:'contract-employment',product:'contract-product',terms:'contract-economics',schedule:'contract-schedule',identity:'credit-review',conformity:'contract-review'};
+export type ContractSectionTarget='editor'|'data'|'employment'|'product'|'terms'|'schedule'|'identity'|'conformity';
+const targets:Record<ContractSectionTarget,string>={editor:'contract-unified-editor',data:'contract-personal',employment:'contract-employment',product:'contract-product',terms:'contract-economics',schedule:'contract-schedule',identity:'credit-review',conformity:'contract-review'};
 export function goToContractSection(section:ContractSectionTarget){
  const target=document.querySelector(`[data-testid="${targets[section]}"]`);
  if(target instanceof HTMLDetailsElement)target.open=true;
