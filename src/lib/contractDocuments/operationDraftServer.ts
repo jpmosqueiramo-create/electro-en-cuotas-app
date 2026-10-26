@@ -20,10 +20,10 @@ export async function readOperationDraftDocuments(db:Firestore,id:string,v:numbe
   const d=ds.data() as ContractDraftV2;
   const conformity=cs.data(),addressHash=paymentAddressHashOrNull(d.personalData);
   const current=!!conformity&&clientConformityIsCurrent(d,conformity)&&addressHash!==null&&conformity.confirmedPaymentAddressHash===addressHash&&!!conformity.confirmedAt&&!!conformity.confirmedBy&&!!conformity.evidence;
-  return {projection:projectOperationDraft(bs.data() as BudgetV2,as.data() as BudgetAcceptanceV2,d,identity.requiresClarification,!current),conformity};
+  return {projection:projectOperationDraft(bs.data() as BudgetV2,as.data() as BudgetAcceptanceV2,d,identity.requiresClarification,!current,true),conformity};
  });
  // PDF work outside the transaction. No Storage, writes, freeze or counter access.
- const code=!p.canPreview?(p.pending.some(x=>x.section==='identity')?'DOCUMENT_IDENTITY_REVIEW_REQUIRED' as const:'DOCUMENT_CONFORMITY_PENDING' as const):p.pending.some(x=>x.section==='data'||x.section==='employment'||x.section==='product'||x.section==='schedule'||(x.section==='terms'&&x.label==='Plan contractual confirmado pendiente'))?'DOCUMENT_DATA_PENDING' as const:null;
+ const code=p.canPreview&&p.pending.some(x=>x.section==='conformity')?'DOCUMENT_CONFORMITY_PENDING' as const:!p.canPreview?(p.pending.some(x=>x.section==='identity')?'DOCUMENT_IDENTITY_REVIEW_REQUIRED' as const:'DOCUMENT_CONFORMITY_PENDING' as const):p.pending.some(x=>x.section==='data'||x.section==='employment'||x.section==='product'||x.section==='schedule'||(x.section==='terms'&&x.label==='Plan contractual confirmado pendiente'))?'DOCUMENT_DATA_PENDING' as const:null;
  if(!p.canPreview)return {projection:p,available:false as const,code};
  try{return {...renderContractPairReview(p,ownerFinalTemplates(),conformity,ownerFinalIssuer()),available:true as const,code};}
  catch{throw new DocumentPreviewError('DOCUMENT_RENDER_FAILED','RENDER','PDF_GENERATION_FAILED');}

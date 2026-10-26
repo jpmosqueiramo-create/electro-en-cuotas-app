@@ -14,13 +14,13 @@ async function main(){
  d.personalData.fullName=b.clienteSnapshot.nombre;d.personalData.dni=b.clienteSnapshot.dni||'12345678';
  await r.budget.create(b);await r.acceptance.create(a);await r.draft.create(d);
  const before=await Promise.all([r.budget.get(),r.acceptance.get(),r.draft.get()]);
- assert.equal((await readOperationDraftDocuments(db,id,1)).available,false);
+ assert.equal((await readOperationDraftDocuments(db,id,1)).available,true);
  await r.draft.collection('conformity').doc('current').create(syntheticPreviewConformity(d));
  const pair=await readOperationDraftDocuments(db,id,1);assert.equal(pair.available,true);assert.equal(pair.projection.budgetId,id);
  assert.deepEqual((await Promise.all([r.budget.get(),r.acceptance.get(),r.draft.get()])).map(s=>s.updateTime),before.map(s=>s.updateTime));
  assert.deepEqual((await r.draft.listCollections()).map(c=>c.id),['conformity']);assert.equal((await db.collection('contractNumberingV2').get()).size,0);assert.equal((await db.collection('contractSnapshotsV2').get()).size,0);
- await r.draft.collection('conformity').doc('current').set({confirmedDigest:null});assert.equal((await readOperationDraftDocuments(db,id,1)).available,false);
- await r.draft.collection('conformity').doc('current').set({confirmedDigest:clientTermsDigest(d)});assert.equal((await readOperationDraftDocuments(db,id,1)).available,false);
+ await r.draft.collection('conformity').doc('current').set({confirmedDigest:null});assert.equal((await readOperationDraftDocuments(db,id,1)).available,true);
+ await r.draft.collection('conformity').doc('current').set({confirmedDigest:clientTermsDigest(d)});assert.equal((await readOperationDraftDocuments(db,id,1)).available,true);
  await r.draft.collection('conformity').doc('current').set(syntheticPreviewConformity(d));assert.equal((await readOperationDraftDocuments(db,id,1)).available,true);
  await r.draft.update({'personalData.fullName':'Otra identidad ficticia'});assert.equal((await readOperationDraftDocuments(db,id,1)).available,false);
  await r.draft.update({personalData:d.personalData});
@@ -36,7 +36,7 @@ async function main(){
  const allowed=await GET(new NextRequest(uri,{headers:{Authorization:'Bearer '+administrator}}),ctx);assert.equal(allowed.status,200);assert.match(allowed.headers.get('cache-control')!,/no-store/);
  const snapshots=await Promise.all([r.budget.get(),r.acceptance.get(),r.draft.get()]);const view=await GET(new NextRequest(uri,{headers:{Authorization:'Bearer '+administrator}}),ctx);assert.equal(view.status,200);assert.deepEqual((await Promise.all([r.budget.get(),r.acceptance.get(),r.draft.get()])).map(s=>s.updateTime),snapshots.map(s=>s.updateTime));
  assert.equal((await db.collection('contractNumberingV2').get()).size,0);assert.equal((await db.collection('contractSnapshotsV2').get()).size,0);
- console.log('OPERATION_DRAFT_DOCUMENTS_EMULATOR=PASS; ADMIN_ONLY; CROSS_ROLE_DENIED; TWO_OPERATIONS_ISOLATED; NEW_RECURRENT; IDENTITY_CONFORMITY_BLOCK; READ_ONLY_UPDATE_TIMES; NO_NUMBERING_SNAPSHOT_STORAGE_WRITES');
+ console.log('OPERATION_DRAFT_DOCUMENTS_EMULATOR=PASS; ADMIN_ONLY; CROSS_ROLE_DENIED; TWO_OPERATIONS_ISOLATED; NEW_RECURRENT; IDENTITY_BLOCK_DRAFT_CONFORMITY_PENDING; READ_ONLY_UPDATE_TIMES; NO_NUMBERING_SNAPSHOT_STORAGE_WRITES');
  await admin.app().delete();
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

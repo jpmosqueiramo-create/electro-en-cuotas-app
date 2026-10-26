@@ -5,8 +5,8 @@ import {templateHash,type FinalTemplate,type FinalDocumentKind} from './catalog'
 import {contractValueHash} from '../contractIntegrityV2';
 export const OWNER_FINAL_DOCUMENT_VERSION=source.version;
 // Technical package revision only: original clauses and template hashes remain V1.
-export const OWNER_FINAL_PACKAGE_ID='loop-owner-final-20261025-v2';
-export const OWNER_FINAL_PACKAGE_VERSION='OWNER_FINAL_UPLOADED_20261025_V2';
+export const OWNER_FINAL_PACKAGE_ID='loop-owner-final-20261025-v3';
+export const OWNER_FINAL_PACKAGE_VERSION='OWNER_FINAL_UPLOADED_20261025_V3';
 export function ownerFinalTemplates():Record<FinalDocumentKind,FinalTemplate>{
  const templates=originalTemplates();
  for(const kind of ['MANDATE','PAGARE'] as const){

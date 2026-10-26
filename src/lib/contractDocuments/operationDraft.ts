@@ -10,13 +10,13 @@ import { DocumentPreviewError,type PreviewReason } from './previewErrors';
 export const OPERATION_DOCUMENT_VERSION = 'OPERATION_DRAFT_REVIEW_V2';
 export const issuerDraft = contractLegalEntity;
 export interface DocumentPending {label:string;section:'data'|'employment'|'product'|'terms'|'schedule'|'identity'|'conformity'|'legal'}
-export function projectOperationDraft(b:BudgetV2,a:BudgetAcceptanceV2,d:ContractDraftV2,identityBlocked:boolean,conformityPending:boolean){
- try{return projectPersistedDraft(b,a,d,identityBlocked,conformityPending);}catch(error){
+export function projectOperationDraft(b:BudgetV2,a:BudgetAcceptanceV2,d:ContractDraftV2,identityBlocked:boolean,conformityPending:boolean,allowPendingConformity=false){
+ try{return projectPersistedDraft(b,a,d,identityBlocked,conformityPending,allowPendingConformity);}catch(error){
   if(error instanceof DocumentPreviewError)throw error;
   throw new DocumentPreviewError('DOCUMENT_ORIGIN_INCONSISTENT','PROJECTION','SOURCE_MISMATCH');
  }
 }
-function projectPersistedDraft(b:BudgetV2,a:BudgetAcceptanceV2,d:ContractDraftV2,identityBlocked:boolean,conformityPending:boolean){
+function projectPersistedDraft(b:BudgetV2,a:BudgetAcceptanceV2,d:ContractDraftV2,identityBlocked:boolean,conformityPending:boolean,allowPendingConformity:boolean){
  const fail=(reason:PreviewReason='SOURCE_MISMATCH'):never=>{throw new DocumentPreviewError('DOCUMENT_ORIGIN_INCONSISTENT','PROJECTION',reason);};
  if(b.schemaVersion!=='BUDGET_V2'||b.estado!=='EMITIDO'||a.schemaVersion!=='BUDGET_ACCEPTANCE_V2'||d.schemaVersion!=='CONTRACT_DRAFT_V2'||b.id!==a.budgetId||b.version!==a.budgetVersion||a.sourceCollection!==b.sourceCollection||a.solicitudId!==b.solicitudId||d.budgetId!==b.id||d.budgetVersion!==b.version||d.contractDraftId!==`v${b.version}`||d.acceptedOptionId!==a.acceptedOptionId||!['DRAFT','READY_TO_FORMALIZE'].includes(d.status))fail();
  const selected=b.options.filter(o=>o.optionId===a.acceptedOptionId);
@@ -55,7 +55,7 @@ function projectPersistedDraft(b:BudgetV2,a:BudgetAcceptanceV2,d:ContractDraftV2
   if(!e||rows.length!==e.contractPlanCuotas||rows.reduce((n,r)=>n+r.amount,0)!==e.contractTotal||rows.some((r,i)=>r.installmentNumber!==i+1||r.amount!==e.contractInstallmentAmount||(i>0&&r.dueDate<=rows[i-1].dueDate))||rows[0].dueDate!==d.firstInstallmentDueDate)fail('SCHEDULE_MISMATCH');
   rows.forEach(r=>calendarDate(r.dueDate));
  }
- const projection={version:OPERATION_DOCUMENT_VERSION,operationId:operationFromAcceptance(a).operationId,budgetId:b.id,budgetVersion:b.version,acceptedOptionId:a.acceptedOptionId,draftRevision:d.revision,updatedAt:d.updatedAt,issuer:issuerDraft,customer:{...p,province,cuil:d.employmentData.cuil},product:{name:reference.nombre,description:reference.descripcion,...product},economics:e?{capital:e.capitalAmount,service:e.serviceAmount,total:e.contractTotal,count:e.contractPlanCuotas,installment:e.contractInstallmentAmount}:null,schedule:rows.map(r=>({...r})),pending,canPreview:!identityBlocked&&!conformityPending,number:null,legalApproval:'PENDING' as const,issuance:'DRAFT_REVIEW_ONLY' as const};
+ const projection={version:OPERATION_DOCUMENT_VERSION,operationId:operationFromAcceptance(a).operationId,budgetId:b.id,budgetVersion:b.version,acceptedOptionId:a.acceptedOptionId,draftRevision:d.revision,updatedAt:d.updatedAt,issuer:issuerDraft,customer:{...p,province,cuil:d.employmentData.cuil},product:{name:reference.nombre,description:reference.descripcion,...product},economics:e?{capital:e.capitalAmount,service:e.serviceAmount,total:e.contractTotal,count:e.contractPlanCuotas,installment:e.contractInstallmentAmount}:null,schedule:rows.map(r=>({...r})),pending,canPreview:!identityBlocked&&(!conformityPending||allowPendingConformity),number:null,legalApproval:'PENDING' as const,issuance:'DRAFT_REVIEW_ONLY' as const};
  return {...projection,sourceHash:contractValueHash({budget:b,acceptance:a,draft:d,identityBlocked,conformityPending}),projectionHash:contractValueHash(projection)};
 }
 export type OperationDraftProjection=ReturnType<typeof projectOperationDraft>;

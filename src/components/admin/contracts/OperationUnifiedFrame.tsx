@@ -15,7 +15,7 @@ const sections: Record<OperationSection, string> = { documents: 'Documentación'
 const steps:OperationSection[]=['documents','client','contract','logistics'];
 const descriptions:Partial<Record<OperationSection,string>>={documents:'Cargá las imágenes y revisá la documentación del cliente.',client:'Enviá el formulario privado y revisá los datos recibidos.',contract:'Completá las condiciones y prepará el mandato y el pagaré.',logistics:'Seguí el pedido, los documentos de traslado y la entrega.'};
 const money = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
-export function OperationUnifiedFrame({ budget, draft, operation, section, onSection, pendingSubmissions, conformityPending, panels,headerActions,headerContent,identityReview,refreshKey=0 }: {refreshKey?:number;identityReview?:OperationIdentityReview|null;
+export function OperationUnifiedFrame({ budget, draft, operation, section, onSection, pendingSubmissions, conformityPending, panels,headerActions,headerContent,identityReview,refreshKey=0,preparationOnly=false }: {preparationOnly?:boolean;refreshKey?:number;identityReview?:OperationIdentityReview|null;
   budget?: BudgetV2; draft: ContractDraftV2 | null; operation: OperationViewV2 | null; section: OperationSection;
   onSection: (value: OperationSection) => void; pendingSubmissions: boolean; conformityPending: boolean;
   panels: Partial<Record<OperationSection, ReactNode>>; headerActions?: ReactNode; headerContent?: ReactNode;
@@ -35,19 +35,20 @@ export function OperationUnifiedFrame({ budget, draft, operation, section, onSec
   const [tracking, setTracking] = useState<FulfillmentV2 | null>(null), [trackingError, setTrackingError] = useState('');
   const budgetId = budget?.id ?? draft?.budgetId; const version = budget?.version ?? draft?.budgetVersion;
   const load = useCallback(async (signal?: AbortSignal) => {
-    if (!user || !budgetId || !version) return;
+    if (preparationOnly || !user || !budgetId || !version) return;
     try {
       const response = await fetch(`/api/admin/presupuestos-v2/${encodeURIComponent(budgetId)}/versions/${version}/fulfillment`, { signal, cache: 'no-store', headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
       const credit=await fetch(`/api/admin/presupuestos-v2/${encodeURIComponent(budgetId)}/versions/${version}/credit-review`,{signal,cache:'no-store',headers:{Authorization:`Bearer ${await user.getIdToken()}`}});if(!credit.ok)throw Error();const evaluation=await credit.json();if(!signal?.aborted)setCreditState(evaluation.review?evaluation.state:undefined);
       if (!response.ok) throw Error(); const data = await response.json();
       if (!signal?.aborted) { setTracking(data.state); setTrackingError(''); }
     } catch { if (!signal?.aborted) setTrackingError('No se pudo consultar el seguimiento. Reintentá antes de decidir el próximo paso logístico.'); }
-  }, [user, budgetId, version]);
+  }, [user, budgetId, version,preparationOnly]);
   useEffect(() => { const controller = new AbortController(); void load(controller.signal); return () => controller.abort(); }, [load, section,refreshKey]);
   const next = identityReview?.requiresClarification ? { status: 'Identidad pendiente de aclaración', label: 'Revisar identidad del cliente', responsible: 'Administración', section: 'contract' as const } : operationNextAction({ draft, tracking, pendingSubmissions, conformityPending,creditState });
   const nextSection:OperationSection=next.section!=='contract'?next.section:identityReview?.requiresClarification?'documents':pendingSubmissions||creditState==='PENDING_DATA'?'client':creditState&&creditState!=='APPROVED'?'documents':'contract';
   const stepIndex=steps.indexOf(section);
   const accepted = draft?.acceptedReferenceSnapshot ?? budget?.options.find(o => o.optionId === operation?.identity.acceptedOptionId)?.referenceSnapshot;
+  if(preparationOnly)return <section className="min-w-0 space-y-5" data-testid="independent-contract-preparation"><header className="rounded-xl border border-border-color bg-surface p-4"><h2 className="font-heading text-2xl font-bold">Confección de contrato y pagaré</h2><p className="break-words">{draft?.personalData.fullName||budget?.clienteSnapshot.nombre||'Cliente'} · {accepted?.nombre||'Propuesta aceptada'}</p><p>1. Revisá o aplicá los datos recibidos. 2. Guardá el plan y las fechas. 3. Revisá los documentos y completá los requisitos de emisión.</p><Link className="inline-flex min-h-11 items-center underline" href={`/admin/operaciones/${encodeURIComponent(budgetId??'')}/${version}?section=contract`}>Volver a ficha de operación</Link></header>{headerContent}{['documents','client','contract'].includes(section)?panels.contract:panels[section]}</section>;
   return <section data-testid="operation-unified-workspace" className="min-w-0 space-y-5 border-t border-border-color pt-5">
     <header className="min-w-0 space-y-3 rounded-2xl border border-border-color bg-surface p-4 sm:p-6">
       {operation&&<Link className="admin-control inline-flex min-h-11 items-center font-semibold text-brand-primary" href={`/admin/solicitudes/${operation.identity.sourceCollection}/${encodeURIComponent(operation.identity.solicitudId)}`}>Volver a solicitud</Link>}

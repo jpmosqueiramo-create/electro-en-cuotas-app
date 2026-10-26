@@ -1,3 +1,4 @@
+import {revisionState,revisionStateRef,editionRef,assertBeforeSignature} from './documentRevisionState';
 import { renderFinalDocument } from './pdf';
 import { assertCurrentIssueDates } from './businessDate';
 import { issuedDocumentKinds, assertExternalProductionPackage } from './catalog';
@@ -40,15 +41,29 @@ export async function frozenOperation(runtime: ProductionRuntime, tx: Transactio
     if (raw.freeze.readinessPolicyVersion !== 'CONTRACT_PRODUCTION_APPROVAL_V1')
         throw Error('PRODUCTION_SNAPSHOT_REQUIRED');
     const snapshot = raw as FinalSnapshot;
-    if (snapshot.sourceDraft.budgetId !== id || snapshot.sourceDraft.budgetVersion !== v || snapshot.sourceDraft.acceptedOptionId !== identity.acceptedOptionId || snapshot.sourceDraft.contractDraftId !== identity.contractDraftId || snapshot.contractSnapshotId !== contractSnapshotId(contractKey(identity)) || snapshot.contractId !== contractIdentity(contractKey(identity)) || d.revision !== snapshot.sourceDraft.revision + 1 || d.activeClientDataRequestId !== null)
+    if (snapshot.sourceDraft.budgetId !== id || snapshot.sourceDraft.budgetVersion !== v || snapshot.sourceDraft.acceptedOptionId !== identity.acceptedOptionId || snapshot.sourceDraft.contractDraftId !== identity.contractDraftId || snapshot.contractSnapshotId !== contractSnapshotId(contractKey(identity),snapshot.snapshotVersion) || snapshot.contractId !== contractIdentity(contractKey(identity)) || d.revision !== snapshot.sourceDraft.revision + 1 || d.activeClientDataRequestId !== null)
         throw Error('PRODUCTION_SNAPSHOT_ORIGIN_MISMATCH');
     const grant = await authorization(runtime, tx, id, v, snapshot.freeze.authorizationId, scope, forWrite);
     if (grant.authorization.operationId !== identity.operationId || grant.authorization.hash !== snapshot.freeze.authorizationHash || grant.authorization.packageHash !== snapshot.freeze.legalPackageHash || grant.authorization.approvalHash !== snapshot.freeze.legalApprovalsHash)
         throw Error('PRODUCTION_AUTHORIZATION_MISMATCH');
     const [number, origin, evidence, ready, command] = await Promise.all([tx.get(db.collection(productionPaths.numbers).doc(snapshot.contractNumber)), tx.get(db.collection(productionPaths.origins).doc(contractOriginId(contractKey(identity)))), tx.get(db.collection(productionPaths.evidence).doc(snapshot.contractId)), tx.get(r.draft.collection('readyReviews').doc(snapshot.freeze.readyEvidenceId)), tx.get(productionRef(db, id, v).collection('freezeCommands').doc(snapshot.freeze.commandId))]);
     const expected = { contractId: snapshot.contractId, snapshotId: snapshot.contractSnapshotId, contractNumber: snapshot.contractNumber, snapshotHash: snapshot.integrity.payloadHash };
-    for (const x of [receipt, number.data()?.receipt, origin.data()?.receipt, evidence.data()?.receipt, command.data()?.receipt])
-        same(x ?? null, expected);
+    same(receipt,expected);same(command.data()?.receipt,expected);
+    const revision=await revisionState(db,tx,id,v);
+    const allocation=revision?.allocationReceipt??expected;
+    if(snapshot.snapshotVersion>1){
+        if(!revision||revision.status!=='FROZEN'||revision.snapshotVersion!==snapshot.snapshotVersion)throw Error('DOCUMENT_REVISION_INTEGRITY');
+        same(revision.receipt,expected);
+        const record=(await tx.get(editionRef(db,id,v,snapshot.snapshotVersion))).data();
+        if(!record)throw Error('DOCUMENT_REVISION_INTEGRITY');const {hash,...body}=record;
+        same(hash,contractValueHash(body));same(record.receipt,expected);same(record.allocationReceipt,allocation);same(record.previousReceipt,revision.previousReceipt);
+        if(record.authorizationHash!==grant.authorization.hash||record.reopenCommandId!==revision.commandId)throw Error('DOCUMENT_REVISION_INTEGRITY');
+        const previous=(await tx.get(db.collection(productionPaths.snapshots).doc(record.previousReceipt.snapshotId))).data();validateContractSnapshot(previous);
+        if(previous.snapshotVersion!==snapshot.snapshotVersion-1||previous.contractId!==snapshot.contractId||previous.contractNumber!==snapshot.contractNumber||previous.integrity.payloadHash!==record.previousReceipt.snapshotHash)throw Error('DOCUMENT_REVISION_ORIGIN_CHANGED');
+    }else if(revision)throw Error('DOCUMENT_REVISION_SUPERSEDED');
+    for(const x of [number.data()?.receipt,origin.data()?.receipt,evidence.data()?.receipt])same(x??null,allocation);
+    const original=(await tx.get(db.collection(productionPaths.snapshots).doc(allocation.snapshotId))).data();validateContractSnapshot(original);
+    if(original.snapshotVersion!==1||original.contractId!==snapshot.contractId||original.contractNumber!==snapshot.contractNumber||original.integrity.payloadHash!==allocation.snapshotHash)throw Error('DOCUMENT_ALLOCATION_CHANGED');
     same(snapshot.origin.budgetHash, contractValueHash(bs.data()));
     same(snapshot.origin.acceptanceHash, contractValueHash(a));
     const { productionFreeze: _meta, ...rest } = d;
@@ -59,7 +74,7 @@ export async function frozenOperation(runtime: ProductionRuntime, tx: Transactio
     verifyReadyEvidence(bs.data() as BudgetV2, a, source, e);
     same(snapshot.freeze.readyEvidenceHash, contractValueHash(e));
     same(snapshot.freeze.dependenciesHash, contractValueHash(grant.authorization.legalContext));
-    same(evidence.data()?.authorizationHash, grant.authorization.hash);
+    if(snapshot.snapshotVersion===1)same(evidence.data()?.authorizationHash, grant.authorization.hash);
     same(snapshot.freeze.provenanceManifestHash, grant.authorization.sourceHash);
     if (number.data()?.executionMode !== 'PRODUCTION' || number.data()?.sequence !== snapshot.numbering.sequence || d.productionFreeze.authorizationId !== grant.authorization.id || d.updatedAt !== snapshot.freeze.termsFrozenAt || d.updatedBy !== snapshot.freeze.termsFrozenBy)
         throw Error('PRODUCTION_REGISTRY_INCONSISTENT');
@@ -92,13 +107,17 @@ export async function freezeOperation(runtime: ProductionRuntime, id: string, v:
         if (!ct || ct.schemaVersion !== 'CONTRACT_NUMBER_COUNTER_V1' || ct.policyId !== 'CONTRACT_NUMBERING_V1' || ct.executionMode !== 'PRODUCTION' || ct.active !== true || typeof ct.initializationAuthorizationReference !== 'string' || !ct.initializationAuthorizationReference.trim())
             throw Error('PRODUCTION_COUNTER_AUTHORIZATION_REQUIRED');
         validateSequence(ct.lastAllocatedSequence, true);
-        const sequence = (BigInt(ct.lastAllocatedSequence) + BigInt(1)).toString(), number = contractNumber(sequence), identity = source.identity, idc = contractIdentity(contractKey(identity)), sid = contractSnapshotId(contractKey(identity)), now = issueInstant.toISOString(), d = source.draft, e = source.evidence, ac = source.acceptance;
+        const revision=await revisionState(db,tx,id,v);
+        if(revision&&revision.status!=='EDITING')throw Error('DOCUMENT_REVISION_NOT_EDITABLE');
+        if(revision)await assertBeforeSignature(db,tx,id,v,source.identity.operationId);
+        const edition=revision?.snapshotVersion??1;
+        const sequence = revision?revision.allocationReceipt.contractNumber.slice(3).replace(/^0+(?=\d)/,''):(BigInt(ct.lastAllocatedSequence) + BigInt(1)).toString(), number = contractNumber(sequence), identity = source.identity, idc = contractIdentity(contractKey(identity)), sid = contractSnapshotId(contractKey(identity),edition), now = issueInstant.toISOString(), d = source.draft, e = source.evidence, ac = source.acceptance;
         const sr = db.collection(productionPaths.snapshots).doc(sid), nr = db.collection(productionPaths.numbers).doc(number), or = db.collection(productionPaths.origins).doc(contractOriginId(contractKey(identity))), er = db.collection(productionPaths.evidence).doc(idc);
         const all = await Promise.all([tx.get(sr), tx.get(nr), tx.get(or), tx.get(er)]);
-        if (all.some(x => x.exists))
-            throw Error('PRODUCTION_NUMBER_OR_ORIGIN_COLLISION');
+        if(revision){if(all[0].exists||all.slice(1).some(x=>!x.exists)||revision.allocationReceipt.contractId!==idc||revision.allocationReceipt.contractNumber!==number||BigInt(sequence)>BigInt(ct.lastAllocatedSequence))throw Error('DOCUMENT_REVISION_ALLOCATION_INVALID');for(const record of all.slice(1))same(record.data()?.receipt,revision.allocationReceipt);}
+        else if (all.some(x => x.exists))throw Error('PRODUCTION_NUMBER_OR_ORIGIN_COLLISION');
         const sourceDraft = { budgetId: id, budgetVersion: v, contractDraftId: d.contractDraftId, acceptedOptionId: d.acceptedOptionId, revision: d.revision, readyDigest: e.termsDigest };
-        const snapshot = sealContractSnapshot({ schemaVersion: 'CONTRACT_SNAPSHOT_V2', currency: 'ARS', contractId: idc, contractSnapshotId: sid, snapshotVersion: 1, contractNumber: number, numbering: { policyId: 'CONTRACT_NUMBERING_V1', sequence }, sourceDraft,
+        const snapshot = sealContractSnapshot({ schemaVersion: 'CONTRACT_SNAPSHOT_V2', currency: 'ARS', contractId: idc, contractSnapshotId: sid, snapshotVersion: edition, contractNumber: number, numbering: { policyId: 'CONTRACT_NUMBERING_V1', sequence }, sourceDraft,
             origin: { sourceCollection: ac.sourceCollection, solicitudId: ac.solicitudId, acceptedAt: ac.acceptedAt, acceptedBy: ac.acceptedBy, budgetHash: contractValueHash(source.budget), acceptanceHash: contractValueHash(ac), draftHash: contractValueHash(d), preferredPlanCuotas: ac.preferredPlanCuotas, preferredPlanAmountSnapshot: ac.preferredPlanAmountSnapshot },
             acceptedReference: d.acceptedReferenceSnapshot, productDetails: d.productDetails, personalDataVersion: PERSONAL_ADDRESS_VERSION, personalData: d.personalData as Required<typeof d.personalData>, addressInterpretation: { jurisdictionCatalogVersion: PERSONAL_ADDRESS_VERSION, provinceDisplayName: provinceLabel(d.personalData.province!), postalPolicyVersion: 'AR_POSTAL_STRUCTURE_V1' }, employmentData: d.employmentData, economicTerms: d.economicTerms!, calculationPolicyVersion: 'P5C_SHARED_C1_V1', roundingPolicy: 'NEXT_90_V1', paymentSchedule: { calendarPolicyVersion: 'P5C_EXPLICIT_MONTH_CLAMP_V1', firstInstallmentDueDate: d.firstInstallmentDueDate!, preferredMonthlyDueDay: d.preferredMonthlyDueDay!, installments: d.paymentScheduleDraft }, ...a.legalContext,
             freeze: { state: 'TERMS_FROZEN', preparedAt: d.preparedAt, readyAt: e.reviewedAt, readyBy: e.reviewedBy, termsFrozenAt: now, termsFrozenBy: actor, commandId: cid, readinessPolicyVersion: 'CONTRACT_PRODUCTION_APPROVAL_V1', integrationPolicyVersion: 'READY_FREEZE_PRODUCTION_V1', executionMode: 'PRODUCTION', readyEvidenceId: d.readyEvidenceId!, readyEvidenceHash: contractValueHash(e), dependenciesHash: contractValueHash(a.legalContext), legalTemplateReviewRequired: true, authorizationId: aid, authorizationHash: a.hash, legalPackageHash: a.packageHash, legalApprovalsHash: a.approvalHash, provenanceManifestHash: a.sourceHash } });
@@ -108,13 +127,14 @@ export async function freezeOperation(runtime: ProductionRuntime, id: string, v:
             renderFinalDocument(snapshot as FinalSnapshot, grant.package, kind, runtimeData(runtime).test);
         const receipt = { contractId: idc, snapshotId: sid, contractNumber: number, snapshotHash: snapshot.integrity.payloadHash };
         tx.create(sr, snapshot);
-        tx.create(nr, { executionMode: 'PRODUCTION', sequence, receipt, allocatedAt: now });
+        if(!revision){tx.create(nr, { executionMode: 'PRODUCTION', sequence, receipt, allocatedAt: now });
         tx.create(or, { sourceDigest: a.sourceHash, receipt });
         tx.create(er, { schemaVersion: 'PRODUCTION_ORIGIN_EVIDENCE_V1', authorizationHash: a.hash, readyEvidence: e, receipt });
+        }else{const body={schemaVersion:'PRODUCTION_DOCUMENT_EDITION_V1',receipt,allocationReceipt:revision.allocationReceipt,previousReceipt:revision.previousReceipt,authorizationHash:a.hash,reopenCommandId:revision.commandId,actor,at:now};tx.create(editionRef(db,id,v,edition),{...body,hash:contractValueHash(body)});const {hash:_hash,...priorState}=revision;void _hash;const active={...priorState,status:'FROZEN' as const,receipt};tx.set(revisionStateRef(db,id,v),{...active,hash:contractValueHash(active)});}
         tx.create(ref, { digest, receipt, actor, at: now, authorizationId: aid });
         tx.create(productionRef(db, id, v).collection('events').doc(cid), { action: 'TERMS_FROZEN', actor, at: now, authorizationId: aid, receipt });
         tx.update(contractRefs(db, id, v).draft, { status: 'TERMS_FROZEN', revision: d.revision + 1, updatedAt: now, updatedBy: actor, productionFreeze: { executionMode: 'PRODUCTION', authorizationId: aid, receipt } });
-        tx.update(db.doc(productionPaths.counter), { lastAllocatedSequence: sequence });
+        if(!revision)tx.update(db.doc(productionPaths.counter), { lastAllocatedSequence: sequence });
         return { ...receipt, replay: false };
     });
 }
