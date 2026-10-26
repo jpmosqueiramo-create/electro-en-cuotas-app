@@ -1,3 +1,4 @@
+import {assertOwnerFinalCatalog} from './helpers/assertOwnerFinalCatalog';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, mkdtempSync, writeFileSync } from 'node:fs';
@@ -15,7 +16,7 @@ assert(manifest.sources['src/lib/contractDocuments/amountWords.ts']);
 assert(manifest.sources['src/lib/logoBase64.ts']);
 assert(manifest.sources['src/lib/productionV2/catalog.ts']);
 assert(!Object.hasOwn(manifest.sources, 'src/lib/productionV2/finalPackages.json'), 'Package content is independently hashed, never recursively included in its own renderer hash');
-assert.deepEqual(JSON.parse(readFileSync('src/lib/productionV2/finalPackages.json', 'utf8')), [], 'No legal approval is fabricated for launch');
+assertOwnerFinalCatalog(JSON.parse(readFileSync('src/lib/productionV2/finalPackages.json', 'utf8')));
 assert(!readFileSync('src/lib/productionV2/pdf.ts', 'utf8').includes('.toString()'));
 const folder = mkdtempSync(join(tmpdir(), 'ch-renderer-hash-'));
 const entry = join(folder, 'entry.ts');

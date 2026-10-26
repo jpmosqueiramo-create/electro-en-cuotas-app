@@ -1,3 +1,4 @@
+import {assertOwnerFinalCatalog} from './helpers/assertOwnerFinalCatalog';
 import './helpers/requireSafeEmulatorEnvironment';
 import { creditorPaymentPlaceReviewTemplates, creditorPaymentReviewIssuer } from '../src/lib/productionV2/creditorPaymentPlaceProposal';
 import assert from 'node:assert/strict';
@@ -22,7 +23,7 @@ function pass(label:string){checks.push(label);console.log('PASS '+label);}
 async function run(){
  assert.equal(process.env.GCLOUD_PROJECT,'demo-cuenta-hogar');
  assert.equal(process.env.FIREBASE_STORAGE_EMULATOR_HOST,'127.0.0.1:9199');
- assert.deepEqual(approvedFinalPackages,[]);
+ assertOwnerFinalCatalog(approvedFinalPackages);
  const db=admin.firestore(), actor=(await admin.auth().createUser({email:process.env.NEXT_PUBLIC_ADMIN_EMAIL,emailVerified:true,password:'Only-Emulator-123'})).uid;
  const f=await productionReadyFixture(actor,true), consentRef=f.r.draft.collection('conformity').doc('current');
  const initial=(await consentRef.get()).data()!, origin={budget:await f.r.budget.get(),acceptance:await f.r.acceptance.get()};

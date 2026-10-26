@@ -1,3 +1,4 @@
+import {approvedFinalPackages} from '../src/lib/productionV2/catalog';
 import './helpers/requireSafeEmulatorEnvironment';
 import {issuedDocumentKinds,packageHash} from '../src/lib/productionV2/catalog';
 import assert from 'node:assert/strict';
@@ -23,7 +24,7 @@ const scope = (test: string) => `document.querySelector('[data-testid=${test}]')
 async function run() {
     const db = admin.firestore(), email = process.env.NEXT_PUBLIC_ADMIN_EMAIL!;
     assert.equal(email, 'production-review-admin@example.test');
-    const actor = (await admin.auth().createUser({ email, password, emailVerified: true })).uid, basePackage = process.env.SYNTHETIC_ORIGINALS_SUITE === '1' ? syntheticOriginalPackage() : syntheticFinalPackage(), p=external?(()=>{const {sha256:old,...base}=basePackage;void old;const next={...base,deliveryDocumentPolicy:'EXTERNAL_TRANSFER_AND_RECEIPT_V1' as const};return {...next,sha256:packageHash(next)};})():basePackage, runtime = productionRuntimeForEmulator(db, admin.auth(), [p], [actor]);
+    const actor = (await admin.auth().createUser({ email, password, emailVerified: true })).uid, basePackage = process.env.SYNTHETIC_INSTALLED_OWNER_PACKAGE_SUITE === '1' ? structuredClone(approvedFinalPackages[0]) : process.env.SYNTHETIC_ORIGINALS_SUITE === '1' ? syntheticOriginalPackage() : syntheticFinalPackage(), p=external?(()=>{const {sha256:old,...base}=basePackage;void old;const next={...base,deliveryDocumentPolicy:'EXTERNAL_TRANSFER_AND_RECEIPT_V1' as const};return {...next,sha256:packageHash(next)};})():basePackage, runtime = productionRuntimeForEmulator(db, admin.auth(), [p], [actor]);
     const f = await productionReadyFixture(actor, process.env.SYNTHETIC_ORIGINALS_SUITE === '1'), clientEmail = 'production-browser-client@example.test', client = (await admin.auth().createUser({ email: clientEmail, password, emailVerified: true })).uid;
     await db.doc(productionPaths.counter).create({ schemaVersion: 'CONTRACT_NUMBER_COUNTER_V1', policyId: 'CONTRACT_NUMBERING_V1', executionMode: 'PRODUCTION', active: true, lastAllocatedSequence: '0', initializationAuthorizationReference: 'SYNTHETIC_BROWSER_COUNTER_ONLY' });
     mkdirSync(out, { recursive: true });

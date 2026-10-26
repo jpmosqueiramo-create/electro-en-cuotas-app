@@ -1,0 +1,18 @@
+{
+  "result": "PASS",
+  "project": "demo-cuenta-hogar",
+  "widths": [
+    1280,
+    390
+  ],
+  "cases": [
+    "real Next UI and route handlers",
+    "owner approval without professional fields",
+    "exact package recorded",
+    "operation authorization",
+    "unique CH freeze",
+    "mandate and note issued",
+    "desktop/mobile"
+  ],
+  "productionWrites": 0
+}
