@@ -1,3 +1,4 @@
+import {OWNER_FINAL_PACKAGE_ID} from './ownerFinalDocuments';
 import {readProductionReadiness} from '../productionReadinessV2Server';
 import {assertFinalRenderer} from './pdf';
 import {revisionState,assertBeforeSignature,issuedManifestRef} from './documentRevisionState';
@@ -27,6 +28,8 @@ export async function productionOverview(runtime: ProductionRuntime, id: string,
     const { db, test, administrators, packages, auth } = runtimeData(runtime), user = await auth.getUser(actor);
     if (user.disabled || !user.emailVerified || !isAdminEmail(user.email)) throw Error('PRODUCTION_ADMIN_REQUIRED');
     const administratorAuthorized = !user.disabled && user.emailVerified && administrators.includes(actor), deploymentEnabled = test || process.env.PRODUCTION_OPERATIONS_ENABLED === 'true';
+    const issuancePackages=packages.filter(p=>{try{assertFinalRenderer(p);return true;}catch{return false;}});
+    const editorPackage=issuancePackages.find(p=>p.id===OWNER_FINAL_PACKAGE_ID)??(test&&issuancePackages.length===1?issuancePackages[0]:undefined);
     const preparation=await readProductionReadiness(db,id,v);
     return db.runTransaction(async (tx) => {
         const r = contractRefs(db, id, v), ref = productionRef(db, id, v);
@@ -47,7 +50,7 @@ export async function productionOverview(runtime: ProductionRuntime, id: string,
             }
         }
         else if (!ds.data()?.productionFreeze)
-            blockers.push('Completá los cinco pasos. La revisión técnica se registra al confirmar la emisión.');
+            blockers.push(...preparation.items.filter(i=>i.state!=='READY').map(i=>i.detail));
         if (!packages.length)
             blockers.push('Falta instalar la versión final del mandato y pagaré aprobada por hash, con la política de documentación externa de traslado. La declaración sobre los originales no aprueba una plantilla derivada.');
         const validApprovals: {
@@ -114,7 +117,7 @@ export async function productionOverview(runtime: ProductionRuntime, id: string,
         }
         const cursor = (s: typeof approvals) => s.size > 20 ? s.docs[19].id : null;
         const pagination = { approvalAfter: cursor(approvals), authorizationAfter: cursor(grants), recoveryAfter: cursor(recoveries) };
-        return { editorPrepared:!!ds.data()?.commercialPreparation, preparationComplete:preparation.items.every(i=>i.state==='READY'),contractTotal:ds.data()?.economicTerms?.contractTotal??null,issuancePackages:packages.filter(p=>{try{assertFinalRenderer(p);return true;}catch{return false;}}).map(p=>({id:p.id,version:p.version,hash:p.sha256,originalsBindingsRequired:!!p.originalsPolicy,externalDelivery:p.deliveryDocumentPolicy==='EXTERNAL_TRANSFER_AND_RECEIPT_V1'})), revisionPreparation:revision?.status==='EDITING'?{contractNumber:revision.allocationReceipt.contractNumber,snapshotVersion:revision.snapshotVersion}:null,canReviseBeforeSignature,revisionBlocker,approvalHistory, recoveryAuthorizations, pagination, issueDate: argentinaBusinessDate(), issueTimeZone: ISSUE_DATE_TIME_ZONE, operationId: identity.operationId, revision: ds.data()?.revision ?? 0, administratorAuthorized, deploymentEnabled, test, counterReady, readyValid, blockers, packages: packages.map(p => ({ id: p.id, version: p.version, hash: p.sha256, originalsBindingsRequired: !!p.originalsPolicy, templates: Object.values(p.templates).map(t => ({ kind: t.kind, title: t.title, version: t.version, hash: t.sha256 })) })), approvals: validApprovals, authorizations, frozen, issued, arcaEnabled: false as const };
+        return { preparationPending:preparation.items.filter(i=>i.state!=='READY').map(i=>({key:i.key,detail:i.detail})), documentScheduleCompatible:!editorPackage?.originalsPolicy||!(ds.data()?.paymentScheduleDraft??[]).slice(1).some((row:{dueDate:string})=>Number(row.dueDate.slice(8,10))>10||Number(row.dueDate.slice(8,10))<1), editorPrepared:!!ds.data()?.commercialPreparation, preparationComplete:preparation.items.every(i=>i.state==='READY'),contractTotal:ds.data()?.economicTerms?.contractTotal??null,issuancePackages:issuancePackages.map(p=>({id:p.id,version:p.version,hash:p.sha256,originalsBindingsRequired:!!p.originalsPolicy,externalDelivery:p.deliveryDocumentPolicy==='EXTERNAL_TRANSFER_AND_RECEIPT_V1'})), revisionPreparation:revision?.status==='EDITING'?{contractNumber:revision.allocationReceipt.contractNumber,snapshotVersion:revision.snapshotVersion}:null,canReviseBeforeSignature,revisionBlocker,approvalHistory, recoveryAuthorizations, pagination, issueDate: argentinaBusinessDate(), issueTimeZone: ISSUE_DATE_TIME_ZONE, operationId: identity.operationId, revision: ds.data()?.revision ?? 0, administratorAuthorized, deploymentEnabled, test, counterReady, readyValid, blockers, packages: packages.map(p => ({ id: p.id, version: p.version, hash: p.sha256, originalsBindingsRequired: !!p.originalsPolicy, templates: Object.values(p.templates).map(t => ({ kind: t.kind, title: t.title, version: t.version, hash: t.sha256 })) })), approvals: validApprovals, authorizations, frozen, issued, arcaEnabled: false as const };
     });
 }
 export type ProductionOverview = Awaited<ReturnType<typeof productionOverview>>;
