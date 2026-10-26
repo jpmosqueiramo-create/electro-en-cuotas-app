@@ -9,6 +9,7 @@ async function run(){
  for(const extra of [{costoProveedor:1},{sourceCollection:'solicitudes'},{estado:'APROBADO'},{montoCuota:10}])assert.throws(()=>parsePublicSolicitud({...payload,...extra}));
  for(const key of ['nombreCompleto','whatsapp','localidad','productoNombre'])assert.throws(()=>parsePublicSolicitud({...payload,[key]:''}));
  const legacy=mapSolicitudToAdminReadModel('old',{datosPersonales:{localidad:'Ciudad vieja',direccion:'Calle vieja'},estado:'REQUIERE_INFO'});
+ const directory=mapSolicitudToAdminReadModel('directory',{datosPersonales:{ocupacion:'Actividad sintética',antiguedadLaboral:'2020-01-01'},nombreAfiliado:'Afiliado sintético'});assert.equal(directory.ocupacion,'Actividad sintética');assert.equal(directory.antiguedadLaboral,'2020-01-01');assert.equal(directory.nombreAfiliado,'Afiliado sintético');
  assert.equal(legacy.localidad,'Ciudad vieja');assert.equal(legacy.domicilio,'Calle vieja');assert.equal(legacy.origenPresentacion,'Origen no registrado');
  const b=mapSolicitudCuentaToAdminReadModel('b',{tipo:'apertura_cuenta',productoId:'ref',productoNombre:'Original',planElegido:'12',montoCuota:85000,localidad:'Ciudad',direccion:'Calle'});
  assert.equal(b.referenciaCatalogo,'ref');assert.equal(b.planPreferido,'12');assert.equal(b.cuotaCapturada,85000);assert.equal(b.localidad,'Ciudad');assert.equal(b.domicilio,'Calle');assert.equal(b.origenPresentacion,'Solicitud desde catálogo');

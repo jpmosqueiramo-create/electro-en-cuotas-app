@@ -1,0 +1,29 @@
+{
+  "result": "PASS",
+  "project": "demo-cuenta-hogar",
+  "widths": [
+    1280,
+    390
+  ],
+  "requestIds": [
+    "web_29822a38-8343-4631-a611-b47d8a7a7528",
+    "web_29312346-057a-443f-8909-abccb022e6fa",
+    "web_40572e50-d1bf-4e28-855b-9c3c42b94009",
+    "web_b64d3335-2471-4b6f-a2bd-f4ee661363a8"
+  ],
+  "cases": [
+    "hero to persisted form",
+    "catalog reference and plan reach same inbox",
+    "four fields HTTP persistence",
+    "double click single effect",
+    "same payload replay unchanged updateTime",
+    "alert created",
+    "pending inbox and detail",
+    "directory authorized same source",
+    "removed requests excluded",
+    "focus refresh",
+    "desktop/mobile overflow",
+    "no external Firebase"
+  ],
+  "productionWrites": 0
+}

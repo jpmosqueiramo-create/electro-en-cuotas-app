@@ -16,6 +16,7 @@ export type AdminSolicitudListItem = {
   tipoPresentacion: AdminSolicitudType; origenPresentacion: string;
   nombreCliente: string | null; dni: string | null; cuil: string | null; email: string | null; telefono: string | null;
   domicilio: string | null; localidad: string | null; productoONecesidad: string | null;
+  ocupacion?: string | null; antiguedadLaboral?: string | null; nombreAfiliado?: string | null;
   referenciaCatalogo: string | null; planPreferido: string | null; cuotaCapturada: number | null;
   estadoOriginal: string | null; fechaCreacion: StoredDate | null; fechaSort: number | null;
   mensajeAdmin: string | null; clienteId: string | null; tipoOriginal: string | null;
@@ -105,6 +106,7 @@ function mapRecord(sourceCollection: AdminSolicitudSource, documentId: string, i
     cuil: text(personal.cuil, data.cuil), email: text(data.clienteEmail, data.email, personal.email),
     telefono: text(personal.telefono, data.whatsapp, data.telefono), domicilio: text(personal.direccion, data.direccion), localidad: text(personal.localidad, data.localidad),
     productoONecesidad: text(data.productoDeseado, data.necesidad, data.productoNombre),
+    ocupacion: text(personal.ocupacion,data.ocupacion), antiguedadLaboral: text(personal.antiguedadLaboral,data.antiguedadLaboral), nombreAfiliado: text(data.nombreAfiliado,data.referidoPor),
     estadoOriginal: text(data.estado), fechaCreacion, fechaSort: storedDateMillis(fechaCreacion),
     mensajeAdmin: text(data.mensajeAdmin), clienteId: text(data.clienteId), tipoOriginal,
     estadoEntrega: text(data.estadoEntrega), propuestas: projectProposals(data.presupuestos), documentos, actividad,

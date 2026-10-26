@@ -4,95 +4,41 @@ import { AdminNav } from "@/components/AdminNav";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
-import { db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
-import { Users, Search, ArrowLeft, MessageCircle, MapPin, Briefcase, FileText, Phone, Mail, UserCheck, ShieldCheck } from "lucide-react";
+import {useAuth} from "@/components/AuthProvider";
+import {loadAuthorizedRequestPage,mergeAuthorizedRequestPages} from "@/lib/adminSolicitudesHttpReader";
+import type {AdminSolicitudListItem} from "@/lib/adminSolicitudesReadModel";
+import { Users, Search, MessageCircle, MapPin, Briefcase } from "lucide-react";
 
 export default function ClientesPage() {
-  const [clientes, setClientes] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busqueda, setBusqueda] = useState<string>("");
-
-  const fetchClientes = async () => {
-    setLoading(true);
-    try {
-      const mapClientes = new Map<string, any>();
-
-      // 1. Cargar desde solicitudes_cuenta (Aperturas de Cuenta)
-      const snapAperturas = await getDocs(collection(db, "solicitudes_cuenta"));
-      snapAperturas.forEach((d) => {
-        const data = d.data();
-        const dni = (data.numeroDni || data.dni || "").toString().replace(/\D/g, "");
-        const email = (data.email || data.clienteEmail || "").toLowerCase().trim();
-        const key = dni || email || d.id;
-
-        if (key) {
-          mapClientes.set(key, {
-            id: d.id,
-            nombreCompleto: data.nombreCompleto || data.nombre || "Sin Nombre",
-            dni: dni || "S/D",
-            cuil: data.cuil || "S/D",
-            email: data.email || data.clienteEmail || "S/D",
-            whatsapp: data.whatsapp || data.telefono || "S/D",
-            direccion: data.direccion || data.localidad || "S/D",
-            ocupacion: data.ocupacion || "S/D",
-            antiguedadLaboral: data.antiguedadLaboral || "S/D",
-            nombreAfiliado: data.nombreAfiliado || data.referidoPor || "Directo",
-            estado: data.estado || "Aperturado",
-            solicitudesCount: 1,
-            fechaAlta: data.fechaIso || new Date().toISOString()
-          });
+  const {user}=useAuth();
+  const [loaded,setLoaded]=useState<{uid:string;items:AdminSolicitudListItem[]}|null>(null);
+  const [failed,setFailed]=useState(false);
+  const [attempt,setAttempt]=useState(0);
+  const [busqueda,setBusqueda]=useState("");
+  const loading=!!user&&loaded?.uid!==user.uid&&!failed;
+  // Same authorized sources and removal state as Solicitudes. Never merge people
+  // by DNI/email or recreate a customer profile just by opening this directory.
+  const clientes=(loaded?.uid===user?.uid?loaded?.items??[]:[]).filter(item=>!item.administrativeState||item.administrativeState.state==='ACTIVE').map(item=>({
+    id:item.recordKey,nombreCompleto:item.nombreCliente??"Sin nombre",dni:item.dni??"S/D",cuil:item.cuil??"S/D",email:item.email??"S/D",whatsapp:item.telefono??"S/D",direccion:item.domicilio??item.localidad??"S/D",ocupacion:item.ocupacion??"S/D",antiguedadLaboral:item.antiguedadLaboral??"S/D",nombreAfiliado:item.nombreAfiliado??"No registrado",estado:item.estadoOriginal??"Sin estado",solicitudesCount:1,fechaAlta:item.fechaCreacion?new Date(item.fechaSort!).toISOString():null,
+    href:`/admin/solicitudes/${item.sourceCollection}/${encodeURIComponent(item.documentId)}`,
+  }));
+  useEffect(()=>{
+    const controller=new AbortController();
+    if(!user)return()=>controller.abort();
+    async function load(){
+      try{
+        let page=await loadAuthorizedRequestPage(user!,{},controller.signal);
+        if(Object.keys(page.errors).length)throw Error('DIRECTORY_UNAVAILABLE');
+        while(Object.values(page.cursors).some(Boolean)){
+          const next=await loadAuthorizedRequestPage(user!,page.cursors,controller.signal);
+          if(Object.keys(next.errors).length)throw Error('DIRECTORY_UNAVAILABLE');
+          page=mergeAuthorizedRequestPages(page,next);
         }
-      });
-
-      // 2. Cargar/Enriquecer desde solicitudes (Solicitudes Estándar)
-      const snapSolicitudes = await getDocs(collection(db, "solicitudes"));
-      snapSolicitudes.forEach((d) => {
-        const data = d.data();
-        const dni = (data.numeroDni || data.dni || data.datosPersonales?.numeroDni || "").toString().replace(/\D/g, "");
-        const email = (data.email || data.clienteEmail || data.datosPersonales?.email || "").toLowerCase().trim();
-        const key = dni || email || d.id;
-
-        if (key) {
-          const existing = mapClientes.get(key);
-          if (existing) {
-            existing.solicitudesCount += 1;
-            if (data.estadoEntrega === "ENTREGADO" || data.nroContrato) {
-              existing.estado = "Con Contrato Activo";
-            }
-          } else {
-            mapClientes.set(key, {
-              id: d.id,
-              nombreCompleto: data.nombreCompleto || data.nombre || data.datosPersonales?.nombreCompleto || "Sin Nombre",
-              dni: dni || "S/D",
-              cuil: data.cuil || data.datosPersonales?.cuil || "S/D",
-              email: email || "S/D",
-              whatsapp: data.whatsapp || data.telefono || "S/D",
-              direccion: data.direccion || data.localidad || data.datosPersonales?.direccion || "S/D",
-              ocupacion: data.ocupacion || data.datosPersonales?.ocupacion || "S/D",
-              antiguedadLaboral: data.antiguedadLaboral || "S/D",
-              nombreAfiliado: data.nombreAfiliado || data.referidoPor || "Directo",
-              estado: data.estadoEntrega === "ENTREGADO" ? "Con Contrato Activo" : (data.estado || "Solicitante"),
-              solicitudesCount: 1,
-              fechaAlta: data.fechaCreacion || new Date().toISOString()
-            });
-          }
-        }
-      });
-
-      const listFinal = Array.from(mapClientes.values());
-      listFinal.sort((a, b) => new Date(b.fechaAlta).getTime() - new Date(a.fechaAlta).getTime());
-      setClientes(listFinal);
-    } catch (e) {
-      console.error("Error al cargar base de clientes:", e);
-    } finally {
-      setLoading(false);
+        if(!controller.signal.aborted){setLoaded({uid:user!.uid,items:page.items});setFailed(false);}
+      }catch{if(!controller.signal.aborted){setLoaded(null);setFailed(true);}}
     }
-  };
-
-  useEffect(() => {
-    fetchClientes();
-  }, []);
+    setFailed(false);void load();return()=>controller.abort();
+  },[user,attempt]);
 
   const clientesFiltrados = clientes.filter((c) => {
     const q = busqueda.toLowerCase().trim();
@@ -110,10 +56,10 @@ export default function ClientesPage() {
   return (
     <AdminProtectedRoute>
       <div className="min-h-screen bg-[#F7F3EC] text-[#1F2928] p-4 md:p-8 font-sans selection:bg-[#173E3B] selection:text-white">
-        <div className="max-w-7xl mx-auto space-y-6">
+        <div className="max-w-7xl mx-auto space-y-6" data-testid="clients-directory" data-loaded={loaded?.uid===user?.uid&&!!loaded} aria-busy={loading}>
 
           {/* HEADER PRINCIPAL */}
-          <AdminNav title="Base de Datos de Clientes" subtitle="Directorio maestro de perfiles, DNI, CUIL, teléfonos y antecedentes crediticios" />
+          <AdminNav title="Base de Datos de Clientes" subtitle="Datos de las solicitudes vigentes. Los registros retirados no aparecen en este directorio." />
 
           {/* BARRA DE BÚSQUEDA */}
           <div className="bg-[#FFFDFC] border border-[#DED8CF] p-4 rounded-2xl shadow-xs">
@@ -129,6 +75,7 @@ export default function ClientesPage() {
             </div>
           </div>
 
+          {failed&&<div role="alert" className="rounded-xl border border-[#DED8CF] p-4"><p>No pudimos cargar el directorio. No se muestran datos incompletos.</p><button type="button" className="min-h-11 underline" onClick={()=>{setLoaded(null);setFailed(false);setAttempt(value=>value+1);}}>Reintentar</button></div>}
           {/* LISTADO DE CLIENTES */}
           {loading ? (
             <div className="bg-[#FFFDFC] border border-[#DED8CF] p-12 rounded-2xl text-center shadow-xs">
@@ -144,12 +91,12 @@ export default function ClientesPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {clientesFiltrados.map((c, idx) => {
+              {clientesFiltrados.map((c) => {
                 const cleanPhone = (c.whatsapp || "").replace(/\D/g, "");
                 const waUrl = cleanPhone ? `https://wa.me/549${cleanPhone}?text=${encodeURIComponent(`Hola ${c.nombreCompleto}, te contactamos de Cuenta Hogar.`)}` : null;
 
                 return (
-                  <div key={idx} className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-[#173E3B]/60 p-6 rounded-2xl space-y-4 shadow-xs transition-all flex flex-col justify-between">
+                  <div key={c.id} className="bg-[#FFFDFC] border border-[#DED8CF] hover:border-[#173E3B]/60 p-6 rounded-2xl space-y-4 shadow-xs transition-all flex flex-col justify-between">
                     
                     <div>
                       {/* ENCABEZADO CLIENTE */}
@@ -227,7 +174,7 @@ export default function ClientesPage() {
                       </div>
 
                       <Link
-                        href={`/admin/solicitudes`}
+                        href={c.href}
                         className="bg-[#FFFDFC] hover:bg-[#F7F3EC] text-[#173E3B] font-heading font-bold px-3.5 py-2 rounded-xl text-xs border border-[#DED8CF] hover:border-[#173E3B] transition shadow-xs"
                       >
                         📋 Ver solicitudes
