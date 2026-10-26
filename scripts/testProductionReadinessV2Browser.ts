@@ -11,7 +11,7 @@ import {operationRef,operationFromAcceptance} from '../src/lib/operationV2';
 import {CatalogBrowser} from './helpers/catalogBrowser';
 import {adminEmail,adminPassword} from './helpers/adminSolicitudesFixtures';
 import {contractValueHash} from '../src/lib/contractIntegrityV2';
-const out='/tmp/cuenta-hogar-production-readiness',scope="document.querySelector('[data-testid=production-readiness]')";
+const out='docs/simple-contract-preparation/evidence',scope="document.querySelector('[data-testid=production-readiness]')";
 async function run(){
  assert.equal(process.env.GCLOUD_PROJECT,'demo-cuenta-hogar');assert.equal(adminEmail,'production-review-admin@example.test');
  const db=admin.firestore(),f=await persistReadyContract(db,'production-browser-'+randomUUID(),false,12);
@@ -23,16 +23,16 @@ async function run(){
   await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(adminEmail)},${JSON.stringify(adminPassword)}).then(()=>true)`);
   await browser.navigate(`/admin/operaciones/${f.id}/1?section=contract`);
   await browser.until(`${scope}?.textContent.includes('Próximo paso:')`,'readiness returned by actual API');
-  await browser.click('[data-testid=production-readiness] summary');
+  assert.equal(await browser.evaluate(`document.querySelectorAll('[data-testid=production-readiness] li').length`),5);
   for(const [width,height,mobile]of [[1280,900,false],[390,844,true]] as const){
    await browser.command('Emulation.setDeviceMetricsOverride',{width,height,mobile,deviceScaleFactor:1});
    await browser.evaluate(`${scope}.scrollIntoView({block:'start'})`);await browser.overflow('production-readiness-'+width);
-   await browser.until(`${scope}?.textContent.includes('Esta lista revisa la preparación; no autoriza emitir, entregar ni cobrar')`,'complete readiness panel');
-   const text=await browser.evaluate<string>(`${scope}.innerText`);writeFileSync(`${out}/readiness-${width}.txt`,text);assert(text.includes('Esta lista revisa la preparación; no autoriza emitir, entregar ni cobrar'));assert(text.includes('aprobación')||text.includes('validación'));
+   await browser.until(`${scope}?.textContent.includes('Estos cinco pasos revisan la preparación.')`,'complete readiness panel');
+   const text=await browser.evaluate<string>(`${scope}.innerText`);writeFileSync(`${out}/readiness-${width}.txt`,text);assert(text.includes('Estos cinco pasos revisan la preparación.'));assert(text.includes('2. Datos personales'));assert(text.includes('3. Datos laborales'));assert(!text.includes('Bloqueado · Implementación técnica'));assert(!text.includes('validación profesional'));
    const shot=await browser.command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(`${out}/readiness-${width}.png`,Buffer.from(shot.data as string,'base64'));
   }
   await browser.clickText('Actualizar comprobación',scope);await browser.until(`${scope}?.textContent.includes('Próximo paso:')`,'refresh remains read only');
-  const hrefs=await browser.evaluate<string[]>(`[...${scope}.querySelectorAll('a')].map(a=>a.getAttribute('href'))`);assert(hrefs.includes('/admin/aprobacion-documental'));assert(!hrefs.some(h=>h.includes('laboratorio')));
+  const hrefs=await browser.evaluate<string[]>(`[...${scope}.querySelectorAll('a')].map(a=>a.getAttribute('href'))`);assert(!hrefs.includes('/admin/aprobacion-documental'));assert(!hrefs.some(h=>h.includes('laboratorio')));
   const post=await browser.evaluate<number>(`window.__FIREBASE_AUTH__.currentUser.getIdToken().then(token=>fetch('/api/admin/presupuestos-v2/${f.id}/versions/1/production-readiness',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({action:'FREEZE',enabled:true})})).then(r=>r.status)`);assert.equal(post,405);
   assert.equal(browser.externalFirebase.length,0);
   const after=await f.r.draft.get();assert(after.updateTime!.isEqual(before.updateTime!));assert.equal(contractValueHash(after.data()),contractValueHash(before.data()));

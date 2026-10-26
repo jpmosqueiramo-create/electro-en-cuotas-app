@@ -1,3 +1,4 @@
+import {issuePreparedOperation} from '@/lib/productionV2/simpleIssuance';
 import {reopenBeforeSignature} from '@/lib/productionV2/documentRevision';
 import { NextResponse } from 'next/server';
 import { admin } from '@/lib/firebaseAdmin';
@@ -53,7 +54,8 @@ async function handler(req: Request, { params }: {
             throw Error('INVALID_REQUEST');
         const c = exact(await contractJson(req), ['action', 'data']);
         let result: unknown;
-        if (c.action === 'REGISTER_PACKAGE_APPROVAL')
+        if(c.action==='ISSUE_PREPARED')result=await issuePreparedOperation(context,await getBudgetDocumentationBucket(),p.budgetId,v,c.data,uid);
+        else if (c.action === 'REGISTER_PACKAGE_APPROVAL')
             result = await recordFinalPackageApproval(context, c.data, uid);
         else if (c.action === 'AUTHORIZE')
             result = await authorizeOperation(context, p.budgetId, v, c.data, uid);
@@ -76,7 +78,10 @@ async function handler(req: Request, { params }: {
             throw Error('INVALID_REQUEST');
         return NextResponse.json(result, { headers: contractHeaders });
     }
-    catch {
+    catch (error) {
+        const code=error instanceof Error?error.message:'';
+        const messages:Record<string,string>={ORIGINAL_ALLOCATION_REQUIRED:'Completá los importes explícitos del desglose del contrato.',ORIGINAL_ALLOCATION_TOTAL_MISMATCH:'El desglose debe sumar el total contractual guardado, sin agregar importes.',ORIGINAL_FORMAL_EVIDENCE_REQUIRED:'Completá la referencia de conformidad del desglose y los datos de emisión.',ORIGINAL_SCHEDULE_OUTSIDE_APPROVED_RANGE:'El texto instalado establece vencimientos mensuales entre los días 1 y 10. Revisá el cronograma con el cliente.',PRODUCTION_CONFORMITY_REQUIRED:'Registrá la conformidad del cliente para los datos y condiciones guardados.',PRODUCTION_IDENTITY_REQUIRED:'Revisá la discrepancia entre la identidad de la solicitud y los datos del cliente.',PRODUCTION_READY_REVISION_REQUIRED:'Los datos cambiaron. Actualizá la pantalla y revisá la preparación.',PRODUCTION_PRODUCT_REQUIRED:'Completá la cantidad y condición del producto.',EXACT_FINAL_PACKAGE_CONFIRMATION_REQUIRED:'La versión de documentos cambió. Revisá y confirmá la versión instalada.',PRODUCTION_COMMAND_CONFLICT:'El intento anterior tiene otros datos. Consultá los documentos y actualizá la pantalla antes de volver a emitir.'};
+        if(messages[code])return NextResponse.json({code,error:messages[code]},{status:409,headers:contractHeaders});
         return NextResponse.json({ error: 'No se confirmó la operación. Revisá los requisitos, la autorización y la revisión vigente. No cambies los identificadores al reintentar una solicitud sin respuesta.' }, { status: 409, headers: contractHeaders });
     }
 }

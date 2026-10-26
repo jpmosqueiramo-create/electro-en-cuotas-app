@@ -15,7 +15,7 @@ export function syntheticFinalPackage(): FinalPackage {
     const p = { id: 'synthetic-final-package', version: 'TEST_V1', issuer: { ...issuer, profileHash: contractValueHash(issuer) }, jurisdiction: 'Jurisdicción ficticia de prueba, sin aprobación jurídica', templates, rendererHash: FINAL_RENDERER_HASH, resourcesHash: FINAL_RESOURCES_HASH };
     return { ...p, sha256: packageHash(p) };
 }
-export async function productionReadyFixture(actor: string, originals = false) {
+export async function productionReadyFixture(actor: string, originals = false, skipCredit = false) {
     const db = admin.firestore(), f = await deliveryFixture(), root = { uid: actor, admin: true };
     // Create the original synthetic request explicitly; never look up a person by name.
     const source = db.collection(f.b.sourceCollection).doc(f.b.solicitudId);
@@ -26,10 +26,12 @@ export async function productionReadyFixture(actor: string, originals = false) {
     await publicContractData(db, intake.requestId!, intake.secret!, { personalData: { ...addressPayload.personalData, fullName: f.b.clienteSnapshot.nombre }, employmentData: originals ? { ...addressPayload.employmentData, cuil: '20123456786' } : addressPayload.employmentData });
     await cmd('APPLY_CLIENT_SUBMISSION', { submissionId: intake.requestId });
     await cmd('UPDATE_PRODUCT_DETAILS', { productDetails: { quantity: 1, condition: 'NEW' } });
+    if(!skipCredit){
     await reviewCommand(f.id, 'VERIFY_IDENTITY', { evidence: 'Identidad sintética verificada sólo en Emulator' });
     await addDocuments(f.id);
     await reviewCommand(f.id, 'DECIDE', { state: 'IN_REVIEW', resolution: 'Revisión sintética', notes: 'No es aprobación real' });
     await reviewCommand(f.id, 'DECIDE', { state: 'APPROVED', resolution: 'Aprobación ficticia', notes: 'No es autorización real' });
+    }
     await cmd('SET_CONTRACT_PLAN', { contractPlanCuotas: 12 });
     await cmd('SET_PAYMENT_DATES', { firstInstallmentDueDate: originals ? '2026-12-05' : '2026-12-15', preferredMonthlyDueDay: originals ? 5 : 30 });
     await cmd('RECORD_CLIENT_CONFORMITY', { evidence: 'Conformidad sintética explícita para pruebas, sin efectos reales' });

@@ -93,7 +93,7 @@ export async function approvedPackage(runtime: ProductionRuntime, tx: Transactio
         throw Error('FINAL_PACKAGE_APPROVAL_REVOKED');
     return { package: p, approval: a, approvalHash: contractValueHash(a) };
 }
-function legalContext(p: FinalPackage, approvalId: string, formal: unknown, draft: ContractDraftV2) {
+export function legalContext(p: FinalPackage, approvalId: string, formal: unknown, draft: ContractDraftV2) {
     const f = exact(formal, ['contractIssueDate', 'contractIssuePlace', 'promissoryNoteIssueDate', 'promissoryNoteIssuePlace', ...(p.originalsPolicy ? originalFormalFields : [])]);
     calendarDate(f.contractIssueDate);
     calendarDate(f.promissoryNoteIssueDate);

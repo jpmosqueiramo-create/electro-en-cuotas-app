@@ -1,4 +1,4 @@
-import {operationRuntime,productionDeliveryProof,verifiedProductionDelivery,productionWriter} from './productionV2/gates';
+import {operationRuntime,productionClientAccessProof,verifiedProductionClientDocuments,productionWriter} from './productionV2/gates';
 import type {VerifiedEvidence} from './operationEvidenceV2';
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
 import { createHash, timingSafeEqual } from 'node:crypto';
@@ -22,7 +22,7 @@ async function context(db:Firestore,tx:Transaction,id:string,v:number) {
  return {origin,state,ref};
 }
 async function requirePrerequisites(db:Firestore,tx:Transaction,id:string,v:number,forWrite=true,verified?:Map<string,VerifiedEvidence>) {
- const runtime=await operationRuntime(db,tx,id,v);if(runtime){await productionDeliveryProof(runtime,tx,id,v,'CLIENT_ACTIVATION',forWrite,verified);return;}
+ const runtime=await operationRuntime(db,tx,id,v);if(runtime){await productionClientAccessProof(runtime,tx,id,v,forWrite,verified);return;}
  requireInvitationEmulator();
  const proof=(await tx.get(prerequisitesRef(db,id,v))).data();
  if(proof?.schemaVersion!=='EMULATOR_CLIENT_ACTIVATION_FIXTURE_V2'||proof.project!=='demo-cuenta-hogar'||proof.delivered!==true||proof.mandateSigned!==true||proof.pagareSigned!==true||proof.remitoSigned!==true)portalFail('Falta entrega efectiva y control documental firmado (fixture aislado de Emulator).');
@@ -38,13 +38,13 @@ export async function readClientBinding(db:Firestore,id:string,v:number,actor?:s
   const events=await tx.get(clientBindingRef(db,id,v).collection('events').orderBy('revision','desc').limit(50));
   let invitation:null|{id:string;state:string;expiresAt:string}=null;
   if(state.activeInvitationId){const i=(await tx.get(invitationRef(db,state.activeInvitationId))).data() as ClientInvitationV2;invitation={id:i.invitationId,state:i.state,expiresAt:i.expiresAt};}
-  const runtime=await operationRuntime(db,tx,id,v);let productive=false;if(runtime&&actor){try{await productionWriter(runtime,{uid:actor,admin:true});await productionDeliveryProof(runtime,tx,id,v,'CLIENT_ACTIVATION');productive=true;}catch{/* Read-only preparation remains available. */}}
-  return {identity:origin.identity,state,invitation,executionMode:runtime?'PRODUCTION' as const:'EMULATOR_ONLY' as const,invitationsEnabled:runtime?productive:invitationsEnabled(),blockReason:productive?'Entrega, firmas y originales comprobados. La invitación requiere una cuenta existente vinculada explícitamente.':'Activación pendiente de entrega efectiva, tres documentos firmados y autorización específica. No se activa al vincular un UID.',events:events.docs.map(d=>d.data())};
+  const runtime=await operationRuntime(db,tx,id,v);let productive=false;if(runtime&&actor){try{await productionWriter(runtime,{uid:actor,admin:true});await productionClientAccessProof(runtime,tx,id,v);productive=true;}catch{/* Read-only preparation remains available. */}}
+  return {identity:origin.identity,state,invitation,executionMode:runtime?'PRODUCTION' as const:'EMULATOR_ONLY' as const,invitationsEnabled:runtime?productive:invitationsEnabled(),blockReason:productive?'Mandato y pagaré emitidos. Vinculá explícitamente una cuenta existente; el portal no activa cuotas ni acredita entrega.':'El portal estará disponible después de emitir los documentos. Requiere una cuenta existente vinculada y verificada; vincular un UID no activa su acceso.',events:events.docs.map(d=>d.data())};
  });
 }
 export async function clientBindingCommand(db:Firestore,id:string,v:number,input:unknown,actor:string) {
  const c=parseClientCommand(input),runtime=await db.runTransaction(tx=>operationRuntime(db,tx,id,v));let verified:Map<string,VerifiedEvidence>|undefined;
- if(c.action==='INVITE'&&runtime){await productionWriter(runtime,{uid:actor,admin:true});verified=await verifiedProductionDelivery(runtime,id,v,'CLIENT_ACTIVATION');}
+ if(c.action==='INVITE'&&runtime){await productionWriter(runtime,{uid:actor,admin:true});verified=await verifiedProductionClientDocuments(runtime,id,v);}
  const receipt=clientBindingRef(db,id,v).collection('commands').doc(c.commandId);
  // Hash the capability before digesting or persisting commands; no raw link/token in history.
  const safeData=c.action==='INVITE'?{...c.data,token:hash(portalToken(c.data.token))}:c.data;
@@ -127,7 +127,7 @@ export async function redeemClientInvitation(db:Firestore,invitationId:string,to
  const initial=(await invitationRef(db,invitationId).get()).data() as ClientInvitationV2|undefined;verifyToken(initial,token);if(!initial)portalFail();
  const runtime=await db.runTransaction(tx=>operationRuntime(db,tx,initial.budgetId,initial.version));
  if(!runtime)requireInvitationEmulator();else await productionWriter(runtime,{uid,admin:false});
- const verified=runtime?await verifiedProductionDelivery(runtime,initial.budgetId,initial.version,'CLIENT_ACTIVATION'):undefined;
+ const verified=runtime?await verifiedProductionClientDocuments(runtime,initial.budgetId,initial.version):undefined;
  if(!user.emailVerified)portalFail('Verificá tu email antes de activar el servicio.');
  return db.runTransaction(async tx=>{
   const ir=invitationRef(db,invitationId),i=(await tx.get(ir)).data() as ClientInvitationV2|undefined;verifyToken(i,token);if(!i)portalFail();

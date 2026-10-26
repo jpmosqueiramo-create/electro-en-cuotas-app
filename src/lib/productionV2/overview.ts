@@ -1,3 +1,5 @@
+import {readProductionReadiness} from '../productionReadinessV2Server';
+import {assertFinalRenderer} from './pdf';
 import {revisionState,assertBeforeSignature,issuedManifestRef} from './documentRevisionState';
 import { FieldPath, type CollectionReference } from 'firebase-admin/firestore';
 import { opaque } from '../contractV2';
@@ -25,6 +27,7 @@ export async function productionOverview(runtime: ProductionRuntime, id: string,
     const { db, test, administrators, packages, auth } = runtimeData(runtime), user = await auth.getUser(actor);
     if (user.disabled || !user.emailVerified || !isAdminEmail(user.email)) throw Error('PRODUCTION_ADMIN_REQUIRED');
     const administratorAuthorized = !user.disabled && user.emailVerified && administrators.includes(actor), deploymentEnabled = test || process.env.PRODUCTION_OPERATIONS_ENABLED === 'true';
+    const preparation=await readProductionReadiness(db,id,v);
     return db.runTransaction(async (tx) => {
         const r = contractRefs(db, id, v), ref = productionRef(db, id, v);
         const [ds, ac, op, counter, approvals, grants, recoveries] = await Promise.all([tx.get(r.draft), tx.get(r.acceptance), tx.get(operationRef(db, id, v)), tx.get(db.doc(productionPaths.counter)), tx.get(pageQuery(legalRegistryRef(db).collection('finalPackageApprovals'), page.approvalAfter)), tx.get(pageQuery(ref.collection('authorizations'), page.authorizationAfter)), tx.get(pageQuery(ref.collection('issuanceRecoveries'), page.recoveryAfter))]);
@@ -40,11 +43,11 @@ export async function productionOverview(runtime: ProductionRuntime, id: string,
                 readyValid = true;
             }
             catch {
-                blockers.push('Revisar identidad, crédito, conformidad y evidencia READY vigentes.');
+                blockers.push('Revisar los datos guardados, la identidad y la aceptación de las condiciones.');
             }
         }
         else if (!ds.data()?.productionFreeze)
-            blockers.push('Completar y confirmar la revisión contractual READY.');
+            blockers.push('Completá los cinco pasos. La revisión técnica se registra al confirmar la emisión.');
         if (!packages.length)
             blockers.push('Falta instalar la versión final del mandato y pagaré aprobada por hash, con la política de documentación externa de traslado. La declaración sobre los originales no aprueba una plantilla derivada.');
         const validApprovals: {
@@ -64,8 +67,7 @@ export async function productionOverview(runtime: ProductionRuntime, id: string,
             catch { /* Unrelated, revoked and stale approvals never authorize a package. */ }
             approvalHistory.push({ id: a.id, packageId: String(a.data().packageId ?? ''), at: String(a.data().at ?? ''), basis: a.data().status === 'OWNER_AUTHORIZED' ? 'OWNER_AUTHORIZATION' : a.data().status === 'PROFESSIONAL_VERSION_IDENTIFIED' ? 'PROFESSIONAL_APPROVAL' : 'UNKNOWN', valid });
         }
-        if (!validApprovals.length)
-            blockers.push('No hay aprobaciones vigentes en esta página del historial. Revisá las otras páginas o registrá la aprobación exacta faltante.');
+        // The explicit integrated emission confirms the exact owner package; no separate form required.
         const counterReady = counter.data()?.executionMode === 'PRODUCTION' && counter.data()?.active === true && !!counter.data()?.initializationAuthorizationReference;
         if (!counterReady)
             blockers.push('La numeración requiere inicialización expresamente autorizada después de inventariar los números existentes.');
@@ -112,7 +114,7 @@ export async function productionOverview(runtime: ProductionRuntime, id: string,
         }
         const cursor = (s: typeof approvals) => s.size > 20 ? s.docs[19].id : null;
         const pagination = { approvalAfter: cursor(approvals), authorizationAfter: cursor(grants), recoveryAfter: cursor(recoveries) };
-        return { revisionPreparation:revision?.status==='EDITING'?{contractNumber:revision.allocationReceipt.contractNumber,snapshotVersion:revision.snapshotVersion}:null,canReviseBeforeSignature,revisionBlocker,approvalHistory, recoveryAuthorizations, pagination, issueDate: argentinaBusinessDate(), issueTimeZone: ISSUE_DATE_TIME_ZONE, operationId: identity.operationId, revision: ds.data()?.revision ?? 0, administratorAuthorized, deploymentEnabled, test, counterReady, readyValid, blockers, packages: packages.map(p => ({ id: p.id, version: p.version, hash: p.sha256, originalsBindingsRequired: !!p.originalsPolicy, templates: Object.values(p.templates).map(t => ({ kind: t.kind, title: t.title, version: t.version, hash: t.sha256 })) })), approvals: validApprovals, authorizations, frozen, issued, arcaEnabled: false as const };
+        return { preparationComplete:preparation.items.every(i=>i.state==='READY'),contractTotal:ds.data()?.economicTerms?.contractTotal??null,issuancePackages:packages.filter(p=>{try{assertFinalRenderer(p);return true;}catch{return false;}}).map(p=>({id:p.id,version:p.version,hash:p.sha256,originalsBindingsRequired:!!p.originalsPolicy,externalDelivery:p.deliveryDocumentPolicy==='EXTERNAL_TRANSFER_AND_RECEIPT_V1'})), revisionPreparation:revision?.status==='EDITING'?{contractNumber:revision.allocationReceipt.contractNumber,snapshotVersion:revision.snapshotVersion}:null,canReviseBeforeSignature,revisionBlocker,approvalHistory, recoveryAuthorizations, pagination, issueDate: argentinaBusinessDate(), issueTimeZone: ISSUE_DATE_TIME_ZONE, operationId: identity.operationId, revision: ds.data()?.revision ?? 0, administratorAuthorized, deploymentEnabled, test, counterReady, readyValid, blockers, packages: packages.map(p => ({ id: p.id, version: p.version, hash: p.sha256, originalsBindingsRequired: !!p.originalsPolicy, templates: Object.values(p.templates).map(t => ({ kind: t.kind, title: t.title, version: t.version, hash: t.sha256 })) })), approvals: validApprovals, authorizations, frozen, issued, arcaEnabled: false as const };
     });
 }
 export type ProductionOverview = Awaited<ReturnType<typeof productionOverview>>;

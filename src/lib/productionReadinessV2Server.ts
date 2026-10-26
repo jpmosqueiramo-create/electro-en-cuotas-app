@@ -1,7 +1,7 @@
 import {createHash} from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import { contractRefs, clientTermsDigest } from './contractV2Server';
-import { completeness, contractEconomics, contractSchedule, stable, newContractDraft, type ContractDraftV2 } from './contractV2';
+import { completeness, contractEconomics, contractSchedule, stable, dataFields, employmentFields, newContractDraft, type ContractDraftV2 } from './contractV2';
 import { validateBudgetV2, type BudgetV2 } from './budgetV2';
 import { privateBudgetReferenceId } from './budgetV2Persistence';
 import type { BudgetAcceptanceV2 } from './budgetAcceptanceV2';
@@ -63,7 +63,8 @@ export async function readProductionReadiness(db: Firestore, id: string, version
         saved.data()?.identityHash === createHash('sha256').update(stable({dni:draft.personalData.dni,fullName:draft.personalData.fullName.trim().normalize('NFKC').toLocaleUpperCase('es-AR')})).digest('hex');
     }
     const items = assessProductionReadiness({sourceValid: !identityReview.originalUnavailable,
-      personalComplete: !!draft.lastClientSubmissionAppliedAt && !missing.some(x => x.startsWith('Datos personales')),
+      personalComplete: !identityReview.requiresClarification && !missing.some(x => x.startsWith('Datos personales')),
+      employmentComplete: (()=>{try{dataFields(draft.employmentData,employmentFields);return true;}catch{return false;}})(),
       productComplete: !!draft.productDetails?.quantity && !!draft.productDetails?.condition,
       economicComplete, scheduleComplete, identityVerified, creditApproved,
       conformityCurrent: consent.exists && consent.data()?.confirmedDigest === clientTermsDigest(draft) &&
@@ -74,6 +75,6 @@ export async function readProductionReadiness(db: Firestore, id: string, version
       sourceHashes:[contractValueHash(budget),contractValueHash(acceptance),contractValueHash(draft)],
       consent:consent.data()??null,credit:credit.data()??null,records:records.docs.map(doc=>({id:doc.id,record:doc.data()})),items});
     return {policy:PRODUCTION_READINESS_POLICY,operationId:identity.operationId,revision:draft.revision,digest,evaluatedAt:new Date().toISOString(),items,
-      nextAction:items.find(item=>item.state!=='READY')!,finalIssuanceEnabled:false,productionDeliveryEnabled:false,productionFinancialEnabled:false,arcaEnabled:false};
+      nextAction:items.find(item=>item.state!=='READY')??{...items[4],label:'Revisar emisión',detail:'Los cinco pasos de preparación están completos. Consultá el estado efectivo de emisión.'},finalIssuanceEnabled:false,productionDeliveryEnabled:false,productionFinancialEnabled:false,arcaEnabled:false};
   });
 }

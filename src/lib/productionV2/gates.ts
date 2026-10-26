@@ -1,3 +1,4 @@
+import {issuedDocumentKinds} from './catalog';
 import {externalDeliveryPolicy,externalDeliveryMissing} from '../externalDeliveryDocumentV2';
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
 import { admin } from '../firebaseAdmin';
@@ -9,7 +10,6 @@ import type { DeliveryV2 } from '../operationDeliveryV2';
 import { verifyEvidenceObject, assertVerifiedEvidence, type EvidenceMetadata, type VerifiedEvidence } from '../operationEvidenceV2';
 import { runtimeForDatabase, runtimeData, requireProductionActor, type ProductionRuntime } from './runtime';
 import { issuedOperation } from './documents';
-import { issuedDocumentKinds } from './catalog';
 import type { ProductionScope } from './authorization';
 export async function operationRuntime(db: Firestore, tx: Transaction, id: string, v: number): Promise<ProductionRuntime | null> {
     const d = (await tx.get(contractRefs(db, id, v).draft)).data();
@@ -82,4 +82,24 @@ export async function verifiedProductionDelivery(runtime: ProductionRuntime, id:
     for (const [path, p] of files)
         verified.set(path, await verifyEvidenceObject(bucket, p));
     return verified;
+}
+
+/** Portal activation follows issued documents, not delivery or debt activation.
+ * Reads keep the same snapshot/package/authorization/manifest proof. Activation
+ * verifies immutable object generations outside the transaction and rechecks the
+ * exact metadata inside it. Financial/delivery proofs above remain unchanged.
+ */
+export async function productionClientAccessProof(runtime:ProductionRuntime,tx:Transaction,id:string,v:number,forWrite=true,verified?:Map<string,VerifiedEvidence>){
+ const issued=await issuedOperation(runtime,tx,id,v,'CLIENT_ACTIVATION',forWrite);
+ for(const k of issuedDocumentKinds(issued.package)){
+  const doc=issued.manifest.documents[k];
+  if(verified)assertVerifiedEvidence(doc,verified.get(doc.path));
+ }
+ return issued;
+}
+export async function verifiedProductionClientDocuments(runtime:ProductionRuntime,id:string,v:number){
+ const {db}=runtimeData(runtime),issued=await db.runTransaction(tx=>productionClientAccessProof(runtime,tx,id,v));
+ const {getBudgetDocumentationBucket}=await import('../budgetDocumentationStorage'),bucket=await getBudgetDocumentationBucket(),verified=new Map<string,VerifiedEvidence>();
+ for(const k of issuedDocumentKinds(issued.package)){const doc=issued.manifest.documents[k];verified.set(doc.path,await verifyEvidenceObject(bucket,doc));}
+ return verified;
 }
