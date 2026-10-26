@@ -1,47 +1,53 @@
-# Preparación contractual en cinco pasos
+# Preparación y emisión simplificadas — PR #93
 
-## Cambio implementado
+## Recorrido manual
 
-Se reemplaza el diagnóstico histórico de 18 filas por una presentación de preparación con exactamente cinco pasos:
+1. Abrir la operación aceptada y «Confeccionar contrato y pagaré», también disponible en ventana independiente.
+2. Completar los cinco pasos: solicitud/presupuesto/aceptación, datos personales, datos laborales, condiciones económicas y cronograma. El producto y la conformidad vigente forman parte del origen aceptado. Los campos laborales opcionales conservan su régimen actual.
+3. Guardar los cambios. El botón de emisión no acepta cambios locales sin guardar.
+4. En «Emitir contrato y pagaré», revisar la versión instalada, lugar y fecha efectiva de emisión. Si el original exige desglose económico, completar sus importes explícitos y referencia de conformidad; deben sumar el total guardado. No se equiparan servicios y CFT ni se inventan tasas.
+5. Confirmar como titular los documentos exactos y la operación, y pulsar «Emitir contrato y pagaré». El servidor registra revisión técnica, aprobación del titular por hash y autorización de la operación; reserva una única numeración y genera ambos archivos privados.
+6. Abrir ambos documentos. Ahora se puede vincular expresamente una cuenta existente y verificada e invitarla al portal, antes de la entrega. Este acceso no crea cuotas ni acredita firmas.
+7. Continuar a logística. Firmas, originales, custodia, documentación externa y recepción/entrega conservan sus validaciones para activar las cuotas.
 
-1. Solicitud y aceptación (incluye producto y conformidad de las condiciones guardadas).
-2. Datos personales.
-3. Datos laborales (conserva sus campos opcionales).
-4. Condiciones económicas.
-5. Cronograma contractual.
+## Política autorizada y controles
 
-El panel aparece directamente al inicio del paso Contrato, en la ficha y en su ventana independiente. Sustituye el resumen duplicado anterior. Los botones navegan a los campos existentes; no abren nuevos formularios ni guardan datos.
+El propietario autorizó expresamente retirar evaluación crediticia y verificación documental manual como requisitos adicionales de emisión, integrar aprobación exacta y autorización por operación en una confirmación, y permitir portal posterior a documentos sin esperar entrega. El rechazo inicial de revisión automática correspondía a un alcance anterior; la autorización específica posterior sustenta estos cambios.
 
-Los datos personales completos ingresados por Administración ya no se presentan como pendientes por carecer de `lastClientSubmissionAppliedAt`. Se sigue comprobando su contenido y cualquier discrepancia de identidad. Se conserva la recepción/aplicación explícita del formulario del cliente.
+La evaluación crediticia sigue disponible como herramienta administrativa. No se inventa una aprobación profesional, verificación documental, conformidad ni firma. Se conservan identidad coherente, origen aceptado, datos completos, cronograma íntegro, conformidad vigente, permisos administrativos verificados, habilitación del servidor, paquete exacto instalado, hashes, numeración, auditoría y revocación. La aprobación expresa del titular no se ejecuta al cargar una página.
 
-Se retiraron del **diagnóstico de presentación** las filas permanentes de aprobación profesional, infraestructura, tres remitos/firmas, ARCA y portal. Esas filas describían un estado antiguo de implementación y no representaban la configuración efectiva de emisión. La presentación ahora remite al estado efectivo de «Emisión definitiva del contrato y pagaré» y no afirma que preparar cinco pasos autorice por sí solo una acción.
+El nuevo comando `ISSUE_PREPARED` almacena una intención inmutable en la subcolección `simpleIssuanceCommands` del registro productivo de la operación. Guarda digest, actor, revisión, paquete, contexto formal, fecha de autorización y resultado; no almacena tokens. Sus fases usan los recibos idempotentes de los motores existentes. La caducidad de autorización y la recuperación explícita de archivos incompletos conservan su procedimiento vigente. Los nuevos permisos abarcan emisión y continuidad del circuito con las verificaciones independientes de cada etapa.
 
-## Alcance no implementado: política del backend
+Los registros históricos no se migran ni se reescriben. Correcciones previas a firmas/entrega conservan CH e historial. No cambian cláusulas, renderer, versiones de plantillas, catálogo instalado, Rules, Auth, configuración, fórmulas, ledger ni contador productivo. ARCA continúa separada. No hay merge ni deploy en esta entrega.
 
-La revisión automática rechazó el cambio que retiraba la aprobación crediticia del backend y sustituía las barreras de emisión por los cinco pasos. Ninguna parte de ese comando rechazado se aplicó.
+## Evidencia ejecutada
 
-Este PR no elimina ni evita validadores de emisión, aprobación de paquete, autorización por operación, READY, crédito, identidad, conformidad, firmas, entrega, permisos, numeración, finanzas o acceso al portal. No integra aprobaciones automáticas. No modifica documentos ni sus hashes, catálogo, Rules, Auth, configuración, CH, motores financieros ni datos productivos.
+| Verificación | Resultado | Entorno/evidencia |
+| --- | --- | --- |
+| Cinco pasos y datos completos sin marca de formulario recibido | PASS | 11 casos unitarios + 9 grupos de lectura en Emulator, etapa inicial de este mismo PR |
+| Emisión integrada, paquete exacto, administrador, conformidad, concurrencia, replay, archivos y portal sin entrega | PASS | 7 grupos con paquete sintético; 8 grupos finales con el paquete original instalable, demo-cuenta-hogar |
+| Identidad incompatible, administrador no verificado, archivo sustituido y acceso de otro rol | PASS | Suite `testSimpleContractIssuanceEmulator.ts`; sin consumo CH en rechazos previos |
+| Portal antes de entrega sin deuda; activación financiera/entrega sin evidencias rechazada | PASS | Misma operación sintética de la suite anterior |
+| Contratos, recuperación P1, revocación, numeración, entrega externa, pagos, parciales, reversas, saldos y permisos de tres roles | PASS | 32 grupos `testProductionAdapterEmulator.ts`, aprobación del titular y documentación externa |
+| Correcciones con mismo CH, edición concurrente, historial inmutable, bloqueo tras firmas/entrega/finanzas | PASS | `testContractDocumentRevisionEmulator.ts` |
+| Evaluación crediticia independiente, documentos privados, decisiones, permisos y concurrencia | PASS | `testCreditReviewV2Emulator.ts` |
+| Ficha, datos recibidos, conformidad, control de revisión, origen y permisos | PASS | `testOperationWorkspaceV2Emulator.ts`, identidad sintética @example.invalid requerida por esa suite |
+| Botón único mediante HTTP real y UI Next, desktop 1280×900/mobile 390×844, sin desbordamiento | PASS | Chrome local; handlers reales conectados a runtime opaco exclusivamente Emulator |
+| PDF | PASS | Mandato 3 páginas + pagaré 1; revisión visual de todas, texto seleccionable, logo sólo en mandato |
+| TypeScript, ESLint diferencial, build y test:safe | PASS | Ejecutados localmente; manifiesto reproducible del renderer sin cambios |
 
-La habilitación funcional integral solicitada por el propietario **todavía no está resuelta**. El PR debe seguir en borrador mientras se confirma el alcance del cambio de política y se implementa y prueba.
+Los fixtures usan capital $580.000, servicios brutos con IVA incluido $1.160.000, total/pagaré $1.740.000 y 12 cuotas de $145.000. Vencimientos del caso original: 05/12/2026 al 05/11/2027. El desglose original también usa valores sintéticos explícitos; **no constituye una distribución comercial aprobada ni una regla servicios=CFT**. No se calcula otro total ni se suma IVA en el PDF.
 
-## Cambio concreto propuesto para autorización
+Las capturas muestran una operación sintética recorrida desde el navegador; los PDF adjuntos corresponden al caso sintético de concurrencia de la misma suite (CH-000001 local). La emisión de navegador reserva CH-000002 local: no se mezclan ambas como si fueran el mismo expediente. Ambos casos viven únicamente en Emulator.
 
-La confirmación específica pendiente abarca:
+[Desktop](evidence/issuance/desktop.png) · [Mobile](evidence/issuance/mobile.png) · [Emitidos en mobile](evidence/issuance/issued-mobile.png) · [Mandato sintético](evidence/issuance/mandato-sintetico.pdf) · [Pagaré sintético](evidence/issuance/pagare-sintetico.pdf) · [Resultados](evidence/issuance/results.json).
 
-- Dejar de exigir aprobación crediticia y verificación documental manual como condiciones adicionales de emisión, manteniendo el rechazo de identidad incompatible y el origen aceptado íntegro.
-- Integrar la revisión técnica, la aprobación exacta del paquete por el titular y la autorización por operación en una confirmación explícita «Emitir contrato y pagaré», con hashes, control de revisión, auditoría y reintentos idempotentes. No registrar una aprobación profesional ni una conformidad del cliente inexistente.
-- Permitir la activación del portal después de emitir ambos documentos íntegros, con cuenta existente expresamente vinculada y Auth verificada, sin exigir previamente entrega. Esto no activaría cuotas ni acreditaría pagos.
-- Mantener firmas, originales, custodia, documentación externa y entrega como condiciones de la etapa logística y de activación financiera; conservar permisos, revocación, conciliación y ausencia de duplicaciones.
+### Límites y observaciones
 
-Esta propuesta no autoriza ni ejecuta emisiones, vínculos o movimientos reales, ni cambia configuración. No requiere volver a consultar al abogado para preparar el cambio de software; no modifica cláusulas.
+No se emitieron instrumentos reales ni se consumió CH productivo. No se probaron estas modificaciones en producción porque aún no están mergeadas ni desplegadas. La aceptación final productiva requiere su publicación autorizada y el recorrido manual del propietario.
 
-## Pruebas realmente ejecutadas
+La primera ejecución de dos suites relacionadas encontró expectativas de crédito anteriores a la política autorizada; se actualizaron para comprobar datos/conformidad, sin retirar pruebas de integridad. Otra ejecución de ficha se detuvo por su exigencia explícita de correo sintético @example.invalid; pasó al usar su configuración correcta. Durante los navegadores, el listener directo de alertas del dashboard recibió una denegación de Rules con la identidad sintética: no se cambiaron Rules para evitarla. Los handlers del recorrido contractual pasaron; no se presenta esa alerta general como verificada.
 
-- Unitarias de preparación: **11 PASS** (cinco pasos, cada pendiente, datos laborales opcionales y ausencia de capacidad productiva por flags del navegador).
-- Emulator de lectura: **9 grupos PASS** (carga administrativa reconocida sin formulario enviado, permisos, identidad, conformidad, cronograma inconsistente, revisión y ausencia de escrituras o cambios de timestamps).
-- Navegador Chrome local desktop 1280×900 y mobile 390×844: **PASS**, cinco filas visibles, sin desbordamiento, GET privado y POST rechazado 405, ningún cambio en el borrador.
-- TypeScript, ESLint diferencial, build y `test:safe`: **PASS**.
+## Publicación pendiente
 
-[Desktop](evidence/readiness-1280.png) · [Mobile](evidence/readiness-390.png) · [Resultado navegador](evidence/browser-results.json).
-
-Las escrituras de fixtures se ejecutaron exclusivamente en `demo-cuenta-hogar`, con Firestore 8080, Auth 9099 y Storage 9199. No se hicieron pruebas comerciales productivas, merge ni deploy.
+Revisión y merge manual del PR #93; verificar SHA resultante y ejecutar preflight antes de solicitar un rollout específico. Este PR no necesita cambiar las variables productivas ya autorizadas, instalar otro catálogo ni reinicializar CH. Después, el propietario podrá emitir desde la interfaz con su administrador autorizado y datos completos. No se ejecutará una primera emisión real durante la verificación automática.

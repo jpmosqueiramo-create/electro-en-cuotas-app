@@ -22,7 +22,8 @@ async function main() {
   let d=(await contractCommand(db,id,1,{action:'OPEN_OR_CREATE',commandId:'open'},'synthetic-admin')).draft;
   const cmd=async(action:string,extra:Record<string,unknown>={})=>{const result=await contractCommand(db,id,1,{action,commandId:randomUUID(),expectedRevision:d.revision,...extra},'synthetic-admin');d=result.draft;return result;};
   await cmd('UPDATE_PERSONAL_DATA',{personalData:addressPayload.personalData});
-  await assert.rejects(()=>cmd('SET_CONTRACT_PLAN',{contractPlanCuotas:12}),/evaluación crediticia/);
+  await cmd('SET_CONTRACT_PLAN',{contractPlanCuotas:12});assert.equal(d.economicTerms?.contractPlanCuotas,12);
+  assert.notEqual(operationNextAction({draft:d,tracking:null,pendingSubmissions:false,conformityPending:false,creditState:'PENDING_DOCUMENTS'}).label,'Revisar documentación del cliente');
   const intake=await cmd('CREATE_CLIENT_DATA_REQUEST');
   await publicContractData(db,intake.requestId!,intake.secret!,{personalData:addressPayload.personalData,employmentData:addressPayload.employmentData});
   await cmd('APPLY_CLIENT_SUBMISSION',{submissionId:intake.requestId});

@@ -17,11 +17,11 @@ import {readOperationDraftDocuments} from '../src/lib/contractDocuments/operatio
 import {createCreditCase} from './testCreditReviewV2Emulator';
 async function main(){
  const db=admin.firestore(),actor=(await admin.auth().createUser({email:process.env.NEXT_PUBLIC_ADMIN_EMAIL,emailVerified:true})).uid,p=syntheticFinalPackage(),runtime=productionRuntimeForEmulator(db,admin.auth(),[p],[actor]),bucket=await getBudgetDocumentationBucket();
- // The new preparation policy persists draft terms before credit without allowing READY.
+ // The new preparation policy persists draft terms before credit; current conformity remains required.
  const pending=await createCreditCase();let draft=(await contractCommand(db,pending.id,1,{action:'SET_CONTRACT_PLAN',contractPlanCuotas:12,commandId:randomUUID(),expectedRevision:pending.d.revision},actor)).draft;
  draft=(await contractCommand(db,pending.id,1,{action:'SET_PAYMENT_DATES',firstInstallmentDueDate:'2027-01-31',preferredMonthlyDueDay:31,commandId:randomUUID(),expectedRevision:draft.revision},actor)).draft;
  assert.equal(draft.paymentScheduleDraft.length,12);assert.equal(draft.paymentScheduleDraft[1].dueDate,'2027-02-28');
- await assert.rejects(contractCommand(db,pending.id,1,{action:'MARK_READY_TO_FORMALIZE',commandId:randomUUID(),expectedRevision:draft.revision},actor),/crediticia/);
+ await assert.rejects(contractCommand(db,pending.id,1,{action:'MARK_READY_TO_FORMALIZE',commandId:randomUUID(),expectedRevision:draft.revision},actor),/conformidad/);
  draft=(await contractCommand(db,pending.id,1,{action:'UPDATE_PERSONAL_DATA',personalData:{...draft.personalData,fullName:pending.b.clienteSnapshot.nombre},commandId:randomUUID(),expectedRevision:draft.revision},actor)).draft;
  const preview=await readOperationDraftDocuments(db,pending.id,1);assert.equal(preview.available,false);assert.equal(preview.code,'DOCUMENT_IDENTITY_REVIEW_REQUIRED');assert.equal((await db.collection('contractNumbersV2').get()).size,0);
  const approvalId=randomUUID();await recordFinalPackageApproval(runtime,{commandId:approvalId,packageId:p.id,packageHash:p.sha256,approvalBasis:'OWNER_AUTHORIZATION',reason:'Aprobación sintética para pruebas sin efectos reales',confirmed:true},actor);
