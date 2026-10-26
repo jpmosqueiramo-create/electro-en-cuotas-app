@@ -1,3 +1,4 @@
+import {issuedManifestRef} from './documentRevisionState';
 import type { Transaction } from 'firebase-admin/firestore';
 import { exact, opaque } from '../contractV2';
 import { contractValueHash } from '../contractIntegrityV2';
@@ -42,7 +43,7 @@ export async function authorizeIssuanceRecovery(runtime: ProductionRuntime, id: 
         assertFinalRenderer(proof.package);
         if (Date.parse(proof.authorization.expiresAt) > Date.now()) throw Error('ORIGINAL_AUTHORIZATION_STILL_VALID');
         if (proof.authorization.id !== c.authorizationId || proof.snapshot.integrity.payloadHash !== c.snapshotHash) throw Error('RECOVERY_CONTEXT_CHANGED');
-        if ((await tx.get(productionRef(db, id, v).collection('documents').doc('issued'))).exists) throw Error('DOCUMENTS_ALREADY_ISSUED');
+        if ((await tx.get(issuedManifestRef(runtimeData(runtime).db,id,v,proof.snapshot.snapshotVersion))).exists) throw Error('DOCUMENTS_ALREADY_ISSUED');
         const data = { schemaVersion: 'PRODUCTION_ISSUANCE_RECOVERY_V1' as const, id: cid, ...binding(proof), reason, actor, at: new Date().toISOString(), expiresAt, digest }, hash = contractValueHash(data);
         tx.create(ref, { ...data, hash });
         tx.create(productionRef(db, id, v).collection('events').doc('recovery_' + cid), { action: 'ISSUANCE_RECOVERY_AUTHORIZED', recoveryId: cid, recoveryHash: hash, snapshotHash: c.snapshotHash, actor, at: data.at });

@@ -1,3 +1,4 @@
+import {issuedManifestRef} from './documentRevisionState';
 import { createHash } from 'node:crypto';
 import type { Transaction } from 'firebase-admin/firestore';
 import type { Bucket } from '@google-cloud/storage';
@@ -36,7 +37,7 @@ export interface IssuedManifest {
     hash: string;
 }
 export async function issuedOperation(runtime: ProductionRuntime, tx: Transaction, id: string, v: number, scope: ProductionScope, forWrite = true) {
-    const { db } = runtimeData(runtime), proof = await frozenOperation(runtime, tx, id, v, scope, forWrite), saved = await tx.get(productionRef(db, id, v).collection('documents').doc('issued')), m = saved.data() as IssuedManifest | undefined;
+    const { db } = runtimeData(runtime), proof = await frozenOperation(runtime, tx, id, v, scope, forWrite), saved = await tx.get(issuedManifestRef(db,id,v,proof.snapshot.snapshotVersion)), m = saved.data() as IssuedManifest | undefined;
     if (!m || m.schemaVersion !== 'PRODUCTION_DOCUMENT_MANIFEST_V1' || m.executionMode !== 'PRODUCTION' || m.operationId !== proof.identity.operationId || m.snapshotId !== proof.snapshot.contractSnapshotId || m.snapshotHash !== proof.snapshot.integrity.payloadHash || m.packageHash !== proof.package.sha256)
         throw Error('ISSUED_DOCUMENTS_REQUIRED');
     const { hash, ...payload } = m;
@@ -62,7 +63,8 @@ export async function issueDocuments(runtime: ProductionRuntime, bucket: Bucket,
     // A completed command is a read-only replay, even after expiry. No leases,
     // object regeneration, dates or updateTime changes for an existing issuance.
     const completed = await db.runTransaction(async tx => {
-        if (!(await tx.get(productionRef(db, id, v).collection('documents').doc('issued'))).exists) return null;
+        const proof=await frozenOperation(runtime,tx,id,v,'ISSUANCE',false);
+        if (!(await tx.get(issuedManifestRef(db,id,v,proof.snapshot.snapshotVersion))).exists) return null;
         await issuanceProof(runtime, tx, id, v, recoveryId, false);
         return (await issuedOperation(runtime, tx, id, v, 'ISSUANCE', false)).manifest;
     });
@@ -132,7 +134,7 @@ export async function issueDocuments(runtime: ProductionRuntime, bucket: Bucket,
         documents[k] = p;
     }
     return db.runTransaction(async (tx) => {
-        const current = await issuanceProof(runtime, tx, id, v, recoveryId), ref = productionRef(db, id, v).collection('documents').doc('issued'), old = await tx.get(ref);
+        const current = await issuanceProof(runtime, tx, id, v, recoveryId), ref = issuedManifestRef(db,id,v,proof.snapshot.snapshotVersion), old = await tx.get(ref);
         if (current.snapshot.integrity.payloadHash !== proof.snapshot.integrity.payloadHash)
             throw Error('DOCUMENT_CONTEXT_CHANGED');
         if (old.exists) {
@@ -151,7 +153,7 @@ export async function issueDocuments(runtime: ProductionRuntime, bucket: Bucket,
         }
         const issuedAt = new Date().toISOString(), data = { schemaVersion: 'PRODUCTION_DOCUMENT_MANIFEST_V1' as const, executionMode: 'PRODUCTION' as const, operationId: current.identity.operationId, snapshotId: current.snapshot.contractSnapshotId, snapshotHash: current.snapshot.integrity.payloadHash, packageHash: current.package.sha256, documents, issuedAt, issuedBy: actor, ...(current.recovery ? { recoveryAuthorization: { id: current.recovery.id, hash: current.recovery.hash } } : {}) }, hash = contractValueHash(data);
         tx.create(ref, { ...data, hash });
-        tx.create(productionRef(db, id, v).collection('events').doc('documents_issued'), { action: 'DOCUMENTS_ISSUED', manifestHash: hash, actor, at: issuedAt, recoveryAuthorization: current.recovery ? { id: current.recovery.id, hash: current.recovery.hash } : null });
+        tx.create(productionRef(db, id, v).collection('events').doc(current.snapshot.snapshotVersion===1?'documents_issued':'documents_issued_'+current.snapshot.snapshotVersion), { action: 'DOCUMENTS_ISSUED', manifestHash: hash, actor, at: issuedAt, recoveryAuthorization: current.recovery ? { id: current.recovery.id, hash: current.recovery.hash } : null });
         return { manifestHash: hash, replay: false };
     });
 }

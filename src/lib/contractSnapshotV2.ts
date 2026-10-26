@@ -28,7 +28,7 @@ export interface ContractLegalContextV2 {
   documentDefinitions: { contract: ContractDocumentDefinitionV2; promissoryNote: ContractDocumentDefinitionV2 };
 }
 export interface ContractSnapshotV2 extends ContractLegalContextV2 {
-  schemaVersion: 'CONTRACT_SNAPSHOT_V2'; currency: 'ARS'; contractId: string; contractSnapshotId: string; snapshotVersion: 1;
+  schemaVersion: 'CONTRACT_SNAPSHOT_V2'; currency: 'ARS'; contractId: string; contractSnapshotId: string; snapshotVersion: number;
   contractNumber: string; numbering: { policyId: typeof CONTRACT_NUMBERING_POLICY; sequence: string };
   sourceDraft: ContractIdentityV2 & { revision: number; readyDigest: string };
   origin: {
@@ -96,7 +96,7 @@ export function contractOriginId(identity: ContractIdentityV2): string {
   contractIdentity(identity);
   return 'bo_' + contractValueHash({ budgetId: identity.budgetId, budgetVersion: identity.budgetVersion });
 }
-export function contractSnapshotId(identity: ContractIdentityV2): string { return contractIdentity(identity) + '_s1'; }
+export function contractSnapshotId(identity: ContractIdentityV2, edition=1): string { if(!Number.isSafeInteger(edition)||edition<1)fail('INVALID_SNAPSHOT_EDITION');return contractIdentity(identity) + '_s'+edition; }
 export function validateSequence(value: unknown, zeroAllowed = false): asserts value is string {
   if (typeof value !== 'string' || value.length > 1000 || !(zeroAllowed ? /^(0|[1-9][0-9]*)$/ : /^[1-9][0-9]*$/).test(value)) fail('INVALID_CONTRACT_SEQUENCE');
 }
@@ -132,7 +132,7 @@ export function validateContractSnapshot(value: unknown): asserts value is Contr
   const productFields: Record<string, Check> = {};
   if (value && typeof value === 'object' && Object.hasOwn(value, 'productDetails')) productFields.productDetails = v => equal(productDetails(v), v);
   shape({
-    schemaVersion: literal('CONTRACT_SNAPSHOT_V2'), currency: literal('ARS'), contractId: text(), contractSnapshotId: text(), snapshotVersion: literal(1), contractNumber: text(1003),
+    schemaVersion: literal('CONTRACT_SNAPSHOT_V2'), currency: literal('ARS'), contractId: text(), contractSnapshotId: text(), snapshotVersion: integer, contractNumber: text(1003),
     numbering: shape({ policyId: literal(CONTRACT_NUMBERING_POLICY), sequence: v => validateSequence(v) }),
     sourceDraft: shape({ ...identityKeys, revision: integer, readyDigest: hash }),
     origin: shape({ sourceCollection: literal('solicitudes','solicitudes_cuenta'), solicitudId: text(1500), acceptedAt: instant, acceptedBy: text(), budgetHash: hash, acceptanceHash: hash, draftHash: hash, preferredPlanCuotas: nullable(integer), preferredPlanAmountSnapshot: nullable(positive) }),
@@ -157,7 +157,8 @@ export function validateContractSnapshot(value: unknown): asserts value is Contr
   })(value);
   const s = value as ContractSnapshotV2, { budgetId, budgetVersion, contractDraftId, acceptedOptionId } = s.sourceDraft;
   const id = { budgetId, budgetVersion, contractDraftId, acceptedOptionId };
-  if (s.contractId !== contractIdentity(id) || s.contractSnapshotId !== contractSnapshotId(id) || s.contractNumber !== contractNumber(s.numbering.sequence)) fail('CONTRACT_IDENTITY_MISMATCH');
+  if (s.contractId !== contractIdentity(id) || s.contractSnapshotId !== contractSnapshotId(id,s.snapshotVersion) || s.contractNumber !== contractNumber(s.numbering.sequence)) fail('CONTRACT_IDENTITY_MISMATCH');
+  if(s.snapshotVersion!==1&&s.freeze.readinessPolicyVersion!=='CONTRACT_PRODUCTION_APPROVAL_V1')fail('REVISED_SNAPSHOT_REQUIRES_PRODUCTION_PROOF');
   const fullRef = { ...s.acceptedReference, imagenUrls: [] };
   const rebuilt = buildBudgetOptionV2(acceptedOptionId, { draft: referenceSnapshotToDraft(fullRef), fechaCotizacion: fullRef.fechaCotizacion, ...(fullRef.source === 'EXISTING_REFERENCE' ? { source: fullRef.source, referenceId: fullRef.referenceId! } : { source: 'NEW_REFERENCE', referenceId: null }) }).referenceSnapshot;
   equal({ ...rebuilt, referenceId: fullRef.referenceId }, fullRef);

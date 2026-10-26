@@ -1,3 +1,4 @@
+import {revisionState,assertBeforeSignature,issuedManifestRef} from './documentRevisionState';
 import { FieldPath, type CollectionReference } from 'firebase-admin/firestore';
 import { opaque } from '../contractV2';
 import { isAdminEmail } from '../adminIdentity';
@@ -26,7 +27,7 @@ export async function productionOverview(runtime: ProductionRuntime, id: string,
     const administratorAuthorized = !user.disabled && user.emailVerified && administrators.includes(actor), deploymentEnabled = test || process.env.PRODUCTION_OPERATIONS_ENABLED === 'true';
     return db.runTransaction(async (tx) => {
         const r = contractRefs(db, id, v), ref = productionRef(db, id, v);
-        const [ds, ac, op, counter, approvals, grants, docs, recoveries] = await Promise.all([tx.get(r.draft), tx.get(r.acceptance), tx.get(operationRef(db, id, v)), tx.get(db.doc(productionPaths.counter)), tx.get(pageQuery(legalRegistryRef(db).collection('finalPackageApprovals'), page.approvalAfter)), tx.get(pageQuery(ref.collection('authorizations'), page.authorizationAfter)), tx.get(ref.collection('documents').doc('issued')), tx.get(pageQuery(ref.collection('issuanceRecoveries'), page.recoveryAfter))]);
+        const [ds, ac, op, counter, approvals, grants, recoveries] = await Promise.all([tx.get(r.draft), tx.get(r.acceptance), tx.get(operationRef(db, id, v)), tx.get(db.doc(productionPaths.counter)), tx.get(pageQuery(legalRegistryRef(db).collection('finalPackageApprovals'), page.approvalAfter)), tx.get(pageQuery(ref.collection('authorizations'), page.authorizationAfter)), tx.get(pageQuery(ref.collection('issuanceRecoveries'), page.recoveryAfter))]);
         if (!ac.exists || !op.exists)
             throw Error('PRODUCTION_ORIGIN_REQUIRED');
         const identity = operationFromAcceptance(ac.data() as BudgetAcceptanceV2);
@@ -91,12 +92,14 @@ export async function productionOverview(runtime: ProductionRuntime, id: string,
                 templateVersion: string;
             }[];
         } = null;
+        const revision=await revisionState(db,tx,id,v);let canReviseBeforeSignature=false;let revisionBlocker='';
         if (ds.data()?.productionFreeze) {
             const proof = await frozenOperation(runtime, tx, id, v, 'ISSUANCE', false);
             frozen = { contractNumber: proof.snapshot.contractNumber, snapshotHash: proof.snapshot.integrity.payloadHash, authorizationId: proof.authorization.id, issuanceExpired: Date.parse(proof.authorization.expiresAt) <= Date.now(),
                 issuanceRevoked: (await tx.get(ref.collection('authorizations').doc(proof.authorization.id).collection('revocations').doc('current'))).exists,
                 issueDate: proof.snapshot.documentContext.contractIssueDate };
-            if (docs.exists) {
+            try{await assertBeforeSignature(db,tx,id,v,identity.operationId);canReviseBeforeSignature=true;}catch{revisionBlocker='Firma, recepción o actividad financiera registrada: la corrección requiere el procedimiento auditado posterior.';}
+            if ((await tx.get(issuedManifestRef(db,id,v,proof.snapshot.snapshotVersion))).exists) {
                 const d = await issuedOperation(runtime, tx, id, v, 'ISSUANCE', false);
                 issued = { hash: d.manifest.hash, documents: Object.values(d.manifest.documents).map(doc => ({ kind: doc.kind, templateVersion: doc.templateVersion })) };
             }
@@ -109,7 +112,7 @@ export async function productionOverview(runtime: ProductionRuntime, id: string,
         }
         const cursor = (s: typeof approvals) => s.size > 20 ? s.docs[19].id : null;
         const pagination = { approvalAfter: cursor(approvals), authorizationAfter: cursor(grants), recoveryAfter: cursor(recoveries) };
-        return { approvalHistory, recoveryAuthorizations, pagination, issueDate: argentinaBusinessDate(), issueTimeZone: ISSUE_DATE_TIME_ZONE, operationId: identity.operationId, revision: ds.data()?.revision ?? 0, administratorAuthorized, deploymentEnabled, test, counterReady, readyValid, blockers, packages: packages.map(p => ({ id: p.id, version: p.version, hash: p.sha256, originalsBindingsRequired: !!p.originalsPolicy, templates: Object.values(p.templates).map(t => ({ kind: t.kind, title: t.title, version: t.version, hash: t.sha256 })) })), approvals: validApprovals, authorizations, frozen, issued, arcaEnabled: false as const };
+        return { revisionPreparation:revision?.status==='EDITING'?{contractNumber:revision.allocationReceipt.contractNumber,snapshotVersion:revision.snapshotVersion}:null,canReviseBeforeSignature,revisionBlocker,approvalHistory, recoveryAuthorizations, pagination, issueDate: argentinaBusinessDate(), issueTimeZone: ISSUE_DATE_TIME_ZONE, operationId: identity.operationId, revision: ds.data()?.revision ?? 0, administratorAuthorized, deploymentEnabled, test, counterReady, readyValid, blockers, packages: packages.map(p => ({ id: p.id, version: p.version, hash: p.sha256, originalsBindingsRequired: !!p.originalsPolicy, templates: Object.values(p.templates).map(t => ({ kind: t.kind, title: t.title, version: t.version, hash: t.sha256 })) })), approvals: validApprovals, authorizations, frozen, issued, arcaEnabled: false as const };
     });
 }
 export type ProductionOverview = Awaited<ReturnType<typeof productionOverview>>;

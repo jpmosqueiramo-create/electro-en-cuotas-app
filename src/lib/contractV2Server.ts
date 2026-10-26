@@ -90,7 +90,9 @@ export async function contractCommand(db:Firestore,id:string,v:number,input:unkn
       readyEvidence=evidence.data() as ContractReadyEvidenceV1;
       verifyReadyEvidence(budget,a.data() as BudgetAcceptanceV2,d,readyEvidence);
     }
-    if(['SET_CONTRACT_PLAN','SET_PAYMENT_DATES','MARK_READY_TO_FORMALIZE'].includes(action))await assertCreditPreparation(db,tx,id,v);
+    // Draft economics/calendar can be prepared before credit approval. READY and
+    // productive source/freeze still require a current approval and conformity.
+    if(action==='MARK_READY_TO_FORMALIZE')await assertCreditPreparation(db,tx,id,v);
     const before=structuredClone(d);
     const conformityRef=r.draft.collection('conformity').doc('current');
     const conformity=await tx.get(conformityRef);

@@ -1,3 +1,4 @@
+import {reopenBeforeSignature} from '@/lib/productionV2/documentRevision';
 import { NextResponse } from 'next/server';
 import { admin } from '@/lib/firebaseAdmin';
 import { isAdminEmail } from '@/lib/adminIdentity';
@@ -56,6 +57,7 @@ async function handler(req: Request, { params }: {
             result = await recordFinalPackageApproval(context, c.data, uid);
         else if (c.action === 'AUTHORIZE')
             result = await authorizeOperation(context, p.budgetId, v, c.data, uid);
+        else if(c.action==='REOPEN_BEFORE_SIGNATURE')result=await reopenBeforeSignature(context,p.budgetId,v,c.data,uid);
         else if (c.action === 'FREEZE')
             result = await freezeOperation(context, p.budgetId, v, c.data, uid);
         else if (c.action === 'AUTHORIZE_ISSUANCE_RECOVERY')
