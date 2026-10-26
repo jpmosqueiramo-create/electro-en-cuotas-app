@@ -47,6 +47,7 @@ export async function productionOverview(runtime: ProductionRuntime, id: string,
         if (!packages.length)
             blockers.push('Falta instalar la versión final del mandato y pagaré aprobada por hash, con la política de documentación externa de traslado. La declaración sobre los originales no aprueba una plantilla derivada.');
         const validApprovals: {
+            basis: 'OWNER_AUTHORIZATION' | 'PROFESSIONAL_APPROVAL';
             id: string;
             packageId: string;
             at: string;
@@ -57,10 +58,10 @@ export async function productionOverview(runtime: ProductionRuntime, id: string,
             try {
                 await approvedPackage(runtime, tx, a.data().packageId, a.id);
                 valid = true;
-                validApprovals.push({ id: a.id, packageId: a.data().packageId, at: a.data().at });
+                validApprovals.push({ id: a.id, packageId: a.data().packageId, at: a.data().at, basis: a.data().status === 'OWNER_AUTHORIZED' ? 'OWNER_AUTHORIZATION' : 'PROFESSIONAL_APPROVAL' });
             }
             catch { /* Unrelated, revoked and stale approvals never authorize a package. */ }
-            approvalHistory.push({ id: a.id, packageId: String(a.data().packageId ?? ''), at: String(a.data().at ?? ''), valid });
+            approvalHistory.push({ id: a.id, packageId: String(a.data().packageId ?? ''), at: String(a.data().at ?? ''), basis: a.data().status === 'OWNER_AUTHORIZED' ? 'OWNER_AUTHORIZATION' : a.data().status === 'PROFESSIONAL_VERSION_IDENTIFIED' ? 'PROFESSIONAL_APPROVAL' : 'UNKNOWN', valid });
         }
         if (!validApprovals.length)
             blockers.push('No hay aprobaciones vigentes en esta página del historial. Revisá las otras páginas o registrá la aprobación exacta faltante.');

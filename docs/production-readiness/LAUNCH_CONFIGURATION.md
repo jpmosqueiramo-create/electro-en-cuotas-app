@@ -12,7 +12,7 @@ Este procedimiento no autoriza sus mutaciones. No se consultaron ni modificaron 
 | 4. Numeración | Inventario de contador/números/orígenes/snapshots; manifiesto de inicialización CH | Número inicial y escritura exacta autorizados; no se presupone que comienza en 1 |
 | 5. Administradores | `PRODUCTION_OPERATION_ADMIN_UIDS=<UIDs existentes expresamente aprobados, separados por coma>`; rol administrativo actual y correo verificado | Asignación/configuración exacta autorizada; no hardcodear correos personales |
 | 6. Habilitar comandos | `PRODUCTION_OPERATIONS_ENABLED=true`, sólo servidor/RUNTIME, conservando todos los overrides previos | Cambio exacto de configuración y publicación autorizados |
-| 7. Operación | Registro profesional del paquete + autorización de la revisión READY y sus alcances | Una operación real identificada; no deriva del despliegue |
+| 7. Operación | Aprobación exacta del titular + autorización de la revisión READY y sus alcances | Una operación real identificada; no deriva del despliegue |
 | 8. Entrega/finanzas/cliente | Tres firmas auténticas, originales y custodia, entrega real; ledger una sola vez; UID existente explícito | Alcances DELIVERY, FINANCE y CLIENT_ACTIVATION; acreditaciones reales separadas |
 
 `OPERATIONS_LAB_*` no forma parte de este procedimiento. No se cambian bucket, HMAC, rate limit, secretos ni rollouts automáticos. ARCA permanece deshabilitada. Las liquidaciones productivas de comisiones tampoco se habilitan mediante este adaptador.
@@ -50,7 +50,7 @@ Desde la sesión administrativa de la aplicación, sin extraer tokens ni credenc
 
 `POST /api/admin/presupuestos-v2/{budgetId}/versions/{version}/production`
 
-- `REGISTER_PACKAGE_APPROVAL`: `commandId`, `packageId`, `packageHash`, `approvalDate`, `professional`, `validationReference`, `sourceReference`, `confirmed:true`. Sólo un paquete instalado exacto; no acepta textos desde el navegador.
+- `REGISTER_PACKAGE_APPROVAL`: `commandId`, `packageId`, `packageHash`, `approvalBasis: "OWNER_AUTHORIZATION"`, `reason`, `confirmed:true`. Basta la aprobación expresa del titular mediante su sesión administrativa autorizada y verificada. El servidor registra fecha, UID y hashes; no solicita profesional ni constancia jurídica. La estructura profesional V1 se conserva por compatibilidad, separada de esta autorización V2. Sólo un paquete instalado exacto; no acepta textos desde el navegador.
 - `AUTHORIZE`: `commandId`, `operationId`, `expectedRevision`, `packageId`, `approvalId`, `formal` con lugares/fechas de mandato y pagaré, `scopes`, `expiresAt`, `reason`, `confirmed:true`. La autorización siempre incluye ISSUANCE; los demás alcances se eligen explícitamente. Vigencia de emisión máxima 30 días.
 - `FREEZE`: `commandId`, `authorizationId`, `expectedRevision`, `confirmed:true`. Reserva numeración y snapshot; potencialmente irreversible. No se ofrece como prueba productiva.
 - `ISSUE_DOCUMENTS`: `confirmed:true`. Tres archivos determinísticos privados para el mismo snapshot; reintento conserva identidad y no genera otro pagaré.
@@ -75,7 +75,7 @@ Pausa bajo autorización: poner el flag en false o revocar un permiso concreto. 
 
 ## Recuperación de emisión vencida
 
-En la misma ficha, Administración ve la fecha original y el número reservado. Requiere cuenta activa/verificada, rol actual, UID autorizado y ejecución habilitada, además de la aprobación jurídica exacta vigente.
+En la misma ficha, Administración ve la fecha original y el número reservado. Requiere cuenta activa/verificada, rol actual, UID autorizado y ejecución habilitada, además de la aprobación exacta del paquete vigente.
 
 1. Revisar número, snapshot y autorización original; la emisión no debe tener un manifiesto completo. No editar el snapshot ni la aceptación.
 2. Registrar `AUTHORIZE_ISSUANCE_RECOVERY` con `commandId`, `snapshotHash`, `authorizationId` original, `expiresAt` ISO UTC (máximo 24 horas), `reason` y `confirmed:true`. La pantalla exige una confirmación específica. El servidor liga operación, revisión congelada, número, paquete, aprobación y recursos por hash; no acepta otra plantilla o datos económicos.

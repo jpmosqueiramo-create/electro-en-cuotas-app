@@ -1,3 +1,4 @@
+import {approvedFinalPackages} from '../src/lib/productionV2/catalog';
 import './helpers/requireSafeEmulatorEnvironment';
 import assert from 'node:assert/strict';
 import { mock } from 'node:test';
@@ -30,7 +31,7 @@ export async function test() {
     assert.equal(process.env.GCLOUD_PROJECT, 'demo-cuenta-hogar');
     assert.equal(process.env.FIREBASE_STORAGE_EMULATOR_HOST, '127.0.0.1:9199');
     assert.equal((await db.collection('contractSnapshotsV2').get()).size, 0, 'Fresh emulator');
-    const actor = (await admin.auth().createUser({ email: process.env.NEXT_PUBLIC_ADMIN_EMAIL, emailVerified: true, password: 'Emulator-only-123' })).uid, basePackage = process.env.SYNTHETIC_ORIGINALS_SUITE === '1' ? syntheticOriginalPackage() : syntheticFinalPackage(), p = external ? (()=>{const {sha256: old,...b}=basePackage;void old;const next={...b,deliveryDocumentPolicy:'EXTERNAL_TRANSFER_AND_RECEIPT_V1' as const};return {...next,sha256:packageHash(next)};})() : basePackage, runtime = productionRuntimeForEmulator(db, admin.auth(), [p], [actor]), bucket = await getBudgetDocumentationBucket();
+    const actor = (await admin.auth().createUser({ email: process.env.NEXT_PUBLIC_ADMIN_EMAIL, emailVerified: true, password: 'Emulator-only-123' })).uid, basePackage = process.env.SYNTHETIC_INSTALLED_OWNER_PACKAGE_SUITE === '1' ? structuredClone(approvedFinalPackages[0]) : process.env.SYNTHETIC_ORIGINALS_SUITE === '1' ? syntheticOriginalPackage() : syntheticFinalPackage(), p = external ? (()=>{const {sha256: old,...b}=basePackage;void old;const next={...b,deliveryDocumentPolicy:'EXTERNAL_TRANSFER_AND_RECEIPT_V1' as const};return {...next,sha256:packageHash(next)};})() : basePackage, runtime = productionRuntimeForEmulator(db, admin.auth(), [p], [actor]), bucket = await getBudgetDocumentationBucket();
     assert.throws(() => productionRuntime(db, admin.auth()), /PRODUCTION_RUNTIME_INVALID/);
     assert.throws(() => runtimeData({} as never), /SERVER_PRODUCTION_CONTEXT_REQUIRED/);
     const original = process.env.GCLOUD_PROJECT;
@@ -38,12 +39,37 @@ export async function test() {
     assert.throws(() => runtimeData(runtime), /LOCAL_ONLY/);
     process.env.GCLOUD_PROJECT = original;
     pass('OPAQUE_CONTEXT_AND_NO_PRODUCTIVE_TEST_OVERRIDE');
-    const approvalId = randomUUID(), approval = { commandId: approvalId, packageId: p.id, packageHash: p.sha256, approvalDate: argentinaBusinessDate(), professional: 'Profesional sintético NO REAL', validationReference: 'SYNTHETIC_ONLY', sourceReference: 'scripts/helpers/productionAdapterFixtures.ts', confirmed: true };
+    const ownerApproval = process.env.SYNTHETIC_OWNER_APPROVAL_SUITE === '1';
+    const approvalId = randomUUID(), professionalApproval = { commandId: approvalId, packageId: p.id, packageHash: p.sha256, approvalDate: argentinaBusinessDate(), professional: 'Profesional sintético NO REAL', validationReference: 'SYNTHETIC_ONLY', sourceReference: 'scripts/helpers/productionAdapterFixtures.ts', confirmed: true };
+    const approval = ownerApproval ? { commandId: approvalId, packageId: p.id, packageHash: p.sha256, approvalBasis: 'OWNER_AUTHORIZATION', reason: 'Autorización de titular SINTÉTICA, sin efectos reales', confirmed: true } : professionalApproval;
     await assert.rejects(recordFinalPackageApproval(runtime, { ...approval, packageHash: '0'.repeat(64) }, actor));
     await recordFinalPackageApproval(runtime, approval, actor);
     assert((await recordFinalPackageApproval(runtime, approval, actor)).replay);
-    await assert.rejects(recordFinalPackageApproval(runtime, { ...approval, professional: 'diferente' }, actor));
+    await assert.rejects(recordFinalPackageApproval(runtime, { ...approval, ...(ownerApproval ? { reason: 'Otro motivo' } : { professional: 'diferente' }) }, actor));
     pass('EXACT_PACKAGE_APPROVAL_IDEMPOTENCY');
+    if (ownerApproval) {
+        const stored = await packageApprovalRef(db, approvalId).get();
+        assert.equal(stored.data()!.schemaVersion, 'EXACT_OWNER_PACKAGE_APPROVAL_V2');
+        assert.equal(stored.data()!.status, 'OWNER_AUTHORIZED');
+        for (const field of ['professional','validationReference','sourceReference']) assert.equal(field in stored.data()!, false);
+        assert.equal(stored.data()!.actor, actor);
+        await assert.rejects(recordFinalPackageApproval(runtime, {...approval, confirmed:false}, actor));
+        await assert.rejects(recordFinalPackageApproval(runtime, {...approval, professional:'No permitido'}, actor));
+        const concurrent = {...approval, commandId:randomUUID()};
+        const pair=await Promise.all([recordFinalPackageApproval(runtime,concurrent,actor),recordFinalPackageApproval(runtime,concurrent,actor)]);
+        assert.equal(pair.filter(r=>!r.replay).length,1);
+        mock.timers.enable({apis:['Date'],now:Date.now()+86400000});
+        try { assert((await recordFinalPackageApproval(runtime,approval,actor)).replay); } finally { mock.timers.reset(); }
+        assert((await packageApprovalRef(db,approvalId).get()).updateTime!.isEqual(stored.updateTime!));
+        const fake=packageApprovalRef(db,randomUUID());await fake.create({...stored.data()!,status:'PROFESSIONAL_VERSION_IDENTIFIED'});
+        await assert.rejects(db.runTransaction(tx=>approvedPackage(runtime,tx,p.id,fake.id)),/APPROVAL_REQUIRED/);
+        const tampered=packageApprovalRef(db,randomUUID());await tampered.create({...stored.data()!,reason:'Alterado'});
+        await assert.rejects(db.runTransaction(tx=>approvedPackage(runtime,tx,p.id,tampered.id)),/INTEGRITY/);
+        const outsider=(await admin.auth().createUser({email:'owner-outsider@example.test',emailVerified:true})).uid;
+        await assert.rejects(recordFinalPackageApproval(runtime,{...approval,commandId:randomUUID()},outsider),/NOT_AUTHORIZED/);
+        pass('OWNER_ONLY_APPROVAL_NO_PROFESSIONAL_REPLAY_NEXT_DAY_CONCURRENT_ROLE_TAMPER_AND_NO_UPGRADE');
+    }
+
     // Simulate a previously installed immutable package, never replace its bytes.
     const oldBody = { ...p, id: 'synthetic-archived-renderer', rendererHash: 'a'.repeat(64) };
     const { sha256: discardedHash, ...oldPayload } = oldBody; void discardedHash;

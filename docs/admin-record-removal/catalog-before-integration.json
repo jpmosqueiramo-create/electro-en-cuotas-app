@@ -1,0 +1,258 @@
+[
+  {
+    "id": "loop-owner-final-20261025-v1",
+    "version": "OWNER_FINAL_UPLOADED_20261025_V1",
+    "issuer": {
+      "profileId": "loop-owner-confirmed",
+      "profileVersion": "LOOP_OWNER_FINAL_UPLOADED_20261025",
+      "legalName": "LOOP GESTIÓN INTEGRAL S.R.L.",
+      "tradeName": "Cuenta Hogar",
+      "taxId": "30-71962686-2",
+      "legalAddress": "Caracas 1101, Ciudad Autónoma de Buenos Aires, CP 1431",
+      "representative": {
+        "fullName": "Juan Pablo Mosqueira Morales",
+        "capacity": "Socio Gerente"
+      },
+      "profileHash": "a8e11da8a53aadc37dce3a9b2a1ae6134a359c4221a91489742e538cd36064d3"
+    },
+    "jurisdiction": "Tribunales del domicilio validado del cliente; campos del original proporcionado por el titular",
+    "deliveryDocumentPolicy": "EXTERNAL_TRANSFER_AND_RECEIPT_V1",
+    "originalsPolicy": {
+      "version": "OWNER_ORIGINALS_V1",
+      "mandateJurisdiction": "CLIENT_DOMICILE_COMPETENT_COURTS",
+      "noteJurisdiction": "Localidad y provincia del cliente desde el expediente validado; texto y renuncia del original conservados",
+      "notePaymentPlace": "Caracas 1101, C.A.B.A., CP: 1431, o donde la acreedora lo indique",
+      "penaltyMonthlyPercent": "0",
+      "corporatePowersReference": "Datos declarados por el titular y texto del mandato final 2ccd7587c39db88c8a7bdecddbf634ea1700d961e1f2b33b95fced3a598df7a4. Sin atribuir verificación profesional.",
+      "addressAmendmentReference": "Domicilio Caracas 1101 declarado por el titular e identificado en los dos originales finales. No se presume evidencia societaria adicional.",
+      "economicAllocationPolicy": "EXPLICIT_RECONCILED_CLIENT_CONFORMITY"
+    },
+    "templates": {
+      "MANDATE": {
+        "kind": "MANDATE",
+        "id": "loop-owner-final-mandate",
+        "version": "OWNER_FINAL_UPLOADED_20261025_V1",
+        "title": "CONTRATO DE MANDATO COMERCIAL Y GESTIÓN DE COMPRA",
+        "layout": "OWNER_ORIGINALS_V1",
+        "blocks": [
+          {
+            "id": "parties",
+            "type": "paragraph",
+            "text": "Entre LOOP GESTION INTEGRAL S.R.L. , CUIT 30-71962686-2, con domicilio legal en CARACAS 1101 C.A.B.A, representada en este acto por su Socio Gerente, Sr. Juan Pablo Mosqueira Morales, en adelante denominado el \"MANDATARIO\" o la \"EMPRESA\" , por una parte; y por la otra el/la Sr./Sra. {{client.fullName}} , D.N.I. N° {{client.dni}}, CUIT/CUIL N° {{client.cuil}}, con domicilio en la calle {{client.address}}, de la localidad de {{client.locality}}, provincia de {{client.province}}, correo electrónico {{client.email}}, teléfono {{client.phone}}, en adelante denominado el \"MANDANTE\" o el \"CLIENTE\" , convienen en celebrar el presente Contrato de Mandato Comercial, sujeto a las disposiciones del Código Civil y Comercial de la Nación y a las siguientes cláusulas y condiciones:"
+          },
+          {
+            "id": "clause-1-heading",
+            "type": "heading",
+            "text": "PRIMERA: Objeto del Contrato y Documentación de Compra"
+          },
+          {
+            "id": "object",
+            "type": "paragraph",
+            "text": "El MANDANTE encomienda a la EMPRESA, y esta acepta, el mandato irrevocable para gestionar, adquirir y abonar por cuenta y orden del MANDANTE los siguientes bienes muebles (en adelante, los \"Bienes\"):"
+          },
+          {
+            "id": "product-table",
+            "type": "productTable",
+            "text": "Cantidad Descripción del Bien (Marca, Modelo, Color) Estado (Nuevo/Usado) [CANTIDAD] [DESCRIPCIÓN DETALLADA DEL PRODUCTO] [ESTADO]"
+          },
+          {
+            "id": "invoicing",
+            "type": "paragraph",
+            "text": "La EMPRESA actuará exclusivamente en calidad de intermediario y gestor de compra. ACLARACIÓN SOBRE FACTURACIÓN: El MANDANTE acepta y declara conocer que la adquisición de los Bienes puede ser realizada a distintos proveedores (humanos o jurídicos). Por lo tanto, la provisión de una factura de compra original emitida por el proveedor tercero estará supeditada exclusivamente a la disponibilidad de la misma según el origen y la condición del Bien (nuevo o usado). En ningún caso la falta de factura del proveedor original eximirá al MANDANTE de sus obligaciones de pago frente a la EMPRESA por el servicio de gestión y financiación aquí pactado."
+          },
+          {
+            "id": "clause-2-heading",
+            "type": "heading",
+            "text": "SEGUNDA: Liquidación de Costos, Honorarios y Financiación"
+          },
+          {
+            "id": "costs",
+            "type": "paragraph",
+            "text": "El costo total de la operación, que incluye el valor del Bien, los honorarios por la gestión del mandato, los gastos logísticos y el costo financiero por el otorgamiento de facilidades de pago con capital propio de la EMPRESA, se detalla a continuación:"
+          },
+          {
+            "id": "original-economy",
+            "type": "originalEconomy",
+            "text": "● Valor Neto del Bien + Gastos de Gestión y Logística: $[MONTO] ● Costo Financiero Total (CFT): $ [MONTO] ● VALOR TOTAL A FINANCIAR: $ [MONTO TOTAL]"
+          },
+          {
+            "id": "clause-3-heading",
+            "type": "heading",
+            "text": "TERCERA: Forma de Pago y Garantía de Cumplimiento (Pagaré)"
+          },
+          {
+            "id": "payment-plan",
+            "type": "paragraph",
+            "text": "El MANDANTE se compromete a abonar a la EMPRESA el Valor Total indicado en la Cláusula Segunda, mediante el siguiente plan de pagos:"
+          },
+          {
+            "id": "original-schedule",
+            "type": "originalSchedule",
+            "text": "Anticipo / Cuota N° Monto ($) Fecha de Vencimiento Anticipo (si lo hubiere) $ [MONTO ANTICIPO] [FECHA] Cuota 1 $ [MONTO CUOTA 1] [FECHA] Cuota 2 a [N] $ [MONTO CUOTA] Del 1 al 10 de cada mes."
+          },
+          {
+            "id": "one-note",
+            "type": "paragraph",
+            "text": "Como garantía del fiel cumplimiento de las obligaciones de pago aquí asumidas, el MANDANTE suscribe en este acto, a favor de \"LOOP GESTION INTEGRAL S.R.L.\", un (1) Pagaré \"Sin Protesto\" por la suma total financiada."
+          },
+          {
+            "id": "clause-4-heading",
+            "type": "heading",
+            "text": "CUARTA: Mora e Incumplimiento"
+          },
+          {
+            "id": "default",
+            "type": "paragraph",
+            "text": "La mora se producirá de pleno derecho. La falta de pago de una (2) cuotas facultará a la EMPRESA a exigir el pago íntegro del saldo adeudado."
+          },
+          {
+            "id": "clause-5-heading",
+            "type": "heading",
+            "text": "QUINTA: Entregas, Logística y Aceptación"
+          },
+          {
+            "id": "delivery",
+            "type": "paragraph",
+            "text": "La firma del remito o acuse de recibo implicará la total conformidad con el estado exterior y funcionamiento inicial del Bien."
+          },
+          {
+            "id": "clause-6-heading",
+            "type": "heading",
+            "text": "SEXTA: Limitación de Responsabilidad, Garantía Técnica y Roturas"
+          },
+          {
+            "id": "warranty",
+            "type": "paragraph",
+            "text": "La garantía por defectos de fabricación es otorgada exclusivamente por el fabricante y/o proveedor original del producto. La EMPRESA brindará únicamente asistencia administrativa en la gestión del reclamo. En bienes usados, el MANDANTE acepta el estado del bien \"tal como está\" al momento de la entrega, salvo pacto en contrario. Se deja expresa constancia de que cualquier rotura, desperfecto, hurto, robo, pérdida o inutilización del Bien ocurrida con posterioridad a su entrega, por cualquier causa que fuere, no exime, suspende ni extingue bajo ninguna circunstancia la obligación del MANDANTE de cancelar la totalidad de las cuotas adeudadas a la EMPRESA por el servicio de gestión y financiación brindado."
+          },
+          {
+            "id": "clause-7-heading",
+            "type": "heading",
+            "text": "SÉPTIMA: Jurisdicción y Competencia"
+          },
+          {
+            "id": "mandate-jurisdiction",
+            "type": "paragraph",
+            "text": "Las partes se someten a la jurisdicción de los Tribunales Ordinarios de {{client.locality}}, {{client.province}}."
+          },
+          {
+            "id": "execution",
+            "type": "paragraph",
+            "text": "En prueba de conformidad, se firman dos (2) ejemplares de un mismo tenor en la ciudad de {{issue.contract.place}}, a los {{issue.contract.day}} días del mes de {{issue.contract.month}} de {{issue.contract.year}}."
+          },
+          {
+            "id": "signatures",
+            "type": "mandateSignatures",
+            "text": "___________________________ Firma y Aclaración MANDANTE ___________________________ Firma por LOOP GESTION INTEGRAL S.R.L."
+          }
+        ],
+        "paragraphs": [
+          "Entre LOOP GESTION INTEGRAL S.R.L. , CUIT 30-71962686-2, con domicilio legal en CARACAS 1101 C.A.B.A, representada en este acto por su Socio Gerente, Sr. Juan Pablo Mosqueira Morales, en adelante denominado el \"MANDATARIO\" o la \"EMPRESA\" , por una parte; y por la otra el/la Sr./Sra. {{client.fullName}} , D.N.I. N° {{client.dni}}, CUIT/CUIL N° {{client.cuil}}, con domicilio en la calle {{client.address}}, de la localidad de {{client.locality}}, provincia de {{client.province}}, correo electrónico {{client.email}}, teléfono {{client.phone}}, en adelante denominado el \"MANDANTE\" o el \"CLIENTE\" , convienen en celebrar el presente Contrato de Mandato Comercial, sujeto a las disposiciones del Código Civil y Comercial de la Nación y a las siguientes cláusulas y condiciones:",
+          "PRIMERA: Objeto del Contrato y Documentación de Compra",
+          "El MANDANTE encomienda a la EMPRESA, y esta acepta, el mandato irrevocable para gestionar, adquirir y abonar por cuenta y orden del MANDANTE los siguientes bienes muebles (en adelante, los \"Bienes\"):",
+          "Cantidad Descripción del Bien (Marca, Modelo, Color) Estado (Nuevo/Usado) [CANTIDAD] [DESCRIPCIÓN DETALLADA DEL PRODUCTO] [ESTADO]",
+          "La EMPRESA actuará exclusivamente en calidad de intermediario y gestor de compra. ACLARACIÓN SOBRE FACTURACIÓN: El MANDANTE acepta y declara conocer que la adquisición de los Bienes puede ser realizada a distintos proveedores (humanos o jurídicos). Por lo tanto, la provisión de una factura de compra original emitida por el proveedor tercero estará supeditada exclusivamente a la disponibilidad de la misma según el origen y la condición del Bien (nuevo o usado). En ningún caso la falta de factura del proveedor original eximirá al MANDANTE de sus obligaciones de pago frente a la EMPRESA por el servicio de gestión y financiación aquí pactado.",
+          "SEGUNDA: Liquidación de Costos, Honorarios y Financiación",
+          "El costo total de la operación, que incluye el valor del Bien, los honorarios por la gestión del mandato, los gastos logísticos y el costo financiero por el otorgamiento de facilidades de pago con capital propio de la EMPRESA, se detalla a continuación:",
+          "● Valor Neto del Bien + Gastos de Gestión y Logística: $[MONTO] ● Costo Financiero Total (CFT): $ [MONTO] ● VALOR TOTAL A FINANCIAR: $ [MONTO TOTAL]",
+          "TERCERA: Forma de Pago y Garantía de Cumplimiento (Pagaré)",
+          "El MANDANTE se compromete a abonar a la EMPRESA el Valor Total indicado en la Cláusula Segunda, mediante el siguiente plan de pagos:",
+          "Anticipo / Cuota N° Monto ($) Fecha de Vencimiento Anticipo (si lo hubiere) $ [MONTO ANTICIPO] [FECHA] Cuota 1 $ [MONTO CUOTA 1] [FECHA] Cuota 2 a [N] $ [MONTO CUOTA] Del 1 al 10 de cada mes.",
+          "Como garantía del fiel cumplimiento de las obligaciones de pago aquí asumidas, el MANDANTE suscribe en este acto, a favor de \"LOOP GESTION INTEGRAL S.R.L.\", un (1) Pagaré \"Sin Protesto\" por la suma total financiada.",
+          "CUARTA: Mora e Incumplimiento",
+          "La mora se producirá de pleno derecho. La falta de pago de una (2) cuotas facultará a la EMPRESA a exigir el pago íntegro del saldo adeudado.",
+          "QUINTA: Entregas, Logística y Aceptación",
+          "La firma del remito o acuse de recibo implicará la total conformidad con el estado exterior y funcionamiento inicial del Bien.",
+          "SEXTA: Limitación de Responsabilidad, Garantía Técnica y Roturas",
+          "La garantía por defectos de fabricación es otorgada exclusivamente por el fabricante y/o proveedor original del producto. La EMPRESA brindará únicamente asistencia administrativa en la gestión del reclamo. En bienes usados, el MANDANTE acepta el estado del bien \"tal como está\" al momento de la entrega, salvo pacto en contrario. Se deja expresa constancia de que cualquier rotura, desperfecto, hurto, robo, pérdida o inutilización del Bien ocurrida con posterioridad a su entrega, por cualquier causa que fuere, no exime, suspende ni extingue bajo ninguna circunstancia la obligación del MANDANTE de cancelar la totalidad de las cuotas adeudadas a la EMPRESA por el servicio de gestión y financiación brindado.",
+          "SÉPTIMA: Jurisdicción y Competencia",
+          "Las partes se someten a la jurisdicción de los Tribunales Ordinarios de {{client.locality}}, {{client.province}}.",
+          "En prueba de conformidad, se firman dos (2) ejemplares de un mismo tenor en la ciudad de {{issue.contract.place}}, a los {{issue.contract.day}} días del mes de {{issue.contract.month}} de {{issue.contract.year}}.",
+          "___________________________ Firma y Aclaración MANDANTE ___________________________ Firma por LOOP GESTION INTEGRAL S.R.L."
+        ],
+        "sha256": "13c162831df0b5b46474bd50c599ac525f926e23f73ea357a07b7d1f90fa3b6b"
+      },
+      "PAGARE": {
+        "kind": "PAGARE",
+        "id": "loop-owner-final-pagare",
+        "version": "OWNER_FINAL_UPLOADED_20261025_V1",
+        "title": "PAGARÉ A LA VISTA SIN PROTESTO",
+        "layout": "OWNER_ORIGINALS_V1",
+        "blocks": [
+          {
+            "id": "amount",
+            "type": "paragraph",
+            "text": "Por {{economy.totalDisplay}} (Monto en números)"
+          },
+          {
+            "id": "issue",
+            "type": "paragraph",
+            "text": "En la ciudad de {{issue.note.place}}, a los {{issue.note.day}} días del mes de {{issue.note.month}} de {{issue.note.year}}."
+          },
+          {
+            "id": "promise",
+            "type": "paragraph",
+            "text": "A LA VISTA , pagaré sin protesto (Art. 50 Dec. Ley 5965/63) a la orden de LOOP GESTION INTEGRAL S.R.L. CUIT 30-71962686-2, o a quien ésta designe, en el domicilio de Caracas 1101, C.A.B.A., CP: 1431, o donde la acreedora lo indique, la suma de PESOS {{economy.totalWordsWithoutCurrency}} (Monto en letras), por igual valor recibido en servicios de gestión y financiación a mi entera satisfacción."
+          },
+          {
+            "id": "default-capitalization",
+            "type": "paragraph",
+            "text": "La falta de pago de cualquier obligación derivada del contrato de mandato al cual este título accede, producirá la mora de pleno derecho y la caducidad de todos los plazos, haciéndose exigible la presentación y cobro del presente documento."
+          },
+          {
+            "id": "note-jurisdiction",
+            "type": "paragraph",
+            "text": "Para todos los efectos legales, el suscripto se somete a la jurisdicción de los Tribunales Ordinarios de la ciudad de {{client.locality}}, {{client.province}}, renunciando a cualquier otro fuero o jurisdicción, inclusive el Federal, fijando domicilio especial en el indicado al pie de este documento."
+          },
+          {
+            "id": "debtor",
+            "type": "debtorAndSignature",
+            "text": "DATOS DEL DEUDOR: Nombre y Apellido: ______________________________ D.N.I. / CUIT: ___________________________________ Domicilio: ______________________________________ Localidad: ______________________________________ Teléfono: _______________________________________ ___________________________ FIRMA DEL DEUDOR"
+          },
+          {
+            "id": "accessory-note",
+            "type": "paragraph",
+            "text": "Nota: Este pagaré se firma como garantía del cumplimiento del Contrato de Mandato Comercial y Gestión de Compra suscrito entre las partes."
+          }
+        ],
+        "paragraphs": [
+          "Por {{economy.totalDisplay}} (Monto en números)",
+          "En la ciudad de {{issue.note.place}}, a los {{issue.note.day}} días del mes de {{issue.note.month}} de {{issue.note.year}}.",
+          "A LA VISTA , pagaré sin protesto (Art. 50 Dec. Ley 5965/63) a la orden de LOOP GESTION INTEGRAL S.R.L. CUIT 30-71962686-2, o a quien ésta designe, en el domicilio de Caracas 1101, C.A.B.A., CP: 1431, o donde la acreedora lo indique, la suma de PESOS {{economy.totalWordsWithoutCurrency}} (Monto en letras), por igual valor recibido en servicios de gestión y financiación a mi entera satisfacción.",
+          "La falta de pago de cualquier obligación derivada del contrato de mandato al cual este título accede, producirá la mora de pleno derecho y la caducidad de todos los plazos, haciéndose exigible la presentación y cobro del presente documento.",
+          "Para todos los efectos legales, el suscripto se somete a la jurisdicción de los Tribunales Ordinarios de la ciudad de {{client.locality}}, {{client.province}}, renunciando a cualquier otro fuero o jurisdicción, inclusive el Federal, fijando domicilio especial en el indicado al pie de este documento.",
+          "DATOS DEL DEUDOR: Nombre y Apellido: ______________________________ D.N.I. / CUIT: ___________________________________ Domicilio: ______________________________________ Localidad: ______________________________________ Teléfono: _______________________________________ ___________________________ FIRMA DEL DEUDOR",
+          "Nota: Este pagaré se firma como garantía del cumplimiento del Contrato de Mandato Comercial y Gestión de Compra suscrito entre las partes."
+        ],
+        "sha256": "211b030da3405a50ecf6a631c6402bb35ca06a156b3261a34c74967955a2486b"
+      },
+      "REMITO": {
+        "kind": "REMITO",
+        "id": "loop-original-remito",
+        "version": "OWNER_ORIGINALS_INTEGRATION_V1",
+        "title": "REMITO DE TRASLADO / ENTREGA DE MERCADERÍA",
+        "layout": "OWNER_ORIGINALS_V1",
+        "blocks": [
+          {
+            "id": "delivery",
+            "type": "paragraph",
+            "text": "El presente documento certifica el traslado y entrega del producto detallado."
+          },
+          {
+            "id": "transport",
+            "type": "paragraph",
+            "text": "La mercadería viaja por cuenta y orden de la empresa para ser entregada al cliente."
+          }
+        ],
+        "paragraphs": [
+          "El presente documento certifica el traslado y entrega del producto detallado.",
+          "La mercadería viaja por cuenta y orden de la empresa para ser entregada al cliente."
+        ],
+        "sha256": "5df4e2b263d428fa3dd338c6f6bfb74869419617f93f62567006c979d69a15d0"
+      }
+    },
+    "rendererHash": "d8869178425dc27acee44a2fdf33fb109a741f3dbc67e9795261789adb8d3062",
+    "resourcesHash": "403b7a9a2915f3886a8f76385757a092072dd61d0337a01ebc4bb4d0045dfcd3",
+    "sha256": "e10550ef23e324c9972eb5a6a3a361a70483f4c855b3b8f0ea8d46d9086f548c"
+  }
+]

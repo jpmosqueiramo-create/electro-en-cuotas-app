@@ -1,3 +1,4 @@
+import {assertOwnerFinalCatalog} from './helpers/assertOwnerFinalCatalog';
 // Offline regression and reproducible review artifacts; no Firebase, network or credentials.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -20,7 +21,7 @@ const sha = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('he
 const args = process.argv.slice(2);
 assert(args.every(x => x === '--write'));
 assert.equal(sha(readFileSync(amendment.baseCandidate.path)), amendment.baseCandidate.sha256);
-assert.deepEqual(approvedFinalPackages, []);
+assertOwnerFinalCatalog(approvedFinalPackages);
 assert.equal(amendment.installable, false);
 assert.equal(amendment.professionalValidation, null);
 assert.equal(amendment.status, 'PROPOSED_NOT_APPROVED');

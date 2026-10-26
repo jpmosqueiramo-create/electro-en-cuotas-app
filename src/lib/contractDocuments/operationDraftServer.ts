@@ -7,7 +7,7 @@ import { contractRefs,clientConformityIsCurrent } from '../contractV2Server';
 import { readOperationIdentity } from '../operationIdentityReviewServer';
 import { projectOperationDraft } from './operationDraft';
 import { renderContractPairReview } from '../productionV2/originalPdf';
-import { creditorPaymentPlaceReviewTemplates, creditorPaymentReviewIssuer } from '../productionV2/creditorPaymentPlaceProposal';
+import {ownerFinalTemplates,ownerFinalIssuer} from '../productionV2/ownerFinalDocuments';
 import { paymentAddressHashOrNull } from '../contractPaymentAddress';
 import { DocumentPreviewError } from './previewErrors';
 export async function readOperationDraftDocuments(db:Firestore,id:string,v:number){
@@ -25,6 +25,6 @@ export async function readOperationDraftDocuments(db:Firestore,id:string,v:numbe
  // PDF work outside the transaction. No Storage, writes, freeze or counter access.
  const code=!p.canPreview?(p.pending.some(x=>x.section==='identity')?'DOCUMENT_IDENTITY_REVIEW_REQUIRED' as const:'DOCUMENT_CONFORMITY_PENDING' as const):p.pending.some(x=>x.section==='data'||x.section==='employment'||x.section==='product'||x.section==='schedule'||(x.section==='terms'&&x.label==='Plan contractual confirmado pendiente'))?'DOCUMENT_DATA_PENDING' as const:null;
  if(!p.canPreview)return {projection:p,available:false as const,code};
- try{return {...renderContractPairReview(p,creditorPaymentPlaceReviewTemplates(),conformity,creditorPaymentReviewIssuer()),available:true as const,code};}
+ try{return {...renderContractPairReview(p,ownerFinalTemplates(),conformity,ownerFinalIssuer()),available:true as const,code};}
  catch{throw new DocumentPreviewError('DOCUMENT_RENDER_FAILED','RENDER','PDF_GENERATION_FAILED');}
 }

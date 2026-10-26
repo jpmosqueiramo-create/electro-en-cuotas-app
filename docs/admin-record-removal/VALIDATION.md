@@ -58,3 +58,13 @@ Los logs detallados permanecen locales; las capturas del PR contienen exclusivam
 - [issuance-390](screenshots/issuance-390.png)
 - [request-1280](screenshots/request-1280.png)
 - [request-390](screenshots/request-390.png)
+
+## Integración previa al merge con PR #89 y #90
+
+Base actual: `2b37b930236753067b236c8db15d358c3259d1c7`. Se conserva la aprobación administrativa por el titular (sin volver a exigir un profesional), los originales finales, su logo y el acceso directo a emisión. El conflicto se limitó al selector de autorizaciones y su etiqueta; se mantiene la distinción de aprobaciones del titular y profesionales históricas.
+
+La dependencia de retiro administrativo cambia el manifiesto técnico de 26 a 28 fuentes. Para no dejar el catálogo con un renderer incompatible, el paquete pasa a `loop-owner-final-20261025-v2` / `OWNER_FINAL_UPLOADED_20261025_V2`, hash `5a7649a57cdc4353c11c55f66c8b99b321c1f841c165c752f1423c7c52b069ce`. **Los textos, plantillas, sus hashes, economía y reglas de emisión permanecen idénticos.** El catálogo publicado anterior se conserva completo en `catalog-before-integration.json`. No se transfiere una aprobación anterior al nuevo hash técnico ni se reescriben aprobaciones, snapshots o instrumentos históricos. Si ya se registró la aprobación V1, debe confirmarse expresamente la revisión técnica V2 después de su publicación.
+
+Esta integración no modifica variables, Rules, IAM, Auth, numeración CH ni registros productivos. La autorización actual comprende el merge; la publicación requiere autorización del SHA resultante.
+
+Resultado de la integración: PASS TypeScript, ESLint diferencial (sin diagnósticos), build, test:safe, manifiesto de 28 fuentes, integridad del catálogo y 63 comprobaciones históricas. PASS Emulator: 32 grupos del adaptador con catálogo técnico V2 y aprobación del titular; retiro/restauración, concurrencia, idempotencia, permisos y denegación SDK; regresión de borrado seguro de presupuestos. PASS navegador real en localhost (1280 y 390 px): solicitud, presupuesto y contrato retirados/restaurados, doble clic, updateTime canónicos conservados y acceso visible a emisión. Las capturas se actualizaron con esa ejecución sintética. No se eliminaron assertions. Logs `/tmp/ch88-integration-{tsc,eslint,build,safe,emulator,browser,catalog,manifest,historical}.log`.

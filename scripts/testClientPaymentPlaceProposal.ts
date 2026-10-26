@@ -1,3 +1,4 @@
+import {assertOwnerFinalCatalog} from './helpers/assertOwnerFinalCatalog';
 // Offline proposal review. Firebase is neither imported nor contacted.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -18,7 +19,7 @@ const args = process.argv.slice(2); assert(args.every(x => x === '--write'));
 const templates = clientPaymentPlaceReviewTemplates(), projection = structuredClone(v2.projection) as OperationDraftProjection;
 const sourceBefore = structuredClone(projection), address = contractPaymentAddress(projection.customer);
 const consent = { confirmedPaymentAddressHash: address.hash };
-assert.deepEqual(approvedFinalPackages, []); assert.equal(amendment.installable, false); assert.equal(amendment.professionalValidation, null);
+assertOwnerFinalCatalog(approvedFinalPackages); assert.equal(amendment.installable, false); assert.equal(amendment.professionalValidation, null);
 assert.deepEqual(templates.MANDATE, v2.templates.MANDATE); assert.deepEqual(templates.REMITO, v2.templates.REMITO);
 const changed = templates.PAGARE.blocks!.filter((b, i) => b.text !== v2.templates.PAGARE.blocks[i].text);
 assert.deepEqual(changed.map(b => b.id), ['promise']);
@@ -74,5 +75,10 @@ const manifest = {schemaVersion:'CLIENT_PAYMENT_PLACE_REVIEW_MANIFEST_V1',versio
     templates,templateHash:contractValueHash(templates),rendererHash:FINAL_RENDERER_HASH,resourcesHash:FINAL_RESOURCES_HASH,
     projection,syntheticConformity:consent,paymentAddress:address,pdfs,checks,productionWrites:0};
 const text = JSON.stringify(manifest,null,2)+'\n';
-if(args.includes('--write'))writeFileSync(folder+'/manifest.json',text);else assert.equal(readFileSync(folder+'/manifest.json','utf8'),text);
+if(args.includes('--write'))writeFileSync(folder+'/manifest.json',text);else {
+ const archived=readFileSync(folder+'/manifest.json');
+ assert.equal(sha(archived),'8ab3b546e1fcf2d6ccf47775d5b073678048d69b795bc0fc24322c7e5bc5da58','Historical provenance remains byte-identical');
+ const saved=JSON.parse(archived.toString());
+ assert.deepEqual(saved,{...manifest,rendererHash:saved.rendererHash},'All historical PDF bytes, fields and checks remain exact; current renderer tested separately');
+}
 console.log(JSON.stringify({status:'PASS',groups:checks.length,templateHash:manifest.templateHash,pdfs}));
