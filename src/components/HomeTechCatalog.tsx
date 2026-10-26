@@ -229,9 +229,8 @@ export default function HomeTechCatalog() {
               <div className="pt-1 space-y-2">
                 <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                   <a 
-                    href="https://wa.me/5491125659686?text=Hola%2C%20estuve%20viendo%20la%20web%20de%20Cuenta%20Hogar%20y%20quiero%20recibir%20una%20propuesta.%0A%0ANecesito%20comprar%20un%20producto%20y%20quisiera%20conocer%20las%20alternativas%2C%20el%20plan%20de%20cuotas%20y%20la%20entrega%20en%20mi%20localidad.%0A%0A%F0%9F%93%8D%20Mi%20localidad%20es%3A%0A%F0%9F%9B%92%20Producto%20que%20busco%3A%0A%0A%C2%BFMe%20pueden%20orientar%3F" 
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href="#contacto"
+                    data-testid="home-request-proposal"
                     className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs sm:text-sm font-extrabold uppercase tracking-wider px-8 h-[50px] rounded-xl transition-all shadow-lg shadow-[#FFD21A]/20 transform active:scale-95 shrink-0"
                   >
                     <WhatsAppIcon className="w-4.5 h-4.5 text-[#111318]" />

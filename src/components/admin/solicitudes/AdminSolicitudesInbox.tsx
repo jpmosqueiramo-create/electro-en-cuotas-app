@@ -19,16 +19,24 @@ export function AdminSolicitudesInbox({ initialFilters }: { initialFilters: Admi
   const [loaded, setLoaded] = useState<{uid:string;data:AuthorizedRequestPage}|null>(null);
   const result=loaded?.uid===user?.uid?loaded?.data??null:null;
   const [moreBusy,setMoreBusy]=useState(false);
+  const [refreshing,setRefreshing]=useState(false);
   const generation=useRef(0),paging=useRef(false);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     const controller=new AbortController(),current=++generation.current;
     if(!user)return()=>controller.abort();
+    setRefreshing(true);
     loadAuthorizedRequestPage(user,{},controller.signal).then(data=>{if(!controller.signal.aborted&&generation.current===current)setLoaded({uid:user.uid,data});}).catch(()=>{
       if(!controller.signal.aborted&&generation.current===current)setLoaded({uid:user.uid,data:{items:[],loadedSources:[],errors:{solicitudes:"unavailable",solicitudes_cuenta:"unavailable"},cursors:{}}});
-    });
+    }).finally(()=>{if(!controller.signal.aborted&&generation.current===current)setRefreshing(false);});
     return()=>controller.abort();
   }, [attempt,user]);
+  useEffect(()=>{
+    if(!user)return;
+    const refresh=()=>{if(document.visibilityState==='visible'&&!paging.current)setAttempt(value=>value+1);};
+    window.addEventListener('focus',refresh);window.addEventListener('online',refresh);document.addEventListener('visibilitychange',refresh);
+    return()=>{window.removeEventListener('focus',refresh);window.removeEventListener('online',refresh);document.removeEventListener('visibilitychange',refresh);};
+  },[user]);
   async function more(){
     if(!user||!result||paging.current)return;
     paging.current=true;setMoreBusy(true);const current=generation.current;
@@ -47,7 +55,7 @@ export function AdminSolicitudesInbox({ initialFilters }: { initialFilters: Admi
   const states = Array.from(new Set(result?.items.map(item => item.estadoOriginal) ?? [])).sort((a, b) => (a ?? "").localeCompare(b ?? ""));
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-8" data-testid="solicitudes-inbox">
-      <PageHeader title="Solicitudes" subtitle="Todas las consultas y solicitudes que requieren seguimiento, sin perder su origen ni estado." />
+      <div className="flex flex-wrap items-center justify-between gap-3"><PageHeader title="Solicitudes" subtitle="Consultas recibidas desde la web y solicitudes para preparar un presupuesto." /><button type="button" disabled={refreshing||moreBusy||!user} onClick={retry} className="admin-control inline-flex min-h-11 items-center gap-2 rounded-xl border border-border-color px-4 text-sm font-semibold"><RefreshCw aria-hidden="true" className="size-4" />{refreshing?'Actualizando…':'Actualizar bandeja'}</button></div>
       <section aria-label="Buscar y filtrar solicitudes" className="space-y-4 rounded-2xl border border-border-color bg-surface p-4 sm:p-5">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
           <label className="col-span-2 min-w-0 space-y-1.5 text-sm font-semibold md:col-span-1">Buscar operación
