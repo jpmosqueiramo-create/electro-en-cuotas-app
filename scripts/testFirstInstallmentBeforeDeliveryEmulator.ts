@@ -44,8 +44,8 @@ async function main(){
   await browser.navigate(`/admin/operaciones/${f.id}/1?section=logistics`);await browser.until("!!document.querySelector('[data-testid=first-installment-payment] button:not(:disabled)')",'first payment available before signature');
   await browser.until("!!document.querySelector('[data-testid=delivery-guided-actions]')",'guided delivery controls loaded');
   assert.equal(await browser.evaluate("document.body.innerText.includes('Entrega productiva V2 bloqueada')"),false);
-  await browser.clickText('Usar mandato emitido y registrar firma');
-  await browser.until("document.body.innerText.includes('Registrar firma del mandato')",'issued mandate prepared by guided action');
+  await browser.clickText('Registrar firma del mandato');
+  await browser.until("!!document.querySelector('[data-testid=delivery-card-MANDATE] [data-testid=delivery-current-task] input[type=file]')",'issued mandate prepared by guided action');assert((await readDelivery(db,f.id,1,f.root)).state.documents.MANDATE.prepared);
   await browser.evaluate("document.querySelector('[data-testid=delivery-guided-actions]').scrollIntoView({block:'start'})");await browser.screenshot('delivery-guided-desktop.png');
   await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await browser.screenshot('delivery-guided-mobile.png');await browser.overflow('guided delivery mobile');
   await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
