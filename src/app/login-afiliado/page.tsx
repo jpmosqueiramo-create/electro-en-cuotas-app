@@ -116,7 +116,7 @@ export default function LoginPage() {
 
         <div className="mt-8 text-center border-t border-[#222530] pt-6">
           <p className="text-xs text-[#9CA3AF] leading-relaxed">
-            🔒 Las credenciales de acceso son otorgadas exclusivamente por la administración de Cuenta Hogar.
+            🔒 Para crear tu acceso, abrí la invitación enviada por Administración a tu correo.
           </p>
         </div>
       </div>

@@ -1,5 +1,5 @@
+import { withAdminCommissionAccess, commissionWritesEnabled } from '@/lib/affiliateCommissionAccess';
 import {affiliateIndex,readCustody} from '@/lib/operationCustodyV2Server';
-import { financialEnabled } from '@/lib/operationFinancialV2';
 import { NextResponse } from "next/server";
 import { admin } from "@/lib/firebaseAdmin";
 import { validarAdminToken } from "@/lib/adminAuth";
@@ -17,7 +17,7 @@ import {
   ConfiguracionComisionVendedor
 } from "@/lib/commissionsEngine";
 
-export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
+async function read(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const authRes = await validarAdminToken(req);
     if (!authRes.valid) {
@@ -88,7 +88,7 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
     for(const assignment of assignments?.docs??[]){const a=assignment.data();if(a.affiliateId!==canonicalVendorId)continue;const op=await readCustody(db,a.budgetId,a.version,{uid:authRes.uid!,admin:true});operations.push({budgetId:a.budgetId,version:a.version,client:op.client,product:op.product,nextAction:op.nextAction});}
     return NextResponse.json({
       ok: true,
-      mutationEnabled:financialEnabled(),
+      mutationEnabled:await commissionWritesEnabled(db,authRes.uid!),
       vendedor: vendorData,
       operations,
       cuentaCorriente,
@@ -107,3 +107,5 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
     return NextResponse.json({ error: message || "500:INTERNAL_ERROR" }, { status });
   }
 }
+
+export async function GET(req:Request,context:{params:Promise<{id:string}>}){const a=await validarAdminToken(req);if(!a.valid)return NextResponse.json({error:"Acceso administrativo requerido."},{status:403});try{return await withAdminCommissionAccess(admin.firestore(),a.uid!,false,()=>read(req,context));}catch{return NextResponse.json({error:"No se pudo verificar la cuenta del vendedor afiliado."},{status:409});}}

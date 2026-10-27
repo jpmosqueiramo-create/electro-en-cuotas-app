@@ -1,0 +1,32 @@
+import './helpers/requireSafeEmulatorEnvironment';
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {admin} from '../src/lib/firebaseAdmin';
+import {approvedFinalPackages} from '../src/lib/productionV2/catalog';
+import {productionRuntimeForEmulator} from '../src/lib/productionV2/runtime';
+import {productionReadyFixture,syntheticOriginalFormal} from './helpers/productionAdapterFixtures';
+import {productionPaths} from '../src/lib/productionV2/freeze';
+import {issuePreparedOperation} from '../src/lib/productionV2/simpleIssuance';
+import {argentinaBusinessDate} from '../src/lib/productionV2/businessDate';
+import {getBudgetDocumentationBucket} from '../src/lib/budgetDocumentationStorage';
+import {financialCommand,financialRef} from '../src/lib/operationFinancialV2Server';
+import {saveAffiliateProfile} from '../src/lib/affiliateRegistryServer';
+import {listActiveAffiliates} from '../src/lib/operationCustodyV2Server';
+import {withAdminCommissionAccess} from '../src/lib/affiliateCommissionAccess';
+import {obtenerCuentaCorrienteVendedor} from '../src/lib/settlementsEngine';
+async function main(){
+ const db=admin.firestore(),actor=(await admin.auth().createUser({email:process.env.NEXT_PUBLIC_ADMIN_EMAIL!,password:'Emulator-only-123',emailVerified:true})).uid,p=approvedFinalPackages[0],runtime=productionRuntimeForEmulator(db,admin.auth(),[p],[actor]),f=await productionReadyFixture(actor,true,true),bucket=await getBudgetDocumentationBucket();
+ const profile={id:f.affiliateId,commandId:randomUUID(),expectedRevision:0,nombre:'Sintético Baja',email:`${f.uid}@example.test`,localidad:'Ciudad sintética',telefono:'',authUid:f.uid,activo:true,porcentajeComision:10,reason:'Alta sintética'};
+ await saveAffiliateProfile(db,profile,actor);
+ await db.doc(productionPaths.counter).create({schemaVersion:'CONTRACT_NUMBER_COUNTER_V1',policyId:'CONTRACT_NUMBERING_V1',executionMode:'PRODUCTION',active:true,lastAllocatedSequence:'0',initializationAuthorizationReference:'SYNTHETIC_ONLY'});
+ await issuePreparedOperation(runtime,bucket,f.id,1,{commandId:randomUUID(),expectedRevision:(await f.r.draft.get()).data()!.revision,packageId:p.id,packageHash:p.sha256,formal:{contractIssueDate:argentinaBusinessDate(),contractIssuePlace:'Ciudad sintética',promissoryNoteIssueDate:argentinaBusinessDate(),promissoryNoteIssuePlace:'Ciudad sintética',...syntheticOriginalFormal},confirmed:true},actor);
+ const pay=()=>({paymentId:randomUUID(),amountCents:14500000,effectiveDate:argentinaBusinessDate(),method:'TRANSFERENCIA',reference:'SYNTHETIC-DEACTIVATION'});
+ const run=async(action:string,data:Record<string,unknown>)=>financialCommand(db,f.id,1,{action,data,operationId:f.identity.operationId,commandId:randomUUID(),expectedRevision:(await financialRef(db,f.id,1).get()).data()?.revision??0},f.root);
+ await run('ACTIVATE_WITH_FIRST_PAYMENT',pay());
+ const account=()=>withAdminCommissionAccess(db,actor,false,()=>obtenerCuentaCorrienteVendedor(db,f.affiliateId));
+ await saveAffiliateProfile(db,{...profile,commandId:randomUUID(),expectedRevision:1,activo:false,reason:'Baja sintética conservando ventas en curso'},actor);
+ assert(!(await listActiveAffiliates(db)).some(v=>v.id===f.affiliateId));const second=pay();await run('CREDIT_PAYMENT',second);assert.equal((await account()).totalDevengadoCentavos,2900000);
+ await saveAffiliateProfile(db,{...profile,commandId:randomUUID(),expectedRevision:2,activo:true,porcentajeComision:12,reason:'Cambio de porcentaje sintético'},actor);await run('CREDIT_PAYMENT',pay());assert.equal((await account()).totalDevengadoCentavos,4640000);
+ await run('REVERSE_PAYMENT',{paymentId:second.paymentId,reason:'Reversa sintética conserva porcentaje original'});assert.equal((await account()).totalReversadoCentavos,-1450000);assert.equal((await db.doc(productionPaths.counter).get()).data()!.lastAllocatedSequence,'1');console.log('DEACTIVATION_NEW_ASSIGNMENTS_DISABLED_EXISTING_PAYMENTS_PRESERVED_PERCENTAGE_CHANGE_AND_HISTORICAL_REVERSAL = PASS');
+}
+main().catch(e=>{console.error(e);process.exitCode=1;});

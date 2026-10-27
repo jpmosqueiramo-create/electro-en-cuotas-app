@@ -601,67 +601,36 @@ async function runTests3B5B() {
 
   assert(typeof idTokenV1 === "string" && idTokenV1.length > 0, "39. ID Token real de Auth Emulator intercambiado para Vendedor 1.");
 
-  // A. Invocación de GET /api/afiliado/cuenta-corriente con switch FALSE -> HTTP 403
-  const reqV1False = new Request("http://localhost/api/afiliado/cuenta-corriente", {
-    headers: { "Authorization": `Bearer ${idTokenV1}` }
-  });
-  const resV1False = await handlerCuentaCorriente(reqV1False);
-  assert(resV1False.status === 403, "40. Endpoint GET /api/afiliado/cuenta-corriente retorna HTTP 403 cuando mostrarCuentaCorrienteEnPanel === false.");
-
-  // B. Switch TRUE por admin y nueva invocación -> HTTP 200
-  await actualizarVisibilidadPanelVendedor(db, {
-    vendedorId: v1Id,
-    mostrarCuentaCorrienteEnPanel: true,
-    adminUid: "admin_test"
-  });
-
-  const reqV1True = new Request("http://localhost/api/afiliado/cuenta-corriente", {
-    headers: { "Authorization": `Bearer ${idTokenV1}` }
-  });
-  const resV1True = await handlerCuentaCorriente(reqV1True);
-  assert(resV1True.status === 200, "41. Endpoint GET /api/afiliado/cuenta-corriente retorna HTTP 200 cuando mostrarCuentaCorrienteEnPanel === true.");
-
-  const jsonV1 = (await resV1True.json()) as {
-    vendedorAfiliadoId: string;
-    movimientos: Array<{
-      id: string;
-      fecha: string;
-      tipo: string;
-      montoComisionCentavos: number;
-      clienteNombre?: string | null;
-      productoResumen?: string | null;
-      porcentajeAplicadoBasisPoints?: number;
-      snapshot?: unknown;
-      pricing?: unknown;
-      margen?: unknown;
-    }>;
-  };
-
-  // C. Mapping authUid !== vendedorAfiliadoId
-  assert(jsonV1.vendedorAfiliadoId === v1Id, "42. Mapping exitoso: authUid 'uid_vend_1' resolvió correctamente a vendedorAfiliadoId 'vend_3b5b_1'.");
-
-  // D. Aislamiento multitenant
-  const reqV2 = new Request("http://localhost/api/afiliado/cuenta-corriente", {
-    headers: { "Authorization": `Bearer ${idTokenV2}` }
-  });
-  const resV2 = await handlerCuentaCorriente(reqV2);
-  const jsonV2 = (await resV2.json()) as { vendedorAfiliadoId: string; movimientos: Array<{ id: string }> };
-  assert(resV2.status === 200 && jsonV2.vendedorAfiliadoId === v2Id, "43. Aislamiento: Vendedor 2 accede a su propio panel únicamente.");
-  assert(!jsonV2.movimientos.some((m) => jsonV1.movimientos.some((m1) => m1.id === m.id)),
-    "44. Aislamiento estricto: La respuesta del Vendedor A no contiene ningún movimiento del Vendedor B.");
-
-  // E. Filtrado estricto
-  const primerMovV1 = jsonV1.movimientos[0];
-  const noCamposProhibidos = !("porcentajeAplicadoBasisPoints" in primerMovV1) &&
-                             !("snapshot" in primerMovV1) &&
-                             !("pricing" in primerMovV1) &&
-                             !("margen" in primerMovV1);
-  assert(noCamposProhibidos, "45. Respuesta no contiene porcentajeAplicadoBasisPoints, snapshots, pricing ni márgenes.");
-
-  // F. Datos permitidos enriquecidos
-  const movConSol = jsonV1.movimientos.find((m) => m.clienteNombre === "Juan Perez");
-  assert(Boolean(movConSol) && movConSol?.productoResumen === "Heladera No Frost",
-    "46. Respuesta devuelve correctamente clienteNombre ('Juan Perez') y productoResumen ('Heladera No Frost').");
+  // The historical URL already delegates to the current portal projection on main.
+  // Access is based on current verified Auth + active UID binding, not the retired visibility switch.
+  const resUnverified = await handlerCuentaCorriente(new Request("http://localhost/api/afiliado/cuenta-corriente", {
+    headers: { Authorization: `Bearer ${idTokenV1}` }
+  }));
+  const resUnverifiedV2 = await handlerCuentaCorriente(new Request("http://localhost/api/afiliado/cuenta-corriente", {headers:{Authorization:`Bearer ${idTokenV2}`}}));
+  assert(resUnverified.status === 403 && resUnverifiedV2.status===403, "40. Una cuenta sin correo verificado no puede consultar comisiones.");
+  await admin.auth().updateUser(v1AuthUid, {emailVerified:true});
+  await admin.auth().updateUser(v2AuthUid, {emailVerified:true});
+  const verifiedV1 = await exchangeCustomTokenForIdToken(await admin.auth().createCustomToken(v1AuthUid));
+  const verifiedV2 = await exchangeCustomTokenForIdToken(await admin.auth().createCustomToken(v2AuthUid));
+  await actualizarVisibilidadPanelVendedor(db, {vendedorId:v1Id,mostrarCuentaCorrienteEnPanel:true,adminUid:"admin_test"});
+  const resV1 = await handlerCuentaCorriente(new Request("http://localhost/api/afiliado/cuenta-corriente", {headers:{Authorization:`Bearer ${verifiedV1}`}}));
+  assert(resV1.status === 200, "41. La identidad activa, verificada y vinculada consulta la proyección vigente.");
+  const jsonV1 = await resV1.json() as {movements:Array<{id:string;client:string;product:string;amountCents:number;type:string;percentage:number}>;paidCents:number};
+  const ownV1 = (await obtenerCuentaCorrienteVendedor(db,v1Id)).movimientos;
+  assert(jsonV1.movements.length === Math.min(50,ownV1.length) && jsonV1.movements.every(m=>ownV1.some(own=>own.id===m.id)),
+    "42. El UID del vendedor 1 se resuelve a los movimientos de su propio vendedorAfiliadoId.");
+  const resV2 = await handlerCuentaCorriente(new Request("http://localhost/api/afiliado/cuenta-corriente", {headers:{Authorization:`Bearer ${verifiedV2}`}}));
+  const jsonV2 = await resV2.json() as {movements:Array<{id:string}>};
+  const ownV2 = (await obtenerCuentaCorrienteVendedor(db,v2Id)).movimientos;
+  assert(resV2.status===200 && jsonV2.movements.length===Math.min(50,ownV2.length) && jsonV2.movements.every(m=>ownV2.some(own=>own.id===m.id)),
+    "43. El vendedor 2 accede únicamente a su propia cuenta.");
+  assert(!jsonV2.movements.some(m=>jsonV1.movements.some(other=>other.id===m.id)),
+    "44. Aislamiento estricto: ningún movimiento se comparte entre vendedores afiliados.");
+  const raw=JSON.stringify(jsonV1);
+  assert(!["porcentajeAplicadoBasisPoints","snapshot","pricing","margen","costoProveedor"].some(field=>raw.includes('"'+field+'"')),
+    "45. La proyección excluye snapshots, pricing, costos y márgenes internos.");
+  assert(jsonV1.movements.every(m=>{const original=ownV1.find(own=>own.id===m.id)!;return m.amountCents===original.montoComisionCentavos && m.client===(original.clienteNombre??'Cliente sin informar') && m.product===(original.productoResumen??'');}),
+    "46. Importes y etiquetas proceden del ledger propio; no se inventa información histórica faltante.");
 
   // --- SECCIÓN 8: SECURITY RULES FIRESTORE CON USUARIO AUTH NO ADMIN Y ANÓNIMO ---
   // Test Anónimo (Browser REST semántico)

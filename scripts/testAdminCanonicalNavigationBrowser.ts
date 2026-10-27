@@ -23,9 +23,9 @@ export async function testAdminCanonicalNavigationBrowser(){
    await browser.navigate('/login');await browser.until("typeof window.__FIREBASE_SIGN_IN__==='function'",'auth');await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(adminEmail)},${JSON.stringify(adminPassword)}).then(()=>true)`);
    await browser.navigate('/admin');await browser.until("!!document.querySelector('[data-testid=admin-module-cards]')",'today');
    assert.equal(await browser.evaluate("document.querySelectorAll('aside,nav[aria-label=\"Navegación móvil de administración\"]').length"),0,'Original layout has no lateral or bottom navigation');
-   assert.equal(await browser.evaluate("document.querySelectorAll('[data-testid=admin-module-cards] article').length"),10,'All current modules have visible original-style cards');
+   assert.equal(await browser.evaluate("document.querySelectorAll('[data-testid=admin-module-cards] article').length"),9,'All current modules have visible original-style cards');
    const expected=['/admin/solicitudes','/admin/presupuestos','/admin/documentacion','/admin/cobranzas','/admin/logistica'];
-   for(const path of [...expected,'/admin/clientes','/admin/rendiciones','/admin/comisiones','/admin/productos','/admin/reportes']) {
+   for(const path of [...expected,'/admin/clientes','/admin/comisiones','/admin/productos','/admin/reportes']) {
     assert.ok(await browser.evaluate(`!!document.querySelector('[data-testid=admin-module-cards] a[href="${path}"]')`),'Home card '+path);
     assert.ok(await browser.evaluate(`!!document.querySelector('nav[aria-label="Secciones de administración"] a[href="${path}"]')`),'Horizontal access '+path);
    }
@@ -84,7 +84,7 @@ export async function testAdminCanonicalNavigationBrowser(){
    await browser!.navigate('/admin/cobranzas');await browser!.until("location.pathname==='/login'",'role denied');assert.equal(await browser!.evaluate("!!document.querySelector('[data-testid=canonical-operations]')"),false);
   }
   assert.deepEqual(await databaseSnapshot(),before);assert.deepEqual(browser!.externalFirebase,[]);
-  writeFileSync(`${dir}/results.json`,JSON.stringify({result:'PASS',project:'demo-cuenta-hogar',widths:[1280,390],cases:['original header and horizontal navigation','ten current module cards','home to requests','current operation and origin','legacy redirects','history read only','client and affiliate denied admin','no navigation writes','no external Firebase']},null,2));
+  writeFileSync(`${dir}/results.json`,JSON.stringify({result:'PASS',project:'demo-cuenta-hogar',widths:[1280,390],cases:['original header and horizontal navigation','nine current module cards','home to requests','current operation and origin','legacy redirects','history read only','client and affiliate denied admin','no navigation writes','no external Firebase']},null,2));
   console.log('ADMIN_ORIGINAL_INTERFACE_CANONICAL_BROWSER_DESKTOP_MOBILE_ALERTS_HISTORY_SECTIONS_ROLES_NO_WRITES = PASS');
  }finally{await browser?.close();}
 }

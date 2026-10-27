@@ -1,3 +1,4 @@
+import { withAdminCommissionAccess } from '@/lib/affiliateCommissionAccess';
 import { NextResponse } from "next/server";
 import { admin } from "@/lib/firebaseAdmin";
 import { validarAdminToken } from "@/lib/adminAuth";
@@ -14,19 +15,21 @@ export interface VendedorAdminSummary {
   email: string;
   localidad?: string;
   activo: boolean;
-  saldoCuentaCorrienteCentavos: number;
-  saldoDisponibleLiquidacionCentavos: number;
-  efectivoPendienteRendicionCentavos: number;
+  cuentaVerificada: boolean;
+  saldoCuentaCorrienteCentavos: number|null;
+  saldoDisponibleLiquidacionCentavos: number|null;
+  efectivoPendienteRendicionCentavos: number|null;
   porcentajeVigenteBasisPoints: number|null;
   porcentajeVigenteDisplay: string;
   mostrarCuentaCorrienteEnPanel: boolean;
   authUid?: string;
+  portalInvitationState?:string;
   revision:number;
   porcentajeComision:number|null;
   telefono:string;
 }
 
-export async function GET(req: Request) {
+async function read(req: Request) {
   try {
     const authRes = await validarAdminToken(req);
     if (!authRes.valid) {
@@ -44,29 +47,29 @@ export async function GET(req: Request) {
       const vendorId = doc.id;
 
       // 1. Account current summary
-      let saldoCuentaCorrienteCentavos = 0;
+      let saldoCuentaCorrienteCentavos:number|null = null;
       try {
         const cc = await obtenerCuentaCorrienteVendedor(db, vendorId);
         saldoCuentaCorrienteCentavos = cc.saldoCuentaCorrienteCentavos;
       } catch {
-        // Fallback
+        // Unavailable balances remain unknown; never fabricate zero.
       }
 
       // 2. Settlement available balance
-      let saldoDisponibleLiquidacionCentavos = 0;
+      let saldoDisponibleLiquidacionCentavos:number|null = null;
       try {
         saldoDisponibleLiquidacionCentavos = await obtenerSaldoDisponibleLiquidacion(db, vendorId);
       } catch {
-        // Fallback
+        // Unavailable balances remain unknown; never fabricate zero.
       }
 
       // 3. Cash custody pending
-      let efectivoPendienteRendicionCentavos = 0;
+      let efectivoPendienteRendicionCentavos:number|null = null;
       try {
         const cust = await obtenerLedgerCustodiaEfectivo(db, vendorId);
         efectivoPendienteRendicionCentavos = cust.efectivoPendienteRendicionCentavos;
       } catch {
-        // Fallback
+        // Unavailable balances remain unknown; never fabricate zero.
       }
 
       // 4. Current commission percentage
@@ -89,12 +92,14 @@ export async function GET(req: Request) {
         email: data.email || "",
         localidad: data.localidad || "",
         activo: data.activo !== false,
+        cuentaVerificada:saldoCuentaCorrienteCentavos!==null&&saldoDisponibleLiquidacionCentavos!==null,
         saldoCuentaCorrienteCentavos,
         saldoDisponibleLiquidacionCentavos,
         efectivoPendienteRendicionCentavos,
         porcentajeVigenteBasisPoints,
         porcentajeVigenteDisplay,
         mostrarCuentaCorrienteEnPanel: Boolean(data.mostrarCuentaCorrienteEnPanel),
+        portalInvitationState:typeof data.portalInvitationState==='string'?data.portalInvitationState:undefined,
         revision:data.revision??0,
         porcentajeComision:porcentajeVigenteBasisPoints===null?null:porcentajeVigenteBasisPoints/100,
         telefono:data.telefono??'',
@@ -111,3 +116,5 @@ export async function GET(req: Request) {
 }
 
 export async function POST(){return NextResponse.json({error:'Utilizá el registro administrativo unificado.'},{status:409});}
+
+export async function GET(req:Request){const a=await validarAdminToken(req);if(!a.valid)return NextResponse.json({error:"Acceso administrativo requerido."},{status:403});try{return await withAdminCommissionAccess(admin.firestore(),a.uid!,false,()=>read(req));}catch{return NextResponse.json({error:"No se pudo verificar el registro de vendedores afiliados."},{status:409});}}

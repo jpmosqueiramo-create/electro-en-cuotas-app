@@ -18,8 +18,9 @@ export async function preparePaymentCommissions(db:Firestore,tx:Transaction,para
   const reversals=await Promise.all(ids.map(id=>tx.get(ledger.doc(key('reverse',id)))));
   for(let i=0;i<existing.length;i++)if(existing[i].exists&&!reversals[i].exists){const original=existing[i].data()!;rows.push({...original,id:key('reverse',ids[i]),tipo:'REVERSA_COMISION',movimientoOriginalId:ids[i],montoComisionCentavos:-original.montoComisionCentavos,montoComisionDevengadoCentavos:-original.montoComisionCentavos,baseComisionableCentavos:-original.baseComisionableCentavos,idempotencyKey:key('reverse',ids[i]),registradoPor:actor,createdAt:at,motivo:payment.reversalReason});}
  }else if(assignment){
+  // Deactivation prevents new assignments; existing assigned operations keep their agreed commission and customer payments.
   const vendor=await tx.get(db.collection('vendedores').doc(assignment.affiliateId)),v=vendor.data();
-  if(!v||v.activo!==true||v.authUid!==assignment.uid)throw Error('Vendedor afiliado asignado no disponible para devengamiento.');
+  if(!v||v.authUid!==assignment.uid)throw Error('Vendedor afiliado asignado no disponible para devengamiento.');
   const configs=await tx.get(db.collection('vendedores_configuraciones_comision').where('vendedorAfiliadoId','==',assignment.affiliateId));
   const applicable=configs.docs.map(d=>({...d.data(),id:d.id} as ConfiguracionComisionVendedor)).filter(d=>typeof d.vigenteDesde==='string'&&d.vigenteDesde<=at).sort((a,b)=>String(b.vigenteDesde).localeCompare(String(a.vigenteDesde))||String(b.createdAt).localeCompare(String(a.createdAt))||b.id.localeCompare(a.id));
   const cfg=applicable[0],pct=cfg?.porcentajeComisionBasisPoints;if(!Number.isSafeInteger(pct)||pct<0||pct>10000)throw Error('Configuración vigente de comisión requerida.');
