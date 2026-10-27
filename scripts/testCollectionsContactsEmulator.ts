@@ -1,0 +1,76 @@
+import './helpers/requireSafeEmulatorEnvironment';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { admin } from '../src/lib/firebaseAdmin';
+import { approvedFinalPackages } from '../src/lib/productionV2/catalog';
+import { productionRuntimeForEmulator } from '../src/lib/productionV2/runtime';
+import { productionReadyFixture, syntheticOriginalFormal } from './helpers/productionAdapterFixtures';
+import { productionPaths } from '../src/lib/productionV2/freeze';
+import { issuePreparedOperation } from '../src/lib/productionV2/simpleIssuance';
+import { argentinaBusinessDate } from '../src/lib/productionV2/businessDate';
+import { getBudgetDocumentationBucket } from '../src/lib/budgetDocumentationStorage';
+import { financialCommand, financialRef } from '../src/lib/operationFinancialV2Server';
+import { affiliateEngagement } from '../src/lib/affiliateEngagementV2';
+import { custodyRef } from '../src/lib/operationCustodyV2Server';
+import { startProductionBrowserServer } from './helpers/productionAdapterBrowserServer';
+import { CatalogBrowser } from './helpers/catalogBrowser';
+import { p1Token } from './testPortalP1Emulator';
+import { GET as adminGet, POST as adminPost } from '../src/app/api/admin/presupuestos-v2/[budgetId]/versions/[version]/gestiones/route';
+import { GET as affiliateGet } from '../src/app/api/afiliado/operaciones-v2/[budgetId]/[version]/gestiones/route';
+const results: string[] = [], pass = (name: string) => { results.push(name); console.log(name + ' = PASS'); };
+async function main() {
+  const db = admin.firestore(), password = 'Emulator-only-123', actor = (await admin.auth().createUser({ email: process.env.NEXT_PUBLIC_ADMIN_EMAIL, password, emailVerified: true })).uid;
+  const p = approvedFinalPackages[0], runtime = productionRuntimeForEmulator(db, admin.auth(), [p], [actor]), bucket = await getBudgetDocumentationBucket(), f = await productionReadyFixture(actor, true, true);
+  await db.doc(productionPaths.counter).create({ schemaVersion: 'CONTRACT_NUMBER_COUNTER_V1', policyId: 'CONTRACT_NUMBERING_V1', executionMode: 'PRODUCTION', active: true, lastAllocatedSequence: '0', initializationAuthorizationReference: 'SYNTHETIC_ONLY' });
+  await issuePreparedOperation(runtime, bucket, f.id, 1, { commandId: randomUUID(), expectedRevision: (await f.r.draft.get()).data()!.revision, packageId: p.id, packageHash: p.sha256, formal: { contractIssueDate: argentinaBusinessDate(), contractIssuePlace: 'Localidad sintética', promissoryNoteIssueDate: argentinaBusinessDate(), promissoryNoteIssuePlace: 'Localidad sintética', ...syntheticOriginalFormal }, confirmed: true }, actor);
+  await financialCommand(db, f.id, 1, { action: 'ACTIVATE_WITH_FIRST_PAYMENT', commandId: randomUUID(), expectedRevision: 0, operationId: f.identity.operationId, data: { paymentId: randomUUID(), amountCents: 14500000, effectiveDate: argentinaBusinessDate(), method: 'TRANSFERENCIA', reference: 'SYNTHETIC-COLLECTIONS' } }, f.root);
+  const before = JSON.stringify((await financialRef(db, f.id, 1).get()).data()), ctx = { params: Promise.resolve({ budgetId: f.id, version: '1' }) }, url = `http://localhost/api/admin/presupuestos-v2/${f.id}/versions/1/gestiones`;
+  assert.equal((await adminGet(new Request(url), ctx)).status, 403);
+  const outsider = (await admin.auth().createUser({ email: 'collections-outsider@example.test', password, emailVerified: true })).uid;
+  for (const uid of [f.uid, outsider]) {
+    const token = await p1Token({ uid });
+    assert.equal((await adminGet(new Request(url, { headers: { Authorization: 'Bearer ' + token } }), ctx)).status, 403);
+    assert.equal((await adminPost(new Request(url, { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: '{}' }), ctx)).status, 403);
+  }
+  const otherToken = await p1Token({ uid: outsider }); assert.equal((await affiliateGet(new Request('http://localhost/api/afiliado/operaciones-v2/test/1/gestiones', { headers: { Authorization: 'Bearer ' + otherToken } }), ctx)).status, 403);
+  const command = { commandId: randomUUID(), kind: 'PROMISE', note: 'Contacto sintético concurrente', promisedDate: '2099-01-01', nextContactDate: '2099-01-02' };
+  const replies = await Promise.all([affiliateEngagement(db, f.id, 1, f.root, command), affiliateEngagement(db, f.id, 1, f.root, command)]);
+  assert.equal(replies.filter(r => r.replay === false).length, 1);
+  await assert.rejects(affiliateEngagement(db, f.id, 1, f.root, { ...command, note: 'Otra nota' }));
+  await assert.rejects(affiliateEngagement(db, f.id, 1, f.root, { ...command, commandId: randomUUID(), promisedDate: '2000-01-01' }));
+  pass('ADMIN_AUTH_AFFILIATE_CLIENT_ISOLATION_CONCURRENT_REPLAY_AND_CONFLICT');
+  const server = await startProductionBrowserServer(runtime), browser = await CatalogBrowser.open();
+  try {
+    await browser.command('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
+    await browser.navigate('/login'); await browser.until("typeof window.__FIREBASE_SIGN_IN__==='function'", 'Auth'); await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(process.env.NEXT_PUBLIC_ADMIN_EMAIL)},${JSON.stringify(password)}).then(()=>true)`);
+    await browser.navigate('/admin/cobranzas'); await browser.until("!!document.querySelector('[data-testid=collection-row]')", 'collection ledger row');
+    assert.equal(await browser.evaluate("document.querySelector('[data-testid=collection-row]').innerText.includes('1.595.000')"), true);
+    const name = await browser.evaluate<string>("document.querySelector('[data-testid=collection-row] h2').textContent");
+    await browser.change('[aria-label="Buscar cliente o contrato"]', name.split(/\s+/).reverse().join(' '));
+    await browser.until("document.querySelectorAll('[data-testid=collection-row]').length===1", 'reverse name search');
+    await browser.change('[aria-label="Buscar cliente o contrato"]', 'NOMBRE-QUE-NO-EXISTE'); await browser.until("document.body.innerText.includes('No hay coincidencias')", 'empty filters');
+    await browser.clickText('Limpiar filtros'); await browser.until("!!document.querySelector('[data-testid=collection-row]')", 'reset filters');
+    await browser.field('Fecha de venta desde', '2099-01-01'); await browser.until("document.body.innerText.includes('No hay coincidencias')", 'sale date range'); await browser.clickText('Limpiar filtros');
+    await browser.evaluate("document.querySelector('[data-testid=operation-contacts] summary').click()"); await browser.until("!!document.querySelector('[data-testid=contact-record]')", 'shared contact history');
+    await browser.change('textarea[name="note"]', 'AVISO SINTÉTICO ADMIN: abonará el viernes'); await browser.change('input[name="promisedDate"]', '2099-02-01'); await browser.clickText('Guardar contacto');
+    await browser.until("document.body.innerText.includes('AVISO SINTÉTICO ADMIN')", 'admin contact persisted');
+    await browser.change('textarea[name="note"]', 'COMENTARIO SIN GUARDAR'); await browser.clickText('Actualizar cobranzas');
+    await browser.until("document.querySelector('[data-testid=collections-dashboard]').getAttribute('aria-busy')==='false'", 'refresh completed'); assert.equal(await browser.evaluate("document.querySelector('textarea[name=note]').value"), 'COMENTARIO SIN GUARDAR');
+    await browser.evaluate("document.querySelector('[data-testid=collections-dashboard]').scrollIntoView({block:'start'})"); await browser.screenshot('collections-desktop.png'); await browser.overflow('collections desktop');
+    await browser.command('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true }); await browser.screenshot('collections-mobile.png'); await browser.overflow('collections mobile');
+    await browser.evaluate("document.querySelector('[data-testid=operation-contacts]').scrollIntoView({block:'start'})"); await browser.screenshot('contacts-admin-mobile.png'); await browser.overflow('admin contacts mobile');
+    pass('BROWSER_ADMIN_LEDGER_FILTER_SEARCH_REFRESH_PRESERVES_FORM_DESKTOP_MOBILE');
+    const affiliateEmail = (await admin.auth().getUser(f.uid)).email!;
+    await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(affiliateEmail)},${JSON.stringify(password)}).then(()=>true)`); await browser.navigate('/afiliado');
+    await browser.until("!!document.querySelector('[data-testid=operation-contacts]')", 'assigned affiliate contacts'); await browser.evaluate("document.querySelector('[data-testid=operation-contacts] summary').click()");
+    await browser.until("document.body.innerText.includes('AVISO SINTÉTICO ADMIN')", 'affiliate sees admin contact');
+    await browser.change('textarea[name="note"]', 'AVISO SINTÉTICO AFILIADO: se coordinó seguimiento'); await browser.change('input[name="nextContactDate"]', '2099-02-02'); await browser.clickText('Guardar contacto'); await browser.until("document.body.innerText.includes('AVISO SINTÉTICO AFILIADO')", 'affiliate saved');
+    await browser.evaluate("document.querySelector('[data-testid=operation-contacts]').scrollIntoView({block:'start'})"); await browser.screenshot('contacts-affiliate-mobile.png'); await browser.overflow('affiliate contacts mobile');
+    const history = await affiliateEngagement(db, f.id, 1, f.root); assert('records' in history); assert(history.records?.some(r => r.note.includes('AVISO SINTÉTICO AFILIADO'))); assert(history.records?.every(r => r.at));
+    assert.equal(before, JSON.stringify((await financialRef(db, f.id, 1).get()).data())); assert.equal((await custodyRef(db, f.id, 1).collection('engagements').get()).size, 3);
+    assert.deepEqual(browser.externalFirebase, []); pass('BROWSER_AFFILIATE_ADMIN_SHARED_HISTORY_NO_FINANCIAL_CHANGES');
+  } finally { await browser.close(); await server.stop(); }
+  mkdirSync('/tmp/ch98-evidence', { recursive: true }); writeFileSync('/tmp/ch98-evidence/results.json', JSON.stringify({ results, productionWrites: 0 }, null, 2));
+}
+main().catch(error => { console.error(error); process.exitCode = 1; });
