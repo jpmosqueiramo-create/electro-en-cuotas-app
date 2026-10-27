@@ -1,0 +1,48 @@
+import assert from 'node:assert/strict';
+import { argentinaBusinessDate } from '../src/lib/productionV2/businessDate';
+import { collectionStatus, installmentWhatsApp, loadCollections, overdueBalance, selectCollections, type CollectionRow } from '../src/lib/collectionsOverview';
+import { financialSummary } from '../src/lib/operationFinancialV2';
+import type { BudgetV2 } from '../src/lib/budgetV2';
+const today = '2026-10-26';
+assert.equal(argentinaBusinessDate(new Date('2026-10-27T02:59:00Z')), today);
+assert.equal(argentinaBusinessDate(new Date('2026-10-27T03:00:00Z')), '2026-10-27');
+const installment = { number: 1, dueDate: '2026-10-20', amountCents: 1000000 };
+const summary = financialSummary({ installments: [installment, { number: 2, dueDate: '2026-11-20', amountCents: 1000000 }], totalCents: 2000000 }, [{ reversedAt: null, allocations: [{ installmentNumber: 1, amountCents: 400000 }] }], today);
+const row: CollectionRow = { key: 'a:1', budgetId: 'a', version: 1, name: 'María José Pérez', product: 'Producto sintético', saleDate: '2026-10-15', whatsapp: '+54 9 11 5555-1234', financial: { active: true, mutationEnabled: true, revision: 1, contractNumber: 'TEST-000001', operationId: 'synthetic', executionMode: 'EMULATOR_ONLY', snapshotHash: 'test', activatedAt: today, asOfDate: today, receipts: [], nextCursor: null, blockReason: '', ...summary } };
+const filters = { query: '', status: 'ALL' as const, from: '', to: '', sort: 'DUE' };
+assert.equal(collectionStatus(row, today), 'OVERDUE'); assert.equal(overdueBalance(row), 600000);
+for (const query of ['PEREZ maria', 'jose', 'María Pérez', 'TEST-000001']) assert.equal(selectCollections([row], { ...filters, query }, today).length, 1);
+assert.equal(selectCollections([row], { ...filters, query: 'otro cliente' }, today).length, 0);
+assert.equal(selectCollections([row], { ...filters, from: '2026-10-15', to: '2026-10-15' }, today).length, 1);
+assert.equal(selectCollections([row], { ...filters, from: '2026-10-16' }, today).length, 0);
+const unknown = { ...row, key: 'b', financial: null }, inactive = { ...row, key: 'c', financial: { active: false as const, executionMode: 'PRODUCTION' as const, mutationEnabled: false, firstInstallmentCents: null, blockReason: '' } };
+assert.equal(collectionStatus(unknown, today), 'UNKNOWN'); assert.equal(collectionStatus(inactive, today), 'INACTIVE');
+assert.equal(selectCollections([unknown, inactive, row], { ...filters, status: 'CURRENT' }, today).length, 0);
+assert.equal(selectCollections([unknown, inactive, row], { ...filters, status: 'OVERDUE' }, today).length, 1);
+assert(row.financial?.active);
+const paid = { ...row, financial: { ...row.financial, ...financialSummary({ installments: [installment], totalCents: installment.amountCents }, [{ reversedAt: null, allocations: [{ installmentNumber: 1, amountCents: installment.amountCents }] }], today) } };
+assert.equal(collectionStatus(paid, today), 'PAID'); assert.equal(installmentWhatsApp(paid, today), null);
+const dueToday = { ...row, financial: { ...row.financial, ...financialSummary({ installments: [{ ...installment, dueDate: today }], totalCents: installment.amountCents }, [], today) } };
+assert.equal(collectionStatus(dueToday, today), 'TODAY');
+const url = new URL(installmentWhatsApp(row, today)!); assert.equal(url.origin, 'https://wa.me'); assert.equal(url.pathname, '/5491155551234');
+assert.match(url.searchParams.get('text')!, /6\.000,00/); assert.match(installmentWhatsApp(dueToday, today)!, /Hoy%20vence/);
+assert.equal(installmentWhatsApp({ ...row, whatsapp: 'javascript:invalid' }, today), null);
+assert.equal(installmentWhatsApp(unknown, today), null);
+assert.equal(installmentWhatsApp(row, '2026-10-19'), null);
+assert.equal(JSON.stringify(row.financial), JSON.stringify({ active: true, mutationEnabled: true, revision: 1, contractNumber: 'TEST-000001', operationId: 'synthetic', executionMode: 'EMULATOR_ONLY', snapshotHash: 'test', activatedAt: today, asOfDate: today, receipts: [], nextCursor: null, blockReason: '', ...summary }));
+async function main() {
+  const budget = (id: string) => ({ id, version: 1, estado: 'EMITIDO', clienteSnapshot: { nombre: 'Cliente sintético', whatsapp: '5491155551234' }, options: [] }) as unknown as BudgetV2;
+  let flight = 0, max = 0; const calls: string[] = [];
+  const rows = await loadCollections(async url => {
+    calls.push(url); if (url === '/api/admin/presupuestos-v2') return { budgets: Array.from({ length: 9 }, (_, i) => budget('test-' + i)) };
+    flight++; max = Math.max(max, flight); await new Promise(resolve => setTimeout(resolve, 2)); flight--;
+    if (url.endsWith('/contract')) return { operation: { identity: { acceptedAt: '2026-10-16T01:00:00Z', acceptedOptionId: 'test' } }, draft: null };
+    if (url.includes('test-2/')) throw Error('permission failure');
+    return row.financial;
+  });
+  assert.equal(rows.length, 9); assert(max <= 4); assert(rows.every(r => r.saleDate === '2026-10-15'));
+  assert.equal(collectionStatus(rows[2], today), 'UNKNOWN'); assert.equal(rows.filter(r => r.financial?.active).length, 8);
+  assert(calls.every(url => url.startsWith('/api/admin/')));
+  console.log('COLLECTIONS_SEARCH_DATES_STATUS_PARTIAL_BALANCES_WHATSAPP_BOUNDED_READS = PASS');
+}
+void main();
