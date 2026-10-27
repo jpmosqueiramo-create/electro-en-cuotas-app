@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import type { BudgetV2 } from '@/lib/budgetV2';
 import { ALLOWED_MIME_TYPES, DOCUMENT_LABELS, DOCUMENT_TYPES, MAX_ATTACHMENT_SIZE_BYTES, type BudgetAcceptanceV2, type BudgetDocumentationCaseV2, type DocumentType } from '@/lib/budgetAcceptanceV2';
@@ -8,10 +8,11 @@ import { ALLOWED_MIME_TYPES, DOCUMENT_LABELS, DOCUMENT_TYPES, MAX_ATTACHMENT_SIZ
 const button = 'min-h-11 rounded-xl border border-border-color bg-surface px-4 py-2 text-sm font-semibold text-brand-primary disabled:opacity-40';
 const input = 'min-h-11 w-full min-w-0 rounded-xl border border-border-color bg-surface px-3 py-2';
 const money = (n: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
-export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false,onChanged }: { budget: BudgetV2; documentationOnly?:boolean;onChanged?:()=>Promise<void> }) {
+export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false,onChanged,renderReview,reviewStatuses }: { budget: BudgetV2; documentationOnly?:boolean;onChanged?:()=>Promise<void>;renderReview?:(type:DocumentType)=>ReactNode;reviewStatuses?:Partial<Record<DocumentType,string>> }) {
   const { user } = useAuth();
   const [acceptance, setAcceptance] = useState<BudgetAcceptanceV2 | null>(null);
   const [documentation, setDocumentation] = useState<BudgetDocumentationCaseV2 | null>(null);
+  const [notice,setNotice]=useState('');
   const [loaded, setLoaded] = useState(false), [error, setError] = useState(''), [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false), [confirm, setConfirm] = useState(false), [manage, setManage] = useState(false);
   const [selected, setSelected] = useState(''), [preferred, setPreferred] = useState('');
@@ -34,7 +35,7 @@ export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false,
   }, [request]);
   async function act(work: () => Promise<void>) {
     if (flight.current) return;
-    flight.current = true; setBusy(true); setError('');
+    flight.current = true; setBusy(true); setError('');setNotice('');
     try { await work(); } catch (e) { setError(e instanceof Error ? e.message : 'No se pudo completar la operación.'); }
     finally { flight.current = false; setBusy(false); }
   }
@@ -52,14 +53,15 @@ export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false,
     const key = JSON.stringify([type, file.name, file.type, digest]);
     let id = uploadCommands.current.get(key); if (!id) { id = crypto.randomUUID(); uploadCommands.current.set(key, id); }
     const form = new FormData(); form.append('commandId', id); form.append('file', file);
-    await request(`documentation/${type}/attachments`, { method: 'POST', body: form }); await reloadDocumentation(); uploadCommands.current.delete(key);
+    await request(`documentation/${type}/attachments`, { method: 'POST', body: form }); await reloadDocumentation(); uploadCommands.current.delete(key);setNotice(`${DOCUMENT_LABELS[type]}: archivo cargado.`);
   }
   useEffect(()=>{if(!documentationOnly)return;let active=true;void request('documentation').then(r=>r.json()).then(data=>{if(active){setDocumentation(data.documentation);setManage(true);}}).catch(()=>{if(active)setError('No se pudo consultar la documentación.');});return()=>{active=false;};},[documentationOnly,request]);
   const option = budget.options.find(o => o.optionId === selected);
-  return <section data-testid="budget-acceptance" className="min-w-0 space-y-4 rounded-xl border border-border-color p-4">
-    <h3 className="font-heading text-lg font-bold">{documentationOnly?'Archivos de esta operación':'Aceptación y documentación'}</h3>
+  return <section data-testid="budget-acceptance" className={renderReview?"min-w-0 space-y-4":"min-w-0 space-y-4 rounded-xl border border-border-color p-4"}>
+    {!renderReview&&<h3 className="font-heading text-lg font-bold">{documentationOnly?'Archivos de esta operación':'Aceptación y documentación'}</h3>}
     {error && <p role="alert" className="break-words text-red-700">{error}</p>}
-    {!loaded && !error && <p>Consultando aceptación…</p>}
+    {notice&&<p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900">{notice}</p>}{busy&&<p role="status">Guardando archivo…</p>}
+    {!documentationOnly && !loaded && !error && <p>Consultando aceptación…</p>}
     {!documentationOnly && loaded && !acceptance && <button className={button} disabled={busy} onClick={() => { setOpen(!open); setConfirm(false); }}>Registrar aceptación</button>}
     {open && !acceptance && <fieldset disabled={busy} data-testid="acceptance-panel" className="min-w-0 space-y-4">
       <legend className="font-semibold">Elegir una opción</legend>
@@ -95,12 +97,12 @@ export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false,
       <button className={button} disabled={busy} onClick={() => void act(async () => { await reloadDocumentation(); setManage(!manage); })}>Gestionar documentación</button>
     </div>}
     {manage && documentation && <div data-testid="documentation-panel" className="space-y-4">
-      <h4 className="font-heading text-lg font-bold">Documentación privada</h4><p className="text-sm text-text-secondary">{documentationOnly?'Para evaluación: DNI frente, dorso y comprobante de domicilio vigentes. Ingresos opcionales. La carpeta verificada puede reutilizar archivos anteriores.':'La carga conserva el expediente histórico; los requisitos de evaluación se revisan en la Ficha de operación.'} Archivos JPEG, PNG, WEBP o PDF de hasta 10 MiB.</p>
+      {!renderReview&&<h4 className="font-heading text-lg font-bold">Documentación privada</h4>}<p className="text-sm text-text-secondary">{renderReview?'Cargá y consultá cada archivo desde su tarjeta.':documentationOnly?'La carpeta verificada puede reutilizar archivos anteriores.':'La carga conserva el expediente histórico.'} JPEG, PNG, WEBP o PDF · hasta 10 MiB por archivo.</p>
       <div className="grid min-w-0 gap-4 lg:grid-cols-2">{DOCUMENT_TYPES.map(type => { const slot = documentation.slots[type]; return <article key={type} data-document-type={type} className="min-w-0 space-y-3 rounded-xl border border-border-color p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2"><h5 className="font-semibold">{DOCUMENT_LABELS[type]}</h5><span className="text-xs font-semibold text-text-secondary">{documentationOnly&&type!=='PAYSLIP'?'PARA EVALUACIÓN':'OPCIONAL'}</span></div>
-        <p data-slot-status className="text-sm font-semibold">{slot.status.replaceAll('_', ' ')}</p>
+        <div className="flex flex-wrap items-center justify-between gap-2"><h5 className="font-semibold">{DOCUMENT_LABELS[type]}</h5><span className="text-xs font-semibold text-text-secondary">{type==='PAYSLIP'?'Ingresos · opcional':'Identidad y domicilio'}</span></div>
+        <p data-slot-status className="text-sm font-semibold">{(slot.attachments.length||reviewStatuses?.[type]==='Verificado y vigente'?reviewStatuses?.[type]:undefined)??({SIN_CARGAR:'Sin archivo',CARGADO:'Archivo cargado',OBSERVADO:'Requiere actualización'}[slot.status]??slot.status.replaceAll('_',' '))}</p>
         {slot.observation && <p className="whitespace-pre-wrap break-words text-sm">Observación: {slot.observation}</p>}
-        <label className="block space-y-2"><span className="text-sm">Agregar archivo</span><input aria-label={`Agregar archivo ${DOCUMENT_LABELS[type]}`} className={`${input} text-sm`} type="file" accept={ALLOWED_MIME_TYPES.join(',')} disabled={busy} onChange={e => { const file = e.target.files?.[0]; e.currentTarget.value = ''; if (file) void act(() => upload(type, file)); }} /></label>
+        <label className="block space-y-2"><span className="text-sm">Agregar archivo</span><input aria-label={`Agregar archivo ${DOCUMENT_LABELS[type]}`} className={`${input} text-sm file:mr-2 file:rounded-lg file:border-0 file:bg-background-main file:px-3 file:py-2 file:text-brand-primary`} type="file" accept={ALLOWED_MIME_TYPES.join(',')} disabled={busy} onChange={e => { const file = e.target.files?.[0]; e.currentTarget.value = ''; if (file) void act(() => upload(type, file)); }} /></label>
         {slot.attachments.map(a => <div key={a.attachmentId} className="min-w-0 space-y-2 border-t border-border-color pt-3"><p className="break-all text-sm">{a.originalName}</p><div className="flex flex-wrap gap-2">
           <button className={button} disabled={busy} onClick={() => void act(async () => {
             const response = await request(`documentation/${type}/attachments/${a.attachmentId}`); const url = URL.createObjectURL(await response.blob());
@@ -109,9 +111,10 @@ export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false,
           <button className={button} disabled={busy} onClick={() => { if (window.confirm('¿Eliminar este archivo? Se conservará el evento de auditoría.')) void act(async () => { const key = `${type}:${a.attachmentId}`; let commandId = deleteCommands.current.get(key); if (!commandId) { commandId = crypto.randomUUID(); deleteCommands.current.set(key, commandId); }
             await request(`documentation/${type}/attachments/${a.attachmentId}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ commandId }) }); await reloadDocumentation(); deleteCommands.current.delete(key); }); }}>Eliminar</button>
         </div></div>)}
-        {!!slot.attachments.length && <div className="space-y-2"><label className="block space-y-2"><span className="text-sm">Observación administrativa</span><textarea className={input} maxLength={1000} value={notes[type] ?? ''} onChange={e => setNotes({ ...notes, [type]: e.target.value })} /></label>
+        {!renderReview&&!!slot.attachments.length && <div className="space-y-2"><label className="block space-y-2"><span className="text-sm">Observación administrativa</span><textarea className={input} maxLength={1000} value={notes[type] ?? ''} onChange={e => setNotes({ ...notes, [type]: e.target.value })} /></label>
           <button className={button} disabled={busy || !notes[type]?.trim()} onClick={() => void act(async () => { await request(`documentation/${type}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ observation: notes[type] }) }); await reloadDocumentation(); })}>Marcar observado</button>
         </div>}
+        {renderReview&&<fieldset disabled={busy} className="min-w-0">{renderReview(type)}</fieldset>}
       </article>; })}</div>
     </div>}
   </section>;
