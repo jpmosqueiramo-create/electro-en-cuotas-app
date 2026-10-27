@@ -5,7 +5,7 @@ Base actualizada: main `67b8c716db13b0047d9940890aefe1665f673983` (PR #102 publi
 ## Uso
 
 1. En **Vendedores afiliados**, buscar por nombre, apellido, correo o localidad; filtrar activos/inactivos. **Agregar vendedor afiliado** y **Editar** usan el registro existente. El porcentaje se aplica a cobros futuros y no reescribe los movimientos anteriores.
-2. En **Acceso al portal**, buscar la cuenta existente por su correo exacto y guardar para confirmar su vinculación. La cuenta debe estar activa y verificada; no se crean usuarios Auth ni se elevan roles. Una vinculación existente no puede reemplazarse con otra identidad.
+2. En el alta activo, **Guardar y enviar invitación** guarda el perfil y envía al vendedor afiliado un enlace para crear su acceso. El destinatario verifica su correo y elige su contraseña. Para perfiles anteriores, **Enviar invitación por correo** o la búsqueda de cuenta existente permiten completar el vínculo; una identidad ya vinculada no se reemplaza. Ver requisitos de envío productivo y estados debajo.
 3. **Ver operaciones y comisiones** abre la cuenta seleccionada. En **Operaciones → Asignar operación nueva o en curso**, buscar cliente/producto/CH y elegir una operación con aceptación. Confirmar la asignación. La custodia pendiente sigue impidiendo una reasignación incompatible.
 4. En **Comisiones**, consultar movimientos y porcentajes históricos. La comisión se devenga sobre pagos efectivamente acreditados, con las reglas existentes.
 5. En **Pagos**, consultar **Disponible**, **Reservado**, **Total pagado** y **A recuperar**. Preparar un importe, confirmar su reserva y, después de realizar el pago, registrar transferencia/efectivo y referencia. Cada paso requiere confirmación. Una reserva confirmada pendiente puede cancelarse con motivo. Preparar o reservar no marca un importe como pagado.
@@ -98,3 +98,41 @@ La navegación de documentación y los cuatro pasos sí pasan en `testOperationD
 PR para revisión; sin merge ni deploy automáticos. Después de revisar y autorizar el SHA mergeado, desplegar mediante App Hosting con el preflight habitual y sin modificar variables/Rules/permisos. La configuración productiva vigente se conserva.
 
 Smoke productivo de lectura: registro, selección, cuenta, operaciones y pagos históricos en desktop/mobile. Alta, vinculación, asignaciones y registros de pago reales requieren la acción deliberada del administrador; no se ejecutan como smoke.
+
+## Invitación por correo y alta autónoma del acceso
+
+La ampliación de este PR, sobre main `44d8a37dd5bc51c2c8303f6bf29f985d243754b0`, agrega:
+
+1. **Guardar y enviar invitación** en el alta de un vendedor afiliado activo. Guarda el perfil y su porcentaje; Firebase Authentication envía un enlace al correo registrado. No se crea un usuario Auth desde Administración ni se pide un UID.
+2. La tarjeta muestra **Invitación enviada · esperando activación**, o un estado explícito de envío no confirmado. El perfil se conserva si falla el correo. **Reenviar invitación por correo** inicia otro envío deliberado; hay un minuto mínimo entre envíos y la nueva invitación sustituye a la anterior.
+3. El destinatario abre el enlace, confirma su correo y elige su contraseña. Firebase crea/autentica la cuenta y verifica el correo. El backend vincula únicamente ese UID verificado al perfil activo y al correo exacto invitado. No cambia custom claims ni roles administrativos.
+4. Desde **Ver operaciones y comisiones → Operaciones → Asignar operación nueva o en curso** se asignan las ventas aceptadas. El vendedor debe haber activado su cuenta para poder asignarle una operación. La misma ficha reúne comisión disponible, pagos y efectivo/rendiciones.
+5. El vendedor vuelve a entrar por `/login-afiliado` con su correo y contraseña. Sus datos siguen limitados por los handlers propios del portal; una baja revoca el acceso.
+
+El correo usa el mecanismo oficial de [Firebase Email Link](https://firebase.google.com/docs/auth/web/email-link-auth) y [`accounts:sendOobCode`](https://docs.cloud.google.com/identity-platform/docs/reference/rest/v1/accounts/sendOobCode), sin SMTP ni dependencias nuevas. La API nunca devuelve ni persiste el código OOB, la contraseña ni el enlace de autenticación. El callback no contiene el correo. No se almacena información personal adicional en localStorage.
+
+### Configuración exacta pendiente de revisión productiva
+
+Lectura de configuración productiva, 27/10/2026: `signIn.email.enabled=true`, `signIn.email.passwordRequired=true`; `www.cuentahogar.com.ar` no figura como dominio autorizado.
+
+Para que Firebase envíe el enlace con este callback se necesita, **sin aplicar desde este PR**:
+
+- Conservar Email/Password habilitado y habilitar **Email link (passwordless sign-in)** (`signIn.email.passwordRequired=false`). El formulario de activación sigue permitiendo elegir contraseña para el login habitual.
+- Agregar `www.cuentahogar.com.ar` a `authorizedDomains`, conservando íntegramente los demás dominios y métodos existentes.
+
+No requiere modificar Firestore Rules, Storage Rules, IAM, comisiones ni configuración de emisión. La entrega a una casilla real y las plantillas de correo no se declaran probadas en producción. La prueba Emulator captura el OOB en el buzón emulado y completa el login contra Auth real emulado.
+
+### Nuevos campos y compatibilidad
+
+Sin migración ni renombrado de colecciones. Registros previos sin invitación siguen funcionando.
+
+- `vendedores/{id}`: `portalInvitationId`, `portalInvitationAt` (ISO), `portalInvitationState` (`SENDING`, `SENT`, `UNCONFIRMED`, `ACCEPTED`). Consumidores: listado administrativo y activación. Se conservan porcentajes, saldos e historial.
+- `vendedores/{id}/portalInvitations/{commandId}`: `email`, `actor`, `createdAt`, `expiresAt` (48 horas), `state`, `sentAt`; al aceptar, `acceptedAt` y `acceptedBy`. La invitación sólo es vigente si coincide con `portalInvitationId`, el correo actual y un perfil activo. Los datos quedan bajo las Rules administrativas existentes; el vendedor accede mediante un handler que verifica su token revocado/usuario actual y correo verificado.
+- La aceptación vincula `authUid`, incrementa la revisión del perfil y agrega `registryHistory/invitation_{id}` dentro de la misma transacción. Aceptaciones concurrentes del mismo UID devuelven el mismo resultado; otra identidad, correo cambiado, perfil duplicado, baja, reemplazo o vencimiento son rechazados.
+- El envío reserva el comando antes de contactar Firebase. Un reintento con el mismo comando no vuelve a enviar. Si la respuesta del proveedor se pierde, el estado queda **UNCONFIRMED**, no se inventa un envío exitoso. Un cierre del proceso durante el envío puede dejar **SENDING**; el administrador puede realizar otro envío explícito después de un minuto. No existe transacción distribuida con el proveedor de correo ni se promete entrega exactamente una vez.
+
+### Verificación adicional
+
+`testAffiliateInvitationsEmulator.ts`: envío Firebase emulado, doble clic y reintento sin segundo envío; creación de cuenta por OOB real emulado; aceptación concurrente y única; rechazo de correo ajeno, expiración, cambio de correo, reemplazo, cuenta sin verificar, usuario deshabilitado y perfil dado de baja. Recorrido de navegador a 1280, 390 y 320: menú único, redirect de Rendiciones, alta + envío desde el mismo formulario, callback, contraseña y portal propio. Todos los registros son sintéticos en `demo-cuenta-hogar`.
+
+Capturas del alta e invitación (datos sintéticos): [escritorio](screenshots/affiliate-management/affiliate-invitation-registry-1280.png), [móvil 390](screenshots/affiliate-management/affiliate-invitation-registry-390.png), [móvil 320](screenshots/affiliate-management/affiliate-invitation-registry-320.png), [cuenta activada](screenshots/affiliate-management/affiliate-invitation-activated-mobile.png).

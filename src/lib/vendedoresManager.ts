@@ -2,7 +2,7 @@ import { auth } from './firebase';
 export interface Vendedor {
  id?:string; nombre:string; email:string; localidad:string; porcentajeComision:number|null;
  efectivoPendienteRendicionCentavos?:number|null; saldoDisponibleLiquidacionCentavos?:number|null;
- telefono?:string; activo?:boolean; authUid?:string; revision?:number;
+ portalInvitationState?:string; telefono?:string; activo?:boolean; authUid?:string; revision?:number;
 }
 const pending=new Map<string,string>();
 async function headers(){const user=auth.currentUser;if(!user)throw Error('Sesión administrativa requerida.');return {Authorization:`Bearer ${await user.getIdToken()}`,'Content-Type':'application/json'};}

@@ -23,6 +23,7 @@ export interface VendedorAdminSummary {
   porcentajeVigenteDisplay: string;
   mostrarCuentaCorrienteEnPanel: boolean;
   authUid?: string;
+  portalInvitationState?:string;
   revision:number;
   porcentajeComision:number|null;
   telefono:string;
@@ -98,6 +99,7 @@ async function read(req: Request) {
         porcentajeVigenteBasisPoints,
         porcentajeVigenteDisplay,
         mostrarCuentaCorrienteEnPanel: Boolean(data.mostrarCuentaCorrienteEnPanel),
+        portalInvitationState:typeof data.portalInvitationState==='string'?data.portalInvitationState:undefined,
         revision:data.revision??0,
         porcentajeComision:porcentajeVigenteBasisPoints===null?null:porcentajeVigenteBasisPoints/100,
         telefono:data.telefono??'',
