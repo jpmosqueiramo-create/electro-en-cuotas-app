@@ -17,6 +17,7 @@ export const ADMIN_DESTINATIONS = [
 ] as const;
 
 export function activeAdminDestination(pathname: string) {
+  if (pathname.startsWith("/admin/operaciones/")) return "requests";
   if (pathname === "/admin/solicitudes" || pathname.startsWith("/admin/solicitudes/")) return "requests";
   if (pathname.startsWith("/admin/clientes")) return "clients";
   if (pathname.startsWith("/admin/rendiciones")) return "settlements";
