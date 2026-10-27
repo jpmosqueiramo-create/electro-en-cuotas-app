@@ -1,5 +1,6 @@
 "use client";
 
+import {ClientEmailInviteButton} from '@/components/admin/ClientEmailInviteButton';
 import { AdminNav } from "@/components/AdminNav";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -29,6 +30,7 @@ export default function ClientesPage() {
         if (key) {
           mapClientes.set(key, {
             id: d.id,
+            invitationSource: {kind:"REQUEST",collection:"solicitudes_cuenta",id:d.id},
             nombreCompleto: data.nombreCompleto || data.nombre || "Sin Nombre",
             dni: dni || "S/D",
             cuil: data.cuil || "S/D",
@@ -63,6 +65,7 @@ export default function ClientesPage() {
           } else {
             mapClientes.set(key, {
               id: d.id,
+              invitationSource: {kind:"REQUEST",collection:"solicitudes",id:d.id},
               nombreCompleto: data.nombreCompleto || data.nombre || data.datosPersonales?.nombreCompleto || "Sin Nombre",
               dni: dni || "S/D",
               cuil: data.cuil || data.datosPersonales?.cuil || "S/D",
@@ -220,7 +223,7 @@ export default function ClientesPage() {
                       </div>
                     </div>
 
-                    {/* RESUMEN COMERCIAL Y BOTÓN LEGAJO */}
+                    <div className="min-w-0 space-y-2"><p className="break-words text-sm text-text-secondary">Correo registrado: {c.email}</p><ClientEmailInviteButton target={c.invitationSource}/></div>{/* RESUMEN COMERCIAL Y BOTÓN LEGAJO */}
                     <div className="flex justify-between items-center pt-3 border-t border-[#DED8CF] text-xs mt-3">
                       <div className="flex gap-4 text-[#68706E] text-xs">
                         <span>Solicitudes: <strong className="text-[#173E3B] font-mono font-bold">{c.solicitudesCount}</strong></span>

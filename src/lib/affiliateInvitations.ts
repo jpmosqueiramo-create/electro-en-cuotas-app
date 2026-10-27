@@ -2,24 +2,12 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { admin } from './firebaseAdmin';
 import { opaque } from './contractV2';
 import { isAdminEmail } from './adminIdentity';
-import { requireProductionActor, runtimeForDatabase, runtimeData } from './productionV2/runtime';
+import { requireProductionActor, runtimeForDatabase } from './productionV2/runtime';
+import { deliverAccountEmail } from './accountEmailDelivery';
 import type { PortalIdentity } from './legacyPortalServer';
 
 const unavailable = () => Error('La invitación no está disponible. Pedí a Administración un nuevo enlace.');
 const invitationRef = (db: Firestore, id: string, command: string) => db.collection('vendedores').doc(opaque(id)).collection('portalInvitations').doc(opaque(command));
-/** Firebase delivers the email; never return or persist its OOB credential. */
-async function deliver(db: Firestore, email: string, continueUrl: string) {
- const { test } = runtimeData(runtimeForDatabase(db, admin.auth()));
- const apiKey = test ? 'emulator-only' : process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
- if (!apiKey) throw Error('Configuración de correo de Firebase incompleta.');
- const host = test ? 'http://127.0.0.1:9099/identitytoolkit.googleapis.com' : 'https://identitytoolkit.googleapis.com';
- const response = await fetch(`${host}/v1/accounts:sendOobCode?key=${encodeURIComponent(apiKey)}`, {
-  method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Firebase-Locale': 'es' },
-  body: JSON.stringify({ requestType: 'EMAIL_SIGNIN', email, continueUrl, canHandleCodeInApp: true }),
-  signal: AbortSignal.timeout(15000),
- });
- if (!response.ok) throw Error('Firebase no confirmó el envío. Revisá que Email link esté habilitado y el dominio autorizado.');
-}
 export async function inviteAffiliate(db: Firestore, vendorId: string, commandId: string, actor: string) {
  const runtime = await requireProductionActor(runtimeForDatabase(db, admin.auth()), actor);
  const ref = invitationRef(db, vendorId, commandId), vendorRef = ref.parent.parent!;
@@ -40,7 +28,7 @@ export async function inviteAffiliate(db: Firestore, vendorId: string, commandId
  if (invitation.duplicate) return { state: invitation.state, duplicate: true };
  const origin = runtime.test ? 'http://localhost:3000' : 'https://www.cuentahogar.com.ar';
  let state = 'SENT';
- try { await deliver(db, invitation.email, `${origin}/activar-vendedor/${vendorId}/${commandId}`); }
+ try { await deliverAccountEmail(db, invitation.email, `${origin}/activar-vendedor/${vendorId}/${commandId}`); }
  catch { state = 'UNCONFIRMED'; }
  await db.runTransaction(async tx => {
   const current = await tx.get(vendorRef), sent = await tx.get(ref);
