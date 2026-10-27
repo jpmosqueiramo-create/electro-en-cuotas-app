@@ -1,3 +1,6 @@
+import {issuedPaymentProof} from './productionV2/issuedPaymentProof';
+import {prepareClientActivationAtFirstPayment} from './operationClientV2Server';
+import {argentinaBusinessDate} from './productionV2/businessDate';
 import {operationRuntime,productionDeliveryProof,productionWriter,productionReader} from './productionV2/gates';
 import {runtimeData} from './productionV2/runtime';
 import {frozenOperation} from './productionV2/freeze';
@@ -26,10 +29,13 @@ async function context(db:Firestore,tx:Transaction,id:string,v:number,actor:Cust
  if(role==='CLIENT'){const binding=(await tx.get(clientBindingRef(db,id,v))).data();const u=await admin.auth().getUser(actor.uid).catch(()=>financialFail());if(u.disabled||!u.emailVerified||binding?.uid!==actor.uid||binding?.state!=='ACTIVE'||binding.operationId!==base.source.identity.operationId)financialFail('Servicio no disponible para esta cuenta.');}
  const ref=financialRef(db,id,v),saved=await tx.get(ref),state=saved.exists?saved.data() as FinancialState:null;
  if(state&&(state.schemaVersion!=='OPERATION_FINANCIAL_V2'||state.policy!==FINANCIAL_POLICY||!['EMULATOR_ONLY','PRODUCTION'].includes(state.executionMode)||state.operationId!==base.source.identity.operationId||!Number.isSafeInteger(state.revision)))financialFail();
+ if(state?.activationBasis&&(state.activationBasis.policy!=='FIRST_PAYMENT_BEFORE_DELIVERY_V1'||!/^([a-f0-9]{64})$/.test(state.activationBasis.issuedManifestHash)||state.executionMode!=='PRODUCTION'||state.deliveryCommandId!==null))financialFail('Origen financiero inválido.');
  const runtime=await operationRuntime(db,tx,id,v);if(runtime)await productionReader(runtime,actor);if(state&&((state.executionMode==='PRODUCTION')!==!!runtime||state.executionMode==='PRODUCTION'&&(!state.approvalAuthorizationId||state.approvalFixtureId)))financialFail('Modo financiero incompatible.');
  return {...base,ref,financial:state,runtime};
 }
-async function activationProof(db:Firestore,tx:Transaction,id:string,v:number,base:Awaited<ReturnType<typeof context>>,verified?:Map<string,VerifiedEvidence>){
+async function activationProof(db:Firestore,tx:Transaction,id:string,v:number,base:Awaited<ReturnType<typeof context>>,verified?:Map<string,VerifiedEvidence>,firstPayment=false){
+ if(base.runtime&&(firstPayment||base.financial?.activationBasis?.policy==='FIRST_PAYMENT_BEFORE_DELIVERY_V1')){const proof=await issuedPaymentProof(base.runtime,tx,id,v,verified);if(base.financial?.activationBasis&&(base.financial.activationBasis.issuedManifestHash!==proof.manifest.hash||base.financial.deliveryCommandId!==null))financialFail('Origen de activación financiera inconsistente.');return proof;}
+ if(firstPayment)financialFail('El primer pago anticipado requiere documentos productivos emitidos.');
  if(base.runtime)return productionDeliveryProof(base.runtime,tx,id,v,'FINANCE',true,verified);
  const files=new Map<string,EvidenceMetadata>();
  requireFinancialEmulator();const identity=base.source.identity,sid=contractSnapshotId({budgetId:id,budgetVersion:v,contractDraftId:identity.contractDraftId,acceptedOptionId:identity.acceptedOptionId}),r=contractRefs(db,id,v);
@@ -81,38 +87,41 @@ function accountingSummary(s:FinancialState,payments:FinancialPayment[]){
  return financialSummary(s,[{allocations:s.installments.map((i,n)=>({installmentNumber:i.number,amountCents:a.paidByInstallment[n]})),reversedAt:null}]);
 }
 export async function readFinancial(db:Firestore,id:string,v:number,actor:CustodyActor,role:FinancialRole,cursor?:string){
- return db.runTransaction(async tx=>{const c=await context(db,tx,id,v,actor,role);let productionMutation=false;if(c.runtime&&role==='ADMIN'){try{await productionWriter(c.runtime,actor);await productionDeliveryProof(c.runtime,tx,id,v,'FINANCE');productionMutation=true;}catch{/* Preserve authorized reads while new commands are blocked. */}}const mutationEnabled=c.runtime?productionMutation:financialEnabled()&&role==='ADMIN';if(!c.financial)return {active:false as const,executionMode:c.runtime?'PRODUCTION' as const:'EMULATOR_ONLY' as const,mutationEnabled,blockReason:productionMutation?'Entrega y documentos comprobados. Administración puede activar una sola vez el cronograma contractual.':'Cuotas sin activar. Se requiere emisión aprobada, entrega, tres firmas, originales y autorización vigente.'};
+ return db.runTransaction(async tx=>{const c=await context(db,tx,id,v,actor,role);let productionMutation=false,firstInstallmentCents:number|null=null;if(c.runtime&&role==='ADMIN'){try{await productionWriter(c.runtime,actor);const proof=await activationProof(db,tx,id,v,c,undefined,!c.financial);firstInstallmentCents=cents(proof.snapshot.paymentSchedule.installments[0].amount);productionMutation=true;}catch{/* Preserve authorized reads while new commands are blocked. */}}const mutationEnabled=c.runtime?productionMutation:financialEnabled()&&role==='ADMIN';if(!c.financial)return {active:false as const,executionMode:c.runtime?'PRODUCTION' as const:'EMULATOR_ONLY' as const,mutationEnabled,firstInstallmentCents,blockReason:productionMutation?'Podés registrar la primera cuota recibida. Se activa el cronograma emitido sin declarar firmas ni entrega.':'Primero emití el mandato y el pagaré y verificá la habilitación administrativa.'};
  // Frozen hash is rechecked on every view; never project private reference or personal fields.
  if(c.runtime)await frozenOperation(c.runtime,tx,id,v,'FINANCE',false);else requireFinancialEmulator();const snapshot=(await tx.get(db.collection('contractSnapshotsV2').doc(c.financial.snapshotId))).data();validateContractSnapshot(snapshot);verifyProjection(c.financial,snapshot);
  const s=c.financial,page=await paymentHistory(tx,c.ref,s,cursor),payments=page.payments,summary=accountingSummary(s,payments);
- return {active:true as const,mutationEnabled,operationId:s.operationId,revision:s.revision,contractNumber:s.contractNumber,executionMode:s.executionMode,snapshotHash:s.snapshotHash,activatedAt:s.activatedAt,...summary,nextCursor:page.nextCursor,receipts:payments.map(p=>customerReceipt(p,s)),...(role==='ADMIN'?{capitalCents:s.capitalCents,serviceCents:s.serviceCents,history:payments}:{}),blockReason:c.runtime?'Importes del contrato emitido. Los recibos acreditan pagos; no sustituyen comprobantes fiscales.':'Demostración en Emulator. Cobranza productiva deshabilitada; revisión jurídica pendiente.'};});
+ const binding=role==='ADMIN'?(await tx.get(clientBindingRef(db,id,v))).data():null;
+ return {active:true as const,...(role==='ADMIN'?{clientPortalStatus:binding?.state==='ACTIVE'?'ACTIVE':binding?.state==='REVOKED'?'REVOKED':'ACCOUNT_LINK_REQUIRED'}:{}),mutationEnabled,operationId:s.operationId,revision:s.revision,contractNumber:s.contractNumber,executionMode:s.executionMode,snapshotHash:s.snapshotHash,activatedAt:s.activatedAt,...summary,nextCursor:page.nextCursor,receipts:payments.map(p=>customerReceipt(p,s)),...(role==='ADMIN'?{capitalCents:s.capitalCents,serviceCents:s.serviceCents,history:payments}:{}),blockReason:c.runtime?'Importes del contrato emitido. Los recibos acreditan pagos; no sustituyen comprobantes fiscales.':'Demostración en Emulator. Cobranza productiva deshabilitada; revisión jurídica pendiente.'};});
 }
 export async function financialCommand(db:Firestore,id:string,v:number,input:unknown,actor:CustodyActor){
  const runtime=await db.runTransaction(tx=>operationRuntime(db,tx,id,v));if(runtime)await productionWriter(runtime,actor);else requireFinancialEmulator();if(!actor.admin)financialFail('Sólo Administración acredita o revierte pagos.');
  const c=parseFinancialCommand(input),ref=financialRef(db,id,v),receipt=ref.collection('commands').doc(c.commandId),digest=createHash('sha256').update(stable({c,actor:actor.uid})).digest('hex');
  // Authorize and capture metadata first; no Storage I/O runs in either transaction.
- const files=await db.runTransaction(async tx=>{const base=await context(db,tx,id,v,actor,'ADMIN'),prior=await tx.get(receipt);if(prior.exists){if(prior.data()!.digest!==digest)financialFail('Conflicto de commandId.');return new Map<string,EvidenceMetadata>();}return (await activationProof(db,tx,id,v,base)).files;});
+ const files=await db.runTransaction(async tx=>{const base=await context(db,tx,id,v,actor,'ADMIN'),prior=await tx.get(receipt);if(prior.exists){if(prior.data()!.digest!==digest)financialFail('Conflicto de commandId.');return new Map<string,EvidenceMetadata>();}return (await activationProof(db,tx,id,v,base,undefined,c.action==='ACTIVATE_WITH_FIRST_PAYMENT')).files;});
  const verified=new Map<string,VerifiedEvidence>();
  if(files.size){const {getBudgetDocumentationBucket}=await import('./budgetDocumentationStorage');const bucket=await getBudgetDocumentationBucket();for(const [path,p] of files)verified.set(path,await verifyEvidenceObject(bucket,p));}
  return db.runTransaction(async tx=>{
  if(!runtime)requireFinancialEmulator();const base=await context(db,tx,id,v,actor,'ADMIN'),prior=await tx.get(receipt);if(c.operationId!==base.source.identity.operationId)financialFail('Operación incorrecta.');if(prior.exists){if(prior.data()!.digest!==digest)financialFail('Conflicto de commandId.');return {...prior.data()!.result,replay:true};}
  if((base.financial?.revision||0)!==c.expectedRevision)financialFail('Conflicto de revisión. Recargá.');
- const proof=await activationProof(db,tx,id,v,base,verified),now=new Date().toISOString(),data=c.data;
+ const proof=await activationProof(db,tx,id,v,base,verified,c.action==='ACTIVATE_WITH_FIRST_PAYMENT'),now=new Date().toISOString(),data=c.data;
  let s=base.financial,created:FinancialPayment|null=null,reversed:FinancialPayment|null=null;
- if(c.action==='ACTIVATE'){
-  exact(data,[]);if(s)financialFail('Cobranza ya activada.');const snapshot=proof.snapshot;
+ const firstPayment=c.action==='ACTIVATE_WITH_FIRST_PAYMENT';
+ if(c.action==='ACTIVATE'||firstPayment){
+  if(!firstPayment)exact(data,[]);if(s)financialFail('Cobranza ya activada.');const snapshot=proof.snapshot;
   const installments=snapshot.paymentSchedule.installments.map(i=>({number:i.installmentNumber,dueDate:i.dueDate,amountCents:cents(i.amount)}));const total=cents(snapshot.economicTerms.contractTotal),capital=cents(snapshot.economicTerms.capitalAmount),service=cents(snapshot.economicTerms.serviceAmount);
   if(installments.reduce((n,i)=>n+i.amountCents,0)!==total||capital+service!==total||installments.length!==snapshot.economicTerms.contractPlanCuotas)financialFail('Cronograma inconsistente.');
-  s={schemaVersion:'OPERATION_FINANCIAL_V2',policy:FINANCIAL_POLICY,executionMode:runtime?'PRODUCTION':'EMULATOR_ONLY',operationId:c.operationId,revision:1,snapshotId:snapshot.contractSnapshotId,snapshotHash:snapshot.integrity.payloadHash,contractNumber:snapshot.contractNumber,capitalCents:capital,serviceCents:service,totalCents:total,installments,activatedAt:now,activatedBy:actor.uid,deliveryCommandId:proof.delivery.event!.commandId,...(runtime&&proof.snapshot.freeze.readinessPolicyVersion==='CONTRACT_PRODUCTION_APPROVAL_V1'?{approvalAuthorizationId:proof.snapshot.freeze.authorizationId}:{approvalFixtureId:financialApprovalRef(db,id,v).id}),accounting:{schemaVersion:'FINANCIAL_BALANCES_V1',paymentCount:0,paidByInstallment:installments.map(()=>0)}};
- }else{
+  s={schemaVersion:'OPERATION_FINANCIAL_V2',policy:FINANCIAL_POLICY,executionMode:runtime?'PRODUCTION':'EMULATOR_ONLY',operationId:c.operationId,revision:1,snapshotId:snapshot.contractSnapshotId,snapshotHash:snapshot.integrity.payloadHash,contractNumber:snapshot.contractNumber,capitalCents:capital,serviceCents:service,totalCents:total,installments,activatedAt:now,activatedBy:actor.uid,deliveryCommandId:proof.delivery?.event?.commandId??null,...(firstPayment&&'manifest' in proof?{activationBasis:{policy:'FIRST_PAYMENT_BEFORE_DELIVERY_V1' as const,issuedManifestHash:proof.manifest.hash}}:{}),...(runtime&&proof.snapshot.freeze.readinessPolicyVersion==='CONTRACT_PRODUCTION_APPROVAL_V1'?{approvalAuthorizationId:proof.snapshot.freeze.authorizationId}:{approvalFixtureId:financialApprovalRef(db,id,v).id}),accounting:{schemaVersion:'FINANCIAL_BALANCES_V1',paymentCount:0,paidByInstallment:installments.map(()=>0)}};
+ }
+ if(c.action!=='ACTIVATE'){
   if(!s||s.snapshotHash!==proof.snapshot.integrity.payloadHash)financialFail('Cobranza no activada o snapshot diferente.');
   verifyProjection(s,proof.snapshot);
   const payments=s.accounting?[]:(await paymentHistory(tx,ref,s)).payments;
   const summary=accountingSummary(s,payments);
-  if(c.action==='CREDIT_PAYMENT'){
+  if(c.action==='CREDIT_PAYMENT'||firstPayment){
    exact(data,['paymentId','amountCents','effectiveDate','method','reference']);const pid=opaque(data.paymentId);if((await tx.get(ref.collection('payments').doc(pid))).exists)financialFail('Pago ya registrado. Reintentá el commandId original.');
    if(!Number.isSafeInteger(data.amountCents)||Number(data.amountCents)<=0||!['TRANSFERENCIA','EFECTIVO'].includes(String(data.method))||typeof data.reference!=='string'||!data.reference.trim()||data.reference.length>200)financialFail('Datos de pago inválidos.');
-   const amount=Number(data.amountCents),summary=accountingSummary(s,payments),effectiveDate=financialDate(data.effectiveDate);if(amount>summary.balanceCents)financialFail('El pago supera el saldo contractual.');if(effectiveDate<proof.delivery.event!.occurredAt.slice(0,10))financialFail('Pago anterior a entrega efectiva. No se admiten anticipos.');
+   const amount=Number(data.amountCents),summary=accountingSummary(s,payments),effectiveDate=financialDate(data.effectiveDate);if(amount>summary.balanceCents)financialFail('El pago supera el saldo contractual.');if(firstPayment&&amount!==s.installments[0].amountCents)financialFail('El importe debe coincidir con la primera cuota del contrato.');if(s.activationBasis){if(effectiveDate<proof.snapshot.documentContext.contractIssueDate||effectiveDate>argentinaBusinessDate())financialFail('Fecha de pago fuera del período de emisión vigente.');}else if(!proof.delivery?.event||effectiveDate<proof.delivery.event.occurredAt.slice(0,10))financialFail('Pago anterior a entrega efectiva.');
    // Reuse legacy FIFO allocation order/partial amounts, never its source lookup, tax split, commissions or writers.
    const allocations=allocateOperationPayment(summary,amount);
    created={id:pid,amountCents:amount,effectiveDate,recordedAt:now,actor:actor.uid,method:data.method as FinancialPayment['method'],reference:data.reference.trim(),allocations,reversedAt:null,reversedBy:null,reversalReason:null,receiptId:`receipt_${pid}`};
@@ -124,9 +133,11 @@ export async function financialCommand(db:Firestore,id:string,v:number,input:unk
   s={...s,revision:s.revision+1,accounting:{schemaVersion:'FINANCIAL_BALANCES_V1',paymentCount:(s.accounting?.paymentCount??payments.length)+(created?1:0),paidByInstallment:paid}};
   accountingSummary(s,[]);
  }
+ if(!s)financialFail('Cobranza no activada.');
+ const clientActivation=firstPayment?await prepareClientActivationAtFirstPayment(db,tx,id,v,actor.uid,c.commandId,now):null;
  const commissionWrites=created||reversed?await preparePaymentCommissions(db,tx,{operationId:s.operationId,budgetId:id,version:v,assignment:base.state.assignment,clientName:proof.snapshot.personalData.fullName,productName:proof.snapshot.acceptedReference.nombre,payment:(created||reversed)!,reversal:!!reversed,actor:actor.uid,at:now},runtime??undefined):()=>{};
- const result={revision:s.revision,paymentId:created?.id||reversed?.id||null,replay:false};
- commissionWrites();tx.set(ref,s);if(created){tx.create(ref.collection('payments').doc(created.id),created);tx.create(ref.collection('receipts').doc(created.receiptId),customerReceipt(created,s));}if(reversed){tx.set(ref.collection('payments').doc(reversed.id),reversed);tx.set(ref.collection('receipts').doc(reversed.receiptId),customerReceipt(reversed,s));}
+ const result={revision:s.revision,paymentId:created?.id||reversed?.id||null,replay:false,...(clientActivation?{clientPortal:clientActivation.status}:{})};
+ clientActivation?.write();commissionWrites();tx.set(ref,s);if(created){tx.create(ref.collection('payments').doc(created.id),created);tx.create(ref.collection('receipts').doc(created.receiptId),customerReceipt(created,s));}if(reversed){tx.set(ref.collection('payments').doc(reversed.id),reversed);tx.set(ref.collection('receipts').doc(reversed.receiptId),customerReceipt(reversed,s));}
  tx.create(receipt,{digest,result,actor:actor.uid,at:now});tx.create(ref.collection('events').doc(c.commandId),{commandId:c.commandId,operationId:c.operationId,action:c.action,expectedRevision:c.expectedRevision,revision:s.revision,actor:actor.uid,at:now,data,evidenceGenerations:Object.fromEntries([...verified].map(([path,p])=>[path,p.generation])),snapshotHash:s.snapshotHash});return result;
  });
 }

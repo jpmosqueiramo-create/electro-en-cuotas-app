@@ -9,7 +9,7 @@ export function OperationClientWorkspace({budgetId,version}:{budgetId:string;ver
  const flight=useRef(false),pending=useRef<{key:string;id:string;token:string}|null>(null);
  const url=`/api/admin/presupuestos-v2/${encodeURIComponent(budgetId)}/versions/${version}/client-portal`;
  const load=useCallback(async()=>{if(!user)return;const r=await fetch(url,{cache:'no-store',headers:{Authorization:`Bearer ${await user.getIdToken()}`}});if(!r.ok)throw Error('No se pudo consultar el vínculo de cliente.');setView(await r.json());},[url,user]);
- useEffect(()=>{void load().catch(e=>setError(e.message));},[load]);
+ useEffect(()=>{void load().catch(e=>setError(e.message));const refresh=()=>void load().catch(e=>setError(e.message));window.addEventListener('operation-financial-updated',refresh);return()=>window.removeEventListener('operation-financial-updated',refresh);},[load]);
  async function command(action:string){if(!view||!user||flight.current)return;flight.current=true;setBusy(true);setError('');
   const data=action==='LINK'?{uid,reason}:action==='INVITE'?{email}:action==='REVOKE_ACCESS'?{reason}:{invitationId:view.invitation?.id};
   const body={operationId:view.state.operationId,expectedRevision:view.state.revision,action,data},key=JSON.stringify(body);

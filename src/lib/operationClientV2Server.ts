@@ -163,3 +163,22 @@ export async function listClientServices(db:Firestore,uid:string) {
  for(const doc of index.docs){const d=doc.data();if(d.uid!==uid||doc.id!==d.operationId)portalFail();const service=await clientService(db,d.budgetId,d.version,uid,true);if(service)services.push(service);}
  return services;
 }
+
+/** Prepared inside the first-payment transaction; never creates users or restores revoked access. */
+export async function prepareClientActivationAtFirstPayment(db:Firestore,tx:Transaction,id:string,v:number,actor:string,commandId:string,now:string){
+ const {origin,state,ref}=await context(db,tx,id,v);
+ if(state.state==='REVOKED')return {status:'REVOKED',write:()=>{}};
+ if(!state.uid)return {status:'ACCOUNT_LINK_REQUIRED',write:()=>{}};
+ const user=await authUser(state.uid);
+ if(!user.emailVerified)return {status:'EMAIL_VERIFICATION_REQUIRED',write:()=>{}};
+ await requirePrerequisites(db,tx,id,v);
+ if(state.state==='ACTIVE')return {status:'ACTIVE',write:()=>{}};
+ const pending=state.activeInvitationId?invitationRef(db,state.activeInvitationId):null;
+ if(pending){const i=(await tx.get(pending)).data();if(!i||i.operationId!==state.operationId||i.targetUid!==state.uid||i.state!=='PENDING')portalFail('Invitación vinculada inconsistente.');}
+ const next:ClientBindingV2={...state,state:'ACTIVE',activeInvitationId:null,activatedAt:now,revision:state.revision+1};
+ return {status:'ACTIVE',write:()=>{
+  if(pending)tx.update(pending,{state:'REVOKED',revokedAt:now});
+  tx.set(ref,next);tx.set(clientIndex(db,state.uid!).doc(origin.identity.operationId),{operationId:origin.identity.operationId,budgetId:id,version:v,uid:state.uid});
+  tx.create(ref.collection('events').doc('payment_'+commandId),{commandId,action:'ACTIVATE_AT_FIRST_PAYMENT',actor,uid:state.uid,at:now,revision:next.revision,expectedRevision:state.revision,invitationId:state.activeInvitationId});
+ }};
+}
