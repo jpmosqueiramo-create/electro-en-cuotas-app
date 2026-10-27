@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict';
+import { initialFulfillment, nextFulfillment, type FulfillmentAction } from '../src/lib/operationFulfillmentV2';
+import { guidedLogisticsAction, logisticsStage, logisticsTimeline, matchesLogistics, loadLogistics, selectLogistics, type LogisticsRow } from '../src/lib/logisticsOverview';
+import type { BudgetV2 } from '../src/lib/budgetV2';
+let state = initialFulfillment('op_' + 'a'.repeat(64), 'Producto sintético', null, 400000), sequence = 0;
+const now = '2026-10-26T20:00:00Z';
+const command = (action: FulfillmentAction, data: Record<string, unknown>) => { state = nextFulfillment(state, { action, data, commandId: `test-${++sequence}`, operationId: state.operationId, expectedRevision: state.revision }, 'admin-test', now); };
+assert.equal(guidedLogisticsAction(state), 'UPDATE_ORDER');
+command('UPDATE_ORDER', { providerName: 'Proveedor de prueba', providerReference: '', estimatedAvailabilityDate: null, notes: '' }); assert.equal(guidedLogisticsAction(state), 'PLACE_ORDER');
+command('PLACE_ORDER', { orderDate: '2026-10-01' }); assert.equal(logisticsStage(state), 'ORDERED');
+command('CONFIRM_ORDER', { actualCost: 400000, confirmedAvailabilityDate: '2026-10-02' }); assert.equal(guidedLogisticsAction(state), 'READY_FOR_PICKUP');
+command('READY_FOR_PICKUP', {}); assert.equal(guidedLogisticsAction(state), 'RECORD_PICKUP');
+command('PLAN_PICKUP', { plannedPickupDate: '2026-10-03', pickupResponsible: 'Persona sintética' }); assert.equal(state.actualPickupDate, null);
+command('RECORD_PICKUP', { actualPickupDate: '2026-10-03', pickupResponsible: 'Persona sintética' }); assert.equal(guidedLogisticsAction(state), 'RECEIVE');
+command('RECEIVE', { actualReceiptDate: '2026-10-04', custodyLocation: 'Depósito de prueba', custodian: 'Persona sintética', visualCondition: 'SIN_DANOS_VISIBLES', notes: '' }); assert.equal(logisticsStage(state), 'RECEIVED');
+command('PLAN_TRIP', { tripReference: 'Traslado de prueba', plannedTripDate: '2026-10-05', carrier: 'Persona sintética' });
+command('PLAN_DELIVERY', { destinationLocality: 'Localidad de prueba', estimatedDeliveryDate: '2026-10-06', deliveryResponsible: 'Persona sintética' });
+assert.equal(guidedLogisticsAction(state), null); assert.equal(logisticsStage(state), 'SCHEDULED');
+const timeline = logisticsTimeline(state, '2026-10-01T01:00:00Z'); assert.equal(timeline[0].date, '2026-09-30'); assert.equal(timeline.at(-1)!.date, null); assert.equal(timeline.find(i => i.label === 'Entrega programada')!.planned, true);
+const delivered = { ...state, logisticsState: 'DELIVERED' as const, deliveryClosure: 'DELIVERED' as const };
+assert.equal(logisticsTimeline(delivered, '2026-10-01T01:00:00Z', '2026-10-07T01:00:00Z').at(-1)!.date, '2026-10-06'); assert.equal(guidedLogisticsAction(delivered), null);
+command('REPORT_INCIDENT', { description: 'Demora de prueba' }); assert.equal(logisticsStage(state), 'INCIDENT'); assert.equal(guidedLogisticsAction(state), 'RESOLVE_INCIDENT');
+assert.equal(logisticsStage(null), 'UNKNOWN');
+async function main() {
+  const budget = (id: string) => ({ id, version: 1, estado: 'EMITIDO', clienteSnapshot: { nombre: 'María José Pérez' }, options: [{ optionId: 'option', referenceSnapshot: { nombre: 'Lavarropas sintético' } }] }) as unknown as BudgetV2;
+  let active = 0, max = 0;
+  const rows = await loadLogistics(async url => {
+    if (url === '/api/admin/presupuestos-v2') return { budgets: Array.from({ length: 7 }, (_, i) => budget('test-' + i)) };
+    active++; max = Math.max(max, active); await new Promise(resolve => setTimeout(resolve, 2)); active--;
+    if (url.endsWith('/contract')) return { operation: { identity: { acceptedAt: now, acceptedOptionId: 'option' } }, draft: null };
+    if (url.includes('test-1/')) throw Error('Read denied');
+    return { state: delivered, deliveredAt: '2026-10-07T01:00:00Z' };
+  });
+  assert.equal(rows.length, 7); assert(max <= 4); assert.equal(selectLogistics(rows, 'perez maria', 'ALL').length, 7);
+  assert.equal(selectLogistics(rows, 'lavarropas', 'DELIVERED').length, 6);
+  assert.equal(selectLogistics(rows, '', 'UNKNOWN').length, 1); assert.equal(selectLogistics(rows, '', 'ACTIVE').length, 1);
+  assert.equal(matchesLogistics({ ...rows[0], view: { ...rows[0].view!, state: { ...delivered, logisticsState: 'RECIBIDO', deliveryClosure: 'BLOCKED_PHYSICAL_SIGNATURES_REQUIRED' } } } as LogisticsRow, 'IN_HAND'), true);
+  assert(rows.every(r => r.quantity === null));
+  console.log('LOGISTICS_GUIDED_STEPS_DATES_ESTIMATES_FILTERS_UNKNOWN_HISTORY_NO_INVENTED_QUANTITY = PASS');
+}
+void main();

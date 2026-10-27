@@ -32,9 +32,11 @@ export async function readFulfillment(db:Firestore,id:string,v:number,before?:nu
   if(snap.exists&&!source.registered)throw new FulfillmentError('Falta identidad operativa registrada.');
   const state=snap.exists?storedFulfillment(snap.data(),source.initial):source.initial;
   if(state.deliveryClosure==='DELIVERED'){const {operationRuntime,productionDeliveryProof}=await import('./productionV2/gates');const runtime=await operationRuntime(db,tx,id,v);if(!runtime)throw new FulfillmentError('Entrega no acreditada.');await productionDeliveryProof(runtime,tx,id,v,'DELIVERY',false);}
+  let deliveredAt:string|null=null;
+  if(['DELIVERED','DELIVERED_EMULATOR'].includes(state.deliveryClosure)){const delivery=(await tx.get(ref.parent.doc('delivery'))).data();const occurred=delivery?.event?.occurredAt;if(delivery?.operationId===state.operationId&&delivery?.status===state.deliveryClosure&&typeof occurred==='string'&&Number.isFinite(Date.parse(occurred)))deliveredAt=occurred;}
   let query=ref.collection('events').orderBy('revision','desc').limit(30);if(before!==undefined)query=query.startAfter(before);
   const events=await tx.get(query);
-  return {available:source.registered,identity:source.identity,state,costDifference:costDifference(state),nextStep:fulfillmentNextStep(state),
+  return {available:source.registered,identity:source.identity,state,deliveredAt,costDifference:costDifference(state),nextStep:fulfillmentNextStep(state),
    events:events.docs.map(d=>d.data()),before:events.size===30?events.docs.at(-1)!.data().revision as number:null};
  });
 }
