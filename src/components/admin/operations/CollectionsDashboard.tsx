@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Search, MessageCircle, RefreshCw, AlertCircle, CalendarDays, CheckCircle2, ArrowUpRight } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
+import { OperationFinancialWorkspace } from '@/components/operations/OperationFinancialWorkspace';
 import { OperationContactPanel } from '@/components/operations/OperationContactPanel';
 import { argentinaBusinessDate } from '@/lib/productionV2/businessDate';
 import { collectionLabels, collectionStatus, matchesCollectionFilter, loadCollections, installmentWhatsApp, overdueBalance, selectCollections, type CollectionFilter, type CollectionRow } from '@/lib/collectionsOverview';
@@ -19,6 +20,7 @@ function CollectionsSession() {
   const [rows, setRows] = useState<CollectionRow[] | null>(null), [error, setError] = useState(false), [loading, setLoading] = useState(false);
   const [query, setQuery] = useState(''), [status, setStatus] = useState<CollectionFilter>('ALL'), [from, setFrom] = useState(''), [to, setTo] = useState(''), [sort, setSort] = useState('DUE');
   const [today, setToday] = useState('');
+  const [selected, setSelected] = useState<CollectionRow | null>(null);
   const sequence = useRef(0), abort = useRef<AbortController | null>(null);
   const refresh = useCallback(async () => {
     if (!user) return;
@@ -33,7 +35,7 @@ function CollectionsSession() {
         return response.json();
       });
       if (current === sequence.current && !controller.signal.aborted) setRows(next);
-    } catch { if (current === sequence.current && !controller.signal.aborted) setError(true); setRows(null); }
+    } catch { if (current === sequence.current && !controller.signal.aborted) { setError(true); setRows(null); } }
     finally { if (current === sequence.current && !controller.signal.aborted) setLoading(false); }
   }, [user]);
   const invalidate = useCallback(() => { ++sequence.current; abort.current?.abort(); }, []);
@@ -71,17 +73,28 @@ function CollectionsSession() {
     {!!unknown && <p role="alert" className="rounded-xl border border-orange-200 bg-orange-50 p-4 text-orange-950">Hay {unknown} operaciones sin verificar. Sus saldos no se cuentan como cero ni como al día. Actualizá la consulta antes de contactar.</p>}
     {rows && <p role="status" className="text-sm text-text-secondary">{visible.length} de {rows.length} operaciones · Rojo: vencidas · Ámbar: vencen hoy · Verde: al día o canceladas.</p>}
     {rows && !visible.length && <div className="rounded-2xl border border-dashed border-border-color p-8 text-center"><h2 className="font-semibold">{rows.length ? 'No hay coincidencias con estos filtros' : 'Todavía no hay operaciones aceptadas'}</h2><p className="mt-1 text-text-secondary">{rows.length ? 'Probá otro nombre, estado o rango de fechas.' : 'Las operaciones aparecerán aquí cuando se acepte un presupuesto.'}</p></div>}
-    <div className="grid min-w-0 gap-4 lg:grid-cols-2">{visible.map(row => <CollectionCard key={row.key} row={row} today={today} />)}</div>
+    <div className="grid min-w-0 gap-4 lg:grid-cols-2">{visible.map(row => <CollectionCard key={row.key} row={row} today={today} onManage={()=>setSelected(row)} />)}</div>
+    {selected && <CollectionAccount row={selected} onClose={()=>setSelected(null)} />}
   </section>;
 }
-function CollectionCard({ row, today }: { row: CollectionRow; today: string }) {
+function CollectionCard({ row, today, onManage }: { row: CollectionRow; today: string; onManage:()=>void }) {
   const state = collectionStatus(row, today), f = row.financial, whatsapp = installmentWhatsApp(row, today);
   return <article data-testid="collection-row" className="min-w-0 space-y-4 rounded-2xl border border-border-color bg-surface p-4 sm:p-5">
     <div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><h2 className="break-words text-lg font-bold text-brand-primary">{row.name}</h2><p className="break-words text-sm text-text-secondary">{row.product}</p></div><span className={`rounded-full border px-3 py-1 text-xs font-bold ${tones[state]}`}>{collectionLabels[state]}</span></div>
     <p className="text-sm">Fecha de venta: <strong>{date(row.saleDate)}</strong>{f?.active && <span className="ml-2 break-words">· {f.contractNumber}</span>}</p>
     {f?.active ? <><dl className="grid grid-cols-2 gap-4"><div><dt className="text-sm text-text-secondary">Saldo pendiente</dt><dd className="break-words text-xl font-bold tabular-nums">{money(f.balanceCents)}</dd></div><div><dt className="text-sm text-text-secondary">Importe vencido</dt><dd className={`break-words text-xl font-bold tabular-nums ${f.overdueCount ? 'text-red-800' : 'text-text-primary'}`}>{money(overdueBalance(row))}</dd></div><div><dt className="text-sm text-text-secondary">Cuotas pagadas / total</dt><dd className="font-semibold">{f.paidInstallmentCount} / {f.installments.length}</dd></div><div><dt className="text-sm text-text-secondary">Cuotas vencidas</dt><dd className="font-semibold">{f.overdueCount}</dd></div></dl><p className="rounded-xl bg-background-main p-3 text-sm">{f.nextDueDate ? <>Próxima cuota pendiente: <strong>{date(f.nextDueDate)} · {money(f.nextDueAmountCents)}</strong></> : 'Sin cuotas pendientes.'}</p></> : <p className="text-sm text-text-secondary">{f ? 'El plan de cuotas todavía no está activo. Consultá la primera cuota desde la ficha.' : 'No se pudo verificar el estado de esta operación.'}</p>}
-    <Link className="btn-primary admin-control w-full whitespace-normal text-center" href={`/admin/operaciones/${encodeURIComponent(row.budgetId)}/${row.version}?section=logistics`}>Ver cuotas y registrar pago<ArrowUpRight size={18} aria-hidden="true" /></Link>
+    <button type="button" className="btn-primary admin-control min-h-11 w-full whitespace-normal text-center" onClick={onManage}>Gestionar cobranza<ArrowUpRight size={18} aria-hidden="true" /></button>
     {whatsapp ? <div><a className="admin-control inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-emerald-700 bg-emerald-50 px-3 py-2 text-center font-semibold text-emerald-900" href={whatsapp} target="_blank" rel="noopener noreferrer"><MessageCircle size={18} aria-hidden="true" />Recordar cuota por WhatsApp</a><p className="mt-1 text-xs text-text-secondary">Abre un mensaje para revisar y enviar. No se envía automáticamente.</p></div> : (state === 'OVERDUE' || state === 'TODAY') && <p className="text-sm text-text-secondary">Revisá el WhatsApp del cliente, con código de país, para abrir el recordatorio.</p>}
     <OperationContactPanel budgetId={row.budgetId} version={row.version} role="ADMIN" />
   </article>;
+}
+
+function CollectionAccount({row,onClose}:{row:CollectionRow;onClose:()=>void}) {
+  const dialog=useRef<HTMLDialogElement>(null);
+  const [busy,setBusy]=useState(false);
+  useEffect(()=>{const element=dialog.current;const opener=document.activeElement; element?.showModal();return ()=>{element?.close();if(opener instanceof HTMLElement&&opener.isConnected)opener.focus();};},[]);
+  return <dialog ref={dialog} onCancel={e=>{e.preventDefault();if(!busy)onClose();}} aria-labelledby="collection-account-title" className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%_-_1rem)] max-w-4xl overflow-y-auto rounded-2xl border border-border-color bg-background-main p-0 text-text-primary shadow-2xl backdrop:bg-black/50">
+    <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-border-color bg-surface p-4"><div className="min-w-0"><h2 id="collection-account-title" className="break-words text-xl font-bold text-brand-primary">Cobranza de {row.name}</h2><p className="break-words text-sm">{row.product}</p></div><button autoFocus type="button" disabled={busy} className={input+' !w-auto font-semibold'} onClick={onClose}>Cerrar</button></div>
+    <div className="space-y-4 p-3 sm:p-5"><OperationFinancialWorkspace budgetId={row.budgetId} version={row.version} operationId={row.operationId} compact onBusyChange={setBusy}/><OperationContactPanel budgetId={row.budgetId} version={row.version} role="ADMIN"/><Link className="admin-control inline-flex min-h-11 items-center gap-2 font-semibold text-brand-primary underline" href={`/admin/operaciones/${encodeURIComponent(row.budgetId)}/${row.version}?section=logistics`}>Ver ficha y logística<ArrowUpRight size={18} aria-hidden="true"/></Link></div>
+  </dialog>;
 }
