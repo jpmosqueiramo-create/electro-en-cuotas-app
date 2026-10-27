@@ -9,7 +9,7 @@ export type CollectionStatus = 'OVERDUE' | 'TODAY' | 'CURRENT' | 'PAID' | 'INACT
 export type CollectionFilter = 'ALL' | CollectionStatus;
 export interface CollectionRow {
   key: string; budgetId: string; version: number; name: string; product: string;
-  saleDate: string | null; whatsapp: string; financial: CollectionFinancial | null;
+  operationId?: string; saleDate: string | null; whatsapp: string; financial: CollectionFinancial | null;
 }
 export const collectionLabels: Record<CollectionFilter, string> = {
   ALL: 'Todas', OVERDUE: 'Cuotas vencidas', TODAY: 'Vencen hoy', CURRENT: 'Al día',
@@ -60,6 +60,7 @@ export async function loadCollections(read: (url: string) => Promise<unknown>): 
       try {
         const { operation, draft } = await read(`${url}/contract`) as { operation: OperationViewV2 | null; draft: ContractDraftV2 | null };
         if (!operation) return null;
+        base.operationId = operation.identity.operationId;
         base.whatsapp = draft?.personalData.whatsapp?.trim() || base.whatsapp;
         base.name = draft?.personalData.fullName?.trim() || base.name;
         base.product = budget.options.find(o => o.optionId === operation.identity.acceptedOptionId)?.referenceSnapshot.nombre || base.product;

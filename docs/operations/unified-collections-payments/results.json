@@ -1,0 +1,13 @@
+{
+  "base": "d0242e3bd25dd5978c3659b2cf8fd2342cf71173",
+  "typescript": "PASS",
+  "eslintDifferential": "PASS",
+  "build": "PASS",
+  "testSafe": "PASS",
+  "collectionsModel": "PASS",
+  "unifiedCollectionsBrowserEmulator": "PASS",
+  "financialBrowserRegression": "PASS",
+  "productionRequests": 0,
+  "productionWrites": 0,
+  "deployed": false
+}
