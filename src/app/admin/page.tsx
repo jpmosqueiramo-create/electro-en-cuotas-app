@@ -7,7 +7,7 @@ import { collection, query, where, onSnapshot, updateDoc, doc } from "firebase/f
 import { db } from "@/lib/firebase";
 import { resolveAlertAction, AlertaAdminItem } from "@/lib/budgetAlertRouting";
 import { useState, useEffect } from "react";
-import { Bell, ArrowRight, ClipboardList, Files, FileText, Wallet, Truck, CheckCheck, Package, Users, UserCheck, ChartNoAxesCombined, HandCoins } from "lucide-react";
+import { Bell, ArrowRight, ClipboardList, Files, FileText, Wallet, Truck, CheckCheck, Package, Users, UserCheck, ChartNoAxesCombined } from "lucide-react";
 import { adminPaths } from "@/lib/adminCanonicalNavigation";
 import { ADMIN_DESTINATIONS } from "@/components/admin/navigation";
 
@@ -15,8 +15,7 @@ const MODULE_CARDS = [
   { title: "Solicitudes de clientes", subtitle: "Consultas y seguimiento", description: "Revisá las solicitudes recibidas y abrí la ficha de cada operación.", href: adminPaths.requests, icon: ClipboardList, action: "Ver bandeja de solicitudes", badge: "Principal" },
   { title: "Catálogo de productos", subtitle: "Referencias, precios y fotografías", description: "Administrá las referencias del catálogo y sus opciones disponibles.", href: "/admin/productos", icon: Package, action: "Abrir catálogo de productos", badge: "Catálogo" },
   { title: "Cartera y cobranzas", subtitle: "Cuotas, saldos y comprobantes", description: "Consultá vencimientos, pagos, recibos y gestiones de cobranza.", href: adminPaths.collections, icon: Wallet, action: "Abrir cartera y cobranzas", badge: "Finanzas" },
-  { title: "Rendiciones", subtitle: "Control de fondos", description: "Consultá los fondos bajo custodia y las rendiciones registradas.", href: "/admin/rendiciones", icon: HandCoins, action: "Revisar rendiciones", badge: "Caja" },
-  { title: "Vendedores afiliados y comisiones", subtitle: "Registro y seguimiento", description: "Consultá vendedores afiliados, porcentajes, comisiones y liquidaciones.", href: "/admin/comisiones", icon: UserCheck, action: "Abrir vendedores afiliados", badge: "Afiliados" },
+  { title: "Vendedores afiliados y comisiones", subtitle: "Ventas, comisiones y rendiciones", description: "Asigná ventas, gestioná comisiones y registrá el efectivo recibido de cada vendedor afiliado.", href: "/admin/comisiones", icon: UserCheck, action: "Abrir vendedores afiliados", badge: "Afiliados" },
   { title: "Logística y entregas", subtitle: "Proveedor, traslado y recepción", description: "Seguí el producto y consultá la documentación de traslado y entrega.", href: adminPaths.logistics, icon: Truck, action: "Abrir logística", badge: "Logística" },
   { title: "Presupuestos", subtitle: "Confección e historial de propuestas", description: "Prepará presupuestos o retomá las propuestas ya guardadas.", href: adminPaths.budgets, icon: FileText, action: "Abrir presupuestos", badge: "Propuestas" },
   { title: "Clientes", subtitle: "Directorio de clientes", description: "Consultá los datos y el historial disponible de cada cliente.", href: "/admin/clientes", icon: Users, action: "Abrir clientes", badge: "Directorio" },

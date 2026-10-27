@@ -1,6 +1,7 @@
 import { auth } from './firebase';
 export interface Vendedor {
  id?:string; nombre:string; email:string; localidad:string; porcentajeComision:number|null;
+ efectivoPendienteRendicionCentavos?:number|null; saldoDisponibleLiquidacionCentavos?:number|null;
  telefono?:string; activo?:boolean; authUid?:string; revision?:number;
 }
 const pending=new Map<string,string>();
