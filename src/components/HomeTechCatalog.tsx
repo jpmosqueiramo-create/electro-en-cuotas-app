@@ -46,6 +46,7 @@ function WhatsAppIcon({ className = "w-5 h-5" }: { className?: string }) {
 }
 
 export default function HomeTechCatalog() {
+  const [homeCatalogVisible, setHomeCatalogVisible] = useState(false);
   const [productos, setProductos] = useState<CatalogReferencePublic[]>([]);
   const [loading, setLoading] = useState(true);
   const [catalogError, setCatalogError] = useState("");
@@ -105,7 +106,14 @@ export default function HomeTechCatalog() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchPublicCatalog(controller.signal).then(setProductos).catch(error => {
+    fetch('/api/catalogo-visibilidad', {cache:'no-store',signal:controller.signal}).then(async response => {
+      if (!response.ok) throw Error('No se pudo consultar el catálogo.');
+      const body = await response.json(); if (typeof body.homeVisible !== 'boolean') throw Error('Respuesta de catálogo inválida.');
+      if (!body.homeVisible || controller.signal.aborted) return;
+      setHomeCatalogVisible(true);
+      const items = await fetchPublicCatalog(controller.signal);
+      if (!controller.signal.aborted) setProductos(items);
+    }).catch(error => {
       if (!controller.signal.aborted) setCatalogError(error instanceof Error ? error.message : "No pudimos cargar las referencias.");
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
@@ -454,7 +462,7 @@ export default function HomeTechCatalog() {
       </section>
 
       {/* 4. CATÁLOGO DE PRODUCTOS DESTACADOS */}
-      <section id="catalogo" className="py-20 lg:py-24 bg-[#FFFFFF] text-[#111827] border-b border-[#E5E7EB]">
+      {homeCatalogVisible && <section id="catalogo" className="py-20 lg:py-24 bg-[#FFFFFF] text-[#111827] border-b border-[#E5E7EB]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-[#E5E7EB] pb-6">
@@ -582,6 +590,7 @@ export default function HomeTechCatalog() {
         </div>
       </section>
 
+      }
       {/* 5. FORMULARIO RÁPIDO DE CONTACTO Y SOLICITUD (#CONTACTO) */}
       <section id="contacto" className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
+import { CatalogVisibilityControl } from "@/components/admin/catalog/CatalogVisibilityControl";
 import { CatalogReferenceWorkspace } from "@/components/admin/catalog/CatalogReferenceWorkspace";
 import type { Producto, UnidadStock } from "@/components/admin/catalog/catalogStockTypes";
 import { db } from "@/lib/firebase";
@@ -213,6 +214,7 @@ export default function AdminProductosPage() {
 
 
   return <AdminProtectedRoute>
+    <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6"><CatalogVisibilityControl /></div>
     <CatalogReferenceWorkspace productos={productos} fetching={fetching} loadError={loadError} onRefresh={fetchProductos} onStock={setStockProducto} onTransfer={() => setMostrarTrasladoModal(true)} />
       {/* MODAL GESTOR DE STOCK */}
       {stockProducto && (
