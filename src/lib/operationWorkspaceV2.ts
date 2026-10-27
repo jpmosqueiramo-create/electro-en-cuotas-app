@@ -10,7 +10,7 @@ export function operationNextAction({ draft, tracking, pendingSubmissions, confo
   if (conformityPending) return administrative('Condiciones pendientes de conformidad', 'Registrar conformidad del cliente');
   if (tracking?.logisticsState==='DELIVERED') return administrative('Entrega registrada', 'Consultar cuotas y pagos', 'payments');
   if (tracking?.logisticsState==='DELIVERED_EMULATOR') return administrative('Entrega registrada en entorno de prueba', 'Consultar cuotas y pagos', 'payments');
-  if (String(draft.status) === 'TERMS_FROZEN') return administrative('Términos congelados en entorno de prueba', 'Revisar documentación contractual');
+  if (String(draft.status) === 'TERMS_FROZEN') return administrative('Condiciones contractuales guardadas', 'Consultar contrato y pagaré');
   if (draft.status !== 'READY_TO_FORMALIZE') return administrative('Documentación en preparación', 'Completar revisión contractual');
   if (!tracking) return administrative('Preparación técnica revisada', 'Consultar seguimiento del producto', 'logistics');
   if (tracking.providerState === 'PENDIENTE_PEDIDO') return administrative('Preparación técnica revisada', 'Preparar pedido al proveedor', 'logistics');
