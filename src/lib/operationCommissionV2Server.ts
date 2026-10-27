@@ -1,6 +1,6 @@
 import type {ProductionRuntime} from './productionV2/runtime';
 import {requireProductionActor} from './productionV2/runtime';
-import {productionDeliveryProof} from './productionV2/gates';
+import {issuedPaymentProof} from './productionV2/issuedPaymentProof';
 import type { Firestore,Transaction } from 'firebase-admin/firestore';
 import type { FinancialPayment } from './operationFinancialV2';
 import { requireFinancialEmulator } from './operationFinancialV2';
@@ -10,7 +10,7 @@ const key=(...values:unknown[])=>'v2_'+createHash('sha256').update(JSON.stringif
 type Assignment={affiliateId:string;uid:string}|null;
 /** All reads are prepared before the caller writes payment, receipt and these ledger entries atomically. */
 export async function preparePaymentCommissions(db:Firestore,tx:Transaction,params:{operationId:string;budgetId:string;version:number;assignment:Assignment;payment:FinancialPayment;clientName:string;productName:string;reversal:boolean;actor:string;at:string},runtime?:ProductionRuntime){
- if(runtime){const data=await requireProductionActor(runtime,params.actor);if(data.db!==db)throw Error('COMMISSION_CONTEXT_MISMATCH');const proof=await productionDeliveryProof(runtime,tx,params.budgetId,params.version,'FINANCE');if(proof.identity.operationId!==params.operationId)throw Error('COMMISSION_OPERATION_MISMATCH');}else requireFinancialEmulator();const {operationId,payment,reversal,assignment,actor,at}=params,ledger=db.collection('ledger_comisiones_movimientos');
+ if(runtime){const data=await requireProductionActor(runtime,params.actor);if(data.db!==db)throw Error('COMMISSION_CONTEXT_MISMATCH');const proof=await issuedPaymentProof(runtime,tx,params.budgetId,params.version);if(proof.identity.operationId!==params.operationId)throw Error('COMMISSION_OPERATION_MISMATCH');}else requireFinancialEmulator();const {operationId,payment,reversal,assignment,actor,at}=params,ledger=db.collection('ledger_comisiones_movimientos');
  const ids=payment.allocations.map(a=>key(operationId,payment.id,a.installmentNumber));
  const existing=await Promise.all(ids.map(id=>tx.get(ledger.doc(id))));
  const rows:Record<string,unknown>[]=[];
