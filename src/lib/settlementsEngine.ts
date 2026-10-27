@@ -1,4 +1,4 @@
-import { requireFinancialEmulator } from './operationFinancialV2';
+import { validateCommissionSource } from './affiliateCommissionAccess';
 import { admin } from "./firebaseAdmin";
 import { LedgerComisionMovimiento } from "./commissionsEngine";
 
@@ -136,9 +136,10 @@ export async function obtenerCuentaCorrienteVendedor(
 
   const movimientos: LedgerComisionMovimiento[] = [];
 
-  snap.forEach((doc) => {
+  for (const doc of snap.docs) {
     const mov = doc.data() as LedgerComisionMovimiento;
-    if(doc.data().operationSchemaVersion==='OPERATION_COMMISSION_V2')requireFinancialEmulator();
+    if(doc.data().operationSchemaVersion==='OPERATION_COMMISSION_V2'&&doc.id!==mov.id)throw Error('COMMISSION_DOCUMENT_ID_INVALID');
+    await validateCommissionSource(db,transaction,doc.data());
     movimientos.push(mov);
 
     if (mov.tipo === "DEVENGAMIENTO_PAGO") {
@@ -150,7 +151,7 @@ export async function obtenerCuentaCorrienteVendedor(
     } else if (mov.tipo === "PAGO_LIQUIDACION") {
       totalPagadoCentavos += Math.abs(mov.montoComisionCentavos); // Positivo en movimiento
     }
-  });
+  }
 
   // Ordenar movimientos por createdAt ASC
   movimientos.sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));

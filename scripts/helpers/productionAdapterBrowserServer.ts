@@ -23,7 +23,7 @@ export async function startProductionBrowserServer(runtime: ProductionRuntime) {
             return p.startsWith('[...') ? '(.+)' : '([^/]+)';
         } return p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('/');
         return { file, keys, regex: new RegExp('^/api/' + pattern + '/?$') };
-    }).sort((a,b)=>Number(a.keys.some(k=>k.startsWith('...')))-Number(b.keys.some(k=>k.startsWith('...'))));
+    }).sort((a,b)=>Number(a.keys.some(k=>k.startsWith('...')))-Number(b.keys.some(k=>k.startsWith('...')))||a.keys.length-b.keys.length);
     const calls: {
         method: string;
         path: string;

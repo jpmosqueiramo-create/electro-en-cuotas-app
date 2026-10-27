@@ -13,7 +13,7 @@ export const assignmentRef = (db: Firestore, id: string, v: number) => operation
 async function affiliate(db: Firestore, tx: Transaction, uid: string, id?: string) {
  const { admin } = await import('./firebaseAdmin');
  const user = await admin.auth().getUser(uid).catch(()=>custodyFail('UID de Firebase Auth no disponible.'));
- if (user.disabled) custodyFail('Usuario inactivo.');
+ if (user.disabled||!user.emailVerified) custodyFail('Cuenta inactiva o correo sin verificar.');
  const docs = await tx.get(db.collection('vendedores').where('authUid', '==', uid).limit(2));
  if (docs.size !== 1 || (id && docs.docs[0].id !== id) || docs.docs[0].data().activo !== true) custodyFail('Se requiere un vendedor afiliado activo con UID único.');
  return { affiliateId: docs.docs[0].id, uid };
@@ -24,7 +24,7 @@ export async function listActiveAffiliates(db: Firestore) {
  const candidates=await Promise.all(docs.docs.map(async d=>{
   const uid=d.data().authUid;if(typeof uid!=='string'||!uid.trim())return null;
   const matches=await db.collection('vendedores').where('authUid','==',uid).limit(2).get();if(matches.size!==1)return null;
-  try{const user=await admin.auth().getUser(uid);if(user.disabled)return null;}
+  try{const user=await admin.auth().getUser(uid);if(user.disabled||!user.emailVerified)return null;}
   catch(error){if((error as {code?:string}).code==='auth/user-not-found')return null;throw error;}
   return {id:d.id,uid,name:String(d.data().nombre||'Vendedor afiliado')};
  }));
