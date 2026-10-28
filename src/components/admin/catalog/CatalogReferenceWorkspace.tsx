@@ -12,6 +12,7 @@ import { buildCatalogReferencePrivatePatch, catalogPublicationLabel, createCatal
 import { uploadCatalogReferenceImage } from "@/lib/catalogReferenceImages";
 import { CatalogReferencePreview, money } from "./CatalogReferencePreview";
 import { CatalogDialog, ConfirmDialog } from "./CatalogDialog";
+import { CatalogBulkImport } from "./CatalogBulkImport";
 import type { Producto } from "./catalogStockTypes";
 
 // El editor conserva datos privados sin exigir campos financieros legacy.
@@ -37,7 +38,9 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
   const [editing, setEditing] = useState<{ id: string | null; original: CatalogReferenceOriginal | null } | null>(null);
   const [draft, setDraft] = useState(createCatalogReferenceDraft);
   const [dirty, setDirty] = useState(false);
-  const [busy, setBusy] = useState("");
+  const [editorBusy, setBusy] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const busy = editorBusy || (bulkBusy ? "bulk" : "");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [statuses, setStatuses] = useState<Record<string, CatalogPublicationPreview>>({});
@@ -166,6 +169,7 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
   return <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-6 sm:px-7 sm:py-8">
     <PageHeader title="Catálogo de referencias" subtitle="Gestioná las referencias de bienes utilizadas para preparar propuestas de gestión de compra." actions={<button type="button" disabled={!!busy} className={primary} onClick={() => edit()}><Plus size={18} aria-hidden="true" />Nueva referencia</button>} />
     <p className="text-sm text-text-secondary">Referencias para gestión de compra mediante mandato. La disponibilidad se confirma durante la cotización.</p>
+    <CatalogBulkImport products={productos} onSaved={onRefresh} onBusyChange={setBulkBusy} editingOpen={!!editing} disabled={!!busy || !!editing || fetching || !!loadError} />
     {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-[#B42318]">{error}</div>}
     {message && <p role="status" className="rounded-xl border border-border-color bg-surface p-4 text-sm text-brand-primary">{message}</p>}
     <div className={editing ? "grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(260px,1fr)]" : "min-w-0"}>
