@@ -51,6 +51,7 @@ export default function PublicCatalog() {
   const [galleryImages, setGalleryImages] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [catalogError, setCatalogError] = useState("");
+  const [catalogVisible, setCatalogVisible] = useState(false);
 
   // Filtros de búsqueda
   const [searchQuery, setSearchQuery] = useState("");
@@ -109,7 +110,15 @@ export default function PublicCatalog() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchPublicCatalog(controller.signal).then(setProductos).catch(error => {
+    fetch('/api/catalogo-visibilidad', { cache: 'no-store', signal: controller.signal }).then(async response => {
+      if (!response.ok) throw Error('No se pudo consultar el catálogo.');
+      const body = await response.json();
+      if (typeof body.homeVisible !== 'boolean') throw Error('Respuesta de catálogo inválida.');
+      if (!body.homeVisible || controller.signal.aborted) return;
+      setCatalogVisible(true);
+      const items = await fetchPublicCatalog(controller.signal);
+      if (!controller.signal.aborted) setProductos(items);
+    }).catch(error => {
       if (!controller.signal.aborted) setCatalogError(error instanceof Error ? error.message : "No pudimos cargar las referencias.");
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
@@ -518,7 +527,7 @@ export default function PublicCatalog() {
       </section>
 
       {/* 4. OPCIONES DE COMPRA / CATALOG GRID */}
-      <section className="py-20 lg:py-24 bg-[#161922] border-b border-[#222530]">
+      {catalogVisible && <section data-testid="service-public-catalog" className="py-20 lg:py-24 bg-[#161922] border-b border-[#222530]">
         <div className="max-w-7xl mx-auto px-6 space-y-8">
           
           <div className="text-center space-y-3 max-w-2xl mx-auto">
@@ -647,7 +656,7 @@ export default function PublicCatalog() {
           )}
 
         </div>
-      </section>
+      </section>}
 
       {/* 5. COBERTURA DE ENTREGAS */}
       <section className="py-20 lg:py-24 bg-[#111318] border-b border-[#222530]">

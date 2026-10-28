@@ -52,19 +52,38 @@ async function main() {
       await db.collection('catalogo_publico').doc('visibilidad').delete();
       await browser.command('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
       await browser.navigate('/login'); await browser.until("typeof window.__FIREBASE_SIGN_IN__==='function'", 'auth'); await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(email)},${JSON.stringify(password)}).then(()=>true)`);
-      await browser.navigate('/admin/productos'); await browser.until("document.querySelector('[data-testid=catalog-visibility]')?.innerText.includes('Ocultar de la página principal')", 'admin visibility');
+      await browser.navigate('/admin/productos'); await browser.until("document.querySelector('[data-testid=catalog-visibility]')?.innerText.includes('Ocultar catálogo público')", 'admin visibility');
       for (const width of [1280, 390, 320]) { await browser.command('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 768 }); await browser.evaluate("document.querySelector('[data-testid=catalog-visibility]').scrollIntoView({block:'start'})"); await browser.overflow('admin catalog visibility ' + width); await browser.screenshot('catalog-visibility-admin-' + width + '.png'); }
-      await browser.clickText('Ocultar de la página principal'); await browser.until("document.querySelector('[data-testid=catalog-visibility] [role=status]')?.innerText.includes('Catálogo oculto')", 'hidden saved');
+      await browser.clickText('Ocultar catálogo público'); await browser.until("document.querySelector('[data-testid=catalog-visibility] [role=status]')?.innerText.includes('Catálogo oculto')", 'hidden saved');
       const publicReads = server.calls.filter(c => c.path === '/api/catalogo').length;
       await browser.navigate('/'); await browser.until("!!document.querySelector('#contacto')&&performance.getEntriesByType('resource').some(e=>e.name.endsWith('/api/catalogo-visibilidad'))", 'hidden homepage loaded');
       assert.equal(await browser.evaluate("document.querySelector('#catalogo')===null&&document.querySelector('[data-public-reference]')===null"), true); assert.equal(server.calls.filter(c => c.path === '/api/catalogo').length, publicReads);
+      await browser.navigate('/servicio-de-compra');
+      await browser.until("!!document.querySelector('#contacto')&&performance.getEntriesByType('resource').some(e=>e.name.endsWith('/api/catalogo-visibilidad'))", 'hidden service page loaded');
+      assert.equal(await browser.evaluate("document.querySelector('[data-testid=service-public-catalog]')===null&&document.querySelector('[data-public-reference]')===null"), true);
+      assert.equal(server.calls.filter(c => c.path === '/api/catalogo').length, publicReads);
+      for (const width of [1280, 390, 320]) { await browser.command('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 768 }); await browser.overflow('service hidden catalog ' + width); }
       await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(seller.email)},${JSON.stringify(password)}).then(()=>true)`); await browser.navigate('/afiliado'); await browser.until("!!document.querySelector('[data-affiliate-reference=affiliate-visible]')", 'affiliate catalog while homepage hidden');
       await browser.evaluate("(()=>{const s=document.querySelector('[data-affiliate-reference] select');s.value='3';s.dispatchEvent(new Event('change',{bubbles:true}));})()"); await browser.until("document.querySelector('[data-affiliate-reference]').innerText.includes('42.190')", 'published plan without recalculation');
       for (const width of [1280, 390, 320]) { await browser.command('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 768 }); await browser.evaluate("document.querySelector('[data-testid=affiliate-catalog]').scrollIntoView({block:'start'})"); await browser.overflow('affiliate catalog ' + width); await browser.screenshot('affiliate-catalog-' + width + '.png'); }
       await browser.field('Buscar producto', 'LAVARROPAS sintetico'); assert.equal(await browser.evaluate("document.querySelectorAll('[data-affiliate-reference]').length"), 1); await browser.field('Buscar producto', 'inexistente'); await browser.until("document.querySelector('[data-testid=affiliate-catalog]').innerText.includes('No hay coincidencias')", 'search empty'); await browser.field('Buscar producto', '');
-      await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(email)},${JSON.stringify(password)}).then(()=>true)`); await browser.navigate('/admin/productos'); await browser.until("document.querySelector('[data-testid=catalog-visibility]')?.innerText.includes('Mostrar en la página principal')", 'persisted hidden'); await browser.clickText('Mostrar en la página principal'); await browser.until("document.querySelector('[data-testid=catalog-visibility] [role=status]')?.innerText.includes('Catálogo visible')", 'visible saved');
+      await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(email)},${JSON.stringify(password)}).then(()=>true)`); await browser.navigate('/admin/productos'); await browser.until("document.querySelector('[data-testid=catalog-visibility]')?.innerText.includes('Mostrar catálogo público')", 'persisted hidden'); await browser.clickText('Mostrar catálogo público'); await browser.until("document.querySelector('[data-testid=catalog-visibility] [role=status]')?.innerText.includes('Catálogo visible')", 'visible saved');
       await browser.navigate('/'); await browser.until("!!document.querySelector('[data-public-reference=affiliate-visible]')", 'homepage restored'); assert.deepEqual(browser.externalFirebase, []); assert(!server.calls.some(c => c.status >= 500));
-      pass('BROWSER_ADMIN_HIDE_RELOAD_AFFILIATE_SEARCH_PLANS_RESTORE_HOME_DESKTOP_390_320');
+      await browser.navigate('/servicio-de-compra'); await browser.until("!!document.querySelector('[data-public-reference=affiliate-visible]')", 'service catalog restored');
+      for (const width of [1280, 390, 320]) { await browser.command('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 768 }); await browser.overflow('service visible catalog ' + width); }
+      const readsBeforeInvalid = server.calls.filter(c => c.path === '/api/catalogo').length;
+      await db.doc(catalogVisibilityPath).set({ schemaVersion: 999, homeVisible: true, revision: 1 });
+      const visibilityReadsBeforeInvalid = server.calls.filter(c => c.path === '/api/catalogo-visibilidad').length;
+      await browser.navigate('/servicio-de-compra');
+      await browser.until("!!document.querySelector('#contacto')", 'service contact remains available');
+      // Failed resources need not appear in Chrome's Resource Timing buffer. Observe the actual response instead.
+      const invalidDeadline = Date.now() + 10000;
+      while (server.calls.filter(c => c.path === '/api/catalogo-visibilidad').length <= visibilityReadsBeforeInvalid && Date.now() < invalidDeadline) await browser.delay(100);
+      const invalidVisibilityReads = server.calls.filter(c => c.path === '/api/catalogo-visibilidad').slice(visibilityReadsBeforeInvalid);
+      assert(invalidVisibilityReads.length > 0); assert(invalidVisibilityReads.every(c => c.status === 503));
+      assert.equal(await browser.evaluate("document.querySelector('[data-testid=service-public-catalog]')===null"), true);
+      assert.equal(server.calls.filter(c => c.path === '/api/catalogo').length, readsBeforeInvalid);
+      pass('BROWSER_ADMIN_HIDE_BOTH_PUBLIC_PAGES_KEEP_AFFILIATE_RESTORE_BOTH_FAIL_CLOSED_DESKTOP_390_320');
     } finally { await browser.close(); await server.stop(); }
   }
   assert.deepEqual((await db.collection('catalogo_publico').get()).docs.map(d => d.data()), catalogBefore); assert.deepEqual((await db.collection('productos').get()).docs.map(d => d.data()), privateBefore);
