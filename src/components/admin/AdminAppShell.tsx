@@ -1,10 +1,11 @@
 "use client";
 
+import { AdminAlertsLink } from './AdminAlertsLink';
 import type { ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, CircleHelp, LogOut, ShieldCheck } from "lucide-react";
+import { CircleHelp, LogOut, ShieldCheck } from "lucide-react";
 import { CuentaHogarLogo } from '@/components/CuentaHogarLogo';
 import { useAuth } from "@/components/AuthProvider";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
@@ -40,7 +41,7 @@ export function AdminAppShell({ children }: { children: ReactNode }) {
             </Link>
             <div className="flex flex-wrap items-center gap-2 border-t border-border-color pt-3 md:border-0 md:pt-0">
               <span className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border-color bg-background-main px-3 text-xs font-semibold text-brand-primary"><span aria-hidden="true" className="size-2 rounded-full bg-success" />Sesión activa</span>
-              <Link href="/admin#alertas" className="admin-control inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold"><Bell aria-hidden="true" className="size-4" />Alertas</Link>
+              <AdminAlertsLink />
               <a href="/nosotros#contacto" className="admin-control inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold"><CircleHelp aria-hidden="true" className="size-4" />Ayuda</a>
               <button type="button" onClick={handleLogout} disabled={leaving} className="admin-control inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border-color px-3 text-xs font-semibold text-[#B42318] disabled:opacity-60"><LogOut aria-hidden="true" className="size-4" />{leaving ? "Saliendo…" : "Salir"}</button>
             </div>

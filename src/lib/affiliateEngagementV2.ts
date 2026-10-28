@@ -1,3 +1,5 @@
+import {prepareAffiliateCollectionAlert} from './affiliateCollectionAlerts';
+import {contractRefs} from './contractV2Server';
 import { argentinaBusinessDate } from './productionV2/businessDate';
 import type { Firestore } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
@@ -14,5 +16,7 @@ export async function affiliateEngagement(db:Firestore,id:string,v:number,actor:
  if(prior.exists){if(prior.data()!.digest!==digest)throw Error('Conflicto de gestión.');return {id:commandId,replay:true};}
  if(date&&date<argentinaBusinessDate())throw Error('La promesa debe ser presente o futura.');
  if(nextContactDate&&nextContactDate<argentinaBusinessDate())throw Error('El próximo contacto debe ser presente o futuro.');
- tx.create(ref,{operationId:base.source.identity.operationId,kind:c.kind,note:c.note.trim(),promisedDate:date,nextContactDate,actor:actor.uid,at:new Date().toISOString(),digest});return {id:commandId,replay:false};
+ let alertWrite=()=>{};
+ if(!actor.admin&&c.kind==='PROMISE'){const budget=(await tx.get(contractRefs(db,id,v).budget)).data()!;alertWrite=await prepareAffiliateCollectionAlert(db,tx,{identity:base.source.identity,assignment:base.state.assignment,actor:actor.uid,commandId,clientName:String(budget.clienteSnapshot.nombre),event:{kind:'PROMISE',promisedDate:date!,note:c.note.trim()}});}
+ alertWrite();tx.create(ref,{operationId:base.source.identity.operationId,kind:c.kind,note:c.note.trim(),promisedDate:date,nextContactDate,actor:actor.uid,at:new Date().toISOString(),digest});return {id:commandId,replay:false};
  });}

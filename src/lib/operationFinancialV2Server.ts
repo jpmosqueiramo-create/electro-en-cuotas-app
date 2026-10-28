@@ -1,3 +1,4 @@
+import {prepareAffiliateCollectionAlert} from './affiliateCollectionAlerts';
 import {resolveCashCustodian,prepareCashCustody,cashCustodyOptions} from './operationCashCustody';
 import {issuedPaymentProof} from './productionV2/issuedPaymentProof';
 import {prepareClientActivationAtFirstPayment} from './operationClientV2Server';
@@ -139,8 +140,9 @@ export async function financialCommand(db:Firestore,id:string,v:number,input:unk
  const clientActivation=firstPayment?await prepareClientActivationAtFirstPayment(db,tx,id,v,actor.uid,c.commandId,now):null;
  const cashWrites=await prepareCashCustody(db,tx,{created,reversed,operationId:s.operationId,budgetId:id,version:v,actor:actor.uid,at:now});
  const commissionWrites=created||reversed?await preparePaymentCommissions(db,tx,{operationId:s.operationId,budgetId:id,version:v,assignment:base.state.assignment,clientName:proof.snapshot.personalData.fullName,productName:proof.snapshot.acceptedReference.nombre,payment:(created||reversed)!,reversal:!!reversed,actor:actor.uid,at:now,affiliateActor:role==='AFFILIATE'},runtime??undefined):()=>{};
+ const alertWrite=role==='AFFILIATE'&&created?await prepareAffiliateCollectionAlert(db,tx,{identity:base.source.identity,assignment:base.state.assignment,actor:actor.uid,commandId:c.commandId,clientName:proof.snapshot.personalData.fullName,event:{kind:'PAYMENT',paymentId:created.id,amountCents:created.amountCents,effectiveDate:created.effectiveDate,contractNumber:s.contractNumber}}):()=>{};
  const result={revision:s.revision,paymentId:created?.id||reversed?.id||null,replay:false,...(clientActivation?{clientPortal:clientActivation.status}:{})};
- clientActivation?.write();commissionWrites();cashWrites();tx.set(ref,s);if(created){tx.create(ref.collection('payments').doc(created.id),created);tx.create(ref.collection('receipts').doc(created.receiptId),customerReceipt(created,s));}if(reversed){tx.set(ref.collection('payments').doc(reversed.id),reversed);tx.set(ref.collection('receipts').doc(reversed.receiptId),customerReceipt(reversed,s));}
+ clientActivation?.write();commissionWrites();cashWrites();alertWrite();tx.set(ref,s);if(created){tx.create(ref.collection('payments').doc(created.id),created);tx.create(ref.collection('receipts').doc(created.receiptId),customerReceipt(created,s));}if(reversed){tx.set(ref.collection('payments').doc(reversed.id),reversed);tx.set(ref.collection('receipts').doc(reversed.receiptId),customerReceipt(reversed,s));}
  tx.create(receipt,{digest,result,actor:actor.uid,at:now});tx.create(ref.collection('events').doc(c.commandId),{commandId:c.commandId,operationId:c.operationId,action:c.action,expectedRevision:c.expectedRevision,revision:s.revision,actor:actor.uid,at:now,data,evidenceGenerations:Object.fromEntries([...verified].map(([path,p])=>[path,p.generation])),snapshotHash:s.snapshotHash});return result;
  });
 }

@@ -383,6 +383,11 @@ export interface AlertAction {
 export function resolveAlertAction(alerta: AlertaAdminItem): AlertAction | null {
   const tipo = alerta.tipo || "";
 
+  if(tipo==='COBRO_EFECTIVO_AFILIADO'||tipo==='PROMESA_PAGO_AFILIADO'){
+    if(alerta.schemaVersion!=='AFFILIATE_COLLECTION_ALERT_V1'||typeof alerta.budgetId!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(alerta.budgetId)||!Number.isSafeInteger(alerta.budgetVersion)||Number(alerta.budgetVersion)<1)return null;
+    return {label:tipo==='COBRO_EFECTIVO_AFILIADO'?'Ver cobro y recibo':'Ver operación',href:`/admin/operaciones/${encodeURIComponent(alerta.budgetId)}/${alerta.budgetVersion}?section=payments`,type:'other'};
+  }
+
   if(tipo==='CONSULTA_PUBLICA_V2'){
     if(alerta.sourceCollection!=='solicitudes_cuenta'||typeof alerta.solicitudId!=='string'||!/^web_[A-Za-z0-9_-]+$/.test(alerta.solicitudId))return null;
     return {label:'Revisar consulta',href:`/admin/solicitudes/solicitudes_cuenta/${encodeURIComponent(alerta.solicitudId)}`,type:'other'};
