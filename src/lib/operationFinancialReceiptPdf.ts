@@ -8,11 +8,17 @@ export function financialReceiptPdf(source: Awaited<ReturnType<typeof readFinanc
     const money = (c: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(c / 100);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(15);
-    doc.text('Recibo de pago acreditado', 18, 26);
+    doc.rect(99, 10, 12, 12);
+    doc.setFontSize(20);
+    doc.text('X', 105, 19, {align:'center'});
+    doc.setFontSize(15);
+    doc.text('RECIBO DE PAGO', 105, 32, {align:'center'});
+    doc.setFontSize(10);
+    doc.text('DOCUMENTO NO VALIDO COMO FACTURA', 105, 39, {align:'center'});
     drawCuentaHogarLogo(doc, 170, 12, 23);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    let y = 42;
+    let y = 52;
     for (const text of [issuer.legalName, `${issuer.taxId} · ${issuer.legalAddress}`, `Cliente: ${clientName}`, `Contrato: ${r.contractNumber}`, `Recibo: ${r.receiptId}`, `Fecha de acreditación: ${r.effectiveDate}`, `Importe: ${money(r.amountCents)} · Medio: ${r.method}`, `Estado: ${r.status}`, r.reversedAt ? `Reversado: ${r.reversedAt}` : '']) {
         if (!text)
             continue;
