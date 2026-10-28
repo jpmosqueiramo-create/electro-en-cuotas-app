@@ -53,7 +53,7 @@ export default function AdminPage() {
   const marcarLeida = async (id: string) => {
     try {
       await updateDoc(doc(db, "alertas_admin", id), { leida: true });
-      setAlertas(alertas.filter(a => a.id !== id));
+      setAlertas(current => current.filter(a => a.id !== id));
     } catch { /* ignore */ }
   };
 
@@ -85,8 +85,9 @@ export default function AdminPage() {
               const action = resolveAlertAction(alerta);
               const fecha = alerta.fechaCreacion && typeof alerta.fechaCreacion === "object" && "toDate" in alerta.fechaCreacion && typeof (alerta.fechaCreacion as { toDate?: () => Date }).toDate === "function"
                 ? (alerta.fechaCreacion as { toDate: () => Date }).toDate().toLocaleString("es-AR") : null;
-              return <li key={alerta.id} className="rounded-xl border border-border-color bg-background-main p-4">
-                <span className="text-xs font-heading font-semibold text-brand-secondary">{alerta.tipo ? alerta.tipo.replaceAll("_", " ") : "Aviso"}</span>
+              const label=alerta.tipo==="COBRO_EFECTIVO_AFILIADO"?"Cobro del vendedor afiliado":alerta.tipo==="PROMESA_PAGO_AFILIADO"?"Promesa de pago":alerta.tipo?.replaceAll("_", " ")||"Aviso";
+              return <li key={alerta.id} data-testid="admin-alert" className="rounded-xl border border-border-color bg-background-main p-4">
+                <span className="text-xs font-heading font-semibold text-brand-secondary">{label}</span>
                 <p className="mt-1 break-words font-semibold">{alerta.mensaje}</p>
                 {fecha && <p className="mt-1 text-sm text-text-secondary">{fecha}</p>}
                 <div className="mt-3 flex flex-wrap gap-2">
