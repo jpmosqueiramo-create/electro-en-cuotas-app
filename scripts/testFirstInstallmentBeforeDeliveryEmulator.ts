@@ -64,7 +64,7 @@ async function main(){
   // The two independent accounts use the actual portal routes, never role simulation.
   for(const [email,path,label] of [[(await admin.auth().getUser(f.uid)).email!,'/afiliado','affiliate'],['first-payment-client@example.test','/cliente','client']] as const){
    await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(email)},${JSON.stringify(password)}).then(()=>true)`);
-   await browser.navigate(path);await browser.until("!!document.querySelector('[data-testid=financial-v2-status]')",label+' financial portal');
+   await browser.navigate(path);if(label==='affiliate'){await browser.until("!!document.querySelector('[data-testid=affiliate-followup-card]')",'affiliate account card');await browser.click('[data-testid=affiliate-followup-card] summary');}await browser.until("!!document.querySelector('[data-testid=financial-v2-status]')",label+' financial portal');
    assert.equal(await browser.evaluate("document.querySelector('[data-testid=financial-v2]').innerText.includes('1.595.000')"),true);
    assert.equal(await browser.evaluate("document.querySelector('[data-testid=first-installment-payment]')===null"),true);
    await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});await browser.evaluate("document.querySelector('[data-testid=financial-v2]').scrollIntoView({block:'start'})");await browser.screenshot('first-payment-'+label+'-desktop.png');
