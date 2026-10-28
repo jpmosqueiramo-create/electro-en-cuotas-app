@@ -1,3 +1,5 @@
+import {productionWriter} from './productionV2/gates';
+import {custodyLoad} from './operationCustodyV2Server';
 import type {ProductionRuntime} from './productionV2/runtime';
 import {requireProductionActor} from './productionV2/runtime';
 import {issuedPaymentProof} from './productionV2/issuedPaymentProof';
@@ -9,8 +11,8 @@ import { createHash } from 'node:crypto';
 const key=(...values:unknown[])=>'v2_'+createHash('sha256').update(JSON.stringify(values)).digest('hex');
 type Assignment={affiliateId:string;uid:string}|null;
 /** All reads are prepared before the caller writes payment, receipt and these ledger entries atomically. */
-export async function preparePaymentCommissions(db:Firestore,tx:Transaction,params:{operationId:string;budgetId:string;version:number;assignment:Assignment;payment:FinancialPayment;clientName:string;productName:string;reversal:boolean;actor:string;at:string},runtime?:ProductionRuntime){
- if(runtime){const data=await requireProductionActor(runtime,params.actor);if(data.db!==db)throw Error('COMMISSION_CONTEXT_MISMATCH');const proof=await issuedPaymentProof(runtime,tx,params.budgetId,params.version);if(proof.identity.operationId!==params.operationId)throw Error('COMMISSION_OPERATION_MISMATCH');}else requireFinancialEmulator();const {operationId,payment,reversal,assignment,actor,at}=params,ledger=db.collection('ledger_comisiones_movimientos');
+export async function preparePaymentCommissions(db:Firestore,tx:Transaction,params:{operationId:string;budgetId:string;version:number;assignment:Assignment;payment:FinancialPayment;clientName:string;productName:string;reversal:boolean;actor:string;at:string;affiliateActor?:boolean},runtime?:ProductionRuntime){
+ if(runtime){const data=params.affiliateActor?await productionWriter(runtime,{uid:params.actor,admin:false}):await requireProductionActor(runtime,params.actor);if(params.affiliateActor){const base=await custodyLoad(db,tx,params.budgetId,params.version,{uid:params.actor,admin:false});if(params.reversal||base.state.assignment?.affiliateId!==params.assignment?.affiliateId||base.state.assignment?.uid!==params.actor||params.payment.method!=='EFECTIVO')throw Error('AFFILIATE_CASH_ONLY');}if(data.db!==db)throw Error('COMMISSION_CONTEXT_MISMATCH');const proof=await issuedPaymentProof(runtime,tx,params.budgetId,params.version);if(proof.identity.operationId!==params.operationId)throw Error('COMMISSION_OPERATION_MISMATCH');}else requireFinancialEmulator();const {operationId,payment,reversal,assignment,actor,at}=params,ledger=db.collection('ledger_comisiones_movimientos');
  const ids=payment.allocations.map(a=>key(operationId,payment.id,a.installmentNumber));
  const existing=await Promise.all(ids.map(id=>tx.get(ledger.doc(id))));
  const rows:Record<string,unknown>[]=[];
