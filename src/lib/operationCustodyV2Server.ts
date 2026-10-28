@@ -1,3 +1,4 @@
+import { argentinaBusinessDate } from './productionV2/businessDate';
 import { deliveryEnabled } from './operationDeliveryV2';
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
@@ -64,6 +65,7 @@ export async function readCustody(db: Firestore, id: string, v: number, actor: C
   const pending = state.pending;
   const photos = await tx.get(custodyRef(db,id,v).collection('photos').limit(100));
   return { budgetId:id, version:v, operationId:source.identity.operationId, revision:state.revision,
+   saleDate:argentinaBusinessDate(new Date(source.identity.acceptedAt)),
    client:budget.clienteSnapshot.nombre as string, locality:budget.clienteSnapshot.localidad as string,
    product:fulfillment.productName, providerState:fulfillment.providerState,
    availability:fulfillment.confirmedAvailabilityDate || fulfillment.estimatedAvailabilityDate,
