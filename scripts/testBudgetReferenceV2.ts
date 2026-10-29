@@ -1,3 +1,4 @@
+import { createBudgetReferenceDraft } from "../src/lib/budgetReferenceDraft";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import * as api from "../src/lib/budgetReferenceV2";
@@ -40,3 +41,13 @@ assert.deepEqual(Object.keys(api).sort(),["buildBudgetOptionV2","buildBudgetRefe
 const source=readFileSync(new URL("../src/lib/budgetReferenceV2.ts",import.meta.url),"utf8");
 assert.ok(!/firebase|publishCatalogReference|unpublishCatalogReference|reduce\(/.test(source));
 console.log("P2_SNAPSHOT_TESTS = PASS; CLIENT_BUDGET_V2_SENSITIVE_FIELD_LEAKS = 0; NO_COMBINED_ALTERNATIVE_TOTAL_HELPER = YES");
+
+const fresh = createBudgetReferenceDraft();
+Object.assign(fresh, { nombre: "Nuevo presupuesto", costoProveedor: "450000" });
+const offered = api.buildBudgetReferenceSnapshotV2({ ...input, draft: fresh });
+assert.deepEqual(offered.planesOfrecidos.map(p => p.cuotas), Array.from({length: 18}, (_, i) => i + 1));
+assert.equal(offered.planesOfrecidos.find(p => p.cuotas === 12)!.cuotaEstimada, 112590);
+fresh.factoresPlanes[12] = 2;
+assert.equal(offered.factoresSnapshot[12], 3);
+assert.equal(offered.planesOfrecidos.find(p => p.cuotas === 12)!.cuotaEstimada, 112590);
+console.log("DEFAULT_BUDGET_PLANS_CALCULATE_AND_FREEZE = PASS");
