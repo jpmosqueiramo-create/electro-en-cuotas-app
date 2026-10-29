@@ -1,3 +1,4 @@
+import { createBudgetReferenceDraft } from "../src/lib/budgetReferenceDraft";
 import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -49,3 +50,10 @@ assert.equal((markup.match(/data-plan-row=/g) ?? []).length, 18);
 assert.ok(markup.includes("SOLO ADMINISTRACIÓN"));
 assert.ok(!markup.includes('data-editor-section="Publicación"'));
 console.log("P2_CONFIGURATOR_TESTS = PASS; UNROUTED_BUDGET_HOST = PASS");
+
+const newBudgetDraft = createBudgetReferenceDraft();
+assert.equal(Object.values(newBudgetDraft.planesActivos).filter(Boolean).length, 18);
+assert.deepEqual(newBudgetDraft.factoresPlanes, CATALOGO_REFERENCIA_FACTORES_DEFAULT);
+assert.deepEqual(createBudgetReferenceDraft(raw), createReferenceConfiguratorState(raw));
+assert.ok(Object.values(createReferenceConfiguratorState().planesActivos).every(value => !value));
+console.log("NEW_BUDGET_PLANS_ENABLED_EXISTING_SELECTIONS_PRESERVED = PASS");

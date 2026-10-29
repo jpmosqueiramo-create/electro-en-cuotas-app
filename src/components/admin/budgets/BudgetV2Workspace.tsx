@@ -5,8 +5,9 @@ import {loadAuthorizedRequestPage, type RequestPageCursors} from "@/lib/adminSol
 import { useAuth } from "@/components/AuthProvider";
 import { PageHeader } from "@/components/PageHeader";
 import { ReferenceConfigurator, Field } from "../references/ReferenceConfigurator";
-import { createCatalogReferenceDraft, type CatalogReferenceDraft } from "@/lib/catalogReferenceEditor";
+import type { CatalogReferenceDraft } from "@/lib/catalogReferenceEditor";
 import { referenceConfiguratorReducer } from "@/lib/referenceConfigurator";
+import { createBudgetReferenceDraft } from "@/lib/budgetReferenceDraft";
 import { buildBudgetOptionV2 } from "@/lib/budgetReferenceV2";
 import { uploadCatalogReferenceImage } from "@/lib/catalogReferenceImages";
 import { budgetClientLines, duplicateBudgetOption, referenceSnapshotToDraft, replaceBudgetOption, toClientBudgetV2, type BudgetV2 } from "@/lib/budgetV2";
@@ -85,7 +86,7 @@ export function BudgetV2Workspace(){
     setConfirmManualSource(false);
     setBudget({schemaVersion:"BUDGET_V2",id:crypto.randomUUID(),version:1,sourceCollection:source?.sourceCollection??"solicitudes_cuenta",solicitudId:source?.id??"",clienteSnapshot:{nombre:source?.nombre??params.get("nombre")??"",dni:source?.dni??params.get("dni")??"",cuil:source?.cuil??"",whatsapp:source?.whatsapp??params.get("telefono")??"",localidad:source?.localidad??params.get("localidad")??""},options:[],estado:"GENERADO",createdAt:now,updatedAt:now,issuedAt:null,revision:0,revisionOf:null});setDraft(null);setPrivateIds([]);setError("");setMessage("");setWhatsapp("");pending.current=null;
   }
-  function beginOption(reference?:Reference){if(!budget||budget.estado==="EMITIDO")return;setOptionId(crypto.randomUUID());setDraft(createCatalogReferenceDraft(reference));setReferenceId(reference?.id??null);setOptionSource(reference?"EXISTING_REFERENCE":"NEW_REFERENCE");setSavePrivate(false);setFiles([]);setUrl("");setError("");if(!reference){const source=sources.find(s=>s.sourceCollection===budget.sourceCollection&&s.id===budget.solicitudId);setDraft(d=>d?{...d,nombre:source?.necesidad??params.get("producto")??""}:d);}}
+  function beginOption(reference?:Reference){if(!budget||budget.estado==="EMITIDO")return;setOptionId(crypto.randomUUID());setDraft(createBudgetReferenceDraft(reference));setReferenceId(reference?.id??null);setOptionSource(reference?"EXISTING_REFERENCE":"NEW_REFERENCE");setSavePrivate(false);setFiles([]);setUrl("");setError("");if(!reference){const source=sources.find(s=>s.sourceCollection===budget.sourceCollection&&s.id===budget.solicitudId);setDraft(d=>d?{...d,nombre:source?.necesidad??params.get("producto")??""}:d);}}
   async function incorporate(){if(!draft||!budget||flight.current)return;flight.current=true;setBusy(true);setError("");try{
     const urls=[...draft.imagenUrls];if(url.trim()&&!urls.includes(url.trim()))urls.push(url.trim());if(urls.length+files.length>4)throw new Error("Usá hasta 4 imágenes.");
     buildBudgetOptionV2(optionId,{draft:{...draft,imagenUrls:urls},fechaCotizacion:new Date().toISOString(),...(optionSource==="EXISTING_REFERENCE"?{source:optionSource,referenceId:referenceId!}:{source:"NEW_REFERENCE",referenceId:null})});
