@@ -11,3 +11,5 @@ Remito previo a entrega: mantiene espacios para fecha/hora reales, responsable, 
 El paquete técnico loop-consolidated-20261030-v3-annex-fields se instala como nuevo, preservando todos los paquetes previos. No cambia Firestore Rules, Storage Rules, rutas de colecciones ni configuración productiva. Sin migración masiva.
 
 Esta rama parte de main db116cef y es independiente del CFT pendiente en PR #118. Al integrar ambas se deben reconciliar el renderer/manifiesto y crear una versión técnica conjunta, preservando los paquetes y cambios de ambas; no reemplazar una implementación por la otra.
+
+Integración autorizada de PR #118 y #119: el paquete activo conjunto es loop-consolidated-20261030-v4-cft-annexes. Conserva ambos paquetes V3 y combina CFT automático y campos de anexos; los textos anteriores sobre integración pendiente describen el origen de las ramas.

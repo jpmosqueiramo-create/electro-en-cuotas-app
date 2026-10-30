@@ -1,8 +1,8 @@
 import source from './proposedPackages/loop-consolidated-20261030.json';
 import {ownerFinalIssuer} from './ownerFinalDocuments';
 import {templateHash,type FinalDocumentKind,type FinalTemplate} from './catalog';
-export const LOOP_PACKAGE_ID='loop-consolidated-20261030-v3-annex-fields';
-export const LOOP_PACKAGE_VERSION='LOOP_CONSOLIDATED_20261030_V3_ANNEX_FIELDS';
+export const LOOP_PACKAGE_ID='loop-consolidated-20261030-v4-cft-annexes';
+export const LOOP_PACKAGE_VERSION='LOOP_CONSOLIDATED_20261030_V4_CFT_ANNEXES';
 export function loopFinalTemplates():Record<FinalDocumentKind,FinalTemplate>{
  const build=(kind:FinalDocumentKind,title:string,paragraphs:string[]):FinalTemplate=>{
   const value={kind,id:`loop-consolidated-${kind.toLowerCase()}`,version:LOOP_PACKAGE_VERSION,title,layout:'LOOP_CONSOLIDATED_V2' as const,paragraphs};

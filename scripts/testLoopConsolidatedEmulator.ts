@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {fulfillmentCommand,readFulfillment} from '../src/lib/operationFulfillmentV2Server';
 import {prepareClientProposal} from '../src/lib/clientProposalServer';
 import {loopAnnexFields} from '../src/lib/productionV2/loopAnnexFields';
+import {AUTOMATIC_CFT_POLICY,AUTOMATIC_CFT_BASIS} from '../src/lib/loopContractDisclosure';
 import {randomUUID} from 'node:crypto';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {admin} from '../src/lib/firebaseAdmin';
@@ -28,6 +29,7 @@ async function main(){
  const d=(await f.r.draft.get()).data()!;
  const fields={personalData:d.personalData,employmentData:d.employmentData,productDetails:d.productDetails,contractPlanCuotas:12,firstInstallmentDueDate:'2026-12-05',preferredMonthlyDueDay:9,issuePlace:'Localidad sintética',loopServices:{category:'C',tariffRevision:1,otherServicesCents:0,cftAnnualPercent:321.123,cftBasis:'CFT SINTETICO: no es validación fiscal ni legal',supplierTaxId:'20123456786',notePaymentPlace:'Domicilio sintético de pago',noteDueDate:'2027-11-09',acceptanceChannel:'WHATSAPP',proposalSentAt:'2026-10-19T12:00',clientAcceptedAt:'2026-10-19T13:00'}};
  const saved=await cmd('SAVE_CONTRACT_EDITOR',fields);assert.equal(saved.draft.commercialPreparation!.loop!.serviceGrossCents,19000000);
+ const auto=saved.draft.commercialPreparation!.loop!;assert.equal(auto.cftPolicy,AUTOMATIC_CFT_POLICY);assert.equal(auto.cftBasis,AUTOMATIC_CFT_BASIS);assert.notEqual(auto.cftAnnualPercent,321.123);assert.equal(auto.cftCalculation!.baseCents,auto.cashPriceCents-auto.tariff.managementCents);assert.equal(auto.cftCalculation!.chargesCents,auto.financeGrossCents+auto.tariff.managementCents);
  assert.equal((await getContract(db,f.id,1)).clientConformity?.confirmed,false);
  // Concurrent global tariff edits cannot silently change an already prepared operation.
  await saveLoopTariffs(db,{...loopReferenceTariffs,C:{...loopReferenceTariffs.C,deliveryCents:12000000}},1,actor);
@@ -70,6 +72,10 @@ async function main(){
    await browser.navigate(`/admin/operaciones/${isolated.id}/1?section=contract&editor=1`);await browser.until("!!document.querySelector('[data-testid=contract-unified-editor]')",'Contract editor');
    await browser.until("document.body.innerText.includes('Amortización por fechas reales')",'Live breakdown');
    assert.equal(await browser.evaluate("document.body.innerText.includes('40% del excedente')"),false);
+   assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"CFT efectivo anual automático (%)\"]').readOnly"),true);
+   const cftBefore=(await isolated.r.draft.get()).data()!.commercialPreparation.loop.cftAnnualPercent;
+   await browser.evaluate("document.querySelector('[aria-label=\"CFT efectivo anual automático (%)\"]').scrollIntoView({block:'center'})");await browser.screenshot('automatic-cft-390.png');await browser.overflow('automatic CFT mobile');
+   assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"CFT efectivo anual automático (%)\"]').value"),cftBefore.toLocaleString('es-AR',{maximumFractionDigits:6}));
    await browser.evaluate("document.querySelector('[data-testid=contract-editor-economics]').scrollIntoView({block:'start'})");await browser.screenshot('loop-contract-390.png');await browser.overflow('contract mobile');
    const before=(await isolated.r.draft.get()).data()!;
    await browser.change('[aria-label="Lugar de emisión"]','Localidad sintética UI');await browser.clickText('Guardar datos del contrato');await browser.until("document.body.innerText.includes('Cambios guardados.')",'Save complete contract breakdown');
