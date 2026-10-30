@@ -1,0 +1,13 @@
+# Compartir presupuestos por PDF y WhatsApp
+
+En una versión emitida, **PDF del presupuesto** descarga el archivo con número correlativo P, nombre de cliente, primer producto, cantidad de alternativas adicionales y versión. El número es estable entre revisiones y también se imprime en el PDF. El nombre se normaliza y acota para evitar separadores de ruta/caracteres inválidos y distinguir presupuestos/versiones. Se conservan los importes y la proyección de datos permitidos del PDF.
+
+**Preparar WhatsApp** muestra el mensaje en el bloque gris existente y lleva el foco a esa sección. El mensaje contiene nombre del cliente, fecha legible, referencia/versión, todas las alternativas, sus descripciones y todos los planes ofrecidos, con cuota y total estimado. El total mostrado es exclusivamente la suma de las cuotas exhibidas de cada snapshot (cuota × cantidad); no recalcula factores ni altera precios.
+
+**Abrir WhatsApp con esta propuesta** utiliza exactamente el texto visible y el teléfono normalizado del cliente. Completa 549 para un celular argentino de diez dígitos y conserva los formatos internacionales explícitos válidos. Ante un teléfono inválido, informa el problema y permite copiar el presupuesto para pegarlo manualmente. No abre chats al preparar, no envía automáticamente ni adjunta el PDF en un enlace wa.me; la interfaz explica la descarga y adjunto manual si se desea. Copiar conserva el mismo texto. La vista preparada está ligada al ID y versión del presupuesto, para no reutilizar un mensaje de otro cliente.
+
+El mensaje de WhatsApp contiene sólo datos comerciales, sin DNI, CUIL, teléfono/localidad en el cuerpo ni campos internos. El teléfono se usa exclusivamente como destinatario del enlace. La proyección parte de toClientBudgetV2; no incluye proveedor, costo, factor, margen ni objetos administrativos. El PDF descargado agrega el número de presupuesto a su encabezado.
+
+No se modifica Aceptación y documentación, estados, snapshots, Rules, conformidad ni pricing. La numeración y la descarga de contratos se describen en [document-download-names.md](document-download-names.md), con su registro aditivo y compatibilidad.
+
+Validación: testBudgetSharingV2 verifica nombres, caracteres/longitudes, fecha argentina, múltiples opciones/planes, privacidad, totales, normalización y URL exacta. La suite de navegador de presupuestos comprueba la descarga real con ese nombre, igualdad entre mensaje y enlace, prefijo 549, snapshots intactos y flujos existentes en escritorio/móvil, con Firebase Emulators. TSC, ESLint y build son gates adicionales. Ningún mensaje se envía a WhatsApp durante las pruebas.

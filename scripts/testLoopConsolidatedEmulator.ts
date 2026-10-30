@@ -5,7 +5,7 @@ import {prepareClientProposal} from '../src/lib/clientProposalServer';
 import {loopAnnexFields} from '../src/lib/productionV2/loopAnnexFields';
 import {AUTOMATIC_CFT_POLICY,AUTOMATIC_CFT_BASIS} from '../src/lib/loopContractDisclosure';
 import {randomUUID} from 'node:crypto';
-import {mkdirSync,writeFileSync} from 'node:fs';
+import {mkdirSync,writeFileSync,existsSync,readFileSync} from 'node:fs';
 import {admin} from '../src/lib/firebaseAdmin';
 import {productionReadyFixture} from './helpers/productionAdapterFixtures';
 import {saveLoopTariffs,readLoopTariffs} from '../src/lib/loopServiceTariffsServer';
@@ -19,7 +19,7 @@ import {issueContractEditor} from '../src/lib/productionV2/simpleIssuance';
 import {getBudgetDocumentationBucket} from '../src/lib/budgetDocumentationStorage';
 import {startProductionBrowserServer} from './helpers/productionAdapterBrowserServer';
 import {CatalogBrowser} from './helpers/catalogBrowser';
-import {readIssuedDocument} from '../src/lib/productionV2/documents';
+import {readIssuedDocument,readIssuedDocumentDownload} from '../src/lib/productionV2/documents';
 async function main(){
  const db=admin.firestore(),actor=(await admin.auth().createUser({email:process.env.NEXT_PUBLIC_ADMIN_EMAIL!,emailVerified:true,password:'Synthetic-only-123'})).uid;
  const config=await saveLoopTariffs(db,loopReferenceTariffs,0,actor);assert.equal(config.revision,1);await assert.rejects(saveLoopTariffs(db,loopReferenceTariffs,0,actor),/otra sesión/);
@@ -50,7 +50,7 @@ async function main(){
  const currentLogistics=await readFulfillment(db,f.id,1);await fulfillmentCommand(db,f.id,1,{commandId:randomUUID(),operationId:logistics.identity.operationId,expectedRevision:currentLogistics.state.revision,action:'UPDATE_PRODUCT_SERIAL',data:{productSerial:'SYNTHETIC-RECORDED-LATER'}},actor);
  assert.equal((await db.collection(productionPaths.snapshots).doc(result.snapshotId).get()).data()!.documentContext.parameters.loopProductSerial,'SYNTHETIC-SERIAL-ANNEX');
  assert.equal((await issueContractEditor(runtime,bucket,f.id,1,request,actor)).replay,true);assert.equal((await db.doc(productionPaths.counter).get()).data()!.lastAllocatedSequence,'1');
- mkdirSync('/tmp/loop-v2-review',{recursive:true});for(const kind of ['MANDATE','PAGARE'] as const){const bytes=await readIssuedDocument(runtime,bucket,f.id,1,kind,actor);assert(bytes.length>1000);writeFileSync(`/tmp/loop-v2-review/${kind.toLowerCase()}-synthetic.pdf`,bytes);}
+ mkdirSync('/tmp/loop-v2-review',{recursive:true});for(const kind of ['MANDATE','PAGARE'] as const){const bytes=await readIssuedDocument(runtime,bucket,f.id,1,kind,actor);assert(bytes.length>1000);const download=await readIssuedDocumentDownload(runtime,bucket,f.id,1,kind,actor);assert.deepEqual(download.bytes,bytes);assert.match(download.filename,new RegExp('^'+(kind==='MANDATE'?'Contrato':'Pagare')+'-CH-000001-'));assert.ok(download.filename.endsWith('.pdf'));assert.ok(!download.filename.includes(issued.personalData.dni));writeFileSync(`/tmp/loop-v2-review/${kind.toLowerCase()}-synthetic.pdf`,bytes);}
  const isolated=await productionReadyFixture(actor,true,true);await assert.rejects(issueContractEditor(runtime,bucket,isolated.id,1,{commandId:randomUUID(),expectedRevision:isolated.ready.revision,confirmed:true},actor));
  if(process.env.LOOP_BROWSER==='1'){
   const latest=(await isolated.r.draft.get()).data()!;
@@ -85,6 +85,16 @@ async function main(){
    await browser.clickText('Registrar serie o IMEI',"document.querySelector('[data-testid=logistics-product-serial]')");await browser.change('[aria-label="Serie o IMEI del producto"]','SYNTHETIC-SERIAL-UI');await browser.clickText('Confirmar acción operativa',"document.querySelector('[data-testid=fulfillment]')");await browser.until("document.querySelector('[data-testid=logistics-product-serial]').textContent.includes('SYNTHETIC-SERIAL-UI')",'serial saved');assert.equal((await readFulfillment(db,f.id,1)).state.productSerial,'SYNTHETIC-SERIAL-UI');
    for(const width of [1280,390]){await browser.command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});await browser.evaluate("document.querySelector('[data-testid=logistics-product-serial]').scrollIntoView({block:'center'})");await browser.overflow('annex logistics '+width);await browser.screenshot('annex-logistics-'+width+'.png');}
    await browser.until("!!document.querySelector('[data-testid=signed-delivery-receipt]')",'signed receipt guide');assert.ok(await browser.evaluate("document.querySelector('[data-testid=signed-delivery-receipt]').textContent.includes('original firmado')"));
+   await browser.navigate(`/admin/operaciones/${f.id}/1?section=contract&editor=1`);
+   await browser.until("[...document.querySelectorAll('button')].some(b=>b.textContent==='Descargar contrato y anexos')",'named contract downloads');
+   const downloadPath='/tmp/contract-named-downloads-'+Date.now();mkdirSync(downloadPath,{recursive:true});await browser.command('Browser.setDownloadBehavior',{behavior:'allow',downloadPath,eventsEnabled:true});
+   for(const kind of ['MANDATE','PAGARE'] as const){
+    const expected=(await readIssuedDocumentDownload(runtime,bucket,f.id,1,kind,actor)).filename;
+    await browser.clickText(kind==='MANDATE'?'Descargar contrato y anexos':'Descargar pagaré');
+    for(let i=0;i<300&&!existsSync(downloadPath+'/'+expected);i++)await new Promise(r=>setTimeout(r,100));
+    assert.ok(existsSync(downloadPath+'/'+expected),expected);assert.equal(readFileSync(downloadPath+'/'+expected).subarray(0,5).toString(),'%PDF-');
+   }
+   await browser.overflow('contract named downloads mobile');
    assert.equal(browser.externalFirebase.length,0);assert.equal(browser.storageWrites,0);
    console.log('LOOP_BROWSER_ADMIN_TARIFFS_CONTRACT_SAVE_SYNC_1280_390_NO_EXTERNAL_FIREBASE = PASS');
   }finally{await browser.close();await server.stop();}
