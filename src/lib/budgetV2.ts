@@ -16,6 +16,7 @@ export interface BudgetClientV2 {
 }
 export function referenceSnapshotToDraft(s: BudgetReferenceSnapshotV2): CatalogReferenceDraft {
   return { nombre:s.nombre, descripcion:s.descripcion, skuInterno:s.skuInternoSnapshot??"", codigoBarras:s.codigoBarrasSnapshot??"",
+    ...(s.categoriaLogisticaSnapshot?{categoriaLogistica:s.categoriaLogisticaSnapshot}:{}),
     costoProveedor:String(s.costoProveedorSnapshot), proveedor:s.proveedorSnapshot, imagenUrls:[...s.imagenUrls],
     factoresPlanes:{...s.factoresSnapshot}, planesActivos:{...s.planesActivosSnapshot} };
 }
@@ -73,7 +74,8 @@ export function validateBudgetV2(value: unknown, privateId?: (budgetId: string, 
     const option = budgetV2ExactObject(raw, ["optionId", "referenceSnapshot"]);
     if (!budgetV2OpaqueId(option.optionId) || ids.has(option.optionId)) invalid("optionId inválido.");
     ids.add(option.optionId);
-    const s = budgetV2ExactObject(option.referenceSnapshot, ["schemaVersion", "referenceId", "source", "nombre", "descripcion", "imagenUrls", "skuInternoSnapshot", "codigoBarrasSnapshot", "costoProveedorSnapshot", "proveedorSnapshot", "factoresSnapshot", "planesActivosSnapshot", "planesOfrecidos", "fechaCotizacion"]);
+    const s = budgetV2ExactObject(option.referenceSnapshot, [...(Object.hasOwn(option.referenceSnapshot as object,"categoriaLogisticaSnapshot")?["categoriaLogisticaSnapshot"]:[]), "schemaVersion", "referenceId", "source", "nombre", "descripcion", "imagenUrls", "skuInternoSnapshot", "codigoBarrasSnapshot", "costoProveedorSnapshot", "proveedorSnapshot", "factoresSnapshot", "planesActivosSnapshot", "planesOfrecidos", "fechaCotizacion"]);
+    if (Object.hasOwn(s,"categoriaLogisticaSnapshot") && !["A","B","C","D"].includes(s.categoriaLogisticaSnapshot as string)) invalid();
     if (s.schemaVersion !== "BUDGET_REFERENCE_V2" || !text(s.nombre, 500, true) || !text(s.descripcion, 10000) || !text(s.proveedorSnapshot, 500) || !iso(s.fechaCotizacion)) invalid();
     for (const code of [s.skuInternoSnapshot, s.codigoBarrasSnapshot]) if (code !== null && !text(code, 500)) invalid();
     if (typeof s.costoProveedorSnapshot !== "number" || !Number.isFinite(s.costoProveedorSnapshot) || s.costoProveedorSnapshot <= 0) invalid();

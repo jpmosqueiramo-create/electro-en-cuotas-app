@@ -4,6 +4,7 @@ import {
 } from "./catalogReference";
 
 export interface CatalogReferenceDraft {
+  categoriaLogistica?: import("./loopServiceTariffs").LoopCategory | null;
   skuInterno: string;
   codigoBarras: string;
   nombre: string;
@@ -25,6 +26,7 @@ export function createCatalogReferenceDraft(raw?: Readonly<Record<string, unknow
     planesActivos[n] = existing?.planesActivos[n] === true;
   }
   return {
+    categoriaLogistica: existing?.categoriaLogistica ?? null,
     skuInterno: existing?.skuInterno ?? "", codigoBarras: existing?.codigoBarras ?? "",
     nombre: existing?.nombre ?? "", descripcion: existing?.descripcion ?? "",
     costoProveedor: existing && Number.isFinite(existing.costoProveedor) ? String(existing.costoProveedor) : "",
@@ -36,6 +38,7 @@ export function createCatalogReferenceDraft(raw?: Readonly<Record<string, unknow
 /** Patch privado: updateDoc conserva todo campo legacy que no aparezca aquí. */
 export function buildCatalogReferencePrivatePatch(draft: CatalogReferenceDraft, original: Readonly<Record<string, unknown>> = {}) {
   if (!draft.nombre.trim()) throw new Error("Ingresá el nombre de la referencia.");
+  if (draft.categoriaLogistica != null && !["A","B","C","D"].includes(draft.categoriaLogistica)) throw new Error("Categoría logística inválida.");
   const costoProveedor = Number(draft.costoProveedor);
   if (!Number.isFinite(costoProveedor) || costoProveedor <= 0) throw new Error("Ingresá un costo proveedor mayor a cero.");
   if (draft.imagenUrls.length > 4 || draft.imagenUrls.some(url => !url.trim())) {
@@ -57,6 +60,7 @@ export function buildCatalogReferencePrivatePatch(draft: CatalogReferenceDraft, 
     }
   }
   return {
+    categoriaLogistica: draft.categoriaLogistica ?? null,
     skuInterno: draft.skuInterno.trim() || null,
     codigoBarras: draft.codigoBarras.trim() || null,
     nombre: draft.nombre.trim(), descripcion: draft.descripcion.trim(),

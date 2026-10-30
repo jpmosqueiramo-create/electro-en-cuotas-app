@@ -1,4 +1,6 @@
 import './helpers/requireSafeEmulatorEnvironment';
+import {DATA_AUTHORIZATION_VERSION} from '../src/lib/clientFlowMessages';
+const acceptedDataAuthorization={version:DATA_AUTHORIZATION_VERSION,accepted:true};
 import assert from 'node:assert/strict';
 import { createHash,randomBytes } from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
@@ -73,7 +75,7 @@ export async function addressCompatibilityTests(db:Firestore){
  await assert.rejects(()=>publicContractData(db,freshId,fresh.secret!,clientPayload));
  await assert.rejects(()=>publicContractData(db,freshId,fresh.secret!,{...addressPayload,personalData:{...addressPayload.personalData,province:'99'}}));
  await assert.rejects(()=>publicContractData(db,freshId,fresh.secret!,{...addressPayload,personalData:{...addressPayload.personalData,postalCode:'bad'}}));
- const newPayload={employmentData:addressPayload.employmentData,personalData:{...addressPayload.personalData,province:'02',postalCode:'c1425abc'}};
+ const newPayload={dataAuthorization:acceptedDataAuthorization,employmentData:addressPayload.employmentData,personalData:{...addressPayload.personalData,province:'02',postalCode:'c1425abc'}};
  const untouched=(await r.draft.get()).data();
  const freshRequest=r.draft.collection('requests').doc(freshId),freshTime=(await freshRequest.get()).updateTime;
  for(const invalid of [{...newPayload,preferredMonthlyDueDay:30},{...newPayload,preferredMonthlyDueDay:null},{personalData:newPayload.personalData},{employmentData:newPayload.employmentData}])await assert.rejects(()=>publicContractData(db,freshId,fresh.secret!,invalid));

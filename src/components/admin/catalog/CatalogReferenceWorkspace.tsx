@@ -12,6 +12,7 @@ import { buildCatalogReferencePrivatePatch, catalogPublicationLabel, createCatal
 import { uploadCatalogReferenceImage } from "@/lib/catalogReferenceImages";
 import { CatalogReferencePreview, money } from "./CatalogReferencePreview";
 import { CatalogDialog, ConfirmDialog } from "./CatalogDialog";
+import { LoopServiceTariffsEditor } from "./LoopServiceTariffsEditor";
 import { CatalogBulkImport } from "./CatalogBulkImport";
 import type { Producto } from "./catalogStockTypes";
 
@@ -169,6 +170,7 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
   return <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-6 sm:px-7 sm:py-8">
     <PageHeader title="Catálogo de referencias" subtitle="Gestioná las referencias de bienes utilizadas para preparar propuestas de gestión de compra." actions={<button type="button" disabled={!!busy} className={primary} onClick={() => edit()}><Plus size={18} aria-hidden="true" />Nueva referencia</button>} />
     <p className="text-sm text-text-secondary">Referencias para gestión de compra mediante mandato. La disponibilidad se confirma durante la cotización.</p>
+    <LoopServiceTariffsEditor />
     <CatalogBulkImport products={productos} onSaved={onRefresh} onBusyChange={setBulkBusy} editingOpen={!!editing} disabled={!!busy || !!editing || fetching || !!loadError} />
     {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-[#B42318]">{error}</div>}
     {message && <p role="status" className="rounded-xl border border-border-color bg-surface p-4 text-sm text-brand-primary">{message}</p>}
@@ -203,7 +205,7 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
           const plans = Object.entries(saved.planesActivos).filter(([, active]) => active).map(([n]) => n);
           return <article key={product.id} data-reference-row={product.id} className="min-w-0 rounded-2xl border border-border-color bg-surface p-4 sm:p-5">
             <div className="flex items-start gap-4"><div className="size-20 shrink-0 rounded-xl bg-background-main p-2">{ /* eslint-disable-next-line @next/next/no-img-element */ }
-<img onError={event => { if (!event.currentTarget.src.endsWith("/logo-cuenta-hogar-oficial.png")) event.currentTarget.src = "/logo-cuenta-hogar-oficial.png"; }} src={saved.imagenUrls[0] || "/logo-cuenta-hogar-oficial.png"} alt="" className="h-full w-full object-contain" /></div><div className="min-w-0"><h3 className="break-words font-heading font-bold text-brand-primary">{product.nombre}</h3><p data-publication-status className="mt-2 text-sm font-semibold text-text-secondary">{catalogPublicationLabel(state)}</p><p className="mt-1 text-xs text-text-secondary">{saved.imagenUrls.length} imágenes · Planes: {plans.join(", ") || "Ninguno habilitado"}</p></div></div>
+<img onError={event => { if (!event.currentTarget.src.endsWith("/logo-cuenta-hogar-oficial.png")) event.currentTarget.src = "/logo-cuenta-hogar-oficial.png"; }} src={saved.imagenUrls[0] || "/logo-cuenta-hogar-oficial.png"} alt="" className="h-full w-full object-contain" /></div><div className="min-w-0"><h3 className="break-words font-heading font-bold text-brand-primary">{product.nombre}</h3><p data-publication-status className="mt-2 text-sm font-semibold text-text-secondary">{catalogPublicationLabel(state)}</p><p className="mt-1 text-xs font-semibold text-brand-primary">Categoría de servicios: {saved.categoriaLogistica || "Sin asignar"}</p><p className="mt-1 text-xs text-text-secondary">{saved.imagenUrls.length} imágenes · Planes: {plans.join(", ") || "Ninguno habilitado"}</p></div></div>
             <dl className="my-4 grid grid-cols-2 gap-3 rounded-xl bg-background-main p-3 text-sm"><div><dt className="text-xs text-text-secondary">Costo proveedor · Admin</dt><dd className="mt-1 font-semibold">{Number(saved.costoProveedor) > 0 ? money(Number(saved.costoProveedor)) : "Sin configurar"}</dd></div><div className="min-w-0"><dt className="text-xs text-text-secondary">Proveedor · Admin</dt><dd className="mt-1 break-words">{saved.proveedor || "Sin registrar"}</dd></div></dl>
             <div className="flex flex-wrap gap-2"><button type="button" className={secondary} disabled={!!busy} onClick={() => edit(product)}><Pencil size={15} aria-hidden="true" />Editar</button><button type="button" className={secondary} disabled={!!busy} onClick={() => void openPreview(product.id)}><Eye size={15} aria-hidden="true" />{publicationPreviewLabel(state)}</button>
               {state?.hasPublicProjection && <button type="button" className={secondary} disabled={!!busy} onClick={() => setConfirm({ kind: "unpublish", product })}>Despublicar</button>}

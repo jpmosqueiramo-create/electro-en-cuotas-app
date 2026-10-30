@@ -1,9 +1,11 @@
+import {loopContractDisclosure,type LoopContractDisclosure,type LoopServiceSelection} from './loopContractDisclosure';
 import {includedVatAmounts} from './includedVat';
 import type {ContractEconomicTermsV2} from './contractV2';
 /** Owner-confirmed distribution of the saved excess, NOT an annual interest rate. */
 export const CONTRACT_COMMERCIAL_POLICY=Object.freeze({version:'OWNER_SERVICE40_FINANCE60_INCLUDED_VAT21_V1',servicePeriodMonths:12,serviceShareBps:4000,serviceVatRateBps:2100,financeVatRateBps:2100} as const);
 export interface ContractCommercialPreparation {
- schemaVersion:'CONTRACT_COMMERCIAL_PREPARATION_V1';policy:typeof CONTRACT_COMMERCIAL_POLICY;issuePlace:string;
+ loop?:LoopContractDisclosure;
+ schemaVersion:'CONTRACT_COMMERCIAL_PREPARATION_V1';policy:typeof CONTRACT_COMMERCIAL_POLICY|{version:'LOOP_REAL_SERVICE_TARIFFS_V2';serviceVatRateBps:2100;financeVatRateBps:2100};issuePlace:string;
  capitalCents:number;serviceGrossCents:number;serviceNetCents:number;serviceVatCents:number;
  financeGrossCents:number;financeNetCents:number;financeVatCents:number;totalCents:number;
 }
@@ -17,7 +19,7 @@ export function prepareContractCommercial(e:ContractEconomicTermsV2,issuePlace:s
  return {schemaVersion:'CONTRACT_COMMERCIAL_PREPARATION_V1',policy:CONTRACT_COMMERCIAL_POLICY,issuePlace:issuePlace.trim(),capitalCents,serviceGrossCents,serviceNetCents:service.baseCents,serviceVatCents:service.taxCents,financeGrossCents,financeNetCents:finance.baseCents,financeVatCents:finance.taxCents,totalCents};
 }
 export function validateContractCommercial(value:ContractCommercialPreparation,e:ContractEconomicTermsV2){
- const expected=prepareContractCommercial(e,value?.issuePlace);
+ const expected=value.loop?prepareLoopContractCommercial(e,value.issuePlace,value.loop,value.loop.amortization.map(r=>({installmentNumber:r.installmentNumber,dueDate:r.dueDate,amount:r.paymentCents/100}))):prepareContractCommercial(e,value?.issuePlace);
  const normalize=(x:unknown):string=>{if(x&&typeof x==='object'&&!Array.isArray(x))return JSON.stringify(Object.fromEntries(Object.entries(x).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>[k,JSON.parse(normalize(v))])));return JSON.stringify(x);};
  if(normalize(value)!==normalize(expected))throw Error('CONTRACT_COMMERCIAL_INTEGRITY');return expected;
 }
@@ -32,4 +34,9 @@ export function contractServiceInstallmentParts(p:ContractCommercialPreparation,
  if(rows.reduce((n,r)=>n+cents(r.amount),0)!==p.totalCents)throw Error('CONTRACT_COMMERCIAL_SCHEDULE_MISMATCH');
  let cumulative=0,allocated=0;
  return rows.map(r=>{cumulative+=cents(r.amount);const target=Number((BigInt(cumulative)*BigInt(p.serviceGrossCents)+BigInt(p.totalCents)/BigInt(2))/BigInt(p.totalCents));const amount=target-allocated;allocated=target;return amount;});
+}
+
+export function prepareLoopContractCommercial(e:ContractEconomicTermsV2,issuePlace:string,selection:LoopServiceSelection,rows:readonly {installmentNumber:number;dueDate:string;amount:number}[]):ContractCommercialPreparation{
+ const legacy=prepareContractCommercial(e,issuePlace),loop=loopContractDisclosure(legacy.capitalCents,legacy.totalCents,selection,rows);
+ return {schemaVersion:'CONTRACT_COMMERCIAL_PREPARATION_V1',policy:{version:'LOOP_REAL_SERVICE_TARIFFS_V2',serviceVatRateBps:2100,financeVatRateBps:2100},issuePlace:legacy.issuePlace,capitalCents:loop.capitalCents,totalCents:loop.totalCents,serviceGrossCents:loop.serviceGrossCents,serviceNetCents:loop.serviceNetCents,serviceVatCents:loop.serviceVatCents,financeGrossCents:loop.financeGrossCents,financeNetCents:loop.financeNetCents,financeVatCents:loop.financeVatCents,loop};
 }

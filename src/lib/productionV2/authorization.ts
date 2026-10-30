@@ -5,6 +5,8 @@ import type { ContractDraftV2 } from '../contractV2';
 import { assertFinalRenderer } from './pdf';
 import { argentinaBusinessDate, ISSUE_DATE_POLICY, ISSUE_DATE_TIME_ZONE } from './businessDate';
 import type { Transaction } from 'firebase-admin/firestore';
+import {assertLoopContractForIssuance} from '../loopContractIssuance';
+import {clientTermsDigest} from '../contractV2Server';
 import { exact, opaque, calendarDate } from '../contractV2';
 import { contractValueHash } from '../contractIntegrityV2';
 import { contractRefs } from '../contractV2Server';
@@ -95,15 +97,16 @@ export async function approvedPackage(runtime: ProductionRuntime, tx: Transactio
     return { package: p, approval: a, approvalHash: contractValueHash(a) };
 }
 export function legalContext(p: FinalPackage, approvalId: string, formal: unknown, draft: ContractDraftV2) {
-    const f = exact(formal, ['contractIssueDate', 'contractIssuePlace', 'promissoryNoteIssueDate', 'promissoryNoteIssuePlace', ...(p.originalsPolicy ? originalFormalFields : [])]);
+    const f = exact(formal, ['contractIssueDate', 'contractIssuePlace', 'promissoryNoteIssueDate', 'promissoryNoteIssuePlace', ...(p.originalsPolicy ? originalFormalFields : []),...(p.templates.MANDATE.layout==='LOOP_CONSOLIDATED_V2'?['loopConformityEvidence']:[])]);
     calendarDate(f.contractIssueDate);
     calendarDate(f.promissoryNoteIssueDate);
     const originalParams = originalFormalParameters(p, Object.fromEntries(originalFormalFields.map(k=>[k,f[k]])), draft.economicTerms!.contractTotal, draft.paymentScheduleDraft);
     if (usesClientPaymentAddress(p.templates.PAGARE)) originalParams.notePaymentAddressHash = contractPaymentAddress(draft.personalData).hash;
     const commercial=draft.commercialPreparation?validateContractCommercial(draft.commercialPreparation,draft.economicTerms!):undefined;
     if(commercial&&p.originalsPolicy&&(Number(f.originalNetManagementLogistics)!==(commercial.capitalCents+commercial.serviceGrossCents)/100||Number(f.originalCft)!==commercial.financeGrossCents/100))throw Error('CONTRACT_COMMERCIAL_INTEGRITY');
+    const loop=p.templates.MANDATE.layout==='LOOP_CONSOLIDATED_V2'?assertLoopContractForIssuance(draft):null;
     const def = (kind: 'MANDATE' | 'PAGARE') => ({ templateId: p.templates[kind].id, templateVersion: p.templates[kind].version, templateHash: p.templates[kind].sha256, rendererBundleId: p.id, rendererBundleHash: p.rendererHash, resourcesManifestHash: p.resourcesHash, legalApprovalId: approvalId });
-    const value = { issuer: p.issuer, documentContext: { policyVersion: 'PRODUCTION_FORMAL_CONTEXT_V1', contractIssueDate: String(f.contractIssueDate), contractIssuePlace: text(f.contractIssuePlace), promissoryNoteIssueDate: String(f.promissoryNoteIssueDate), promissoryNoteIssuePlace: text(f.promissoryNoteIssuePlace), parameterSchemaId: p.id, parameters: { ...originalParams, ...(commercial?{commercialPreparationJson:JSON.stringify(commercial)}:{}), jurisdiction: p.jurisdiction, issuanceDatePolicy: ISSUE_DATE_POLICY, issuanceTimeZone: ISSUE_DATE_TIME_ZONE } }, documentDefinitions: { contract: def('MANDATE'), promissoryNote: def('PAGARE') } };
+    const value = { issuer: p.issuer, documentContext: { policyVersion: 'PRODUCTION_FORMAL_CONTEXT_V1', contractIssueDate: String(f.contractIssueDate), contractIssuePlace: text(f.contractIssuePlace), promissoryNoteIssueDate: String(f.promissoryNoteIssueDate), promissoryNoteIssuePlace: text(f.promissoryNoteIssuePlace), parameterSchemaId: p.id, parameters: { ...originalParams, ...(loop?{loopClientTermsDigest:clientTermsDigest(draft),loopConformityEvidence:text(f.loopConformityEvidence)}:{}), ...(commercial?{commercialPreparationJson:JSON.stringify(commercial)}:{}), jurisdiction: p.jurisdiction, issuanceDatePolicy: ISSUE_DATE_POLICY, issuanceTimeZone: ISSUE_DATE_TIME_ZONE } }, documentDefinitions: { contract: def('MANDATE'), promissoryNote: def('PAGARE') } };
     validateContractLegalContext(value);
     return value;
 }

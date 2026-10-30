@@ -1,4 +1,6 @@
 import './helpers/requireSafeEmulatorEnvironment';
+import {DATA_AUTHORIZATION_VERSION} from '../src/lib/clientFlowMessages';
+const acceptedDataAuthorization={version:DATA_AUTHORIZATION_VERSION,accepted:true};
 import assert from 'node:assert/strict';
 import { Firestore,type Transaction } from 'firebase-admin/firestore';
 import { createContractFreezeIntegrationEmulator,FREEZE_DEPENDENCIES_COLLECTION } from '../src/lib/contractFreezeIntegrationEmulator';
@@ -78,6 +80,10 @@ async function main(){
   const returned=await fixture('returned');const back=await regular(returned,'RETURN_TO_DRAFT','return',{reason:'correction'});
   await assert.rejects(()=>service.execute(command(returned,'stale'),actor));
   let edited=await regular(returned,'UPDATE_PERSONAL_DATA','edit',{personalData:{...returned.d.personalData,address:'Revisado nuevamente'}},back.draft.revision);
+  // A changed delivery address invalidates prior consent. Preserve the rejection,
+  // then explicitly seed the new customer response before the technical re-review.
+  await assert.rejects(()=>regular(returned,'MARK_READY_TO_FORMALIZE','ready-with-stale-consent',{},edited.draft.revision),/nueva conformidad/);
+  edited=await regular(returned,'RECORD_CLIENT_CONFORMITY','renewed-address-consent',{evidence:'Respuesta sintética que acepta el nuevo domicilio'},edited.draft.revision);
   edited=await regular(returned,'MARK_READY_TO_FORMALIZE','new-ready',{},edited.draft.revision);
   const renewed=await service.execute(command(returned,'renewed',edited.draft.revision),actor);assert.equal((await service.getSnapshot(renewed.snapshotId))!.personalData.address,'Revisado nuevamente');
   assert.equal((await returned.r.draft.collection('readyReviews').get()).size,2);
@@ -101,7 +107,7 @@ async function main(){
   // Active link was revoked by real READY; original received submissions remain preserved.
   const links=await fixture('links');let temp=await regular(links,'RETURN_TO_DRAFT','links-return',{reason:'client data'});
   temp=await regular(links,'CREATE_CLIENT_DATA_REQUEST','links-request',{},temp.draft.revision);const link=temp.secret!,requestId=temp.draft.activeClientDataRequestId!;
-  await publicContractData(db,requestId,link,{personalData:temp.draft.personalData,employmentData:temp.draft.employmentData});const sub=(await links.r.draft.collection('submissions').doc(requestId).get()).data();
+  await publicContractData(db,requestId,link,{dataAuthorization:acceptedDataAuthorization,personalData:temp.draft.personalData,employmentData:temp.draft.employmentData});const sub=(await links.r.draft.collection('submissions').doc(requestId).get()).data();
   temp=await regular(links,'MARK_READY_TO_FORMALIZE','links-ready',{},temp.draft.revision);
   await service.execute(command(links,'links-freeze',temp.draft.revision),actor);assert.deepEqual((await links.r.draft.collection('submissions').doc(requestId).get()).data(),sub);await assert.rejects(()=>publicContractData(db,requestId,link));
   // MARK retry returns its historical receipt only; it cannot overwrite frozen state.

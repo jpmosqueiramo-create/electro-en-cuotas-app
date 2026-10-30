@@ -5,6 +5,7 @@ import { validateReferenceConfigurator } from "./referenceConfigurator";
 export interface BudgetOfferedPlanV2 { readonly cuotas: number; readonly cuotaEstimada: number }
 export interface BudgetReferenceSnapshotV2 {
   readonly schemaVersion: "BUDGET_REFERENCE_V2";
+  readonly categoriaLogisticaSnapshot?: import("./loopServiceTariffs").LoopCategory;
   readonly referenceId: string | null;
   readonly source: "EXISTING_REFERENCE" | "NEW_REFERENCE";
   readonly nombre: string;
@@ -54,6 +55,7 @@ export function buildBudgetReferenceSnapshotV2(input: SnapshotInput): BudgetRefe
     planesOfrecidos.push(Object.freeze({ cuotas, cuotaEstimada: plan.cuotaExhibidaCatalogo }));
   }
   return Object.freeze({
+    ...(draft.categoriaLogistica ? {categoriaLogisticaSnapshot:draft.categoriaLogistica} : {}),
     schemaVersion: "BUDGET_REFERENCE_V2", referenceId: input.referenceId, source: input.source,
     nombre: draft.nombre.trim(), descripcion: draft.descripcion.trim(),
     imagenUrls: Object.freeze([...draft.imagenUrls]),

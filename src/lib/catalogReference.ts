@@ -15,6 +15,7 @@ type PlanesActivos = Readonly<Record<string, boolean | undefined>>;
 
 export interface CatalogReferencePrivate {
   id: string;
+  categoriaLogistica?: import("./loopServiceTariffs").LoopCategory | null;
   skuInterno?: string | null;
   codigoBarras?: string | null;
   nombre: string;
@@ -198,6 +199,7 @@ export function adaptarReferenciaCatalogoLegacy(
   const costo = raw.costoProveedor === undefined ? raw.costoProducto : raw.costoProveedor;
   return {
     id,
+    categoriaLogistica: typeof raw.categoriaLogistica === "string" && ["A","B","C","D"].includes(raw.categoriaLogistica) ? raw.categoriaLogistica as import("./loopServiceTariffs").LoopCategory : null,
     skuInterno: typeof raw.skuInterno === "string" ? raw.skuInterno : null,
     codigoBarras: typeof raw.codigoBarras === "string" ? raw.codigoBarras : null,
     legacyCodigoProducto: typeof raw.legacyCodigoProducto === "string"
