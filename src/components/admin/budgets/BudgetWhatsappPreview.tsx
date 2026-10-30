@@ -1,9 +1,9 @@
 "use client";
 import {useEffect,useRef,useState} from 'react';
-import type {BudgetClientV2} from '@/lib/budgetV2';
+import type {NumberedBudgetClientV2} from '@/lib/budgetSharingV2';
 import {budgetPdfFilename,budgetWhatsappMessage,budgetWhatsappUrl} from '@/lib/budgetSharingV2';
 const button='inline-flex min-h-11 items-center justify-center rounded-xl border border-border-color bg-surface px-4 py-2 text-sm font-semibold text-brand-primary';
-export function BudgetWhatsappPreview({budget}:{budget:BudgetClientV2}){
+export function BudgetWhatsappPreview({budget}:{budget:NumberedBudgetClientV2}){
  const region=useRef<HTMLElement>(null),[notice,setNotice]=useState('');
  const message=budgetWhatsappMessage(budget),url=budgetWhatsappUrl(budget.cliente.whatsapp,message);
  useEffect(()=>{region.current?.focus({preventScroll:true});region.current?.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});},[]);

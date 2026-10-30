@@ -1,13 +1,13 @@
-import {budgetPdfFilename} from "./budgetSharingV2";
+import {budgetPdfFilename,type NumberedBudgetClientV2} from "./budgetSharingV2";
 import { drawCuentaHogarLogo } from "./pdfBranding";
 import { jsPDF } from "jspdf";
-import { budgetClientLines, type BudgetClientV2 } from "./budgetV2";
+import { budgetClientLines } from "./budgetV2";
 /** Only an allowlisted commercial DTO reaches this renderer. */
-export function renderBudgetPdfV2(dto:BudgetClientV2):jsPDF{
+export function renderBudgetPdfV2(dto:NumberedBudgetClientV2):jsPDF{
   const pdf=new jsPDF();let y=40;
   drawCuentaHogarLogo(pdf,16,8,24);
   pdf.setFontSize(11);
-  for(const text of budgetClientLines(dto)){
+  for(const text of budgetClientLines(dto).map((line,i)=>i===1&&dto.documentNumber?`Presupuesto ${dto.documentNumber} · Versión ${dto.version}`:line)){
     const lines=pdf.splitTextToSize(text,178) as string[];
     for(const line of lines){if(y>276){pdf.addPage();drawCuentaHogarLogo(pdf,16,8,24);y=40;}pdf.text(line,16,y);y+=6;}
     y+=3;
@@ -22,7 +22,7 @@ export function renderBudgetPdfV2(dto:BudgetClientV2):jsPDF{
 }
 
 /** Browser-only image loading from the client DTO; never requests Firebase credentials. */
-export async function downloadBudgetPdfV2(dto:BudgetClientV2):Promise<void>{
+export async function downloadBudgetPdfV2(dto:NumberedBudgetClientV2):Promise<void>{
   const options=await Promise.all(dto.options.map(async option=>{
     const url=option.imagenUrls[0];if(!url||url.startsWith("data:image/"))return option;
     try{

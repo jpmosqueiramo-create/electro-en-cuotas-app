@@ -1,3 +1,4 @@
+import {issuedPdfFilename} from '../documentFilenames';
 import {issuedManifestRef} from './documentRevisionState';
 import { createHash } from 'node:crypto';
 import type { Transaction } from 'firebase-admin/firestore';
@@ -157,15 +158,20 @@ export async function issueDocuments(runtime: ProductionRuntime, bucket: Bucket,
         return { manifestHash: hash, replay: false };
     });
 }
-export async function readIssuedDocument(runtime: ProductionRuntime, bucket: Bucket, id: string, v: number, kind: FinalDocumentKind, actor: string) {
+export async function readIssuedDocumentDownload(runtime: ProductionRuntime, bucket: Bucket, id: string, v: number, kind: FinalDocumentKind, actor: string) {
     const { db } = await requireProductionActor(runtime, actor, false);
     if (!finalDocumentKinds.includes(kind))
         throw Error('DOCUMENT_KIND_INVALID');
-    const p = await db.runTransaction(async (tx) => (await issuedOperation(runtime, tx, id, v, 'ISSUANCE', false)).manifest.documents[kind]);
+    const proof = await db.runTransaction(async (tx) => issuedOperation(runtime, tx, id, v, 'ISSUANCE', false));
+    const p = proof.manifest.documents[kind];
+    const filename = issuedPdfFilename(kind, proof.snapshot.contractNumber, proof.snapshot.personalData.fullName, proof.snapshot.acceptedReference.nombre, proof.snapshot.snapshotVersion);
     if (!p) throw Error('DOCUMENT_NOT_ISSUED');
     opaque(p.photoId);
     const result = await readVerifiedEvidenceObject(bucket, p);
     if (createHash('sha256').update(result.bytes).digest('hex') !== p.sha256)
         throw Error('ISSUED_DOCUMENT_CHANGED');
-    return result.bytes;
+    return {bytes:result.bytes,filename};
+}
+export async function readIssuedDocument(runtime: ProductionRuntime, bucket: Bucket, id: string, v: number, kind: FinalDocumentKind, actor: string) {
+    return (await readIssuedDocumentDownload(runtime,bucket,id,v,kind,actor)).bytes;
 }

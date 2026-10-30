@@ -21,3 +21,11 @@ assert.equal(s.deliveryClosure,'BLOCKED_PHYSICAL_SIGNATURES_REQUIRED');
 assert.throws(()=>parseFulfillmentCommand({commandId:'bad',operationId:s.operationId,expectedRevision:s.revision,action:'COMPLETE_DELIVERY',data:{signed:true}}));
 assert.throws(()=>parseFulfillmentCommand({commandId:'bad',operationId:s.operationId,expectedRevision:s.revision,action:'PLAN_DELIVERY',data:{},delivered:true}));
 console.log('FULFILLMENT_V2_MODEL=PASS; FUTURE_REAL_DATES=DENIED; CHRONOLOGY=PASS; ESTIMATES_DO_NOT_ADVANCE=PASS; DELIVERY_CLOSURE=BLOCKED');
+
+const serialBase=initialFulfillment('op_'+'a'.repeat(64),'Prueba',null,100);
+const serialCommand={commandId:'serial-test',operationId:serialBase.operationId,expectedRevision:0,action:'UPDATE_PRODUCT_SERIAL' as const,data:{productSerial:'  SER-123 / IMEI-456  '}};
+const withSerial=nextFulfillment(serialBase,serialCommand,'admin','2026-10-30T12:00:00.000Z');
+assert.equal(withSerial.productSerial,'SER-123 / IMEI-456');assert.equal(withSerial.providerState,serialBase.providerState);assert.equal(serialBase.productSerial,undefined);
+for(const value of ['x'.repeat(101),'<script>','line\nbreak'])assert.throws(()=>nextFulfillment(serialBase,{...serialCommand,data:{productSerial:value}},'admin','2026-10-30T12:00:00.000Z'));
+assert.throws(()=>nextFulfillment({...serialBase,deliveryClosure:'DELIVERED',logisticsState:'DELIVERED'},serialCommand,'admin','2026-10-30T12:00:00.000Z'));
+console.log('LOGISTICS_OPTIONAL_SERIAL_VALIDATION_IMMUTABLE_CLOSED_DELIVERY = PASS');

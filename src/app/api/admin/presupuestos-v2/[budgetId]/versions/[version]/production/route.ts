@@ -11,7 +11,7 @@ import { productionOverview, productionHistoryKeys, type ProductionHistoryPage }
 import { authorizeIssuanceRecovery, revokeIssuanceRecovery } from '@/lib/productionV2/issuanceRecovery';
 import { recordFinalPackageApproval, authorizeOperation, revokeAuthorization } from '@/lib/productionV2/authorization';
 import { freezeOperation } from '@/lib/productionV2/freeze';
-import { issueDocuments, readIssuedDocument } from '@/lib/productionV2/documents';
+import { issueDocuments, readIssuedDocumentDownload } from '@/lib/productionV2/documents';
 import { getBudgetDocumentationBucket } from '@/lib/budgetDocumentationStorage';
 import type { FinalDocumentKind } from '@/lib/productionV2/catalog';
 export const runtime = 'nodejs';
@@ -40,8 +40,8 @@ async function handler(req: Request, { params }: {
             if (url.searchParams.has('document')) {
                 if (url.searchParams.size !== 1 || !url.searchParams.has('document'))
                     throw Error('INVALID_REQUEST');
-                const bytes = await readIssuedDocument(context, await getBudgetDocumentationBucket(), p.budgetId, v, url.searchParams.get('document') as FinalDocumentKind, uid);
-                return new NextResponse(new Uint8Array(bytes), { headers: { ...contractHeaders, 'Content-Type': 'application/pdf', 'Content-Disposition': 'inline' } });
+                const document = await readIssuedDocumentDownload(context, await getBudgetDocumentationBucket(), p.budgetId, v, url.searchParams.get('document') as FinalDocumentKind, uid);
+                return new NextResponse(new Uint8Array(document.bytes), { headers: { ...contractHeaders, 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="${document.filename}"` } });
             }
             const page: ProductionHistoryPage = {};
             for (const [key, value] of url.searchParams) {

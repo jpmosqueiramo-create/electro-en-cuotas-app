@@ -11,7 +11,8 @@ import { createBudgetReferenceDraft } from "@/lib/budgetReferenceDraft";
 import { buildBudgetOptionV2 } from "@/lib/budgetReferenceV2";
 import { uploadCatalogReferenceImage } from "@/lib/catalogReferenceImages";
 import {BudgetWhatsappPreview} from "./BudgetWhatsappPreview";
-import { duplicateBudgetOption, referenceSnapshotToDraft, replaceBudgetOption, toClientBudgetV2, type BudgetV2 } from "@/lib/budgetV2";
+import { duplicateBudgetOption, referenceSnapshotToDraft, replaceBudgetOption, type BudgetV2 } from "@/lib/budgetV2";
+import type {NumberedBudgetClientV2} from "@/lib/budgetSharingV2";
 import { downloadBudgetPdfV2 } from "@/lib/budgetV2Pdf";
 
 import {AdminRecordRemoval} from '../AdminRecordRemoval';
@@ -31,6 +32,9 @@ export function BudgetV2Workspace(){
   const [optionId,setOptionId]=useState(""),[referenceId,setReferenceId]=useState<string|null>(null),[optionSource,setOptionSource]=useState<"EXISTING_REFERENCE"|"NEW_REFERENCE">("NEW_REFERENCE");
   const [privateIds,setPrivateIds]=useState<string[]>([]),[savePrivate,setSavePrivate]=useState(false);
   const [files,setFiles]=useState<File[]>([]),[url,setUrl]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState(""),[message,setMessage]=useState(""),[q,setQ]=useState(""),[stateFilter,setStateFilter]=useState("TODOS"),[whatsapp,setWhatsapp]=useState("");
+  const [sharing,setSharing]=useState<{key:string;budget:NumberedBudgetClientV2}|null>(null);
+  const activeBudgetKey=useRef('');
+  useEffect(()=>{activeBudgetKey.current=budget?`${budget.id}:${budget.version}`:'';},[budget]);
   const [confirmManualSource,setConfirmManualSource]=useState(false);
   const [deleting,setDeleting]=useState<BudgetV2|null>(null);
   const [loading,setLoading]=useState(true);
@@ -81,6 +85,11 @@ export function BudgetV2Workspace(){
     const linked=budgets.find(b=>b.id===id&&String(b.version)===version&&b.sourceCollection===params.get('sourceCollection')&&b.solicitudId===params.get('solicitudId'));
     if(linked)setBudget(structuredClone(linked));else setError('No se encontró el presupuesto vinculado a esta solicitud.');
   },[budgets,loading,params]);
+  async function prepareSharing(download:boolean){
+    if(!budget||!user||flight.current)return;const key=`${budget.id}:${budget.version}`;flight.current=true;setBusy(true);setError('');
+    try{const r=await fetch(`/api/admin/presupuestos-v2/${encodeURIComponent(budget.id)}/versions/${budget.version}/sharing`,{method:'POST',cache:'no-store',headers:{Authorization:`Bearer ${await user.getIdToken()}`}});const result=await r.json();if(!r.ok)throw Error(result.error);if(activeBudgetKey.current!==key)return;setSharing({key,budget:result.budget});if(download)await downloadBudgetPdfV2(result.budget);else setWhatsapp(key);}
+    catch(e){setError(e instanceof Error?e.message:'No se pudo preparar el presupuesto.');}finally{flight.current=false;setBusy(false);}
+  }
   function selectSource(key:string){if(!budget||budget.revision>0)return;const source=sources.find(s=>`${s.sourceCollection}:${s.id}`===key);if(!source)return;setBudget({...budget,sourceCollection:source.sourceCollection,solicitudId:source.id,clienteSnapshot:{nombre:source.nombre,dni:source.dni,cuil:source.cuil,whatsapp:source.whatsapp,localidad:source.localidad}});}
   function newBudget(){const now=new Date().toISOString();const id=params.get("solicitudId"),collection=params.get("sourceCollection");const matches=sources.filter(s=>s.id===id&&(!collection||s.sourceCollection===collection));const source=matches.length===1?matches[0]:undefined;
     if(id&&!source){setError("La solicitud indicada no está disponible. Reintentá cuando termine la carga; no se creó otro origen.");return;}
@@ -132,9 +141,9 @@ export function BudgetV2Workspace(){
         {optionSource==="NEW_REFERENCE"&&<label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={savePrivate} onChange={e=>setSavePrivate(e.target.checked)}/>Guardar también como referencia privada</label>}
         <div className="flex flex-wrap gap-3"><button className={button} onClick={()=>void incorporate()}>Incorporar opción</button><button className={button} onClick={()=>setDraft(null)}>Descartar edición de opción</button></div>
       </fieldset>}
-      <div className="flex flex-wrap gap-3">{!emitted?<><button className={button} disabled={busy} onClick={()=>void command("SAVE")}>Guardar presupuesto</button><button className={button} disabled={busy||budget.revision===0} onClick={()=>{if(window.confirm("¿Emitir y archivar esta versión? Ya no podrá editarse."))void command("ISSUE");}}>Emitir y archivar presupuesto</button></>:<><p className="w-full text-sm">Versión emitida de sólo lectura. Los importes provienen de sus snapshots.</p><button className={button} disabled={busy} onClick={()=>{setError("");void downloadBudgetPdfV2(toClientBudgetV2(budget)).catch(()=>setError("No se pudo generar el PDF."));}}>PDF del presupuesto</button><button className={button} disabled={busy} onClick={()=>setWhatsapp(`${budget.id}:${budget.version}`)}>Preparar WhatsApp</button><button className={button} disabled={busy} onClick={()=>void command("REVISE")}>Crear nueva revisión</button></>}</div>
+      <div className="flex flex-wrap gap-3">{!emitted?<><button className={button} disabled={busy} onClick={()=>void command("SAVE")}>Guardar presupuesto</button><button className={button} disabled={busy||budget.revision===0} onClick={()=>{if(window.confirm("¿Emitir y archivar esta versión? Ya no podrá editarse."))void command("ISSUE");}}>Emitir y archivar presupuesto</button></>:<><p className="w-full text-sm">Versión emitida de sólo lectura. Los importes provienen de sus snapshots.{sharing?.key===`${budget.id}:${budget.version}`&&<> Número: {sharing.budget.documentNumber}.</>}</p><button className={button} disabled={busy} onClick={()=>void prepareSharing(true)}>PDF del presupuesto</button><button className={button} disabled={busy} onClick={()=>void prepareSharing(false)}>Preparar WhatsApp</button><button className={button} disabled={busy} onClick={()=>void command("REVISE")}>Crear nueva revisión</button></>}</div>
       {emitted&&<BudgetAcceptanceDocumentation key={`${budget.id}:${budget.version}`} budget={budget}/>}
-      {emitted&&whatsapp===`${budget.id}:${budget.version}`&&<BudgetWhatsappPreview key={`${budget.id}:${budget.version}`} budget={toClientBudgetV2(budget)}/>}
+      {emitted&&whatsapp===`${budget.id}:${budget.version}`&&sharing?.key===whatsapp&&<BudgetWhatsappPreview key={`${budget.id}:${budget.version}`} budget={sharing.budget}/>}
     </section>}
     {budget&&administrativeStates[budget.id]&&administrativeStates[budget.id].state!=='ACTIVE'&&<section className="space-y-3 rounded-xl border p-4"><p>Este presupuesto está retirado de la bandeja. Sus registros originales se conservan.</p><AdminRecordRemoval subject={{kind:'BUDGET',id:budget.id}} removed onChanged={refresh}/></section>}
     <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={showRemoved} onChange={e=>setShowRemoved(e.target.checked)}/>Mostrar eliminados y archivados</label>

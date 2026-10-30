@@ -1,3 +1,4 @@
+import {loopAnnexFields} from './loopAnnexFields';
 import {validateContractCommercial} from '../contractCommercialPreparation';
 import { originalFormalFields, originalFormalParameters, usesClientPaymentAddress } from './originalBindings';
 import { assertPaymentAddressConformity, contractPaymentAddress } from '../contractPaymentAddress';
@@ -136,7 +137,9 @@ export async function authorizeOperation(runtime: ProductionRuntime, id: string,
         const approved = await approvedPackage(runtime, tx, String(c.packageId), String(c.approvalId));
         assertFinalRenderer(approved.package);
         if (usesClientPaymentAddress(approved.package.templates.PAGARE)) assertPaymentAddressConformity(source.draft.personalData, source.consent);
-        const at = new Date().toISOString(), authorization = { schemaVersion: 'PRODUCTION_OPERATION_AUTHORIZATION_V1' as const, id: commandId, operationId: source.identity.operationId, budgetId: id, version: v, readyRevision: Number(c.expectedRevision), packageId: approved.package.id, packageHash: approved.package.sha256, approvalId: String(c.approvalId), approvalHash: approved.approvalHash, sourceHash: source.sourceHash, scopes: [...(c.scopes as ProductionScope[])].sort() as ProductionScope[], legalContext: legalContext(approved.package, String(c.approvalId), c.formal, source.draft), reason, actor, at, expiresAt, digest };
+        const context=legalContext(approved.package,String(c.approvalId),c.formal,source.draft);
+        if(approved.package.templates.MANDATE.layout==='LOOP_CONSOLIDATED_V2')Object.assign(context.documentContext.parameters,await loopAnnexFields(db,tx,id,v,source.identity.operationId,source.draft,source.consent));
+        const at = new Date().toISOString(), authorization = { schemaVersion: 'PRODUCTION_OPERATION_AUTHORIZATION_V1' as const, id: commandId, operationId: source.identity.operationId, budgetId: id, version: v, readyRevision: Number(c.expectedRevision), packageId: approved.package.id, packageHash: approved.package.sha256, approvalId: String(c.approvalId), approvalHash: approved.approvalHash, sourceHash: source.sourceHash, scopes: [...(c.scopes as ProductionScope[])].sort() as ProductionScope[], legalContext: context, reason, actor, at, expiresAt, digest };
         const hash = contractValueHash(authorization);
         tx.create(ref, { ...authorization, hash });
         return { id: commandId, hash, replay: false };
