@@ -1,0 +1,48 @@
+import './helpers/requireSafeEmulatorEnvironment';
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {NextRequest} from 'next/server';
+import {admin} from '../src/lib/firebaseAdmin';
+import {infrastructureFixture} from './helpers/contractInfrastructureFixtures';
+import {operationRef,operationFromAcceptance} from '../src/lib/operationV2';
+import {contractRefs,getContract,contractCommand} from '../src/lib/contractV2Server';
+import {clientConformityMessage} from '../src/lib/clientConformity';
+import {createClientConformityLink,publicClientConformity} from '../src/lib/clientConformityServer';
+import {POST as adminPost} from '../src/app/api/admin/presupuestos-v2/[budgetId]/versions/[version]/conformity-link/route';
+import {POST as publicPost} from '../src/app/api/public/contract-conformity/[requestId]/route';
+export async function conformityFixture(){
+ const id='conformity-link-'+randomUUID(),r=contractRefs(admin.firestore(),id,1),{budget,acceptance,draft}=infrastructureFixture(id).source;
+ draft.personalData.fullName=budget.clienteSnapshot.nombre;draft.personalData.dni=budget.clienteSnapshot.dni!;draft.productDetails={quantity:1,condition:'NEW'};
+ await r.budget.create(budget);await r.acceptance.create(acceptance);await r.draft.create(draft);await operationRef(admin.firestore(),id,1).create(operationFromAcceptance(acceptance));await admin.firestore().doc(`${budget.sourceCollection}/${budget.solicitudId}`).set({nombre:budget.clienteSnapshot.nombre,nombreCompleto:budget.clienteSnapshot.nombre,dni:budget.clienteSnapshot.dni,numeroDni:budget.clienteSnapshot.dni,localidad:budget.clienteSnapshot.localidad});return {id,r,draft};
+}
+async function main(){const db=admin.firestore(),f=await conformityFixture(),actor='synthetic-admin';
+ const create=async()=>{const revision=(await f.r.draft.get()).data()!.revision;return createClientConformityLink(db,f.id,1,{commandId:randomUUID(),expectedRevision:revision},actor);};
+ const payload={commandId:randomUUID(),expectedRevision:f.draft.revision};
+ const first=await createClientConformityLink(db,f.id,1,payload,actor);assert.ok(first.secret);assert.ok(first.summary);
+ assert.equal((await f.r.draft.get()).data()!.revision,f.draft.revision);assert.equal((await f.r.draft.collection('conformity').doc('current').get()).exists,false);
+ const replay=await createClientConformityLink(db,f.id,1,payload,actor);assert.equal(replay.replayed,true);assert.equal(replay.requestId,first.requestId);assert.equal(replay.secret,undefined);
+ const request=(await f.r.draft.collection('conformityRequests').doc(first.requestId).get()).data()!;assert.ok(!JSON.stringify(request).includes(first.secret));
+ const pending=await publicClientConformity(db,first.requestId,first.secret);assert.equal(pending.confirmed,false);assert.equal((await f.r.draft.collection('conformity').doc('current').get()).exists,false);
+ assert.equal(pending.summary.address.includes(f.draft.personalData.address),true);
+ const allowed=['version','name','address','product','quantity','condition','installments','installmentAmount','total','firstDueDate','schedule'];assert.deepEqual(Object.keys(pending.summary).sort(),allowed.sort());
+ for(const key of ['proveedorSnapshot','costoProveedorSnapshot','factoresSnapshot','dni','email','employmentData'])assert.ok(!JSON.stringify(pending).includes('"'+key+'"'));
+ assert.ok(!clientConformityMessage(first.summary,'https://example.invalid/#synthetic').includes(f.draft.personalData.address));
+ await assert.rejects(()=>publicClientConformity(db,first.requestId,'x'.repeat(43),{confirmed:true}));
+ for(const input of [{confirmed:false},{confirmed:true,extra:true},{}])await assert.rejects(()=>publicClientConformity(db,first.requestId,first.secret!,input));
+ const expired=await create();await f.r.draft.collection('conformityRequests').doc(expired.requestId).update({expiresAt:'2020-01-01T00:00:00.000Z'});await assert.rejects(()=>publicClientConformity(db,expired.requestId,expired.secret!));
+ await assert.rejects(()=>publicClientConformity(db,first.requestId,first.secret!));
+ const stale=await create();await f.r.draft.update({'personalData.address':'Otro domicilio sintético'});await assert.rejects(()=>publicClientConformity(db,stale.requestId,stale.secret!,{confirmed:true}));await f.r.draft.set(f.draft);
+ const changed=await create();await contractCommand(db,f.id,1,{action:'SET_PAYMENT_DATES',commandId:randomUUID(),expectedRevision:f.draft.revision,firstInstallmentDueDate:'2027-01-05',preferredMonthlyDueDay:5},actor);await assert.rejects(()=>publicClientConformity(db,changed.requestId,changed.secret!,{confirmed:true}));
+ const final=await create(),before=(await f.r.draft.get()).data()!;
+ const pair=await Promise.all([publicClientConformity(db,final.requestId,final.secret!,{confirmed:true}),publicClientConformity(db,final.requestId,final.secret!,{confirmed:true})]);assert.deepEqual(pair[0],pair[1]);
+ assert.equal((await f.r.draft.get()).data()!.revision,before.revision+1);assert.equal((await getContract(db,f.id,1)).clientConformity?.confirmed,true);
+ assert.equal((await f.r.draft.collection('events').doc('client-conformity-'+final.requestId).get()).data()!.by,'client-conformity-link');
+ const receipt=(await f.r.draft.collection('conformity').doc('current').get()).data()!;assert.equal((await f.r.draft.collection('events').doc('client-conformity-'+final.requestId).get()).data()!.requestId,final.requestId);assert.ok(receipt.evidence.includes(final.requestId));
+ const ctx={params:Promise.resolve({budgetId:f.id,version:'1'})};
+ assert.equal((await adminPost(new NextRequest('http://localhost:3000/api/admin/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),ctx)).status,401);
+ const publicCtx={params:Promise.resolve({requestId:final.requestId})};
+ for(const headers of [{Origin:'https://evil.invalid'},{Origin:'http://localhost:3000','Sec-Fetch-Site':'cross-site'},{}] as Record<string,string>[])assert.equal((await publicPost(new NextRequest('http://localhost:3000/api/public/test',{method:'POST',headers:{'Content-Type':'application/json','X-Client-Conformity-Token':final.secret!,...headers},body:'{"confirmed":true}'}),publicCtx)).status,400);
+ await db.collection('contractClientConformityLimits').doc(final.requestId).set({start:Date.now(),count:61});await assert.rejects(()=>publicClientConformity(db,final.requestId,final.secret!));
+ console.log('CONFORMITY_LINK_TOKEN_REVOCATION_EXPIRY_CURRENT_DATA_CONCURRENT_ACCEPTANCE_ALLOWLIST_HTTP=PASS');
+ await admin.app().delete();}
+if(process.argv[1]?.endsWith('testClientConformityLinkEmulator.ts'))void main().catch(e=>{console.error(e);process.exitCode=1;});

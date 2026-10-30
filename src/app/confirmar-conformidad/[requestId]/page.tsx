@@ -1,0 +1,4 @@
+import type {Metadata} from 'next';
+import {ClientConformityForm} from './public-form';
+export const metadata:Metadata={title:{absolute:'GESTIONAMOS TU COMPRA'},description:'Revisá y confirmá las condiciones de tu gestión de compra en Cuenta Hogar.',openGraph:{title:'GESTIONAMOS TU COMPRA',description:'Revisá y confirmá las condiciones de tu gestión de compra en Cuenta Hogar.',images:['https://www.cuentahogar.com.ar/logo-cuenta-hogar-oficial.png']},twitter:{card:'summary_large_image',title:'GESTIONAMOS TU COMPRA',images:['https://www.cuentahogar.com.ar/logo-cuenta-hogar-oficial.png']},robots:{index:false,follow:false,noarchive:true},referrer:'no-referrer'};
+export default async function Page({params}:{params:Promise<{requestId:string}>}){return <ClientConformityForm requestId={(await params).requestId}/>;}
