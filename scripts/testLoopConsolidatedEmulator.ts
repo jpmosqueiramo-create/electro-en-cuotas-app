@@ -1,4 +1,5 @@
 import './helpers/requireSafeEmulatorEnvironment';
+import {readBudgetWorkflows} from '../src/lib/adminWorkflowServer';
 import assert from 'node:assert/strict';
 import {fulfillmentCommand,readFulfillment} from '../src/lib/operationFulfillmentV2Server';
 import {prepareClientProposal} from '../src/lib/clientProposalServer';
@@ -45,6 +46,7 @@ async function main(){
  await db.doc(productionPaths.counter).create({schemaVersion:'CONTRACT_NUMBER_COUNTER_V1',policyId:'CONTRACT_NUMBERING_V1',executionMode:'PRODUCTION',active:true,lastAllocatedSequence:'0',initializationAuthorizationReference:'SYNTHETIC_ONLY'});
  const request={commandId:randomUUID(),expectedRevision:(await f.r.draft.get()).data()!.revision,confirmed:true};
  const result=await issueContractEditor(runtime,bucket,f.id,1,request,actor);assert.equal(result.contractNumber,'CH-000001');
+ assert.equal((await readBudgetWorkflows(db,f.r.family))[0].stage,'LOGISTICS');
  const issued=(await db.collection(productionPaths.snapshots).doc(result.snapshotId).get()).data()!;
  assert.equal(issued.documentContext.parameters.loopProductSerial,'SYNTHETIC-SERIAL-ANNEX');assert.equal(issued.documentContext.parameters.loopAcceptedProposalReference,proposal.reference);assert.match(issued.documentContext.parameters.loopAcceptedProposalPdfHash,/^[a-f0-9]{64}$/);
  const currentLogistics=await readFulfillment(db,f.id,1);await fulfillmentCommand(db,f.id,1,{commandId:randomUUID(),operationId:logistics.identity.operationId,expectedRevision:currentLogistics.state.revision,action:'UPDATE_PRODUCT_SERIAL',data:{productSerial:'SYNTHETIC-RECORDED-LATER'}},actor);

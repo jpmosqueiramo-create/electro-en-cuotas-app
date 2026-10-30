@@ -1,3 +1,5 @@
+import {readBudgetWorkflows} from '@/lib/adminWorkflowServer';
+import {workflowKey} from '@/lib/adminWorkflow';
 import {administrativeStatuses} from '@/lib/adminRecordRemovalServer';
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/adminAuth";
@@ -10,7 +12,10 @@ export async function GET(req:NextRequest){
     const db=admin.firestore();const families=await db.collection("presupuestos_v2").get();
     const versions=await Promise.all(families.docs.map(f=>f.ref.collection("versions").get()));
     const administrativeStates=await administrativeStatuses(db,families.docs.filter(f=>!f.id.startsWith('_')).map(f=>({kind:'BUDGET',id:f.id})));
-    return NextResponse.json({administrativeStates,budgets:versions.flatMap(s=>s.docs.map(d=>d.data()))});
+    const workflows:Record<string,unknown>={};
+    const list=families.docs.filter(f=>!f.id.startsWith('_'));
+    for(let i=0;i<list.length;i+=6){const groups=await Promise.all(list.slice(i,i+6).map(f=>readBudgetWorkflows(db,f.ref)));for(const row of groups.flat())workflows[workflowKey(row.budgetId,row.version)]=row;}
+    return NextResponse.json({workflows,administrativeStates,budgets:versions.flatMap(s=>s.docs.map(d=>d.data()))});
   } catch { return NextResponse.json({error:"No se pudo completar la operación."},{status:500}); }
 }
 export async function POST(req:NextRequest){

@@ -1,3 +1,4 @@
+import {matchesWorkflow,workflowLabels,type AdminWorkflow} from './adminWorkflow';
 import type {AdminRecordStatus} from './adminRecordRemoval';
 import { publicSolicitudOrigin } from "./publicSolicitud";
 /** Proyección explícita de lectura. No importa Firebase ni ejecuta efectos. */
@@ -11,6 +12,7 @@ export type AdminProposal = {
   itemCount: number | null; items: { producto: string | null; cuotas: number | null; valorCuota: number | null; contado: number | null }[];
 };
 export type AdminSolicitudListItem = {
+  workflow?:AdminWorkflow[];
   administrativeState?:AdminRecordStatus|null;
   sourceCollection: AdminSolicitudSource; documentId: string; recordKey: string;
   tipoPresentacion: AdminSolicitudType; origenPresentacion: string;
@@ -113,12 +115,14 @@ function mapRecord(sourceCollection: AdminSolicitudSource, documentId: string, i
 export const mapSolicitudToAdminReadModel = (id: string, data: unknown) => mapRecord("solicitudes", id, data);
 export const mapSolicitudCuentaToAdminReadModel = (id: string, data: unknown) => mapRecord("solicitudes_cuenta", id, data);
 export function isAdminSolicitudPending(item: AdminSolicitudListItem): boolean {
+  if(item.workflow?.length)return item.workflow.some(w=>!['DELIVERED','REJECTED','ARCHIVED'].includes(w.stage));
   if (item.estadoOriginal === null) return false;
   return item.sourceCollection === "solicitudes"
     ? ["PENDIENTE", "REQUIERE_INFO", "PENDIENTE_FIRMA"].includes(item.estadoOriginal)
     : ["pendiente", "aprobado_presupuesto", "solicitante", "aperturado"].includes(item.estadoOriginal.toLowerCase());
 }
 export function adminSolicitudNextAction(item: AdminSolicitudListItem): string {
+  if(item.workflow?.length)return item.workflow.length===1?workflowLabels[item.workflow[0].stage]:'Revisar operaciones vinculadas';
   if (item.sourceCollection === "solicitudes") {
     if (item.estadoOriginal === "REQUIERE_INFO") return "Consultar información solicitada";
     if (item.estadoOriginal === "PENDIENTE_FIRMA") return "Consultar autorización";
@@ -134,7 +138,7 @@ export function filterAdminSolicitudes(items: AdminSolicitudListItem[], filters:
   const q = filters.q.trim().toLocaleLowerCase("es");
   return items.filter(item => (filters.view === "all" || isAdminSolicitudPending(item))
     && (!filters.type || filters.type === item.tipoPresentacion)
-    && (!filters.status || (filters.status === EMPTY_STATUS_FILTER ? item.estadoOriginal === null : item.estadoOriginal === filters.status))
+    && (!filters.status || (item.workflow?.length ? item.workflow.some(w=>matchesWorkflow(w,filters.status)) : filters.status === EMPTY_STATUS_FILTER ? item.estadoOriginal === null : item.estadoOriginal === filters.status))
     && (!q || [item.nombreCliente, item.dni, item.email, item.telefono, item.productoONecesidad, item.documentId, item.recordKey].some(value => value?.toLocaleLowerCase("es").includes(q))))
     .sort((a, b) => {
       if (a.fechaSort === null && b.fechaSort !== null) return 1;
@@ -147,7 +151,7 @@ export function adminSolicitudesContext(filters: AdminSolicitudFilters): string 
   const params = new URLSearchParams({ view: filters.view });
   if (["Solicitud", "Consulta inicial", "Contacto rápido"].includes(filters.type)) params.set("type", filters.type);
   // El estado persistido podría contener texto inesperado: transportar sólo valores documentados.
-  if (["PENDIENTE", "REQUIERE_INFO", "PENDIENTE_FIRMA", "APROBADO", "RECHAZADO", "Pendiente", "Aprobado", "Rechazado", "Aprobado_Presupuesto", "solicitante", "aperturado", EMPTY_STATUS_FILTER].includes(filters.status)) params.set("status", filters.status);
+  if ([...Object.keys(workflowLabels),"PENDIENTE", "REQUIERE_INFO", "PENDIENTE_FIRMA", "APROBADO", "RECHAZADO", "Pendiente", "Aprobado", "Rechazado", "Aprobado_Presupuesto", "solicitante", "aperturado", EMPTY_STATUS_FILTER].includes(filters.status)) params.set("status", filters.status);
   return params.toString();
 }
 export function parseAdminSolicitudFilters(params: Record<string, string | string[] | undefined>): AdminSolicitudFilters {
