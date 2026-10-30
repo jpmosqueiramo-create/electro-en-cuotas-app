@@ -1,4 +1,6 @@
 import './helpers/requireSafeEmulatorEnvironment';
+import {DATA_AUTHORIZATION_VERSION} from '../src/lib/clientFlowMessages';
+const acceptedDataAuthorization={version:DATA_AUTHORIZATION_VERSION,accepted:true};
 import assert from 'node:assert/strict';
 import { NextRequest } from 'next/server';
 import { admin } from '../src/lib/firebaseAdmin';
@@ -65,7 +67,7 @@ async function main(){
   let subId='';
   if(kind==='apply-race'){
    const req=await contractCommand(db,y.id,1,command('CREATE_CLIENT_DATA_REQUEST',revision,'request'),'admin-a');revision=req.draft.revision;subId=req.draft.activeClientDataRequestId!;
-   const payload={personalData:{...draft.personalData,address:'Recibido'},employmentData:draft.employmentData};
+   const payload={dataAuthorization:acceptedDataAuthorization,personalData:{...draft.personalData,address:'Recibido'},employmentData:draft.employmentData};
    await publicContractData(db,subId,req.secret!,payload);
   }
   const first=command('MARK_READY_TO_FORMALIZE',revision,'mark');
@@ -89,7 +91,7 @@ async function main(){
  const historical=await fixture('received-history');
  const receivedRequest=await contractCommand(db,historical.id,1,command('CREATE_CLIENT_DATA_REQUEST',1,'request'),'admin-a');
  const receivedId=receivedRequest.draft.activeClientDataRequestId!;
- await publicContractData(db,receivedId,receivedRequest.secret!,{personalData:{...historical.f.source.draft.personalData,address:'Datos recibidos preservados'},employmentData:historical.f.source.draft.employmentData});
+ await publicContractData(db,receivedId,receivedRequest.secret!,{dataAuthorization:acceptedDataAuthorization,personalData:{...historical.f.source.draft.personalData,address:'Datos recibidos preservados'},employmentData:historical.f.source.draft.employmentData});
  const immutableSubmission=(await historical.r.draft.collection('submissions').doc(receivedId).get()).data();
  const markedHistory=await contractCommand(db,historical.id,1,command('MARK_READY_TO_FORMALIZE',receivedRequest.draft.revision,'mark'),'admin-a');
  await assert.rejects(()=>contractCommand(db,historical.id,1,command('APPLY_CLIENT_SUBMISSION',markedHistory.draft.revision,'blocked',{submissionId:receivedId}),'admin-a'));
@@ -100,7 +102,7 @@ async function main(){
  assert.deepEqual((await historical.r.draft.collection('submissions').doc(receivedId).get()).data(),immutableSubmission);
  const receiptRace=await fixture('receipt-race');
  const requestRace=await contractCommand(db,receiptRace.id,1,command('CREATE_CLIENT_DATA_REQUEST',1,'request'),'admin-a');
- const publicPayload={personalData:receiptRace.f.source.draft.personalData,employmentData:receiptRace.f.source.draft.employmentData};
+ const publicPayload={dataAuthorization:acceptedDataAuthorization,personalData:receiptRace.f.source.draft.personalData,employmentData:receiptRace.f.source.draft.employmentData};
  const received=await Promise.allSettled([
   contractCommand(db,receiptRace.id,1,command('MARK_READY_TO_FORMALIZE',requestRace.draft.revision,'mark'),'admin-a'),
   publicContractData(db,requestRace.draft.activeClientDataRequestId!,requestRace.secret!,publicPayload),

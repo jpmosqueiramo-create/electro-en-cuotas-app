@@ -1,4 +1,5 @@
 import './requireSafeEmulatorEnvironment';
+import {DATA_AUTHORIZATION_VERSION} from '../../src/lib/clientFlowMessages';
 import { randomUUID } from 'node:crypto';
 import { admin } from '../../src/lib/firebaseAdmin';
 import { deliveryFixture } from '../testOperationDeliveryV2Emulator';
@@ -23,7 +24,7 @@ export async function productionReadyFixture(actor: string, originals = false, s
         await source.create({ nombre: f.b.clienteSnapshot.nombre, nombreCompleto: f.b.clienteSnapshot.nombre, numeroDni: '12345678', dni: '12345678', localidad: 'Lincoln', productoNombre: 'Producto sintético' });
     async function cmd(action: string, extra: Record<string, unknown> = {}) { const d = (await f.r.draft.get()).data()!; return contractCommand(db, f.id, 1, { action, commandId: randomUUID(), expectedRevision: d.revision, ...extra }, actor); }
     const intake = await cmd('CREATE_CLIENT_DATA_REQUEST');
-    await publicContractData(db, intake.requestId!, intake.secret!, { personalData: { ...addressPayload.personalData, fullName: f.b.clienteSnapshot.nombre }, employmentData: originals ? { ...addressPayload.employmentData, cuil: '20123456786' } : addressPayload.employmentData });
+    await publicContractData(db, intake.requestId!, intake.secret!, { dataAuthorization:{version:DATA_AUTHORIZATION_VERSION,accepted:true}, personalData: { ...addressPayload.personalData, fullName: f.b.clienteSnapshot.nombre }, employmentData: originals ? { ...addressPayload.employmentData, cuil: '20123456786' } : addressPayload.employmentData });
     await cmd('APPLY_CLIENT_SUBMISSION', { submissionId: intake.requestId });
     await cmd('UPDATE_PRODUCT_DETAILS', { productDetails: { quantity: 1, condition: 'NEW' } });
     if(!skipCredit){

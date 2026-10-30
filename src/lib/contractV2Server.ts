@@ -14,6 +14,8 @@ import type { Firestore, DocumentData } from 'firebase-admin/firestore';
 import { validateBudgetV2 } from './budgetV2';
 import { privateBudgetReferenceId } from './budgetV2Persistence';
 import type { BudgetAcceptanceV2 } from './budgetAcceptanceV2';
+import {proposalDigest} from './clientProposalServer';
+import {DATA_AUTHORIZATION_VERSION,DATA_AUTHORIZATION_TEXT,dataAuthorizationPayload} from './clientFlowMessages';
 import { productDetails,personalVersion,calendarDate,contractEconomics,contractSchedule,dataFields,dueDay,employmentFields,exact,newContractDraft,opaque,personalFields,reject,submissionPayload,type ClientDataSubmissionV2,type ContractClientDataRequestV2,type ContractDraftV2,stable } from './contractV2';
 export function clientTermsDigest(d:ContractDraftV2){return digest({economicTerms:d.economicTerms,firstInstallmentDueDate:d.firstInstallmentDueDate,preferredMonthlyDueDay:d.preferredMonthlyDueDay,paymentScheduleDraft:d.paymentScheduleDraft,...(d.commercialPreparation===undefined?{}:{commercialPreparation:d.commercialPreparation}),...(d.productDetails===undefined?{}:{productDetails:d.productDetails})});}
 export function clientConformityIsCurrent(d:ContractDraftV2,c:PaymentAddressConformity & {confirmedDigest?:string|null}){return c.confirmedDigest===clientTermsDigest(d)&&recordedPaymentAddressIsCurrent(d.personalData,c);}
@@ -65,7 +67,7 @@ const actionKeys:Record<string,string[]>={SAVE_CONTRACT_EDITOR:['personalData','
 export async function contractCommand(db:Firestore,id:string,v:number,input:unknown,actor:string) {
   const raw=input as Record<string,unknown>,action=raw?.action;
   if(typeof action!=='string'||!Object.hasOwn(actionKeys,action))reject('NEW_PROPOSAL_REQUIRED: operación no permitida.');
-  const o=exact(input,['action','commandId',...(action==='OPEN_OR_CREATE'?[]:['expectedRevision']),...actionKeys[action],...(action==='SAVE_CONTRACT_EDITOR'&&Object.hasOwn(raw,'loopServices')?['loopServices']:[])]);
+  const o=exact(input,['action','commandId',...(action==='OPEN_OR_CREATE'?[]:['expectedRevision']),...actionKeys[action],...(action==='SAVE_CONTRACT_EDITOR'&&Object.hasOwn(raw,'loopServices')?['loopServices']:[]),...(action==='RECORD_CLIENT_CONFORMITY'&&Object.hasOwn(raw,'proposalCommandId')?['proposalCommandId']:[])]);
   const cid=opaque(o.commandId),r=contractRefs(db,id,v),command=r.draft.collection('commands').doc(cid),dg=digest({actor,input});
   // Generated outside transaction retries, returned only after a committed first execution.
   const secret=action==='CREATE_CLIENT_DATA_REQUEST'?randomBytes(32).toString('base64url'):null;
@@ -95,6 +97,10 @@ export async function contractCommand(db:Firestore,id:string,v:number,input:unkn
     }
     // Owner-authorized policy: credit review is administrative, not an issuance gate.
     // Accepted origin, complete saved data, conformity and READY integrity remain mandatory.
+    if(action==='RECORD_CLIENT_CONFORMITY'&&o.proposalCommandId!==undefined){
+      const proposal=await tx.get(r.draft.collection('clientProposals').doc(opaque(o.proposalCommandId)));
+      if(!proposal.exists||proposal.data()!.digest!==proposalDigest(d))reject('Las condiciones cambiaron. Prepará y enviá una nueva propuesta para aceptar.');
+    }
     const before=structuredClone(d);
     const conformityRef=r.draft.collection('conformity').doc('current');
     const conformity=await tx.get(conformityRef);
@@ -159,7 +165,7 @@ export async function contractCommand(db:Firestore,id:string,v:number,input:unkn
     if(sub)d={...d,...(subVersion==='LEGACY_SIX'?{}:{personalDataVersion:PERSONAL_ADDRESS_VERSION}),personalData:subVersion==='LEGACY_SIX'?{...d.personalData,...submissionPayload(submissionBody(sub),subVersion,subDataOnly).personalData}:dataFields(sub.personalData,personalFields,true),employmentData:dataFields(sub.employmentData,employmentFields),...(sub.preferredMonthlyDueDay===undefined?{}:{preferredMonthlyDueDay:dueDay(sub.preferredMonthlyDueDay)}),lastClientSubmissionId:sub.submissionId,lastClientSubmissionAppliedAt:now,lastClientSubmissionAppliedBy:actor};
     if(action==='CREATE_CLIENT_DATA_REQUEST') {
       if(active?.exists&&active.data()!.status==='ACTIVE')tx.update(activeRef!,{status:'REVOKED',revokedAt:now});
-      const request:ContractClientDataRequestV2={schemaVersion:'CONTRACT_CLIENT_DATA_REQUEST_V2',dataScope:'PERSONAL_EMPLOYMENT_ONLY',personalDataVersion:PERSONAL_ADDRESS_VERSION,requestId,contractDraftId:d.contractDraftId,budgetId:id,budgetVersion:v,tokenHash:hash(secret!),status:'ACTIVE',createdAt:now,createdBy:actor,expiresAt:new Date(Date.parse(now)+7*86400000).toISOString(),submittedAt:null,revokedAt:null,submissionDigest:null};
+      const request:ContractClientDataRequestV2 & {dataAuthorizationVersion:string}={dataAuthorizationVersion:DATA_AUTHORIZATION_VERSION,schemaVersion:'CONTRACT_CLIENT_DATA_REQUEST_V2',dataScope:'PERSONAL_EMPLOYMENT_ONLY',personalDataVersion:PERSONAL_ADDRESS_VERSION,requestId,contractDraftId:d.contractDraftId,budgetId:id,budgetVersion:v,tokenHash:hash(secret!),status:'ACTIVE',createdAt:now,createdBy:actor,expiresAt:new Date(Date.parse(now)+7*86400000).toISOString(),submittedAt:null,revokedAt:null,submissionDigest:null};
       tx.create(r.draft.collection('requests').doc(requestId),request);
       tx.create(db.collection('contractClientDataRequests').doc(requestId),{budgetId:id,version:v});
       d={...d,activeClientDataRequestId:requestId};
@@ -170,12 +176,12 @@ export async function contractCommand(db:Firestore,id:string,v:number,input:unkn
     }
     if(action!=='OPEN_OR_CREATE')d={...d,revision:d.revision+1,updatedAt:now,updatedBy:actor,...(['SET_CONTRACT_PLAN','SET_PAYMENT_DATES','APPLY_CLIENT_SUBMISSION'].includes(action)?{paymentScheduleDraft:d.economicTerms&&d.firstInstallmentDueDate&&d.preferredMonthlyDueDay?contractSchedule(d.economicTerms,d.firstInstallmentDueDate,d.preferredMonthlyDueDay):[]}:{} )};
     if(['UPDATE_PRODUCT_DETAILS','SET_CONTRACT_PLAN','SET_PAYMENT_DATES','APPLY_CLIENT_SUBMISSION'].includes(action)&&clientTermsDigest(before)!==clientTermsDigest(d))tx.set(conformityRef,{termsDigest:clientTermsDigest(d),confirmedDigest:null,changedAt:now,changedBy:actor});
-    if(action==='RECORD_CLIENT_CONFORMITY')tx.set(conformityRef,{...conformity.data(),termsDigest:clientTermsDigest(d),confirmedDigest:clientTermsDigest(d),confirmedPaymentAddressHash:paymentAddressHashOrNull(d.personalData),confirmedAt:now,confirmedBy:actor,evidence:(o.evidence as string).trim()});
+    if(action==='RECORD_CLIENT_CONFORMITY')tx.set(conformityRef,{...conformity.data(),termsDigest:clientTermsDigest(d),confirmedDigest:clientTermsDigest(d),confirmedPaymentAddressHash:paymentAddressHashOrNull(d.personalData),confirmedAt:now,confirmedBy:actor,evidence:(o.evidence as string).trim(),proposalCommandId:o.proposalCommandId??null});
     if(!old.exists||action!=='OPEN_OR_CREATE')tx.set(r.draft,d);
     tx.create(command,{digest:dg,result:d,createdAt:now,by:actor,action});
     if(action!=='OPEN_OR_CREATE')tx.create(r.draft.collection('events').doc(cid),['MARK_READY_TO_FORMALIZE','RETURN_TO_DRAFT'].includes(action)
       ?{action,by:actor,at:now,from:before.status,to:d.status,beforeRevision:before.revision,afterRevision:d.revision,readyEvidenceId:readyEvidence?.commandId??null,...(action==='RETURN_TO_DRAFT'?{reason:(o.reason as string).trim()}: {})}
-      :{action,by:actor,at:now,before,after:d,clientSubmissionId:sub?.submissionId??null,...(action==='RECORD_CLIENT_CONFORMITY'?{evidence:(o.evidence as string).trim(),termsDigest:clientTermsDigest(d),paymentAddressHash:paymentAddressHashOrNull(d.personalData)}:{})});
+      :{action,by:actor,at:now,before,after:d,clientSubmissionId:sub?.submissionId??null,...(action==='RECORD_CLIENT_CONFORMITY'?{evidence:(o.evidence as string).trim(),termsDigest:clientTermsDigest(d),paymentAddressHash:paymentAddressHashOrNull(d.personalData),...(o.proposalCommandId?{proposalCommandId:o.proposalCommandId}:{})}:{})});
     return {draft:d,...(secret?{requestId,secret}:{}),replayed:false};
   });
 }
@@ -204,10 +210,11 @@ export async function publicContractData(db:Firestore,requestId:string,token:str
     if(actual.length!==expected.length||!timingSafeEqual(actual,expected)||d.status!=='DRAFT'||Date.parse(r.expiresAt)<=Date.now()||r.status==='REVOKED'||r.status==='EXPIRED')reject(unavailable);
     if(input===undefined){if(r.status!=='ACTIVE')reject(unavailable);return {available:true,personalDataVersion:personalVersion(r.personalDataVersion),...(r.dataScope==='PERSONAL_EMPLOYMENT_ONLY'?{dataScope:r.dataScope}:{})};}
     const version=personalVersion(r.personalDataVersion);
-    const p=submissionPayload(input,version,r.dataScope==='PERSONAL_EMPLOYMENT_ONLY'),dg=digest(p);
+    const authorization=dataAuthorizationPayload(input,rs.data()!.dataAuthorizationVersion!==undefined);
+    const p=submissionPayload(authorization.payload,version,r.dataScope==='PERSONAL_EMPLOYMENT_ONLY'),dg=authorization.authorized?digest({data:p,dataAuthorizationVersion:DATA_AUTHORIZATION_VERSION}):digest(p);
     if(r.status==='SUBMITTED'){if(r.submissionDigest===dg)return {received:true};reject(unavailable);}
     if(r.status!=='ACTIVE'||d.activeClientDataRequestId!==requestId)reject(unavailable);
-    const s:ClientDataSubmissionV2={schemaVersion:'CLIENT_DATA_SUBMISSION_V2',...(version==='LEGACY_SIX'?{}:{personalDataVersion:version}),submissionId:requestId,requestId,contractDraftId:d.contractDraftId,submittedAt:new Date().toISOString(),...p};
+    const s:ClientDataSubmissionV2={schemaVersion:'CLIENT_DATA_SUBMISSION_V2',...(version==='LEGACY_SIX'?{}:{personalDataVersion:version}),submissionId:requestId,requestId,contractDraftId:d.contractDraftId,submittedAt:new Date().toISOString(),...p,...(authorization.authorized?{dataAuthorization:{version:DATA_AUTHORIZATION_VERSION,text:DATA_AUTHORIZATION_TEXT,accepted:true,acceptedAt:new Date().toISOString(),source:'client-data-link'}}:{})};
     tx.create(refs.draft.collection('submissions').doc(requestId),s);tx.update(rr,{status:'SUBMITTED',submittedAt:s.submittedAt,submissionDigest:dg});
     // Deliberately no Draft update on receipt.
     return {received:true};

@@ -110,3 +110,21 @@ El PR #114 de enlaces de conformidad sigue siendo un cambio independiente.
 | 06_Logica_Calculo_Loop.pdf | `6109f76383e23723d27aa5f7fdef4265b85511ef1ce05e2bcb120dc2bb8dd849` |
 | 07_Informe_para_Contador_Loop.pdf | `348b1b4ad104ea1a70bf8acc70dea6f3c13efcdabb278ec3854b61e31256e3ec` |
 | 08_Super_Calculadora_Loop_Factores_y_Tamanos.xlsx | `7c125c3293f989c25f975c3a7111ae0f3634e9db501855a80ad3c3f197ce4bb6` |
+
+
+## Mensajes del cliente y aceptación por WhatsApp
+
+Fuente textual: `MENSAJE DE ACEPTACION PROPUESTA CLIENTES CUENTA HOGAR.docx`, aportada por el titular el 30/10/2026. Sus anotaciones entre paréntesis no se envían al cliente. Se conserva íntegro el aviso de autorización para datos y evaluación; se agrega al inicio del mensaje de solicitud y antes de los campos del formulario. La casilla no está premarcada. En las solicitudes nuevas, el servidor exige la aceptación explícita de `LOOP_DATA_AUTHORIZATION_20261030_V1`. Crear el enlace no registra consentimiento.
+
+El titular cambió su preferencia anterior de enlace con botón por respuesta «ACEPTO» en WhatsApp. Este PR incorpora ese mecanismo; el PR 114 de enlace automático queda reemplazado para este alcance y no es una dependencia. El modelo usa nombre, producto, localidad, cantidad e importes guardados, primera cuota en entrega y referencia identificable. Se prepara un PDF de propuesta para adjuntar manualmente al chat, con los servicios reales, netos/IVA, financiación, tasas guardadas, cronograma/amortización, condiciones del pagaré y las quince cláusulas del mandato aprobado. No emite CH, contrato definitivo, factura ni recibo; no envía WhatsApp. Después de recibir la respuesta, Administración conserva su referencia original, completa las fechas reales y registra la conformidad. La generación del PDF y el mensaje no registra aceptación ni presume lectura/envío.
+
+La proyección del PDF usa únicamente los datos contractuales autorizados para ese cliente. No incluye factores, márgenes, datos laborales, notas administrativas ni objetos internos. Proveedor, CUIT y adquisición son los conceptos expresamente aprobados para la propuesta/Anexo I; esto no amplía los DTO públicos de catálogo/presupuestos. El endpoint exige identidad administrativa. No publica un enlace público al PDF.
+
+### Campos y compatibilidad de estos mensajes
+
+- `requests/{requestId}` del contrato agrega `dataAuthorizationVersion: string` en nuevas solicitudes. Las solicitudes históricas sin ese campo conservan su schema de envío y su digest anterior; no se crean autorizaciones retrospectivas.
+- `submissions/{requestId}` agrega opcionalmente `dataAuthorization: {version, text, accepted: true, acceptedAt: ISO string, source: client-data-link}`. Es evidencia del envío explícito; aplicar los datos al contrato no reemplaza esa evidencia ni la usa como autorización de compra.
+- `clientProposals/{commandId}` dentro del contrato: schemaVersion CLIENT_PROPOSAL_V1, revision number, reference/digest strings, projection allowlisted object, message string, pdfBase64 string (PDF hasta 500 KB), pdfSha256 string, createdAt ISO string, createdBy UID. Se conserva la versión exacta. Reintentos devuelven el mismo PDF; otra revisión exige un nuevo commandId. La referencia depende del digest de la proyección contractual y de una vinculación privada al DNI y contactos guardados; esos datos privados no se agregan al mensaje ni al PDF.
+- `RECORD_CLIENT_CONFORMITY` acepta opcionalmente proposalCommandId. Si se usa el mensaje generado, comprueba que su proyección siga vigente; no acepta cambios de precio, plan, domicilio, producto, proveedor, servicios, CFT, cronograma o condiciones del pagaré. Las fechas y el canal de trazabilidad se completan después y no alteran los términos comerciales de la propuesta. La evidencia y el evento guardan proposalCommandId; un registro manual sin propuesta limpia cualquier vinculación anterior. El registro manual histórico sigue disponible.
+
+Sin cambio de colecciones existentes ni migración, Rules o configuración productiva. Consumidores: servidor administrativo de contratos/propuesta y formulario privado de datos. Ninguna autorización de datos equivale a aceptación comercial, firma, entrega o aprobación crediticia.

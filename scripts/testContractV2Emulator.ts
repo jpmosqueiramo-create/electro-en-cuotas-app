@@ -1,4 +1,6 @@
 import './helpers/requireSafeEmulatorEnvironment';
+import {DATA_AUTHORIZATION_VERSION} from '../src/lib/clientFlowMessages';
+const acceptedDataAuthorization={version:DATA_AUTHORIZATION_VERSION,accepted:true};
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { NextRequest } from 'next/server';
@@ -42,7 +44,7 @@ async function main(){
  await assert.rejects(()=>publicContractData(db,reqId,'x'.repeat(43)),{message:unavailable});await assert.rejects(()=>publicContractData(db,firstId,first.secret!),{message:unavailable});
  const before=(await r.draft.get()).data();
  const wrong=[{...clientPayload,extra:true},{...clientPayload,personalData:{...clientPayload.personalData,dni:''}},{...clientPayload,preferredMonthlyDueDay:0},{...clientPayload,preferredMonthlyDueDay:32}];for(const p of wrong)await assert.rejects(()=>publicContractData(db,reqId,token,p));
- const dataOnly={personalData:clientPayload.personalData,employmentData:clientPayload.employmentData};
+ const dataOnly={dataAuthorization:acceptedDataAuthorization,personalData:clientPayload.personalData,employmentData:clientPayload.employmentData};
  const racePayloads=[dataOnly,{...dataOnly,personalData:{...dataOnly.personalData,address:'Otra dirección sintética'}}];
  const submitRace=await Promise.allSettled(racePayloads.map(p=>publicContractData(db,reqId,token,p)));
  assert.equal(submitRace.filter(x=>x.status==='fulfilled').length,1);assert.equal(submitRace.filter(x=>x.status==='rejected').length,1);
