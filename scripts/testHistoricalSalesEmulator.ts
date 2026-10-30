@@ -1,0 +1,32 @@
+import './helpers/requireSafeEmulatorEnvironment';
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {admin} from '../src/lib/firebaseAdmin';
+import {historicalSalesCommand,historicalSaleDetail,historicalSalesCollection,listHistoricalSales} from '../src/lib/historicalSalesServer';
+import {historicalMonthlySchedule} from '../src/lib/historicalSales';
+import {historicalFixture} from './testHistoricalSales';
+import {GET,POST} from '../src/app/api/admin/ventas-anteriores/route';
+async function main(){
+ const db=admin.firestore(),id='old-sale-'+randomUUID(),actor='synthetic-admin';
+ const rootsBefore=(await db.listCollections()).map(c=>c.id).sort();
+ const create={saleId:id,commandId:'create',expectedRevision:0,action:'CREATE',data:historicalFixture()};
+ const [a,b]=await Promise.all([historicalSalesCommand(db,create,actor),historicalSalesCommand(db,create,actor)]);assert.deepEqual(a,b);
+ assert.equal((await db.collection(historicalSalesCollection).doc(id).collection('payments').get()).size,2);let d=(await historicalSaleDetail(db,id,null))!;assert.equal(d.summary.paidCents,15000);assert.equal(d.lastPaidOnByInstallment[0],'2024-02-15');
+ await assert.rejects(historicalSalesCommand(db,{...create,data:{...create.data,clientName:'Otro cliente'}},actor));
+ const pay={saleId:id,commandId:'pay',expectedRevision:1,action:'PAY',data:{installmentNumber:2,amountCents:2500,paidOn:'2024-02-20',kind:'HISTORICAL',reference:'Pago anterior'}};
+ await Promise.all([historicalSalesCommand(db,pay,actor),historicalSalesCommand(db,pay,actor)]);d=(await historicalSaleDetail(db,id,null))!;assert.equal(d.revision,2);assert.equal(d.summary.paidCents,17500);assert.equal(d.lastPaidOnByInstallment[1],'2024-02-20');
+ const racing=await Promise.allSettled(['a','b'].map(commandId=>historicalSalesCommand(db,{...pay,commandId,expectedRevision:2,data:{...pay.data,amountCents:2500,paidOn:'2024-02-18'}},actor)));assert.equal(racing.filter(r=>r.status==='fulfilled').length,1);d=(await historicalSaleDetail(db,id,null))!;assert.equal(d.summary.installments[1].status,'PAGADA');
+ await assert.rejects(historicalSalesCommand(db,{...pay,commandId:'overpay',expectedRevision:3,data:{...pay.data,amountCents:1}},actor));
+ await historicalSalesCommand(db,{saleId:id,commandId:'reverse',expectedRevision:3,action:'REVERSE',data:{paymentId:'payment_pay',reason:'Corrección sintética'}},actor);d=(await historicalSaleDetail(db,id,null))!;assert.equal(d.summary.paidCents,17500);assert.equal(d.lastPaidOnByInstallment[1],'2024-02-18');assert.equal(d.payments.find(p=>p.id==='payment_pay')!.reversalReason,'Corrección sintética');
+ await historicalSalesCommand(db,{saleId:id,commandId:'reverse-initial',expectedRevision:4,action:'REVERSE',data:{paymentId:'initial_001',reason:'Fecha mal cargada'}},actor);d=(await historicalSaleDetail(db,id,null))!;assert.equal(d.lastPaidOnByInstallment[0],null);assert.equal(d.summary.installments[0].paidCents,0);
+ assert.deepEqual((await db.listCollections()).map(c=>c.id).sort(),[...rootsBefore,historicalSalesCollection].sort());
+ const path='http://localhost:3000/api/admin/ventas-anteriores';assert.equal((await GET(new Request(path))).status,401);assert.equal((await POST(new Request(path,{method:'POST'}))).status,401);
+ const login=async(email:string,verified=true)=>{const password='Emulator-only-123';await admin.auth().createUser({email,password,emailVerified:verified});const r=await fetch('http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,returnSecureToken:true})});assert.equal(r.status,200);return (await r.json()).idToken as string;};
+ for(const email of ['client-old-sales@example.invalid','affiliate-old-sales@example.invalid']){const token=await login(email),headers={Authorization:'Bearer '+token,'Content-Type':'application/json'};assert.equal((await GET(new Request(path,{headers}))).status,403);assert.equal((await POST(new Request(path,{method:'POST',headers,body:JSON.stringify(create)}))).status,403);const direct=await fetch('http://127.0.0.1:8080/v1/projects/demo-cuenta-hogar/databases/(default)/documents/'+historicalSalesCollection+'/'+id,{headers:{Authorization:'Bearer '+token}});assert.equal(direct.status,403);}
+ const token=await login(process.env.NEXT_PUBLIC_ADMIN_EMAIL!),headers={Authorization:'Bearer '+token,'Content-Type':'application/json'};const read=await GET(new Request(path+'?id='+id,{headers}));assert.equal(read.status,200);assert.equal(read.headers.get('Cache-Control'),'private, no-store');assert.equal((await POST(new Request(path,{method:'POST',headers:{...headers,Origin:'https://untrusted.invalid'},body:JSON.stringify(create)}))).status,403);
+ const batch=db.batch();for(let i=0;i<101;i++){const clone=structuredClone(d);const {summary:_,payments:__,nextPaymentCursor:___,...sale}=clone;void _;void __;void ___;sale.id='page-'+String(i).padStart(3,'0');batch.create(db.collection(historicalSalesCollection).doc(sale.id),sale);}await batch.commit();const page=await listHistoricalSales(db,null);assert.equal(page.items.length,100);assert.ok(page.nextCursor);assert.equal((await listHistoricalSales(db,page.nextCursor)).items.length,2);
+ const owner=await admin.auth().getUserByEmail(process.env.NEXT_PUBLIC_ADMIN_EMAIL!);await admin.auth().updateUser(owner.uid,{emailVerified:false});assert.equal((await GET(new Request(path,{headers}))).status,403);await admin.auth().updateUser(owner.uid,{emailVerified:true});
+ const many=historicalFixture();many.saleDate='2020-01-01';many.installments=historicalMonthlySchedule('2020-02-01',61,100).map(q=>({...q,paidCents:100,paidOn:'2025-03-01'}));const historyId='many-payments';await historicalSalesCommand(db,{saleId:historyId,commandId:'many',expectedRevision:0,action:'CREATE',data:many},actor);const first=await historicalSaleDetail(db,historyId,null);assert.equal(first!.payments.length,50);assert.ok(first!.nextPaymentCursor);const next=await historicalSaleDetail(db,historyId,first!.nextPaymentCursor);assert.equal(next!.payments.length,11);assert.equal(new Set([...first!.payments,...next!.payments].map(p=>p.id)).size,61);assert.ok(first!.lastPaidOnByInstallment.every(day=>day==='2025-03-01'));
+ console.log('HISTORICAL_SALES_EMULATOR_IDEMPOTENCY_CONCURRENCY_OVERPAY_REVERSAL_DATES_ISOLATION_AUTH_RULES_PAGINATION=PASS');await admin.app().delete();
+}
+main().catch(e=>{console.error(e);process.exitCode=1;});
