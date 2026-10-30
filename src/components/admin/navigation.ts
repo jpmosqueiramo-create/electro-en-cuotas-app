@@ -5,6 +5,7 @@ export const ADMIN_DESTINATIONS = [
   { id: "requests", label: "Solicitudes", href: "/admin/solicitudes", icon: ClipboardList },
   { id: "catalog", label: "Catálogo", href: "/admin/productos", icon: Package },
   { id: "collections", label: "Cobranzas", href: "/admin/cobranzas", icon: Wallet },
+  { id: "historical-sales", label: "Ventas anteriores", href: "/admin/ventas-anteriores", icon: FileText },
   { id: "sellers", label: "Vendedores afiliados", href: "/admin/comisiones", icon: Users },
   { id: "logistics", label: "Logística", href: "/admin/logistica", icon: Truck },
   { id: "budgets", label: "Presupuestos", href: "/admin/presupuestos", icon: FileText },
