@@ -1,3 +1,4 @@
+import {budgetPdfFilename} from "./budgetSharingV2";
 import { drawCuentaHogarLogo } from "./pdfBranding";
 import { jsPDF } from "jspdf";
 import { budgetClientLines, type BudgetClientV2 } from "./budgetV2";
@@ -32,5 +33,5 @@ export async function downloadBudgetPdfV2(dto:BudgetClientV2):Promise<void>{
       return {...option,imagenUrls:[image]};
     }catch{return option;}
   }));
-  renderBudgetPdfV2({...dto,options}).save(`Presupuesto-${dto.budgetId}-v${dto.version}.pdf`);
+  renderBudgetPdfV2({...dto,options}).save(budgetPdfFilename(dto));
 }
