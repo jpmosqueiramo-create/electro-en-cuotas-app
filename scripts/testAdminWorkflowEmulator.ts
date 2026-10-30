@@ -1,0 +1,37 @@
+import './helpers/requireSafeEmulatorEnvironment';
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {admin} from '../src/lib/firebaseAdmin';
+import {fixture,addressPayload} from './testContractV2';
+import {reviewCommand,addDocuments} from './testCreditReviewV2Emulator';
+import {readBudgetWorkflows,requestWorkflows} from '../src/lib/adminWorkflowServer';
+import {readAdminRequestPage} from '../src/lib/adminSolicitudesServer';
+import {acceptBudgetV2} from '../src/lib/budgetAcceptanceV2Server';
+import {DATA_AUTHORIZATION_VERSION} from '../src/lib/clientFlowMessages';
+import {contractCommand,contractRefs,publicContractData} from '../src/lib/contractV2Server';
+import {administrativeRecordRef} from '../src/lib/adminRecordRemovalServer';
+export async function workflowFixtures(){
+ const db=admin.firestore(),id='workflow-'+randomUUID(),{b}=fixture(id);b.sourceCollection='solicitudes_cuenta';b.solicitudId='workflow-shared';b.clienteSnapshot.nombre='Cliente seguimiento';
+ const r=contractRefs(db,id,1);await r.family.set({sourceCollection:b.sourceCollection,solicitudId:b.solicitudId,lastVersion:1});await r.budget.set(b);
+ for(const source of ['solicitudes_cuenta','solicitudes'])await db.collection(source).doc(b.solicitudId).set({nombre:'Cliente seguimiento',estado:'Pendiente',necesidad:'Producto sintético',fecha:'2026-10-30T12:00:00Z'});
+ assert.deepEqual(await readBudgetWorkflows(db,r.family),[]);
+ const command={budgetId:id,version:1,acceptedOptionId:'option-1',preferredPlanCuotas:12,commandId:'accept'};await acceptBudgetV2(db,command,'synthetic-admin');await acceptBudgetV2(db,command,'synthetic-admin');
+ const beforeBudget=await r.budget.get(),beforeSource=await db.doc('solicitudes_cuenta/'+b.solicitudId).get();
+ assert.equal((await readBudgetWorkflows(db,r.family))[0].stage,'PENDING_APPROVAL');
+ const inbox=(await readAdminRequestPage(db,'solicitudes_cuenta',null)).items.find(i=>i.documentId===b.solicitudId)!;assert.equal(inbox.workflow![0].stage,'PENDING_APPROVAL');assert.equal(inbox.tipoPresentacion,'Solicitud');assert.equal(inbox.estadoOriginal,'Pendiente');
+ assert.deepEqual(await requestWorkflows(db,'solicitudes',[b.solicitudId]),{});
+ await contractCommand(db,id,1,{action:'OPEN_OR_CREATE',commandId:'open'},'synthetic-admin');assert.equal((await readBudgetWorkflows(db,r.family))[0].stage,'PENDING_PERSONAL_DATA');
+ const creditId='workflow-credit-'+randomUUID(),creditFixture=fixture(creditId);creditFixture.b.sourceCollection='solicitudes_cuenta';creditFixture.b.solicitudId='workflow-credit-source';creditFixture.b.clienteSnapshot.nombre=addressPayload.personalData.fullName;const cr=contractRefs(db,creditId,1);
+ await db.doc('solicitudes_cuenta/workflow-credit-source').set({nombre:addressPayload.personalData.fullName,dni:addressPayload.personalData.dni,estado:'Pendiente'});await cr.family.set({lastVersion:1});await cr.budget.set(creditFixture.b);await acceptBudgetV2(db,{budgetId:creditId,version:1,acceptedOptionId:'option-1',preferredPlanCuotas:12,commandId:'accept'},'synthetic-admin');
+ let cd=(await contractCommand(db,creditId,1,{action:'OPEN_OR_CREATE',commandId:'open'},'synthetic-admin')).draft;
+ const intake=await contractCommand(db,creditId,1,{action:'CREATE_CLIENT_DATA_REQUEST',commandId:'request',expectedRevision:cd.revision},'synthetic-admin');
+ await publicContractData(db,intake.requestId!,intake.secret!,{dataAuthorization:{version:DATA_AUTHORIZATION_VERSION,accepted:true},personalData:addressPayload.personalData,employmentData:addressPayload.employmentData});assert.equal((await readBudgetWorkflows(db,cr.family))[0].stage,'PERSONAL_DATA_RECEIVED');cd=(await contractCommand(db,creditId,1,{action:'APPLY_CLIENT_SUBMISSION',submissionId:intake.requestId,commandId:'apply',expectedRevision:intake.draft.revision},'synthetic-admin')).draft;
+ const credit={id:creditId,b:creditFixture.b,r:cr,d:cd};await credit.r.family.update({sourceCollection:credit.b.sourceCollection,solicitudId:credit.b.solicitudId});
+ await reviewCommand(credit.id,'VERIFY_IDENTITY',{evidence:'Prueba sintética de identidad'});await addDocuments(credit.id);await reviewCommand(credit.id,'DECIDE',{state:'IN_REVIEW',resolution:'Prueba de evaluación',notes:'Sólo Emulator'});await reviewCommand(credit.id,'DECIDE',{state:'APPROVED',resolution:'Sólo Emulator',notes:'Sin efectos reales'});
+ const approved=(await readBudgetWorkflows(db,credit.r.family))[0];assert.equal(approved.stage,'CONTRACT');assert.equal(approved.approval,'APPROVED');
+ const draft=(await credit.r.draft.get()).data()!;await contractCommand(db,credit.id,1,{action:'UPDATE_EMPLOYMENT_DATA',commandId:randomUUID(),expectedRevision:draft.revision,employmentData:{...draft.employmentData,employerOrWorkName:'Cambio sintético'}},'synthetic-admin');assert.equal((await readBudgetWorkflows(db,credit.r.family))[0].approval,'PENDING');
+ await administrativeRecordRef(db,{kind:'CONTRACT',id:credit.id,version:1}).set({schemaVersion:'ADMIN_RECORD_STATE_V1',subject:{kind:'CONTRACT',id:credit.id,version:1},state:'ARCHIVED',revision:1});assert.equal((await readBudgetWorkflows(db,credit.r.family))[0].stage,'ARCHIVED');
+ assert.equal((await r.budget.get()).updateTime!.toMillis(),beforeBudget.updateTime!.toMillis());assert.equal((await db.doc('solicitudes_cuenta/'+b.solicitudId).get()).updateTime!.toMillis(),beforeSource.updateTime!.toMillis());
+ console.log('ADMIN_WORKFLOW_EMULATOR_ACCEPTED_RETRY_STAGE_APPROVAL_FRESHNESS_EXACT_SOURCE_ARCHIVED_READONLY=PASS');return {pending:{id,b,r},credit};
+}
+if(process.argv[1]?.endsWith('testAdminWorkflowEmulator.ts'))workflowFixtures().then(()=>admin.app().delete()).catch(e=>{console.error(e);process.exitCode=1;});
