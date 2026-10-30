@@ -109,11 +109,16 @@ async function main(){
   await assert.rejects(contractCommand(db,ui.id,1,{...saveCommand,commercialPreparation:{totalCents:1}},actor));
   await assert.rejects(contractCommand(db,ui.id,1,{...saveCommand,expectedRevision:saved.revision-1},actor));
   pass('EDITOR_REJECTS_TAMPERED_AMOUNTS_AND_STALE_REVISION');
+  await ui.r.draft.collection('conformity').doc('current').delete();
+  await browser.navigate(`/admin/operaciones/${ui.id}/1?section=contract&editor=1`);
   await browser.until("!!document.querySelector('[data-testid=issuance-pending]')",'precise pending conformity');
   assert.equal(await browser.evaluate("document.querySelector('[data-testid=issuance-pending]').innerText.includes('Registrar la conformidad')"),true);
   await browser.evaluate("document.querySelector('[data-testid=contract-review]').open=false");
   await browser.click('[data-testid=issuance-pending] button');
   await browser.until("document.querySelector('[data-testid=contract-review]').open",'direct conformity navigation');
+  await browser.until("!!document.querySelector('[aria-label=\"Referencia de la evidencia de conformidad\"]')",'first conformity evidence form visible');
+  assert.equal((await ui.r.draft.collection('conformity').doc('current').get()).exists,false);
+  assert.equal(await browser.evaluate("document.querySelector('[data-testid=emit-contract-pair]').disabled"),true);
   await browser.evaluate("document.querySelector('[data-testid=simple-contract-issuance]').scrollIntoView({block:'start'})");
   await browser.screenshot('issuance-simple-pending-desktop.png');
   await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
@@ -122,6 +127,8 @@ async function main(){
   pass('PENDING_CONFORMITY_EXPLICIT_AND_DIRECT_NAVIGATION');
   await browser.change('[aria-label="Referencia de la evidencia de conformidad"]','Conformidad sintética sobre desglose, datos y cuotas; sin efecto real');await browser.clickText('Registrar conformidad recibida');
   await browser.until("!document.querySelector('[data-testid=emit-contract-pair]').disabled",'saved current consent and issuance');
+  assert.equal((await ui.r.draft.collection('conformity').doc('current').get()).data()!.evidence,'Conformidad sintética sobre desglose, datos y cuotas; sin efecto real');
+  pass('FIRST_CONFORMITY_WITHOUT_PRIOR_RECORD_BROWSER');
   await browser.evaluate("document.querySelector('[data-testid=contract-editor-economics]').scrollIntoView({block:'start'})");
   await browser.screenshot('ch94-editor-desktop.png');await browser.overflow('desktop');
   await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await browser.evaluate("document.querySelector('[data-testid=contract-editor-economics]').scrollIntoView({block:'start'})");await browser.screenshot('ch94-editor-mobile.png');await browser.overflow('mobile');
