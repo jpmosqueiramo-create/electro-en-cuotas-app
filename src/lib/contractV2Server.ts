@@ -46,7 +46,7 @@ export async function getContract(db:Firestore,id:string,v:number){
     const draft=snapshot.data() as ContractDraftV2;
     const consent=await tx.get(r.draft.collection('conformity').doc('current'));
     const addressHash=paymentAddressHashOrNull(draft.personalData);
-    const clientConformity=consent.exists?{required:true,confirmed:clientConformityIsCurrent(draft,consent.data()!),paymentAddressConfirmed:addressHash!==null&&consent.data()!.confirmedPaymentAddressHash===addressHash,confirmedAt:consent.data()!.confirmedAt??null}:null;
+    const clientConformity=consent.exists?{required:true,confirmed:clientConformityIsCurrent(draft,consent.data()!),paymentAddressConfirmed:addressHash!==null&&consent.data()!.confirmedPaymentAddressHash===addressHash,confirmedAt:consent.data()!.confirmedAt??null}:{required:true,confirmed:false,paymentAddressConfirmed:false,confirmedAt:null};
     let readiness:ContractReadyEvidenceV1|null=null;
     if(draft.status==='READY_TO_FORMALIZE'){
       if(!draft.readyEvidenceId)reject('Falta evidencia de revisión.');
@@ -97,7 +97,7 @@ export async function contractCommand(db:Firestore,id:string,v:number,input:unkn
     const conformity=await tx.get(conformityRef);
     if(action==='MARK_READY_TO_FORMALIZE'&&conformity.exists&&!clientConformityIsCurrent(d,conformity.data()!))reject('Registrá la nueva conformidad del cliente sobre las condiciones y el domicilio vigentes.');
     if(action==='RECORD_CLIENT_CONFORMITY'){
-      if(!conformity.exists||!d.economicTerms||!d.paymentScheduleDraft.length)reject('Primero completá las condiciones y el cronograma.');
+      if(!d.economicTerms||!d.paymentScheduleDraft.length)reject('Primero completá las condiciones y el cronograma.');
       if(typeof o.evidence!=='string'||!o.evidence.trim()||o.evidence.trim().length>500||/[<>\x00-\x1f\x7f]/.test(o.evidence))reject('Indicá una referencia de evidencia válida.');
     }
     const activeRef=d.activeClientDataRequestId?r.draft.collection('requests').doc(opaque(d.activeClientDataRequestId)):null;
@@ -157,7 +157,7 @@ export async function contractCommand(db:Firestore,id:string,v:number,input:unkn
     }
     if(action!=='OPEN_OR_CREATE')d={...d,revision:d.revision+1,updatedAt:now,updatedBy:actor,...(['SET_CONTRACT_PLAN','SET_PAYMENT_DATES','APPLY_CLIENT_SUBMISSION'].includes(action)?{paymentScheduleDraft:d.economicTerms&&d.firstInstallmentDueDate&&d.preferredMonthlyDueDay?contractSchedule(d.economicTerms,d.firstInstallmentDueDate,d.preferredMonthlyDueDay):[]}:{} )};
     if(['UPDATE_PRODUCT_DETAILS','SET_CONTRACT_PLAN','SET_PAYMENT_DATES','APPLY_CLIENT_SUBMISSION'].includes(action)&&clientTermsDigest(before)!==clientTermsDigest(d))tx.set(conformityRef,{termsDigest:clientTermsDigest(d),confirmedDigest:null,changedAt:now,changedBy:actor});
-    if(action==='RECORD_CLIENT_CONFORMITY')tx.set(conformityRef,{...conformity.data(),confirmedDigest:clientTermsDigest(d),confirmedPaymentAddressHash:paymentAddressHashOrNull(d.personalData),confirmedAt:now,confirmedBy:actor,evidence:(o.evidence as string).trim()});
+    if(action==='RECORD_CLIENT_CONFORMITY')tx.set(conformityRef,{...conformity.data(),termsDigest:clientTermsDigest(d),confirmedDigest:clientTermsDigest(d),confirmedPaymentAddressHash:paymentAddressHashOrNull(d.personalData),confirmedAt:now,confirmedBy:actor,evidence:(o.evidence as string).trim()});
     if(!old.exists||action!=='OPEN_OR_CREATE')tx.set(r.draft,d);
     tx.create(command,{digest:dg,result:d,createdAt:now,by:actor,action});
     if(action!=='OPEN_OR_CREATE')tx.create(r.draft.collection('events').doc(cid),['MARK_READY_TO_FORMALIZE','RETURN_TO_DRAFT'].includes(action)
