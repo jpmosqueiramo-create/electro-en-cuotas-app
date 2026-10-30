@@ -1,5 +1,7 @@
 "use client";
 
+import {WorkflowBadges} from "../WorkflowBadges";
+import {workflowLabels} from "@/lib/adminWorkflow";
 import Link from "next/link";
 import {AdminRecordRemoval} from "../AdminRecordRemoval";
 import { useEffect, useRef, useState } from "react";
@@ -44,10 +46,10 @@ export function AdminSolicitudesInbox({ initialFilters }: { initialFilters: Admi
   const failed = result ? Object.keys(result.errors).length : 0;
   const totalError = result?.loadedSources.length === 0;
   const rows = filterAdminSolicitudes((result?.items ?? []).filter(item=>showRemoved||!item.administrativeState||item.administrativeState.state==='ACTIVE'), filters);
-  const states = Array.from(new Set(result?.items.map(item => item.estadoOriginal) ?? [])).sort((a, b) => (a ?? "").localeCompare(b ?? ""));
+  const states = Array.from(new Set(result?.items.filter(i=>!i.workflow?.length).map(item => item.estadoOriginal) ?? [])).sort((a, b) => (a ?? "").localeCompare(b ?? ""));
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-8" data-testid="solicitudes-inbox">
-      <PageHeader title="Solicitudes" subtitle="Todas las consultas y solicitudes que requieren seguimiento, sin perder su origen ni estado." />
+      <PageHeader title="Solicitudes" subtitle="Del presupuesto aceptado a la entrega: consultá el estado actual y continuá cada solicitud." />
       <section aria-label="Buscar y filtrar solicitudes" className="space-y-4 rounded-2xl border border-border-color bg-surface p-4 sm:p-5">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
           <label className="col-span-2 min-w-0 space-y-1.5 text-sm font-semibold md:col-span-1">Buscar operación
@@ -60,8 +62,8 @@ export function AdminSolicitudesInbox({ initialFilters }: { initialFilters: Admi
           </label>
           <label className="min-w-0 space-y-1.5 text-sm font-semibold">Estado
             <select aria-label="Estado" value={filters.status} onChange={event => updateFilters({ ...filters, status: event.target.value })} className={`${control} mt-1.5`}>
-              <option value="">Todos los estados</option>
-              {filters.status && !states.some(state => (state ?? EMPTY_STATUS_FILTER) === filters.status) && <option value={filters.status}>{filters.status === EMPTY_STATUS_FILTER ? "Sin estado registrado" : presentAdminSolicitudStatus(filters.status)}</option>}
+              <option value="">Todos los estados</option>{Object.entries(workflowLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}
+              {filters.status && !Object.hasOwn(workflowLabels,filters.status)&&!states.some(state => (state ?? EMPTY_STATUS_FILTER) === filters.status) && <option value={filters.status}>{filters.status === EMPTY_STATUS_FILTER ? "Sin estado registrado" : presentAdminSolicitudStatus(filters.status)}</option>}
               {states.map(state => <option key={state ?? EMPTY_STATUS_FILTER} value={state ?? EMPTY_STATUS_FILTER}>{presentAdminSolicitudStatus(state)}</option>)}
             </select>
           </label>
@@ -77,7 +79,7 @@ export function AdminSolicitudesInbox({ initialFilters }: { initialFilters: Admi
           <button type="button" onClick={retry} className="admin-control flex min-h-11 items-center gap-2 rounded-xl border border-border-color px-4 text-sm font-semibold"><RefreshCw aria-hidden="true" className="size-4" />Reintentar</button>
         </div>}
         {!totalError && <>
-          <p role="status" className="text-sm text-text-secondary">{failed ? "Resultados parciales" : "Registros cargados"} · {rows.length} {rows.length === 1 ? "operación visible" : "operaciones visibles"}</p>
+          <button type="button" onClick={retry} className="admin-control min-h-11 rounded-xl border border-border-color px-4 text-sm font-semibold">Actualizar estados</button><p role="status" className="text-sm text-text-secondary">{failed ? "Resultados parciales" : "Registros cargados"} · {rows.length} {rows.length === 1 ? "operación visible" : "operaciones visibles"}</p>
           {Object.values(result.cursors).some(Boolean)&&<div className="flex flex-wrap items-center gap-3"><p className="text-sm">Los filtros se aplican a las solicitudes cargadas. Hay más registros disponibles.</p><button type="button" disabled={moreBusy} onClick={()=>void more()} className="admin-control min-h-11 rounded-xl border border-border-color px-4 text-sm font-semibold">{moreBusy?'Cargando más…':'Cargar más solicitudes'}</button></div>}
           {rows.length === 0 ? <div className="rounded-2xl border border-border-color bg-surface px-5 py-12 text-center"><ClipboardList aria-hidden="true" className="mx-auto mb-3 size-7 text-text-secondary" /><h2 className="font-heading text-lg font-bold text-brand-primary">{result.items.length === 0 && !failed ? "No hay solicitudes" : "No hay coincidencias con estos filtros"}</h2><p className="mt-2 text-sm text-text-secondary">{failed ? "La fuente disponible no tiene coincidencias. Reintentá la carga para completar la bandeja." : "Probá otra vista o ajustá la búsqueda."}</p></div> :
           <section aria-label="Operaciones">
@@ -85,7 +87,7 @@ export function AdminSolicitudesInbox({ initialFilters }: { initialFilters: Admi
               {rows.map(item => <li key={item.recordKey} data-record-key={item.recordKey} className="grid min-w-0 gap-4 rounded-2xl border border-border-color bg-surface p-5 shadow-xs sm:p-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)] lg:items-center">
                 <div className="min-w-0"><h2 className="break-words font-heading font-bold text-brand-primary">{item.nombreCliente ?? "Nombre no registrado"}</h2><p className="mt-1 text-sm text-text-secondary">{item.origenPresentacion}</p><p className="mt-1 text-xs text-text-secondary">Localidad: {item.localidad ?? "No registrada"}</p></div>
                 <div className="min-w-0 break-words text-sm"><p>{item.productoONecesidad ?? "Necesidad no registrada"}</p>{item.planPreferido && <p className="mt-1 text-xs text-text-secondary">Preferencia: {item.planPreferido} cuotas · {item.cuotaCapturada !== null ? `$ ${item.cuotaCapturada.toLocaleString("es-AR")} por cuota al solicitar` : "Importe no registrado"}</p>}</div>
-                <div className="min-w-0"><span className="inline-block max-w-full break-words rounded-lg border border-border-color bg-background-main px-2.5 py-1 text-xs font-semibold">{presentAdminSolicitudStatus(item.estadoOriginal)}</span><p className="mt-2 text-sm text-text-secondary">{formatAdminSolicitudDate(item.fechaCreacion)}</p></div>
+                <div className="min-w-0">{item.workflow?.length?<WorkflowBadges rows={item.workflow} links/>:<span className="inline-block max-w-full break-words rounded-lg border border-border-color bg-background-main px-2.5 py-1 text-xs font-semibold">{presentAdminSolicitudStatus(item.estadoOriginal)}</span>}<p className="mt-2 text-sm text-text-secondary">{formatAdminSolicitudDate(item.fechaCreacion)}</p></div>
                 <div className="min-w-0 space-y-2">{item.administrativeState&&item.administrativeState.state!=='ACTIVE'&&<p className="font-semibold">{item.administrativeState.state==='ARCHIVED'?'Archivada':'Eliminada'}</p>}<p className="mb-2 text-sm text-text-secondary">{adminSolicitudNextAction(item)}</p><Link aria-label={`Ver detalle de ${item.nombreCliente ?? item.documentId}, ${item.tipoPresentacion}`} href={`/admin/solicitudes/${item.sourceCollection}/${encodeURIComponent(item.documentId)}?${adminSolicitudesContext(filters)}`} className="admin-control inline-flex min-h-11 items-center gap-2 rounded-xl border border-border-color px-3 text-sm font-semibold text-brand-primary hover:bg-background-main">Ver detalle<ArrowRight aria-hidden="true" className="size-4" /></Link><AdminRecordRemoval subject={{kind:'REQUEST',source:item.sourceCollection,id:item.documentId}} removed={!!item.administrativeState&&item.administrativeState.state!=='ACTIVE'} onChanged={retry}/></div>
               </li>)}
             </ul>
