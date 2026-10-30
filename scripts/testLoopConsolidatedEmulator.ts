@@ -1,5 +1,8 @@
 import './helpers/requireSafeEmulatorEnvironment';
 import assert from 'node:assert/strict';
+import {fulfillmentCommand,readFulfillment} from '../src/lib/operationFulfillmentV2Server';
+import {prepareClientProposal} from '../src/lib/clientProposalServer';
+import {loopAnnexFields} from '../src/lib/productionV2/loopAnnexFields';
 import {AUTOMATIC_CFT_POLICY,AUTOMATIC_CFT_BASIS} from '../src/lib/loopContractDisclosure';
 import {randomUUID} from 'node:crypto';
 import {mkdirSync,writeFileSync} from 'node:fs';
@@ -31,12 +34,21 @@ async function main(){
  // Concurrent global tariff edits cannot silently change an already prepared operation.
  await saveLoopTariffs(db,{...loopReferenceTariffs,C:{...loopReferenceTariffs.C,deliveryCents:12000000}},1,actor);
  const preserved=await cmd('SAVE_CONTRACT_EDITOR',fields);assert.equal(preserved.draft.commercialPreparation!.loop!.serviceGrossCents,19000000);assert.equal((await readLoopTariffs(db)).revision,2);
- await cmd('RECORD_CLIENT_CONFORMITY',{evidence:'Respuesta WhatsApp sintética conservada. No es aceptación de un cliente real.'});
+ const logistics=await readFulfillment(db,f.id,1);
+ const noSerial=await db.runTransaction(tx=>loopAnnexFields(db,tx,f.id,1,logistics.identity.operationId,preserved.draft,{}));assert.equal(noSerial.loopProductSerial,'');
+ await fulfillmentCommand(db,f.id,1,{commandId:randomUUID(),operationId:logistics.identity.operationId,expectedRevision:logistics.state.revision,action:'UPDATE_PRODUCT_SERIAL',data:{productSerial:'SYNTHETIC-SERIAL-ANNEX'}},actor);
+ const proposal=await prepareClientProposal(db,f.id,1,{commandId:randomUUID(),expectedRevision:(await f.r.draft.get()).data()!.revision},actor);
+ await assert.rejects(()=>db.runTransaction(tx=>loopAnnexFields(db,tx,f.id,1,logistics.identity.operationId,preserved.draft,{proposalCommandId:'missing-proposal'})),/PROPOSAL_MISMATCH/);
+ await cmd('RECORD_CLIENT_CONFORMITY',{proposalCommandId:proposal.commandId,evidence:'Respuesta WhatsApp sintética conservada. No es aceptación de un cliente real.'});
  const p=approvedFinalPackages.find(x=>x.id===LOOP_PACKAGE_ID)!;assert(p);
  const runtime=productionRuntimeForEmulator(db,admin.auth(),[p],[actor]),bucket=await getBudgetDocumentationBucket();
  await db.doc(productionPaths.counter).create({schemaVersion:'CONTRACT_NUMBER_COUNTER_V1',policyId:'CONTRACT_NUMBERING_V1',executionMode:'PRODUCTION',active:true,lastAllocatedSequence:'0',initializationAuthorizationReference:'SYNTHETIC_ONLY'});
  const request={commandId:randomUUID(),expectedRevision:(await f.r.draft.get()).data()!.revision,confirmed:true};
  const result=await issueContractEditor(runtime,bucket,f.id,1,request,actor);assert.equal(result.contractNumber,'CH-000001');
+ const issued=(await db.collection(productionPaths.snapshots).doc(result.snapshotId).get()).data()!;
+ assert.equal(issued.documentContext.parameters.loopProductSerial,'SYNTHETIC-SERIAL-ANNEX');assert.equal(issued.documentContext.parameters.loopAcceptedProposalReference,proposal.reference);assert.match(issued.documentContext.parameters.loopAcceptedProposalPdfHash,/^[a-f0-9]{64}$/);
+ const currentLogistics=await readFulfillment(db,f.id,1);await fulfillmentCommand(db,f.id,1,{commandId:randomUUID(),operationId:logistics.identity.operationId,expectedRevision:currentLogistics.state.revision,action:'UPDATE_PRODUCT_SERIAL',data:{productSerial:'SYNTHETIC-RECORDED-LATER'}},actor);
+ assert.equal((await db.collection(productionPaths.snapshots).doc(result.snapshotId).get()).data()!.documentContext.parameters.loopProductSerial,'SYNTHETIC-SERIAL-ANNEX');
  assert.equal((await issueContractEditor(runtime,bucket,f.id,1,request,actor)).replay,true);assert.equal((await db.doc(productionPaths.counter).get()).data()!.lastAllocatedSequence,'1');
  mkdirSync('/tmp/loop-v2-review',{recursive:true});for(const kind of ['MANDATE','PAGARE'] as const){const bytes=await readIssuedDocument(runtime,bucket,f.id,1,kind,actor);assert(bytes.length>1000);writeFileSync(`/tmp/loop-v2-review/${kind.toLowerCase()}-synthetic.pdf`,bytes);}
  const isolated=await productionReadyFixture(actor,true,true);await assert.rejects(issueContractEditor(runtime,bucket,isolated.id,1,{commandId:randomUUID(),expectedRevision:isolated.ready.revision,confirmed:true},actor));
@@ -69,6 +81,10 @@ async function main(){
    await browser.change('[aria-label="Lugar de emisión"]','Localidad sintética UI');await browser.clickText('Guardar datos del contrato');await browser.until("document.body.innerText.includes('Cambios guardados.')",'Save complete contract breakdown');
    const after=(await isolated.r.draft.get()).data()!;assert.equal(after.revision,before.revision+1);assert.equal(after.commercialPreparation.loop.serviceGrossCents,21000000);assert.equal(after.commercialPreparation.loop.tariffRevision,2);assert.equal(after.economicTerms.contractTotal,before.economicTerms.contractTotal);
    await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});await browser.screenshot('loop-contract-1280.png');await browser.overflow('contract desktop');
+   await browser.navigate(`/admin/operaciones/${f.id}/1?section=logistics`);await browser.until("!!document.querySelector('[data-testid=logistics-product-serial]')",'serial field');
+   await browser.clickText('Registrar serie o IMEI',"document.querySelector('[data-testid=logistics-product-serial]')");await browser.change('[aria-label="Serie o IMEI del producto"]','SYNTHETIC-SERIAL-UI');await browser.clickText('Confirmar acción operativa',"document.querySelector('[data-testid=fulfillment]')");await browser.until("document.querySelector('[data-testid=logistics-product-serial]').textContent.includes('SYNTHETIC-SERIAL-UI')",'serial saved');assert.equal((await readFulfillment(db,f.id,1)).state.productSerial,'SYNTHETIC-SERIAL-UI');
+   for(const width of [1280,390]){await browser.command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});await browser.evaluate("document.querySelector('[data-testid=logistics-product-serial]').scrollIntoView({block:'center'})");await browser.overflow('annex logistics '+width);await browser.screenshot('annex-logistics-'+width+'.png');}
+   await browser.until("!!document.querySelector('[data-testid=signed-delivery-receipt]')",'signed receipt guide');assert.ok(await browser.evaluate("document.querySelector('[data-testid=signed-delivery-receipt]').textContent.includes('original firmado')"));
    assert.equal(browser.externalFirebase.length,0);assert.equal(browser.storageWrites,0);
    console.log('LOOP_BROWSER_ADMIN_TARIFFS_CONTRACT_SAVE_SYNC_1280_390_NO_EXTERNAL_FIREBASE = PASS');
   }finally{await browser.close();await server.stop();}
