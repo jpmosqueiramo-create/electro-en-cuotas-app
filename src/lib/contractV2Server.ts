@@ -1,3 +1,6 @@
+import {isLoopCategory} from './loopServiceTariffs';
+import {parseLoopTariffConfiguration,loopTariffsPath} from './loopServiceTariffsServer';
+import {prepareLoopContractCommercial} from './contractCommercialPreparation';
 import {prepareContractCommercial} from './contractCommercialPreparation';
 import {readAdministrativeStatus,assertAdministrativeRecordActive} from './adminRecordRemovalServer';
 import { readOperationIdentity } from './operationIdentityReviewServer';
@@ -62,7 +65,7 @@ const actionKeys:Record<string,string[]>={SAVE_CONTRACT_EDITOR:['personalData','
 export async function contractCommand(db:Firestore,id:string,v:number,input:unknown,actor:string) {
   const raw=input as Record<string,unknown>,action=raw?.action;
   if(typeof action!=='string'||!Object.hasOwn(actionKeys,action))reject('NEW_PROPOSAL_REQUIRED: operación no permitida.');
-  const o=exact(input,['action','commandId',...(action==='OPEN_OR_CREATE'?[]:['expectedRevision']),...actionKeys[action]]);
+  const o=exact(input,['action','commandId',...(action==='OPEN_OR_CREATE'?[]:['expectedRevision']),...actionKeys[action],...(action==='SAVE_CONTRACT_EDITOR'&&Object.hasOwn(raw,'loopServices')?['loopServices']:[])]);
   const cid=opaque(o.commandId),r=contractRefs(db,id,v),command=r.draft.collection('commands').doc(cid),dg=digest({actor,input});
   // Generated outside transaction retries, returned only after a committed first execution.
   const secret=action==='CREATE_CLIENT_DATA_REQUEST'?randomBytes(32).toString('base64url'):null;
@@ -132,12 +135,22 @@ export async function contractCommand(db:Firestore,id:string,v:number,input:unkn
       if(typeof o.contractPlanCuotas!=='number')reject();
       const economicTerms=contractEconomics({...d.acceptedReferenceSnapshot,imagenUrls:[]},Number(o.contractPlanCuotas));
       const firstInstallmentDueDate=calendarDate(o.firstInstallmentDueDate),preferredMonthlyDueDay=dueDay(o.preferredMonthlyDueDay);
-      d={...d,personalDataVersion:PERSONAL_ADDRESS_VERSION,personalData:dataFields(o.personalData,personalFields),employmentData:dataFields(o.employmentData,employmentFields),productDetails:productDetails(o.productDetails),economicTerms,firstInstallmentDueDate,preferredMonthlyDueDay,paymentScheduleDraft:contractSchedule(economicTerms,firstInstallmentDueDate,preferredMonthlyDueDay),commercialPreparation:prepareContractCommercial(economicTerms,o.issuePlace as string)};
+      if(d.commercialPreparation?.loop&&o.loopServices===undefined)reject('Recargá el panel para conservar el desglose del nuevo contrato.');
+      let commercialPreparation=prepareContractCommercial(economicTerms,o.issuePlace as string);
+      if(o.loopServices!==undefined){
+        const x=exact(o.loopServices,['category','tariffRevision','otherServicesCents','cftAnnualPercent','cftBasis','supplierTaxId','notePaymentPlace','noteDueDate','acceptanceChannel','proposalSentAt','clientAcceptedAt']);
+        if(!isLoopCategory(x.category)||!Number.isSafeInteger(x.tariffRevision))reject('Seleccioná una categoría y tarifas guardadas.');
+        const config=parseLoopTariffConfiguration((await tx.get(db.doc(loopTariffsPath))).data()),saved=d.commercialPreparation?.loop;
+        const tariff=saved&&saved.category===x.category&&saved.tariffRevision===x.tariffRevision?saved.tariff:config.revision===x.tariffRevision?config.tariffs?.[x.category]:null;
+        if(!tariff)reject('Las tarifas cambiaron. Revisá y aplicá las tarifas vigentes.');
+        commercialPreparation=prepareLoopContractCommercial(economicTerms,o.issuePlace as string,{supplierTaxId:x.supplierTaxId as string,notePaymentPlace:x.notePaymentPlace as string,noteDueDate:x.noteDueDate as string,acceptanceChannel:x.acceptanceChannel as string,proposalSentAt:x.proposalSentAt as string,clientAcceptedAt:x.clientAcceptedAt as string,category:x.category,tariffRevision:x.tariffRevision as number,tariff,otherServicesCents:x.otherServicesCents as number,cftAnnualPercent:x.cftAnnualPercent as number|null,cftBasis:x.cftBasis as string},contractSchedule(economicTerms,firstInstallmentDueDate,preferredMonthlyDueDay));
+      }
+      d={...d,personalDataVersion:PERSONAL_ADDRESS_VERSION,personalData:dataFields(o.personalData,personalFields),employmentData:dataFields(o.employmentData,employmentFields),productDetails:productDetails(o.productDetails),economicTerms,firstInstallmentDueDate,preferredMonthlyDueDay,paymentScheduleDraft:contractSchedule(economicTerms,firstInstallmentDueDate,preferredMonthlyDueDay),commercialPreparation};
     }
     if(action==='UPDATE_PRODUCT_DETAILS')d={...d,productDetails:productDetails(o.productDetails)};
     if(action==='UPDATE_PERSONAL_DATA')d={...d,personalDataVersion:PERSONAL_ADDRESS_VERSION,personalData:dataFields(o.personalData,personalFields)};
     if(action==='UPDATE_EMPLOYMENT_DATA')d={...d,employmentData:dataFields(o.employmentData,employmentFields)};
-    if(action==='SET_CONTRACT_PLAN'&&d.commercialPreparation){const {commercialPreparation:_old,...rest}=d;void _old;d=rest;}
+    if(['SET_CONTRACT_PLAN','SET_PAYMENT_DATES'].includes(action)&&d.commercialPreparation){const {commercialPreparation:_old,...rest}=d;void _old;d=rest;}
     if(action==='SET_CONTRACT_PLAN') {
       if(typeof o.contractPlanCuotas!=='number')reject();
       d={...d,economicTerms:contractEconomics({...d.acceptedReferenceSnapshot,imagenUrls:[]},o.contractPlanCuotas)};

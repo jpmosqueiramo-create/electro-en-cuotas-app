@@ -106,14 +106,14 @@ const documentDefinition = shape({ templateId: text(), templateVersion: text(), 
 const issuer = shape({ profileId: text(), profileVersion: text(), profileHash: hash, legalName: text(), tradeName: text(), taxId: text(), legalAddress: text(), representative: shape({ fullName: text(), capacity: text() }) });
 const legalContext = shape({ policyVersion: text(), contractIssueDate: calendarDate, contractIssuePlace: text(), promissoryNoteIssueDate: calendarDate, promissoryNoteIssuePlace: text(), parameterSchemaId: text(), parameters: v => {
   if (!v || typeof v !== 'object' || Array.isArray(v) || Object.keys(v).length > 30) fail();
-  for (const [k, field] of Object.entries(v)) { if (!/^[a-zA-Z][a-zA-Z0-9_]{0,63}$/.test(k) || (field !== null && !['string','number','boolean'].includes(typeof field))) fail(); if (typeof field === 'string') text(1000, false)(field); }
+  for (const [k, field] of Object.entries(v)) { if (!/^[a-zA-Z][a-zA-Z0-9_]{0,63}$/.test(k) || (field !== null && !['string','number','boolean'].includes(typeof field))) fail(); if (typeof field === 'string') text(k==='commercialPreparationJson'?20000:1000, false)(field); }
 } });
 export function validateContractLegalContext(value: unknown): asserts value is ContractLegalContextV2 {
   canonicalizeContract(value);
   shape({ issuer, documentContext: legalContext, documentDefinitions: shape({ contract: documentDefinition, promissoryNote: documentDefinition }) })(value);
 }
 const reference: Check = v => {
-  shape({ schemaVersion: literal('BUDGET_REFERENCE_V2'), referenceId: nullable(text(1500)), source: literal('EXISTING_REFERENCE','NEW_REFERENCE'), nombre: sourceText(500), descripcion: sourceText(10000, false), skuInternoSnapshot: nullable(sourceText(500, false)), codigoBarrasSnapshot: nullable(sourceText(500, false)), costoProveedorSnapshot: positive, proveedorSnapshot: sourceText(500, false), factoresSnapshot: map('number'), planesActivosSnapshot: map('boolean'), planesOfrecidos: rows(shape({ cuotas: integer, cuotaEstimada: integer }), 18), fechaCotizacion: instant })(v);
+  shape({ ...(v&&typeof v==='object'&&Object.hasOwn(v,'categoriaLogisticaSnapshot')?{categoriaLogisticaSnapshot:literal('A','B','C','D')}:{}), schemaVersion: literal('BUDGET_REFERENCE_V2'), referenceId: nullable(text(1500)), source: literal('EXISTING_REFERENCE','NEW_REFERENCE'), nombre: sourceText(500), descripcion: sourceText(10000, false), skuInternoSnapshot: nullable(sourceText(500, false)), codigoBarrasSnapshot: nullable(sourceText(500, false)), costoProveedorSnapshot: positive, proveedorSnapshot: sourceText(500, false), factoresSnapshot: map('number'), planesActivosSnapshot: map('boolean'), planesOfrecidos: rows(shape({ cuotas: integer, cuotaEstimada: integer }), 18), fechaCotizacion: instant })(v);
 };
 function map(kind: 'number' | 'boolean'): Check { return v => {
   if (!v || typeof v !== 'object' || Array.isArray(v)) fail();

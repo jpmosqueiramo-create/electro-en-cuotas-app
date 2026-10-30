@@ -16,7 +16,7 @@ export interface OriginalsPolicy {
     economicAllocationPolicy: 'EXPLICIT_RECONCILED_CLIENT_CONFORMITY';
 }
 export interface FinalTemplate {
-    layout?: 'OWNER_ORIGINALS_V1';
+    layout?: 'OWNER_ORIGINALS_V1' | 'LOOP_CONSOLIDATED_V2';
     blocks?: readonly OriginalBlock[];
     kind: FinalDocumentKind;
     id: string;
@@ -65,7 +65,7 @@ export function validateFinalPackage(p: FinalPackage) {
         const t = p.templates[kind];
         if (!t || t.kind !== kind || !t.id || !t.version || !t.title || !t.paragraphs.length || t.paragraphs.some(s => typeof s !== 'string' || !s.trim()))
             throw Error('FINAL_TEMPLATE_INVALID');
-        if (t.layout || t.blocks || p.originalsPolicy) {
+        if ((t.layout && t.layout !== 'LOOP_CONSOLIDATED_V2') || t.blocks || p.originalsPolicy) {
             if (!p.originalsPolicy || t.layout !== 'OWNER_ORIGINALS_V1' || !t.blocks?.length || t.blocks.some(b => !b.id || !b.type || !b.text) ||
                 new Set(t.blocks.map(b => b.id)).size !== t.blocks.length || contractValueHash(t.paragraphs) !== contractValueHash(t.blocks.map(b => b.text))) throw Error('ORIGINALS_LAYOUT_INVALID');
         }

@@ -1,5 +1,6 @@
 "use client";
 
+import {loopCategories,loopCategoryLabels,type LoopCategory} from "@/lib/loopServiceTariffs";
 import type { ReactNode } from "react";
 import { ImagePlus, ShieldCheck } from "lucide-react";
 import type { CatalogReferenceDraft } from "@/lib/catalogReferenceEditor";
@@ -38,6 +39,7 @@ export function ReferenceConfigurator({ draft, onChange: change, legacyCode, ext
             <div className="grid gap-4 sm:grid-cols-2"><Field label="SKU interno"><input className={input} value={draft.skuInterno} onChange={e => change({ skuInterno: e.target.value })} /></Field><Field label="Código de barras / EAN"><input className={input} value={draft.codigoBarras} onChange={e => change({ codigoBarras: e.target.value })} /></Field></div><p className="text-xs text-text-secondary">Códigos opcionales de uso interno. No forman parte de la vista pública.</p></div></Section>
           <Section number="02" title="Información interna"><p className="mb-4 flex items-center gap-2 text-xs font-bold tracking-wider text-brand-secondary"><ShieldCheck size={16} aria-hidden="true" />SOLO ADMINISTRACIÓN</p>
             <div className="grid gap-4 sm:grid-cols-2"><Field label="Costo proveedor"><input className={input} required type="number" step="0.01" min="0.01" value={draft.costoProveedor} onChange={e => change({ costoProveedor: e.target.value })} /></Field><Field label="Nombre del proveedor"><input className={input} value={draft.proveedor} onChange={e => change({ proveedor: e.target.value })} /></Field></div>
+            <div className="mt-4"><Field label="Categoría de servicios y logística"><select className={input} value={draft.categoriaLogistica ?? ""} onChange={e=>change({categoriaLogistica:(e.target.value || null) as LoopCategory|null})}><option value="">Sin asignar</option>{loopCategories.map(c=><option key={c} value={c}>{c} · {loopCategoryLabels[c]}</option>)}</select></Field><p className="mt-2 text-sm text-text-secondary">Determina el desglose del mandato. No modifica factores ni cuotas.</p></div>
             {legacyCode && <p data-testid="legacy-code" className="mt-4 rounded-xl bg-background-main p-3 text-sm text-text-secondary">Código legacy: <span className="font-mono">{legacyCode}</span><span className="mt-1 block text-xs">Pendiente de clasificación. No se asigna automáticamente a SKU o EAN.</span></p>}
           </Section>
           <Section number="03" title="Planes" id="catalog-plans"><div className="mb-4 space-y-3"><div><p className="text-sm font-semibold">{context === "BUDGET" ? "Planes ofrecidos · 1 a 18 cuotas" : "Planes estimados · 1 a 18 cuotas"}</p><p className="mt-1 text-xs text-text-secondary">{context === "BUDGET" ? "Las opciones nuevas incluyen los 18 planes. Podés quitar los que no quieras ofrecer y ajustar sus factores internos." : "Elegí los planes habilitados. Los factores son internos; las cuotas son una estimación para catálogo."}</p></div><div className="flex flex-wrap gap-2">{context === "BUDGET" && <>

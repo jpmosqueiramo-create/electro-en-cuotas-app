@@ -1,3 +1,6 @@
+import {LOOP_PACKAGE_ID} from './loopDocuments';
+import {assertLoopContractForIssuance} from '../loopContractIssuance';
+import type {ContractDraftV2} from '../contractV2';
 import {OWNER_FINAL_PACKAGE_ID} from './ownerFinalDocuments';
 import {readProductionReadiness} from '../productionReadinessV2Server';
 import {assertFinalRenderer} from './pdf';
@@ -29,13 +32,15 @@ export async function productionOverview(runtime: ProductionRuntime, id: string,
     if (user.disabled || !user.emailVerified || !isAdminEmail(user.email)) throw Error('PRODUCTION_ADMIN_REQUIRED');
     const administratorAuthorized = !user.disabled && user.emailVerified && administrators.includes(actor), deploymentEnabled = test || process.env.PRODUCTION_OPERATIONS_ENABLED === 'true';
     const issuancePackages=packages.filter(p=>{try{assertFinalRenderer(p);return true;}catch{return false;}});
-    const editorPackage=issuancePackages.find(p=>p.id===OWNER_FINAL_PACKAGE_ID)??(test&&issuancePackages.length===1?issuancePackages[0]:undefined);
+    const editorPackage=issuancePackages.find(p=>p.id===LOOP_PACKAGE_ID)??issuancePackages.find(p=>p.id===OWNER_FINAL_PACKAGE_ID)??(test&&issuancePackages.length===1?issuancePackages[0]:undefined);
     const preparation=await readProductionReadiness(db,id,v);
     return db.runTransaction(async (tx) => {
         const r = contractRefs(db, id, v), ref = productionRef(db, id, v);
         const [ds, ac, op, counter, approvals, grants, recoveries] = await Promise.all([tx.get(r.draft), tx.get(r.acceptance), tx.get(operationRef(db, id, v)), tx.get(db.doc(productionPaths.counter)), tx.get(pageQuery(legalRegistryRef(db).collection('finalPackageApprovals'), page.approvalAfter)), tx.get(pageQuery(ref.collection('authorizations'), page.authorizationAfter)), tx.get(pageQuery(ref.collection('issuanceRecoveries'), page.recoveryAfter))]);
         if (!ac.exists || !op.exists)
             throw Error('PRODUCTION_ORIGIN_REQUIRED');
+        let editorPreparationError='';
+        if(editorPackage?.templates.MANDATE.layout==='LOOP_CONSOLIDATED_V2'&&!ds.data()?.productionFreeze){try{assertLoopContractForIssuance(ds.data() as ContractDraftV2);}catch(e){editorPreparationError=e instanceof Error?e.message:'Completá el desglose del contrato.';}}
         const identity = operationFromAcceptance(ac.data() as BudgetAcceptanceV2);
         verifyOperation(op.data(), identity);
         let readyValid = false;
@@ -117,7 +122,7 @@ export async function productionOverview(runtime: ProductionRuntime, id: string,
         }
         const cursor = (s: typeof approvals) => s.size > 20 ? s.docs[19].id : null;
         const pagination = { approvalAfter: cursor(approvals), authorizationAfter: cursor(grants), recoveryAfter: cursor(recoveries) };
-        return { preparationPending:preparation.items.filter(i=>i.state!=='READY').map(i=>({key:i.key,detail:i.detail})), documentScheduleCompatible:!editorPackage?.originalsPolicy||!(ds.data()?.paymentScheduleDraft??[]).slice(1).some((row:{dueDate:string})=>Number(row.dueDate.slice(8,10))>10||Number(row.dueDate.slice(8,10))<1), editorPrepared:!!ds.data()?.commercialPreparation, preparationComplete:preparation.items.every(i=>i.state==='READY'),contractTotal:ds.data()?.economicTerms?.contractTotal??null,issuancePackages:issuancePackages.map(p=>({id:p.id,version:p.version,hash:p.sha256,originalsBindingsRequired:!!p.originalsPolicy,externalDelivery:p.deliveryDocumentPolicy==='EXTERNAL_TRANSFER_AND_RECEIPT_V1'})), revisionPreparation:revision?.status==='EDITING'?{contractNumber:revision.allocationReceipt.contractNumber,snapshotVersion:revision.snapshotVersion}:null,canReviseBeforeSignature,revisionBlocker,approvalHistory, recoveryAuthorizations, pagination, issueDate: argentinaBusinessDate(), issueTimeZone: ISSUE_DATE_TIME_ZONE, operationId: identity.operationId, revision: ds.data()?.revision ?? 0, administratorAuthorized, deploymentEnabled, test, counterReady, readyValid, blockers, packages: packages.map(p => ({ id: p.id, version: p.version, hash: p.sha256, originalsBindingsRequired: !!p.originalsPolicy, templates: Object.values(p.templates).map(t => ({ kind: t.kind, title: t.title, version: t.version, hash: t.sha256 })) })), approvals: validApprovals, authorizations, frozen, issued, arcaEnabled: false as const };
+        return {loopPackage:editorPackage?.templates.MANDATE.layout==='LOOP_CONSOLIDATED_V2',editorPreparationError, preparationPending:preparation.items.filter(i=>i.state!=='READY').map(i=>({key:i.key,detail:i.detail})), documentScheduleCompatible:!editorPackage?.originalsPolicy||!(ds.data()?.paymentScheduleDraft??[]).slice(1).some((row:{dueDate:string})=>Number(row.dueDate.slice(8,10))>10||Number(row.dueDate.slice(8,10))<1), editorPrepared:!!ds.data()?.commercialPreparation&&!editorPreparationError, preparationComplete:preparation.items.every(i=>i.state==='READY'),contractTotal:ds.data()?.economicTerms?.contractTotal??null,issuancePackages:issuancePackages.map(p=>({id:p.id,version:p.version,hash:p.sha256,originalsBindingsRequired:!!p.originalsPolicy,externalDelivery:p.deliveryDocumentPolicy==='EXTERNAL_TRANSFER_AND_RECEIPT_V1'})), revisionPreparation:revision?.status==='EDITING'?{contractNumber:revision.allocationReceipt.contractNumber,snapshotVersion:revision.snapshotVersion}:null,canReviseBeforeSignature,revisionBlocker,approvalHistory, recoveryAuthorizations, pagination, issueDate: argentinaBusinessDate(), issueTimeZone: ISSUE_DATE_TIME_ZONE, operationId: identity.operationId, revision: ds.data()?.revision ?? 0, administratorAuthorized, deploymentEnabled, test, counterReady, readyValid, blockers, packages: packages.map(p => ({ id: p.id, version: p.version, hash: p.sha256, originalsBindingsRequired: !!p.originalsPolicy, templates: Object.values(p.templates).map(t => ({ kind: t.kind, title: t.title, version: t.version, hash: t.sha256 })) })), approvals: validApprovals, authorizations, frozen, issued, arcaEnabled: false as const };
     });
 }
 export type ProductionOverview = Awaited<ReturnType<typeof productionOverview>>;
