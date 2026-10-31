@@ -20,10 +20,10 @@ function planBulk(text:string,updatePublished:boolean,items:BulkProduct[],public
       const {patch,plans}=prepareBulkRow(record,original?.data),currentPublic=publicById.get(id);
       const publicDto=updatePublished&&currentPublic?prepareCatalogPublication(id,{...original?.data,...patch}).dto:null;
       if(updatePublished&&currentPublic&&!publicDto)throw Error('La ficha necesita descripción, imágenes y planes válidos para actualizar su publicación.');
-      rows.push({row:record.row,id,action,name:patch.nombre,previousCost:Number.isFinite(original?.data.costoProveedor??original?.data.costoProducto)?Number(original?.data.costoProveedor??original?.data.costoProducto):null,cost:patch.costoProveedor,supplier:patch.proveedor,plans,errors});
+      rows.push({row:record.row,id,action,name:patch.nombre,previousCost:Number.isFinite(original?.data.costoProveedor??original?.data.costoProducto)?Number(original?.data.costoProveedor??original?.data.costoProducto):null,cost:patch.costoProveedor,supplier:patch.proveedor,categoriaLogistica:patch.categoriaLogistica,plans,errors});
       versions.push({id,version:original?.version??null,publicVersion:updatePublished?currentPublic?.version??null:null});
       writes.push({id,patch,create:!original,publicDto});
-    }catch(e){rows.push({row:record.row,id,action,name:record.cells.nombre||'Producto',previousCost:null,cost:0,supplier:record.cells.proveedor||'',plans:[],errors:[e instanceof Error?e.message:'Fila inválida.']});}
+    }catch(e){rows.push({row:record.row,id,action,name:record.cells.nombre||'Producto',previousCost:null,cost:0,supplier:record.cells.proveedor||'',categoriaLogistica:null,plans:[],errors:[e instanceof Error?e.message:'Fila inválida.']});}
   }
   return {rows,writes,digest:hash(JSON.stringify({schema:1,text,updatePublished,versions})),valid:rows.every(r=>!r.errors.length),publishedUpdates:writes.filter(w=>w.publicDto).length};
 }
