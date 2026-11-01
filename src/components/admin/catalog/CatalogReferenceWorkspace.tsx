@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Plus, Pencil, Eye, Package, ArrowUpRight } from "lucide-react";
 import { addDoc, collection, deleteDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import { useAuth } from "@/components/AuthProvider";
@@ -50,6 +50,24 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
   const [externalUrl, setExternalUrl] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [search, setSearch] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletePreview, setDeletePreview] = useState<{rows:{id:string;name:string}[];digest:string}|null>(null);
+  const deleteFlight = useRef(false);
+  const closeDelete = useCallback(() => { if (!deleteFlight.current) setDeletePreview(null); }, []);
+  async function deleteSelected(apply=false){
+    if(!user||busy||editing||deleteFlight.current)return;
+    const ids=apply?deletePreview?.rows.map(row=>row.id):selectedIds.filter(id=>productos.some(p=>p.id===id));
+    if(!ids?.length)return;
+    deleteFlight.current=true;setBusy("deleteBulk");setError("");setMessage("");
+    try{
+      const response=await fetch('/api/admin/catalogo/eliminar-masivo',{method:'POST',cache:'no-store',headers:{Authorization:`Bearer ${await user.getIdToken()}`,'Content-Type':'application/json'},body:JSON.stringify({action:apply?'APPLY':'PREVIEW',ids,...(apply?{digest:deletePreview!.digest}:{})})});
+      const data=await response.json();if(!response.ok)throw Error(data.error||'No se pudo eliminar la selección.');
+      if(!apply)setDeletePreview(data);
+      else{setDeletePreview(null);setSelectedIds([]);setMessage(data.alreadyDeleted?'Los productos seleccionados ya no están en el catálogo.':`${data.count} productos eliminados del catálogo.`);await onRefresh();}
+    }catch(failure){setDeletePreview(null);setError(failure instanceof Error?failure.message:'No se pudo eliminar la selección.');}
+    finally{deleteFlight.current=false;setBusy("");}
+  }
+
 
   const request = useCallback(async <T,>(id: string, action: string, body?: unknown): Promise<T> => {
     if (!user) throw new Error("Tu sesión no está disponible. Volvé a ingresar.");
@@ -166,7 +184,11 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
     if (draft.imagenUrls.length + files.length >= 4) { setError("Usá hasta 4 imágenes por referencia."); return; }
     change({ imagenUrls: [...draft.imagenUrls, externalUrl.trim()] }); setExternalUrl("");
   }
+  const selected = selectedIds.filter(id=>productos.some(p=>p.id===id));
+  const selectionDisabled = !!busy || !!editing || fetching || !!loadError;
+  const canDelete = (p:Producto) => !!statuses[p.id] && !statuses[p.id].hasPublicProjection && p.publicado!==true && p.activo!==true && (!p.stock || (Array.isArray(p.stock)&&p.stock.length===0));
   const visible = productos.filter(product => product.nombre.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
+  const selectableVisible = visible.filter(canDelete).slice(0,100);
   return <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-6 sm:px-7 sm:py-8">
     <PageHeader title="Catálogo de referencias" subtitle="Gestioná las referencias de bienes utilizadas para preparar propuestas de gestión de compra." actions={<button type="button" disabled={!!busy} className={primary} onClick={() => edit()}><Plus size={18} aria-hidden="true" />Nueva referencia</button>} />
     <p className="text-sm text-text-secondary">Referencias para gestión de compra mediante mandato. La disponibilidad se confirma durante la cotización.</p>
@@ -196,6 +218,14 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
       <section className="min-w-0 space-y-4" aria-label="Listado de referencias">
         <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-heading text-lg font-bold text-brand-primary">Referencias <span className="text-sm font-normal text-text-secondary">({visible.length} visibles)</span></h2><button type="button" className={secondary} onClick={onTransfer}><Package size={16} aria-hidden="true" />Traslado interno</button></div>
         <Field label="Buscar referencia"><input type="search" className={input} value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre de la referencia" /></Field>
+        <div data-testid="catalog-selection" className="flex min-w-0 flex-wrap items-center gap-3 rounded-xl border border-border-color bg-surface p-3">
+          <label className="flex min-h-11 items-center gap-2 text-sm font-semibold"><input type="checkbox" className="size-5 shrink-0" disabled={selectionDisabled||!selectableVisible.length} checked={!!selectableVisible.length&&selectableVisible.every(p=>selected.includes(p.id))} onChange={e=>setSelectedIds(e.target.checked?selectableVisible.map(p=>p.id):selected.filter(id=>!selectableVisible.some(p=>p.id===id)))}/>Seleccionar visibles aptos (hasta 100)</label>
+          <span role="status" className="text-sm">{selected.length} seleccionados</span>
+          <button type="button" className={secondary} disabled={selectionDisabled||!selected.length} onClick={()=>setSelectedIds([])}>Limpiar selección</button>
+          <button type="button" className="min-h-11 rounded-xl bg-red-700 px-4 text-sm font-semibold text-white disabled:opacity-40" disabled={selectionDisabled||!selected.length} onClick={()=>void deleteSelected()}>Eliminar seleccionados</button>
+          <p className="w-full text-xs text-text-secondary">Sólo fichas sin publicar y sin unidades registradas. La selección se conserva al buscar; revisá la lista antes de eliminar.</p>
+          {!!editing&&<p className="w-full text-xs text-text-secondary">Cerrá el editor para seleccionar y eliminar productos.</p>}
+        </div>
         {loadError && <div role="alert" className="rounded-xl border border-border-color bg-surface p-4 text-sm"><p>{loadError}</p><button type="button" className={`${secondary} mt-3`} onClick={() => void onRefresh()}>Reintentar carga</button></div>}
         {fetching && <p role="status" className="p-4 text-sm text-text-secondary">Cargando referencias…</p>}
         {!fetching && !loadError && !visible.length && <div className="rounded-2xl border border-border-color bg-surface p-6"><p className="font-heading font-semibold text-brand-primary">{search ? "No hay coincidencias" : "Tu catálogo de referencias empieza acá"}</p><p className="mt-2 text-sm text-text-secondary">{search ? "Probá con otro nombre." : "Creá una ficha privada, configurá sus planes y publicala cuando esté lista."}</p></div>}
@@ -204,6 +234,7 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
           const saved = createCatalogReferenceDraft(product);
           const plans = Object.entries(saved.planesActivos).filter(([, active]) => active).map(([n]) => n);
           return <article key={product.id} data-reference-row={product.id} className="min-w-0 rounded-2xl border border-border-color bg-surface p-4 sm:p-5">
+            <label className="mb-3 flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" className="size-5 shrink-0" aria-label={`Seleccionar ${product.nombre}`} disabled={selectionDisabled||!canDelete(product)||(!selected.includes(product.id)&&selected.length>=100)} checked={selected.includes(product.id)} onChange={e=>setSelectedIds(previous=>e.target.checked?[...new Set([...previous,product.id])].slice(0,100):previous.filter(id=>id!==product.id))}/>{canDelete(product)?'Seleccionar producto':!state?'Verificando disponibilidad…':state.hasPublicProjection||product.publicado||product.activo?'Despublicá antes de seleccionar':'Tiene unidades registradas'}</label>
             <div className="flex items-start gap-4"><div className="size-20 shrink-0 rounded-xl bg-background-main p-2">{ /* eslint-disable-next-line @next/next/no-img-element */ }
 <img onError={event => { if (!event.currentTarget.src.endsWith("/logo-cuenta-hogar-oficial.png")) event.currentTarget.src = "/logo-cuenta-hogar-oficial.png"; }} src={saved.imagenUrls[0] || "/logo-cuenta-hogar-oficial.png"} alt="" className="h-full w-full object-contain" /></div><div className="min-w-0"><h3 className="break-words font-heading font-bold text-brand-primary">{product.nombre}</h3><p data-publication-status className="mt-2 text-sm font-semibold text-text-secondary">{catalogPublicationLabel(state)}</p><p className="mt-1 text-xs font-semibold text-brand-primary">Categoría de servicios: {saved.categoriaLogistica || "Sin asignar"}</p><p className="mt-1 text-xs text-text-secondary">{saved.imagenUrls.length} imágenes · Planes: {plans.join(", ") || "Ninguno habilitado"}</p></div></div>
             <dl className="my-4 grid grid-cols-2 gap-3 rounded-xl bg-background-main p-3 text-sm"><div><dt className="text-xs text-text-secondary">Costo proveedor · Admin</dt><dd className="mt-1 font-semibold">{Number(saved.costoProveedor) > 0 ? money(Number(saved.costoProveedor)) : "Sin configurar"}</dd></div><div className="min-w-0"><dt className="text-xs text-text-secondary">Proveedor · Admin</dt><dd className="mt-1 break-words">{saved.proveedor || "Sin registrar"}</dd></div></dl>
@@ -218,6 +249,11 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
     {busy === "preview" && <p role="status" className="text-sm text-text-secondary">Preparando vista previa…</p>}
     {preview && <CatalogDialog title="Vista previa de publicación" onClose={closePreview}>
       {preview.dto ? <><p className="mb-4 text-sm font-semibold text-brand-primary">{preview.hasPublicProjection && !preview.hasUnpublishedChanges ? "Publicación actual" : "Lista para publicar"}</p><CatalogReferencePreview reference={preview.dto} />{(!preview.hasPublicProjection || preview.hasUnpublishedChanges) && <button type="button" disabled={!!busy} className={`${primary} mt-5 w-full`} onClick={() => void publish()}><ArrowUpRight size={18} aria-hidden="true" />{busy === "publish" ? "Publicando…" : preview.hasPublicProjection ? "Publicar cambios" : "Publicar"}</button>}</> : <div><p className="font-semibold">No válida para publicar</p><ul className="mt-3 list-inside list-disc space-y-2 text-sm text-text-secondary">{preview.validation.errors.map(value => <li key={value}>{value}</li>)}</ul></div>}
+    </CatalogDialog>}
+    {deletePreview && <CatalogDialog title={`Eliminar ${deletePreview.rows.length} productos`} onClose={closeDelete}>
+      <p className="text-sm text-text-secondary">Se eliminarán permanentemente estas fichas del catálogo. Se verificó que no estén publicadas y que no tengan unidades registradas. Los presupuestos, las operaciones anteriores y los archivos de imágenes se conservan.</p>
+      <ul className="my-4 max-h-64 space-y-2 overflow-y-auto rounded-xl bg-background-main p-3 text-sm">{deletePreview.rows.map(row=><li key={row.id} className="break-words"><strong>{row.name}</strong></li>)}</ul>
+      <div className="flex flex-wrap justify-end gap-3"><button type="button" className={secondary} disabled={!!busy} onClick={closeDelete}>Cancelar</button><button type="button" className="min-h-11 rounded-xl bg-red-700 px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={!!busy} onClick={()=>void deleteSelected(true)}>{busy==='deleteBulk'?'Eliminando…':'Confirmar eliminación'}</button></div>
     </CatalogDialog>}
     {confirm && <ConfirmDialog title={confirm.kind === "unpublish" ? "Despublicar referencia" : "Eliminar referencia"} message={confirm.kind === "unpublish" ? "Se retirará la proyección pública. La ficha privada y sus unidades se conservan." : "La ficha privada se eliminará permanentemente, incluido su registro de unidades. Esta acción legacy no elimina archivos de Storage ni otras operaciones."} onClose={closeConfirm} onConfirm={() => void confirmAction()} busy={!!busy} />}
   </div>;
