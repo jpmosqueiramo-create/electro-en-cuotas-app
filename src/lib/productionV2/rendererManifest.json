@@ -28,7 +28,7 @@
     "src/lib/operationV2.ts": "01c45f13577383fe69bff75a408c6031fb14afb92561faaaff9559734dc200c8",
     "src/lib/pdfBranding.ts": "c3b5823bd92fc0a6be82f05b7a0e2e8704cae6d920548ca1c1259deefd8a4548",
     "src/lib/productionV2/catalog.ts": "4fe98e99a872b5405e59717661a8e03c53e3607c955ea225dbaef96ed2bc6925",
-    "src/lib/productionV2/loopDocuments.ts": "64b0b10cfd7869596297213d1fdb6f1753c668644729e6531004cb18b68d60c1",
+    "src/lib/productionV2/loopDocuments.ts": "b43b7b3d9574a3b403a139b1eb76e3003143e3285ba2a0c40a6ea1d474a70c1a",
     "src/lib/productionV2/loopPdf.ts": "964df459fbf778f6dcd43683b4d93b78d256cf258f92adbd5b2cd56c3b9f7d9b",
     "src/lib/productionV2/originalBindings.ts": "aabe5594ca0edb2c9c135f35b434b5be850258c9faa1bc1c5d4405f18a326b15",
     "src/lib/productionV2/originalPdf.ts": "6e118eac668202f6fd27f53dce26bef8d82c74da68578703a46d696d73b9fdbb",
@@ -42,7 +42,7 @@
   },
   "resources": {
     "font": "Helvetica-WinAnsi",
-    "lockSha256": "aeb157321af515a9b8595fccaedf303bbf160445dc3e5ee0c307933c18019145",
+    "lockSha256": "77d90d75aa4d99ae59fa2a327328f7f3c446fa1e45ac53d739c4c6d3f2f532fa",
     "packages": {
       "jspdf": {
         "version": "4.2.1",
