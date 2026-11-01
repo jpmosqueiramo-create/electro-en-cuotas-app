@@ -1,7 +1,11 @@
 import './helpers/requireSafeEmulatorEnvironment';
 import assert from 'node:assert/strict';
+import readXlsxFile from 'read-excel-file/node';
+import { catalogSheetText } from '../src/lib/catalogSpreadsheet';
+import { parseBulk } from '../src/lib/catalogBulk';
+import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { admin } from '../src/lib/firebaseAdmin';
 import { POST } from '../src/app/api/admin/catalogo/carga-masiva/route';
 import { prepareCatalogPublication } from '../src/lib/catalogPublicationContent';
@@ -52,6 +56,38 @@ async function main(){
   try{
    await browser.navigate('/login');await browser.until("typeof window.__FIREBASE_SIGN_IN__==='function'",'auth');await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(email)},${JSON.stringify(password)}).then(()=>true)`);
    await browser.navigate('/admin/productos');await browser.until("!!document.querySelector('[data-testid=catalog-bulk] button:not(:disabled)')",'bulk panel');await browser.clickText('Abrir carga masiva');
+   const downloads='/tmp/catalog-xlsx-download-'+randomUUID();mkdirSync(downloads,{recursive:true});
+   await browser.command('Browser.setDownloadBehavior',{behavior:'allow',downloadPath:downloads});
+   await browser.click('[data-testid=catalog-bulk] a[download]');
+   for(let i=0;i<100&&!existsSync(downloads+'/plantilla-catalogo.xlsx');i++)await browser.delay(100);
+   assert.deepEqual(readFileSync(downloads+'/plantilla-catalogo.xlsx'),readFileSync('public/plantilla-catalogo.xlsx'));
+   const downloaded=await readXlsxFile(downloads+'/plantilla-catalogo.xlsx');assert.equal(parseBulk(catalogSheetText(downloaded[0])).length,1);
+   async function upload(path:string){
+    const doc=await browser.command('DOM.getDocument');const input=await browser.command('DOM.querySelector',{nodeId:(doc.root as {nodeId:number}).nodeId,selector:'[data-testid=catalog-bulk] input[type=file]'});
+    await browser.command('DOM.setFileInputFiles',{nodeId:input.nodeId,files:[resolve(path)]});
+   }
+   await upload(downloads+'/plantilla-catalogo.xlsx');
+   await browser.until("document.querySelector('[data-testid=catalog-bulk] textarea').value.includes('EJEMPLO-01')&&!document.querySelector('[data-testid=catalog-bulk] fieldset').disabled",'real XLSX template read');
+   await browser.clickText('Revisar carga');await browser.until("document.querySelectorAll('[data-testid=catalog-bulk-row]').length===1",'template preview');
+   await upload('scripts/fixtures/catalog-multiple-sheets.xlsx');
+   await browser.until("!!document.querySelector('[data-testid=catalog-bulk] select')&&!document.querySelector('[data-testid=catalog-bulk] fieldset').disabled",'sheet choice');
+   assert.equal(await browser.evaluate("document.querySelector('[data-testid=catalog-bulk] textarea').value"),'');
+   async function select(name:string){await browser.evaluate(`(()=>{const s=document.querySelector('[data-testid=catalog-bulk] select');s.value=${JSON.stringify(name)};s.dispatchEvent(new Event('change',{bubbles:true}));})()`);}
+   await select('No importar');await browser.until("document.querySelector('[data-testid=catalog-bulk] [role=alert]')?.innerText.includes('Columna desconocida')",'invalid sheet');
+   await select('Productos');await browser.until("document.querySelector('[data-testid=catalog-bulk] textarea').value.includes('001-XLSX')",'selected sheet read');
+   await browser.clickText('Revisar carga');await browser.until("document.querySelectorAll('[data-testid=catalog-bulk-row]').length===2",'two Excel products preview');
+   assert.equal((await db.collection('productos').get()).size,2,'preview does not write');
+   await browser.clickText('Confirmar carga de 2 productos');await browser.until("document.querySelector('[data-testid=catalog-bulk]').innerText.includes('2 productos guardados')&&!document.querySelector('[data-testid=catalog-bulk] fieldset').disabled",'Excel saved and refreshed');
+   const imported=(await db.collection('productos').get()).docs.filter(d=>String(d.data().skuInterno).endsWith('-XLSX'));
+   assert.equal(imported.length,2);const first=imported.find(d=>d.data().skuInterno==='001-XLSX')!;
+   assert.equal(first.data().codigoBarras,'001234567890');assert.equal(first.data().categoriaLogistica,'B');assert.equal(first.data().costoProveedor,400000);assert.equal(first.data().activo,false);assert.equal(first.data().publicado,false);
+   assert.equal(imported.find(d=>d.data().skuInterno==='002-XLSX')!.data().costoProveedor,200000.5);
+   assert.equal((await db.collection('catalogo_publico').get()).size,1);
+   await browser.until(`!!document.querySelector('[data-reference-row="${first.id}"]')`,'new product visible');
+   writeFileSync('/tmp/catalog-corrupt.xlsx','not an Excel workbook');await upload('/tmp/catalog-corrupt.xlsx');
+   await browser.until("document.querySelector('[data-testid=catalog-bulk] [role=alert]')?.innerText.includes('No se pudo leer el Excel')&&!document.querySelector('[data-testid=catalog-bulk] fieldset').disabled",'corrupt XLSX feedback');
+   assert.equal((await db.collection('productos').get()).size,4);
+   console.log('BULK_BROWSER_DOWNLOAD_XLSX_SELECT_SHEET_REVIEW_MULTIPLE_CREATE_REFRESH_IDENTIFIERS_CORRUPT_NO_WRITES=PASS');
    await browser.change('[data-testid=catalog-bulk] textarea','id;costo;categoria_logistica\nbulk-existing;180000;B');await browser.clickText('Revisar carga');await browser.until("document.querySelectorAll('[data-testid=catalog-bulk-row]').length===1",'row preview');assert.equal(await browser.evaluate("document.querySelector('[data-testid=catalog-bulk-row]').innerText.includes('B · Mediano')"),true);
    for(const width of [1280,390,320]){await browser.command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<768});await browser.evaluate("document.querySelector('[data-testid=catalog-bulk]').scrollIntoView({block:'start'})");await browser.overflow('bulk '+width);await browser.screenshot('catalog-bulk-'+width+'.png');}
    await browser.clickText('Confirmar carga de 1 productos');await browser.until("document.querySelector('[data-testid=catalog-bulk]').innerText.includes('1 productos guardados')",'save confirmation');assert.equal((await ref.get()).data()!.costoProveedor,180000);assert.equal((await ref.get()).data()!.categoriaLogistica,'B');await browser.until("document.querySelector('[data-reference-row=bulk-existing]')?.innerText.includes('Categoría de servicios: B')",'saved category refreshed');

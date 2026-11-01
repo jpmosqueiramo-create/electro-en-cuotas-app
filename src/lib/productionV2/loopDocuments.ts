@@ -1,8 +1,8 @@
 import source from './proposedPackages/loop-consolidated-20261030.json';
 import {ownerFinalIssuer} from './ownerFinalDocuments';
 import {templateHash,type FinalDocumentKind,type FinalTemplate} from './catalog';
-export const LOOP_PACKAGE_ID='loop-consolidated-20261101-v5-finance-cft';
-export const LOOP_PACKAGE_VERSION='LOOP_CONSOLIDATED_20261101_V5_FINANCE_CFT';
+export const LOOP_PACKAGE_ID='loop-consolidated-20261101-v6-xlsx-runtime';
+export const LOOP_PACKAGE_VERSION='LOOP_CONSOLIDATED_20261101_V6_XLSX_RUNTIME';
 export function loopFinalTemplates():Record<FinalDocumentKind,FinalTemplate>{
  const build=(kind:FinalDocumentKind,title:string,paragraphs:string[]):FinalTemplate=>{
   const value={kind,id:`loop-consolidated-${kind.toLowerCase()}`,version:LOOP_PACKAGE_VERSION,title,layout:'LOOP_CONSOLIDATED_V2' as const,paragraphs};

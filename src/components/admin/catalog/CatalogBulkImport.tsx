@@ -2,6 +2,7 @@
 import { useRef, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { BULK_TEMPLATE, exportBulk, type BulkRow } from '@/lib/catalogBulk';
+import { catalogSheetText, readCatalogExcel, type CatalogSheet } from '@/lib/catalogSpreadsheet';
 import { loopCategories, loopCategoryLabels } from '@/lib/loopServiceTariffs';
 interface Product { id:string; [key:string]:unknown }
 interface Preview { rows:BulkRow[];digest:string;valid:boolean;publishedUpdates:number }
@@ -11,8 +12,28 @@ function download(text:string,name:string){const url=URL.createObjectURL(new Blo
 export function CatalogBulkImport(props:{products:Product[];onSaved:()=>Promise<void>;disabled?:boolean;onBusyChange:(busy:boolean)=>void;editingOpen?:boolean}){const{user}=useAuth();return <BulkSession key={user?.uid??'anonymous'} {...props}/>;}
 function BulkSession({products,onSaved,disabled,onBusyChange,editingOpen}:{products:Product[];onSaved:()=>Promise<void>;disabled?:boolean;onBusyChange:(busy:boolean)=>void;editingOpen?:boolean}){
  const {user}=useAuth(),[open,setOpen]=useState(false),[text,setText]=useState(''),[updatePublished,setPublished]=useState(false),[preview,setPreview]=useState<Preview|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
+ const [fileName,setFileName]=useState(''),[sheets,setSheets]=useState<CatalogSheet[]>([]),[sheetName,setSheetName]=useState('');
  const flight=useRef(false),commandId=useRef('');
  const reset=()=>{setPreview(null);commandId.current='';setMessage('');setError('');};
+ function chooseSheet(name:string, available=sheets){
+  reset();setSheetName(name);setText('');
+  const sheet=available.find(s=>s.sheet===name);if(!sheet)return;
+  try{setText(catalogSheetText(sheet));}catch(e){setError(e instanceof Error?e.message:'No se pudo leer la hoja.');}
+ }
+ async function loadFile(file:File){
+  if(flight.current)return;
+  reset();setText('');setFileName(file.name);setSheets([]);setSheetName('');
+  if(file.size>400000){setError('El archivo es demasiado grande. Separalo en cargas de hasta 100 productos.');return;}
+  flight.current=true;setBusy(true);onBusyChange(true);
+  try{
+   if(/\.xlsx$/i.test(file.name)){
+    const loaded=await readCatalogExcel(file);setSheets(loaded);
+    if(loaded.length===1)chooseSheet(loaded[0].sheet,loaded);
+   }else if(/\.(csv|tsv)$/i.test(file.name)){setText(await file.text());}
+   else throw Error('Usá un archivo Excel .xlsx, CSV o TSV. Los archivos .xls deben guardarse como .xlsx.');
+  }catch(e){setError(e instanceof Error?e.message:'No se pudo leer el archivo.');}
+  finally{flight.current=false;setBusy(false);onBusyChange(false);}
+ }
  async function request(action:'PREVIEW'|'APPLY'){
   if(!user||flight.current)return;flight.current=true;setBusy(true);onBusyChange(true);setError('');setMessage('');
   try{
@@ -20,19 +41,22 @@ function BulkSession({products,onSaved,disabled,onBusyChange,editingOpen}:{produ
    const r=await fetch('/api/admin/catalogo/carga-masiva',{method:'POST',cache:'no-store',headers:{Authorization:`Bearer ${await user.getIdToken()}`,'Content-Type':'application/json'},body:JSON.stringify({action,text,updatePublished,...(action==='APPLY'?{digest:preview!.digest,commandId:commandId.current}:{})})});
    const data=await r.json();if(!r.ok){if(r.status===409){setPreview(null);commandId.current='';}throw Error(data.error||'No se pudo completar la carga.');}
    if(action==='PREVIEW'){setPreview(data);commandId.current=crypto.randomUUID();}
-   else{setPreview(null);setText('');commandId.current='';setMessage(`${data.count} productos guardados. ${data.publishedUpdates} publicaciones actualizadas. Los productos nuevos se publican desde su ficha.`);await onSaved();}
+   else{setPreview(null);setText('');setFileName('');setSheets([]);setSheetName('');commandId.current='';setMessage(`${data.count} productos guardados. ${data.publishedUpdates} publicaciones actualizadas. Los productos nuevos se publican desde su ficha.`);await onSaved();}
   }catch(e){setError(e instanceof Error?e.message:'No se pudo completar la carga.');}finally{flight.current=false;setBusy(false);onBusyChange(false);}
  }
  return <section data-testid="catalog-bulk" className="min-w-0 space-y-4 rounded-2xl border border-border-color bg-surface p-4 text-text-primary sm:p-5">
-  <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-bold text-brand-primary">Carga masiva de precios</h2><p className="text-sm text-text-secondary">Pegá desde Excel o importá CSV. Revisá todos los productos antes de guardar.</p></div><button className={button} disabled={busy||disabled} onClick={()=>setOpen(v=>!v)} aria-expanded={open}>{open?'Cerrar carga masiva':'Abrir carga masiva'}</button></div>
+  <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-bold text-brand-primary">Carga masiva de precios</h2><p className="text-sm text-text-secondary">Importá Excel (.xlsx), CSV o pegá las celdas. Revisá todos los productos antes de guardar.</p></div><button className={button} disabled={busy||disabled} onClick={()=>setOpen(v=>!v)} aria-expanded={open}>{open?'Cerrar carga masiva':'Abrir carga masiva'}</button></div>
   {editingOpen&&<p className="text-sm text-text-secondary">Cerrá el editor individual para usar la carga masiva.</p>}
   {open&&<div className="min-w-0 space-y-4"><fieldset disabled={busy||disabled} className="min-w-0 space-y-4 disabled:opacity-60">
-   <div className="flex flex-wrap gap-2"><button type="button" className={button} onClick={()=>download('\uFEFF'+BULK_TEMPLATE,'plantilla-catalogo.csv')}>Descargar plantilla</button><button type="button" className={button} disabled={!products.length} onClick={()=>download(exportBulk(products),'catalogo-para-actualizar.csv')}>Exportar catálogo para actualizar</button></div>
+   <p className="text-sm font-semibold">1. Cargá la planilla → 2. Revisá los productos → 3. Confirmá el guardado</p>
+   <div className="flex flex-wrap gap-2"><a className={button} href="/plantilla-catalogo.xlsx" download="plantilla-catalogo.xlsx" onClick={e=>{if(busy||disabled)e.preventDefault();}}>Descargar plantilla Excel</a><button type="button" className={button} onClick={()=>download('\uFEFF'+BULK_TEMPLATE,'plantilla-catalogo.csv')}>Plantilla CSV</button><button type="button" className={button} disabled={!products.length} onClick={()=>download(exportBulk(products),'catalogo-para-actualizar.csv')}>Exportar catálogo para actualizar</button></div>
    <p className="text-sm">Una fila por producto, máximo 100 por carga. <strong>Conservá el ID de los productos existentes.</strong> Para nuevos productos, completá un SKU único. El costo se expresa en pesos; no se agregan impuestos ni recargos al valor ingresado.</p>
    <p className="break-words text-sm text-text-secondary">Columnas: id, sku, nombre, costo, proveedor, cuotas y factor por plazo (factor_8, factor_12, etc.). Cuotas: 8|12. También podés incluir categoria_logistica, descripción y código de barras. En productos existentes, las celdas opcionales vacías conservan sus datos.</p>
    <p className="text-sm text-text-secondary">Categoría de servicios (categoria_logistica): {loopCategories.map(category=>`${category}: ${loopCategoryLabels[category]}`).join(' · ')}. Usa las tarifas ya configuradas en la tabla de servicios. Si la celda está vacía, conserva la categoría del producto; en un alta queda sin asignar.</p>
-   <label className="block min-w-0 text-sm font-semibold">Importar CSV<input className="mt-2 block min-h-11 w-full min-w-0 rounded-xl border border-border-color p-2 font-normal" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" onChange={async e=>{const file=e.target.files?.[0];e.target.value='';if(!file)return;reset();if(file.size>400000){setError('El archivo es demasiado grande. Separalo en cargas de hasta 100 productos.');return;}if(flight.current)return;flight.current=true;setBusy(true);onBusyChange(true);try{setText(await file.text());reset();}catch{setError('No se pudo leer el archivo.');}finally{flight.current=false;setBusy(false);onBusyChange(false);}}}/></label>
-   <label className="block text-sm font-semibold">Planilla para importar<textarea className="mt-2 min-h-44 w-full min-w-0 rounded-xl border border-border-color bg-white p-3 font-mono text-sm text-stone-900" value={text} onChange={e=>{setText(e.target.value);reset();}} placeholder="Pegá las columnas con sus encabezados, o seleccioná un archivo CSV." spellCheck={false}/></label>
+   <label className="block min-w-0 text-sm font-semibold">Importar Excel o CSV<input className="mt-2 block min-h-11 w-full min-w-0 rounded-xl border border-border-color p-2 font-normal" type="file" accept=".xlsx,.csv,.tsv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/tab-separated-values" onChange={e=>{const file=e.target.files?.[0];e.target.value='';if(file)void loadFile(file);}}/></label>
+   {fileName&&<p role="status" className="break-words text-sm">Archivo: <strong>{fileName}</strong>{text.trim()?' · Listo para revisar.':''}</p>}
+   {sheets.length>1&&<label className="block text-sm font-semibold">Hoja para importar<select className="mt-2 min-h-11 w-full rounded-xl border border-border-color bg-white p-2 text-stone-900" value={sheetName} onChange={e=>chooseSheet(e.target.value)}><option value="">Seleccioná una hoja</option>{sheets.map(s=><option key={s.sheet} value={s.sheet}>{s.sheet}</option>)}</select></label>}
+   <label className="block text-sm font-semibold">Planilla para importar<textarea className="mt-2 min-h-44 w-full min-w-0 rounded-xl border border-border-color bg-white p-3 font-mono text-sm text-stone-900" value={text} onChange={e=>{setText(e.target.value);setFileName('');setSheets([]);setSheetName('');reset();}} placeholder="Pegá las columnas con sus encabezados, o seleccioná un archivo Excel .xlsx o CSV." spellCheck={false}/></label>
    <label className="flex min-h-11 items-start gap-3 text-sm"><input className="mt-1 size-5 shrink-0" type="checkbox" checked={updatePublished} onChange={e=>{setPublished(e.target.checked);reset();}}/><span><strong>Actualizar también las publicaciones existentes</strong><span className="block text-text-secondary">Actualiza los precios visibles para visitantes y afiliados. Los productos nuevos no se publican automáticamente.</span></span></label>
    <button className={`${button} bg-brand-primary! text-white!`} disabled={!text.trim()} onClick={()=>void request('PREVIEW')}>{busy?'Procesando…':'Revisar carga'}</button>
   </fieldset>
