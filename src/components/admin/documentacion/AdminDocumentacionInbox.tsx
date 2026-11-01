@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { DOCUMENT_KIND_LABELS, filterAdminDocumentacion, visibleDocumentacionDocuments, type AdminDocumentacionFilters, type DocumentKind } from "@/lib/adminDocumentacionReadModel";
 import { loadAdminDocumentacion, type AdminDocumentacionLoadResult } from "@/lib/adminDocumentacionReader";
 import { presentAdminSolicitudStatus } from "../solicitudes/presentation";
+import { ContractContingencyDownloads } from "./ContractContingencyDownloads";
 import { DocumentAvailabilityList } from "./DocumentAvailabilityList";
 
 const control = "admin-control min-h-11 w-full min-w-0 rounded-xl border border-border-color bg-surface px-3 text-sm text-text-primary";
@@ -29,6 +30,7 @@ export function AdminDocumentacionInbox() {
   const documentKinds = Array.from(new Set(result?.items.flatMap(item => item.documentos.map(doc => doc.kind)) ?? []));
   return <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-8" data-testid="documentacion-inbox">
     <PageHeader title="Documentación" subtitle="Consultá los archivos asociados a cada operación y su disponibilidad." />
+    <ContractContingencyDownloads />
     <AdminOperationsDirectory section="contract" />
     <h2 className="font-heading text-xl font-bold">Archivos de solicitudes · consulta histórica</h2>
     <section aria-label="Buscar y filtrar documentación" className="space-y-3 rounded-2xl border border-border-color bg-surface px-4 py-3 sm:space-y-4 sm:p-5">

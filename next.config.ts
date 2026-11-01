@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  outputFileTracingIncludes: {
+    "/api/admin/documentacion/modelos-contingencia": ["./src/assets/contract-contingency/*.pdf"],
+  },
   async headers() {
     return [{ source: '/completar-datos/:path*', headers: [
       {key:'Cache-Control',value:'no-store'}, {key:'Referrer-Policy',value:'no-referrer'},
