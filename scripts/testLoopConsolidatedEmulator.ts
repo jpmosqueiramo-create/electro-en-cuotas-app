@@ -30,7 +30,7 @@ async function main(){
  const d=(await f.r.draft.get()).data()!;
  const fields={personalData:d.personalData,employmentData:d.employmentData,productDetails:d.productDetails,contractPlanCuotas:12,firstInstallmentDueDate:'2026-12-05',preferredMonthlyDueDay:9,issuePlace:'Localidad sintética',loopServices:{category:'C',tariffRevision:1,otherServicesCents:0,cftAnnualPercent:321.123,cftBasis:'CFT SINTETICO: no es validación fiscal ni legal',supplierTaxId:'20123456786',notePaymentPlace:'Domicilio sintético de pago',noteDueDate:'2027-11-09',acceptanceChannel:'WHATSAPP',proposalSentAt:'2026-10-19T12:00',clientAcceptedAt:'2026-10-19T13:00'}};
  const saved=await cmd('SAVE_CONTRACT_EDITOR',fields);assert.equal(saved.draft.commercialPreparation!.loop!.serviceGrossCents,19000000);
- const auto=saved.draft.commercialPreparation!.loop!;assert.equal(auto.cftPolicy,AUTOMATIC_CFT_POLICY);assert.equal(auto.cftBasis,AUTOMATIC_CFT_BASIS);assert.notEqual(auto.cftAnnualPercent,321.123);assert.equal(auto.cftCalculation!.baseCents,auto.cashPriceCents-auto.tariff.managementCents);assert.equal(auto.cftCalculation!.chargesCents,auto.financeGrossCents+auto.tariff.managementCents);
+ const auto=saved.draft.commercialPreparation!.loop!;assert.equal(auto.cftPolicy,AUTOMATIC_CFT_POLICY);assert.equal(auto.cftBasis,AUTOMATIC_CFT_BASIS);assert.equal(auto.cftAnnualPercent,auto.effectiveAnnualRate!*100);assert.notEqual(auto.cftAnnualPercent,321.123);assert.equal(auto.cftCalculation!.baseCents,auto.cashPriceCents);assert.equal(auto.cftCalculation!.chargesCents,auto.financeGrossCents);
  assert.equal((await getContract(db,f.id,1)).clientConformity?.confirmed,false);
  // Concurrent global tariff edits cannot silently change an already prepared operation.
  await saveLoopTariffs(db,{...loopReferenceTariffs,C:{...loopReferenceTariffs.C,deliveryCents:12000000}},1,actor);
@@ -66,9 +66,13 @@ async function main(){
    await browser.evaluate(`window.__FIREBASE_SIGN_IN__(${JSON.stringify(process.env.NEXT_PUBLIC_ADMIN_EMAIL)},'Synthetic-only-123').then(()=>true)`);
    await browser.navigate('/admin/productos');await browser.until("!!document.querySelector('[data-testid=loop-service-tariffs] input')",'Tariff configuration');
    await browser.evaluate("document.querySelector('[data-testid=loop-service-tariffs]').open=true");
-   await browser.change('[data-testid=loop-service-tariffs] input','41000');await browser.clickText('Guardar tarifas de categorías');
+   const beforePriceSave=await readLoopTariffs(db);
+   await browser.clickText('Preparar aumento del 20 %');await browser.clickText('Preparar aumento del 20 %');
+   assert.equal(await browser.evaluate("document.querySelector('[data-testid=loop-service-tariffs] input').value"),'48000');
+   assert.deepEqual(await readLoopTariffs(db),beforePriceSave,'Preparing prices does not write them');
+   await browser.clickText('Guardar tarifas de categorías');
    await browser.until("document.querySelector('[data-testid=loop-service-tariffs]').innerText.includes('Tarifas guardadas')",'Tariff save response');
-   assert.equal((await readLoopTariffs(db)).tariffs!.A.managementCents,4100000);
+   assert.equal((await readLoopTariffs(db)).tariffs!.A.managementCents,4800000);
    await browser.screenshot('loop-tariffs-1280.png');await browser.overflow('catalog tariffs desktop');
    await browser.command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await browser.screenshot('loop-tariffs-390.png');await browser.overflow('catalog tariffs mobile');
    await browser.navigate(`/admin/operaciones/${isolated.id}/1?section=contract&editor=1`);await browser.until("!!document.querySelector('[data-testid=contract-unified-editor]')",'Contract editor');

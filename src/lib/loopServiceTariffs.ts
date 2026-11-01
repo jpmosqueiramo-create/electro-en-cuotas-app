@@ -23,3 +23,13 @@ export function validateLoopTariffs(value:unknown):LoopTariffs {
  return result;
 }
 export interface LoopTariffConfiguration {revision:number;tariffs:LoopTariffs|null}
+
+/** Prepare a single 20% price increase from an explicit saved revision, rounded to cents. */
+export function increaseLoopTariffsTwentyPercent(tariffs:LoopTariffs):LoopTariffs {
+ const current=validateLoopTariffs(tariffs),result={} as LoopTariffs;
+ for(const category of loopCategories){
+  const row=current[category];
+  result[category]={managementCents:Math.round(row.managementCents*1.2),deliveryCents:Math.round(row.deliveryCents*1.2),assistanceCents:Math.round(row.assistanceCents*1.2)};
+ }
+ return validateLoopTariffs(result);
+}

@@ -1,0 +1,25 @@
+{
+  "description": "Original approved blank models: contract and annexes concatenated without altering their page contents; promissory note byte-identical.",
+  "sources": [
+    {
+      "name": "01_Contrato_Mandato_Loop_Modelo.pdf",
+      "sha256": "66049b66d99a23c55c98dbf5a152cb83bece149648f7668c9059dec9c5ec5874"
+    },
+    {
+      "name": "02_Anexo_I_Autorizacion.pdf",
+      "sha256": "aa783355126aed15897d2903d68f2dd37af6fbbd65d8018e011bf6b4b26955ef"
+    },
+    {
+      "name": "03_Anexo_II_Liquidacion_Modelo.pdf",
+      "sha256": "9c0ce80bb2629941049143796d94e85b196e2e1c0ebf040ca216aa0f98ec150e"
+    },
+    {
+      "name": "04_Anexo_III_Entrega.pdf",
+      "sha256": "40d08b96c63c26a179747ab55f868d6b6f60d998b0103d30be839ac0c68cecb6"
+    },
+    {
+      "name": "05_Pagare_Loop_ARS_Vencimiento_Unico.pdf",
+      "sha256": "97eb506e767cce81797db86bcdce8992ef1a5c72866ae6892cfd9735e581c415"
+    }
+  ]
+}
