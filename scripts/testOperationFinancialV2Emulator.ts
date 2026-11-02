@@ -11,6 +11,7 @@ import { contractCommand,publicContractData } from '../src/lib/contractV2Server'
 import { createContractFreezeIntegrationEmulator,FREEZE_DEPENDENCIES_COLLECTION } from '../src/lib/contractFreezeIntegrationEmulator';
 import { CONTRACT_INFRASTRUCTURE_PATHS } from '../src/lib/contractInfrastructureEmulator';
 import { infrastructureFixture } from './helpers/contractInfrastructureFixtures';
+import { DATA_AUTHORIZATION_VERSION } from '../src/lib/clientFlowMessages';
 import { addressPayload } from './testContractV2';
 import { reviewCommand,addDocuments } from './testCreditReviewV2Emulator';
 import { clientBindingRef,clientIndex } from '../src/lib/operationClientV2Server';
@@ -23,7 +24,7 @@ export async function financialFixture(){
  // New acceptances require the same reviewed intake and manual credit decision
  // as the real workspace; do not bypass the new prerequisite in financial tests.
  const intake=await contractCommand(db,f.id,1,{action:'CREATE_CLIENT_DATA_REQUEST',commandId:randomUUID(),expectedRevision:d.revision},actor);
- await publicContractData(db,intake.requestId!,intake.secret!,{personalData:addressPayload.personalData,employmentData:addressPayload.employmentData});
+ await publicContractData(db,intake.requestId!,intake.secret!,{personalData:addressPayload.personalData,employmentData:addressPayload.employmentData,dataAuthorization:{version:DATA_AUTHORIZATION_VERSION,accepted:true}});
  d=(await contractCommand(db,f.id,1,{action:'APPLY_CLIENT_SUBMISSION',submissionId:intake.requestId,commandId:randomUUID(),expectedRevision:intake.draft.revision},actor)).draft;
  await reviewCommand(f.id,'VERIFY_IDENTITY',{evidence:'Identidad documental sintética verificada'});
  await addDocuments(f.id);
