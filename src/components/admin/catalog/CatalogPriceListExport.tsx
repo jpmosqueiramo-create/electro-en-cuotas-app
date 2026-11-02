@@ -15,7 +15,7 @@ export function CatalogPriceListExport({ products, disabled, onBusyChange }: { p
       const {loadCatalogPriceListImages,renderCatalogPriceList}=await import("@/lib/catalogPriceListPdf");
       const images=await loadCatalogPriceListImages(items,done=>setProgress(`Preparando fotos: ${done}/${items.length}`));
       const date=new Date();await renderCatalogPriceList(items,images,date).save(catalogPriceListFilename(date), { returnPromise: true });
-      setProgress(`PDF preparado: ${items.length} productos. Incluye todo el catálogo, sin aplicar filtros.${images.some(image=>!image)?" Las fotos no disponibles se indican en la lista.":""}`);
+      setProgress(`PDF preparado: ${items.length} productos. Incluye todo el catálogo, sin aplicar filtros.${images.some(image=>!image)?" Las fotos no disponibles se reemplazan por el logo de Cuenta Hogar.":""}`);
     }catch{setError("No se pudo preparar el PDF. Volvé a intentar.");setProgress("");}
     finally{flight.current=false;onBusyChange(false);}
   }

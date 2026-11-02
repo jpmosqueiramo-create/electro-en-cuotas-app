@@ -6,7 +6,7 @@ Incluye nombre, marca, tipo, miniatura y todos los planes habilitados con su cuo
 
 El documento utiliza una lista explícita de campos: no incluye costos, proveedores, factores, stock, identificadores, descripciones ni notas administrativas. Los nombres, marca y tipo son textos destinados a compartir y deben cargarse sin información privada.
 
-Las fotos se descargan sin credenciales, se convierten a miniaturas JPEG y se incorporan al PDF. Si una foto falla, no se interrumpe la exportación: aparece “Sin foto”. No requiere escrituras, colecciones, campos, migraciones ni cambios de reglas. No publica automáticamente productos.
+Las fotos por URL se descargan sin credenciales. También se admiten las imágenes raster embebidas `data:image/png`, `jpeg` y `webp` que usa el fallback de subida del catálogo. Se convierten a miniaturas JPEG y se incorporan al PDF. Si falta una foto o falla su carga (incluido CORS), se dibuja el logo oficial de Cuenta Hogar desde el recurso embebido del sistema, sin depender de otra descarga. No requiere escrituras, colecciones, campos, migraciones ni cambios de reglas. No publica automáticamente productos.
 
 Verificación:
 
