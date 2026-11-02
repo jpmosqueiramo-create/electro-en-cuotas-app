@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Pencil, Eye, Package, ArrowUpRight } from "lucide-react";
 import { addDoc, collection, deleteDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import { useAuth } from "@/components/AuthProvider";
@@ -14,6 +14,7 @@ import { CatalogReferencePreview, money } from "./CatalogReferencePreview";
 import { CatalogDialog, ConfirmDialog } from "./CatalogDialog";
 import { LoopServiceTariffsEditor } from "./LoopServiceTariffsEditor";
 import { CatalogBulkImport } from "./CatalogBulkImport";
+import { catalogFilterOptions, catalogListRows, filterSortCatalog, type CatalogSort } from "@/lib/catalogAdminList";
 import type { Producto } from "./catalogStockTypes";
 
 // El editor conserva datos privados sin exigir campos financieros legacy.
@@ -50,6 +51,11 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
   const [externalUrl, setExternalUrl] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [search, setSearch] = useState("");
+  const [brandFilter,setBrandFilter]=useState(''),[kindFilter,setKindFilter]=useState('');
+  const [sort,setSort]=useState<CatalogSort>('name'),[descending,setDescending]=useState(false);
+  const listRows=useMemo(()=>catalogListRows(productos),[productos]);
+  const brands=useMemo(()=>catalogFilterOptions(listRows,'brand'),[listRows]);
+  const kinds=useMemo(()=>catalogFilterOptions(listRows,'kind'),[listRows]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [deletePreview, setDeletePreview] = useState<{rows:{id:string;name:string}[];digest:string}|null>(null);
   const deleteFlight = useRef(false);
@@ -187,7 +193,8 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
   const selected = selectedIds.filter(id=>productos.some(p=>p.id===id));
   const selectionDisabled = !!busy || !!editing || fetching || !!loadError;
   const canDelete = (p:Producto) => !!statuses[p.id] && !statuses[p.id].hasPublicProjection && p.publicado!==true && p.activo!==true && (!p.stock || (Array.isArray(p.stock)&&p.stock.length===0));
-  const visible = productos.filter(product => product.nombre.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
+  const visibleRows = filterSortCatalog(listRows,{search,brand:brandFilter,kind:kindFilter,sort,descending});
+  const visible = visibleRows.map(row=>row.product);
   const selectableVisible = visible.filter(canDelete).slice(0,100);
   return <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-6 sm:px-7 sm:py-8">
     <PageHeader title="Catálogo de referencias" subtitle="Gestioná las referencias de bienes utilizadas para preparar propuestas de gestión de compra." actions={<button type="button" disabled={!!busy} className={primary} onClick={() => edit()}><Plus size={18} aria-hidden="true" />Nueva referencia</button>} />
@@ -217,7 +224,14 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
       </form>}
       <section className="min-w-0 space-y-4" aria-label="Listado de referencias">
         <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-heading text-lg font-bold text-brand-primary">Referencias <span className="text-sm font-normal text-text-secondary">({visible.length} visibles)</span></h2><button type="button" className={secondary} onClick={onTransfer}><Package size={16} aria-hidden="true" />Traslado interno</button></div>
-        <Field label="Buscar referencia"><input type="search" className={input} value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre de la referencia" /></Field>
+        <div data-testid="catalog-filters" className="grid min-w-0 gap-3 rounded-2xl border border-border-color bg-surface p-3 sm:grid-cols-2 xl:grid-cols-3">
+          <Field label="Buscar referencia"><input type="search" className={input} value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, marca, tipo o SKU" /></Field>
+          <Field label="Tipo de producto"><select className={input} value={kindFilter} onChange={e=>setKindFilter(e.target.value)}><option value="">Todos los tipos</option><option value="missing">Sin clasificar</option>{kinds.map(value=><option key={value} value={JSON.stringify(value)}>{value}</option>)}</select></Field>
+          <Field label="Marca"><select className={input} value={brandFilter} onChange={e=>setBrandFilter(e.target.value)}><option value="">Todas las marcas</option><option value="missing">Sin marca</option>{brands.map(value=><option key={value} value={JSON.stringify(value)}>{value}</option>)}</select></Field>
+          <Field label="Ordenar por"><select className={input} value={sort} onChange={e=>setSort(e.target.value as CatalogSort)}><option value="name">Nombre</option><option value="brand">Marca</option><option value="kind">Tipo de producto</option><option value="cost">Costo del producto</option><option value="installment12">Valor de la cuota en 12 pagos</option></select></Field>
+          <div className="flex flex-wrap items-end gap-2"><button type="button" className={secondary} aria-label="Invertir orden del catálogo" onClick={()=>setDescending(value=>!value)}>{sort==='cost'||sort==='installment12'?(descending?'Mayor a menor ↓':'Menor a mayor ↑'):(descending?'Z → A':'A → Z')}</button><button type="button" className={secondary} onClick={()=>{setSearch('');setBrandFilter('');setKindFilter('');setSort('name');setDescending(false);}}>Restablecer filtros</button></div>
+          <p className="self-end text-xs text-text-secondary">Cuotas estimadas con el costo y los factores guardados. Los productos sin plan de 12 cuotas habilitado se muestran al final de ese orden.</p>
+        </div>
         <div data-testid="catalog-selection" className="flex min-w-0 flex-wrap items-center gap-3 rounded-xl border border-border-color bg-surface p-3">
           <label className="flex min-h-11 items-center gap-2 text-sm font-semibold"><input type="checkbox" className="size-5 shrink-0" disabled={selectionDisabled||!selectableVisible.length} checked={!!selectableVisible.length&&selectableVisible.every(p=>selected.includes(p.id))} onChange={e=>setSelectedIds(e.target.checked?selectableVisible.map(p=>p.id):selected.filter(id=>!selectableVisible.some(p=>p.id===id)))}/>Seleccionar visibles aptos (hasta 100)</label>
           <span role="status" className="text-sm">{selected.length} seleccionados</span>
@@ -229,19 +243,21 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
         {loadError && <div role="alert" className="rounded-xl border border-border-color bg-surface p-4 text-sm"><p>{loadError}</p><button type="button" className={`${secondary} mt-3`} onClick={() => void onRefresh()}>Reintentar carga</button></div>}
         {fetching && <p role="status" className="p-4 text-sm text-text-secondary">Cargando referencias…</p>}
         {!fetching && !loadError && !visible.length && <div className="rounded-2xl border border-border-color bg-surface p-6"><p className="font-heading font-semibold text-brand-primary">{search ? "No hay coincidencias" : "Tu catálogo de referencias empieza acá"}</p><p className="mt-2 text-sm text-text-secondary">{search ? "Probá con otro nombre." : "Creá una ficha privada, configurá sus planes y publicala cuando esté lista."}</p></div>}
-        <div className={editing ? "space-y-4" : "grid gap-4 md:grid-cols-2 2xl:grid-cols-3"}>{visible.map(product => {
-          const state = statuses[product.id];
-          const saved = createCatalogReferenceDraft(product);
-          const plans = Object.entries(saved.planesActivos).filter(([, active]) => active).map(([n]) => n);
-          return <article key={product.id} data-reference-row={product.id} className="min-w-0 rounded-2xl border border-border-color bg-surface p-4 sm:p-5">
-            <label className="mb-3 flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" className="size-5 shrink-0" aria-label={`Seleccionar ${product.nombre}`} disabled={selectionDisabled||!canDelete(product)||(!selected.includes(product.id)&&selected.length>=100)} checked={selected.includes(product.id)} onChange={e=>setSelectedIds(previous=>e.target.checked?[...new Set([...previous,product.id])].slice(0,100):previous.filter(id=>id!==product.id))}/>{canDelete(product)?'Seleccionar producto':!state?'Verificando disponibilidad…':state.hasPublicProjection||product.publicado||product.activo?'Despublicá antes de seleccionar':'Tiene unidades registradas'}</label>
-            <div className="flex items-start gap-4"><div className="size-20 shrink-0 rounded-xl bg-background-main p-2">{ /* eslint-disable-next-line @next/next/no-img-element */ }
-<img onError={event => { if (!event.currentTarget.src.endsWith("/logo-cuenta-hogar-oficial.png")) event.currentTarget.src = "/logo-cuenta-hogar-oficial.png"; }} src={saved.imagenUrls[0] || "/logo-cuenta-hogar-oficial.png"} alt="" className="h-full w-full object-contain" /></div><div className="min-w-0"><h3 className="break-words font-heading font-bold text-brand-primary">{product.nombre}</h3><p data-publication-status className="mt-2 text-sm font-semibold text-text-secondary">{catalogPublicationLabel(state)}</p><p className="mt-1 text-xs font-semibold text-brand-primary">Categoría de servicios: {saved.categoriaLogistica || "Sin asignar"}</p><p className="mt-1 text-xs text-text-secondary">{saved.imagenUrls.length} imágenes · Planes: {plans.join(", ") || "Ninguno habilitado"}</p></div></div>
-            <dl className="my-4 grid grid-cols-2 gap-3 rounded-xl bg-background-main p-3 text-sm"><div><dt className="text-xs text-text-secondary">Costo proveedor · Admin</dt><dd className="mt-1 font-semibold">{Number(saved.costoProveedor) > 0 ? money(Number(saved.costoProveedor)) : "Sin configurar"}</dd></div><div className="min-w-0"><dt className="text-xs text-text-secondary">Proveedor · Admin</dt><dd className="mt-1 break-words">{saved.proveedor || "Sin registrar"}</dd></div></dl>
-            <div className="flex flex-wrap gap-2"><button type="button" className={secondary} disabled={!!busy} onClick={() => edit(product)}><Pencil size={15} aria-hidden="true" />Editar</button><button type="button" className={secondary} disabled={!!busy} onClick={() => void openPreview(product.id)}><Eye size={15} aria-hidden="true" />{publicationPreviewLabel(state)}</button>
-              {state?.hasPublicProjection && <button type="button" className={secondary} disabled={!!busy} onClick={() => setConfirm({ kind: "unpublish", product })}>Despublicar</button>}
-              <button type="button" className={secondary} onClick={() => onStock(product)}>Stock / unidades</button><button type="button" className="min-h-11 px-2 text-sm text-[#B42318] disabled:opacity-40" disabled={!!busy || !state || state.hasPublicProjection} onClick={() => setConfirm({ kind: "delete", product })}>Eliminar</button>
-            </div>{state?.hasPublicProjection && <p className="mt-2 text-xs text-text-secondary">Para eliminar la ficha privada, despublicá primero.</p>}
+        <div role="list" aria-label="Productos del catálogo" className="space-y-2">{visibleRows.map(row => {
+          const product=row.product,state=statuses[product.id],saved=createCatalogReferenceDraft(product);
+          const plans=Object.entries(saved.planesActivos).filter(([,active])=>active).map(([n])=>n);
+          return <article role="listitem" key={product.id} data-reference-row={product.id} className={`grid min-w-0 grid-cols-[24px_minmax(0,1fr)] items-start gap-3 rounded-xl border border-border-color bg-surface p-3 sm:p-4 ${editing?'':'lg:grid-cols-[24px_minmax(180px,1.5fr)_minmax(100px,.6fr)_minmax(100px,.6fr)_minmax(220px,1fr)]'}`}>
+            <input type="checkbox" className="mt-2 size-5 shrink-0 accent-brand-primary" aria-label={`Seleccionar ${product.nombre}`} title={canDelete(product)?'Seleccionar producto':state?.hasPublicProjection||product.publicado||product.activo?'Despublicá antes de seleccionar':product.stock?.length?'Tiene unidades registradas':'Verificando disponibilidad'} disabled={selectionDisabled||!canDelete(product)||(!selected.includes(product.id)&&selected.length>=100)} checked={selected.includes(product.id)} onChange={e=>setSelectedIds(previous=>e.target.checked?[...new Set([...previous,product.id])].slice(0,100):previous.filter(id=>id!==product.id))}/>
+            <div className="flex min-w-0 items-start gap-3"><div className="size-14 shrink-0 rounded-lg bg-background-main p-1">{/* eslint-disable-next-line @next/next/no-img-element */}
+              <img loading="lazy" onError={event=>{if(!event.currentTarget.src.endsWith('/logo-cuenta-hogar-oficial.png'))event.currentTarget.src='/logo-cuenta-hogar-oficial.png';}} src={saved.imagenUrls[0]||'/logo-cuenta-hogar-oficial.png'} alt="" className="h-full w-full object-contain" /></div>
+              <div className="min-w-0"><h3 className="break-words text-sm font-bold text-brand-primary">{product.nombre}</h3><p data-product-classification className="mt-1 break-words text-xs text-text-secondary">{row.brand||'Sin marca'} · {row.kind||'Sin clasificar'}</p><p data-publication-status className="mt-1 text-xs font-semibold text-text-secondary">{catalogPublicationLabel(state)}</p><p className="mt-1 text-xs text-text-secondary">Categoría de servicios: {saved.categoriaLogistica||'Sin asignar'} · Planes: {plans.join(', ')||'Ninguno habilitado'}</p></div>
+            </div>
+            <div className={`col-start-2 grid min-w-0 grid-cols-2 gap-3 ${editing?'':'lg:contents'}`}><dl className="min-w-0 text-sm"><dt className="text-xs text-text-secondary">Costo producto · Admin</dt><dd data-catalog-cost className="mt-1 break-words font-semibold tabular-nums">{row.cost===null?'Sin configurar':money(row.cost)}</dd><dt className="mt-2 text-xs text-text-secondary">Proveedor</dt><dd className="break-words text-xs">{saved.proveedor||'Sin registrar'}</dd></dl>
+            <div className="min-w-0 text-sm"><p className="text-xs text-text-secondary">Cuota estimada × 12</p><p data-catalog-installment12 className="mt-1 break-words font-bold tabular-nums text-brand-primary">{row.installment12===null?'No disponible':money(row.installment12)}</p>{row.installment12===null&&<p className="mt-1 text-xs text-text-secondary">{saved.planesActivos[12]?'Revisá costo y factor':'Plan no habilitado'}</p>}</div></div>
+            <div className={`col-start-2 min-w-0 ${editing?'':'lg:col-start-auto'}`}><div className="flex flex-wrap gap-2"><button type="button" className={secondary} disabled={!!busy} onClick={()=>edit(product)}><Pencil size={15} aria-hidden="true"/>Editar</button><button type="button" className={secondary} disabled={!!busy} onClick={()=>void openPreview(product.id)}><Eye size={15} aria-hidden="true"/>{publicationPreviewLabel(state)}</button>
+              {state?.hasPublicProjection&&<button type="button" className={secondary} disabled={!!busy} onClick={()=>setConfirm({kind:'unpublish',product})}>Despublicar</button>}
+              <button type="button" className={secondary} onClick={()=>onStock(product)}>Stock / unidades</button><button type="button" className="min-h-11 px-2 text-sm text-[#B42318] disabled:opacity-40" disabled={!!busy||!state||state.hasPublicProjection} onClick={()=>setConfirm({kind:'delete',product})}>Eliminar</button>
+            </div>{state?.hasPublicProjection&&<p className="mt-2 text-xs text-text-secondary">Despublicá antes de eliminar o seleccionar.</p>}</div>
           </article>;
         })}</div>
       </section>
