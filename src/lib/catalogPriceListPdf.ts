@@ -12,7 +12,7 @@ export function renderCatalogPriceList(items: readonly CatalogPriceListItem[], i
   autoTable(doc, {
     startY: 43, margin: { top: 43, bottom: 24, left: 14, right: 14 },
     head: [["Foto", "Producto", "Planes en cuotas estimadas"]],
-    body: items.map((item,i) => [images[i] ? "" : "Sin foto", [printable(item.name), printable(item.brand,80), printable(item.kind,80)].filter(Boolean).join("\n"), item.plans.length ? item.plans.map(plan => `${plan.installments} ${plan.installments === 1 ? "cuota" : "cuotas"} de ${money(plan.amount)}`).join("\n") : item.warning]),
+    body: items.map(item => ["", [printable(item.name), printable(item.brand,80), printable(item.kind,80)].filter(Boolean).join("\n"), item.plans.length ? item.plans.map(plan => `${plan.installments} ${plan.installments === 1 ? "cuota" : "cuotas"} de ${money(plan.amount)}`).join("\n") : item.warning]),
     styles: { font: "helvetica", fontSize: 9, cellPadding: 3, overflow: "linebreak", minCellHeight: 23, valign: "middle", textColor: [36,48,46] },
     headStyles: { fillColor: [23,62,59], textColor: [255,255,255], minCellHeight: 10 },
     alternateRowStyles: { fillColor: [247,245,240] },
@@ -20,7 +20,11 @@ export function renderCatalogPriceList(items: readonly CatalogPriceListItem[], i
     rowPageBreak: "avoid",
     didDrawCell: data => {
       const thumbnail = images[data.row.index];
-      if (data.section === "body" && data.column.index === 0 && thumbnail) doc.addImage(thumbnail,"JPEG",data.cell.x+3,data.cell.y+(data.cell.height-17)/2,17,17,undefined,"FAST");
+      if (data.section === "body" && data.column.index === 0) {
+        const x=data.cell.x+3,y=data.cell.y+(data.cell.height-17)/2;
+        if(thumbnail) doc.addImage(thumbnail,"JPEG",x,y,17,17,undefined,"FAST");
+        else drawCuentaHogarLogo(doc,x,y,17);
+      }
     },
   });
   const pages = doc.getNumberOfPages();
@@ -41,7 +45,12 @@ async function thumbnail(url: string): Promise<string | null> {
   let objectUrl = "";
   try {
     const parsed = new URL(url,window.location.origin);
-    if (!["https:","http:"].includes(parsed.protocol)) return null;
+    // Uploads may legitimately fall back to embedded raster data URLs.
+    // Do not allow SVG, HTML, arbitrary schemes or unbounded embedded payloads.
+    const embedded = parsed.protocol === "data:";
+    if (embedded) {
+      if (url.length > 5600000 || !/^data:image\/(png|jpeg|webp);base64,[a-z0-9+/=\r\n]+$/i.test(url)) return null;
+    } else if (!["https:","http:"].includes(parsed.protocol)) return null;
     const response = await fetch(parsed.href,{credentials:"omit",signal:AbortSignal.timeout(5000)});
     if (!response.ok || Number(response.headers.get("content-length")) > 4*1024*1024) return null;
     const blob = await response.blob();
