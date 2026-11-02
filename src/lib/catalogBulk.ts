@@ -3,13 +3,13 @@ import { generarPlanesPublicablesCatalogo } from './catalogReference';
 import { isLoopCategory, type LoopCategory } from './loopServiceTariffs';
 export class BulkInputError extends Error {}
 export const BULK_LIMIT = 100;
-export const BULK_TEMPLATE = 'id;sku;nombre;costo;proveedor;categoria_logistica;cuotas;factor_8;factor_12;descripcion;codigo_barras\n;EJEMPLO-01;Producto de ejemplo;400000;Proveedor de ejemplo;B;8|12;2,31;3;Descripción opcional;\n';
+export const BULK_TEMPLATE = 'id;sku;nombre;costo;proveedor;categoria_logistica;cuotas;factor_8;factor_12;descripcion;codigo_barras;marca;tipo_producto\n;EJEMPLO-01;Producto de ejemplo;400000;Proveedor de ejemplo;B;8|12;2,31;3;Descripción opcional;;Marca de ejemplo;Tipo de ejemplo\n';
 export interface BulkRecord { row: number; cells: Record<string, string> }
 export interface BulkProduct { id: string; data: Record<string, unknown>; version: string }
-export interface BulkRow { row: number; id: string; action: 'CREATE' | 'UPDATE'; name: string; previousCost: number | null; cost: number; supplier: string; categoriaLogistica: LoopCategory | null; plans: { cuotas: number; cuotaEstimada: number; factor: number }[]; errors: string[] }
+export interface BulkRow { row: number; id: string; action: 'CREATE' | 'UPDATE'; name: string; previousCost: number | null; cost: number; supplier: string; marca?:string|null; tipoProducto?:string|null; categoriaLogistica: LoopCategory | null; plans: { cuotas: number; cuotaEstimada: number; factor: number }[]; errors: string[] }
 export const normalizeSku = (sku: string) => sku.trim().normalize('NFKC').toLocaleUpperCase('es-AR');
 const header = (s: string) => s.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[ _-]/g, '');
-const aliases: Record<string,string> = { id:'id', sku:'sku', skuinterno:'sku', nombre:'nombre', costo:'costo', costoproveedor:'costo', proveedor:'proveedor', cuotas:'cuotas', cuotasdisponibles:'cuotas', categoria:'categoria_logistica', categorialogistica:'categoria_logistica', categoriaservicios:'categoria_logistica', categoriadeservicios:'categoria_logistica', descripcion:'descripcion', codigobarras:'codigo_barras' };
+const aliases: Record<string,string> = { marca:'marca', tipoproducto:'tipo_producto', id:'id', sku:'sku', skuinterno:'sku', nombre:'nombre', costo:'costo', costoproveedor:'costo', proveedor:'proveedor', cuotas:'cuotas', cuotasdisponibles:'cuotas', categoria:'categoria_logistica', categorialogistica:'categoria_logistica', categoriaservicios:'categoria_logistica', categoriadeservicios:'categoria_logistica', descripcion:'descripcion', codigobarras:'codigo_barras' };
 /** CSV quoted cells/newlines or clipboard TSV; never evaluates spreadsheet formulas. */
 export function parseBulk(text: string): BulkRecord[] {
   if (typeof text !== 'string' || text.length > 200000 || !text.trim()) throw new BulkInputError('Pegá una planilla de hasta 100 productos (200 KB de texto).');
@@ -41,6 +41,8 @@ function numberCell(raw:string, cost=false) {
 export function prepareBulkRow(record:BulkRecord, original?:Record<string,unknown>) {
   const c=record.cells,draft=createCatalogReferenceDraft(original);
   if(c.nombre)draft.nombre=c.nombre;
+  if(c.marca)draft.marca=c.marca;
+  if(c.tipo_producto)draft.tipoProducto=c.tipo_producto;
   if(c.sku)draft.skuInterno=c.sku;
   if(c.proveedor)draft.proveedor=c.proveedor;
   if(c.descripcion)draft.descripcion=c.descripcion;
@@ -63,6 +65,6 @@ export function prepareBulkRow(record:BulkRecord, original?:Record<string,unknow
 const escapeCsv=(s:unknown)=>{const value=String(s??'');const safe=/^(?:\s*[=+@-]|[\t\r\n])/.test(value)?`'${value}`:value;return `"${safe.replace(/"/g,'""')}"`;};
 export function exportBulk(products: readonly {id:string;[key:string]:unknown}[]) {
   const terms=Array.from({length:18},(_,i)=>i+1).filter(n=>products.some(p=>Object(p.planesActivos)[n]===true));
-  const columns=['id','sku','nombre','costo','proveedor','categoria_logistica','cuotas',...terms.map(n=>`factor_${n}`),'descripcion','codigo_barras'];
-  return '\uFEFF'+[columns,...products.map(p=>{const d=createCatalogReferenceDraft(p);return [p.id,d.skuInterno,d.nombre,d.costoProveedor,d.proveedor,d.categoriaLogistica,Object.entries(d.planesActivos).filter(([,active])=>active).map(([n])=>n).join('|'),...terms.map(n=>d.factoresPlanes[n]),d.descripcion,d.codigoBarras];})].map(row=>row.map(escapeCsv).join(';')).join('\r\n');
+  const columns=['id','sku','nombre','costo','proveedor','categoria_logistica','cuotas',...terms.map(n=>`factor_${n}`),'descripcion','codigo_barras','marca','tipo_producto'];
+  return '\uFEFF'+[columns,...products.map(p=>{const d=createCatalogReferenceDraft(p);return [p.id,d.skuInterno,d.nombre,d.costoProveedor,d.proveedor,d.categoriaLogistica,Object.entries(d.planesActivos).filter(([,active])=>active).map(([n])=>n).join('|'),...terms.map(n=>d.factoresPlanes[n]),d.descripcion,d.codigoBarras,d.marca,d.tipoProducto];})].map(row=>row.map(escapeCsv).join(';')).join('\r\n');
 }
