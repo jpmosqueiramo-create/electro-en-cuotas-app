@@ -1,0 +1,31 @@
+.portal {
+  color-scheme: light;
+  overflow-wrap: anywhere;
+}
+.portal :where(section, article, details, form, fieldset, label, dl) { min-width: 0; }
+.portal :where(input, select, textarea) {
+  max-width: 100%;
+  min-width: 0;
+  color-scheme: light;
+  accent-color: #173e3b;
+}
+.portal :where(input:not([type=checkbox]):not([type=radio]), select, textarea) { font-size: 16px; }
+.portal :where(button, summary, a, input, select, textarea):focus-visible {
+  outline: 2px solid #b44e2a;
+  outline-offset: 3px;
+}
+.portal :where(button, summary) { overflow-wrap: anywhere; }
+.portal :where(button:disabled) { cursor: not-allowed; }
+.portal :where(details > summary) { line-height: 1.5; }
+.portal :where(input[type=checkbox], input[type=radio]) { width: 18px; height: 18px; flex-shrink: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .portal * { scroll-behavior: auto; transition: none; }
+}
+@media (max-width: 639px) {
+  /* Keep shared forms usable inside a client card on narrow phones. */
+  .portal [data-testid=affiliate-v2-operation] [data-testid=financial-v2] { padding: 10px; border: 0; }
+  .portal [data-testid=affiliate-v2-operation] [data-testid=payment-form] { padding: 10px; }
+}
+@media print {
+  .portal nav, .portal footer { display: none; }
+}
