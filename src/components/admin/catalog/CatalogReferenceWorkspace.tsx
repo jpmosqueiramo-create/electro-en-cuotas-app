@@ -13,6 +13,7 @@ import { uploadCatalogReferenceImage } from "@/lib/catalogReferenceImages";
 import { CatalogReferencePreview, money } from "./CatalogReferencePreview";
 import { CatalogDialog, ConfirmDialog } from "./CatalogDialog";
 import { LoopServiceTariffsEditor } from "./LoopServiceTariffsEditor";
+import { CatalogPriceListExport } from "./CatalogPriceListExport";
 import { CatalogBulkImport } from "./CatalogBulkImport";
 import { catalogFilterOptions, catalogListRows, filterSortCatalog, type CatalogSort } from "@/lib/catalogAdminList";
 import type { Producto } from "./catalogStockTypes";
@@ -197,7 +198,7 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
   const visible = visibleRows.map(row=>row.product);
   const selectableVisible = visible.filter(canDelete).slice(0,100);
   return <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-6 sm:px-7 sm:py-8">
-    <PageHeader title="Catálogo de referencias" subtitle="Gestioná las referencias de bienes utilizadas para preparar propuestas de gestión de compra." actions={<button type="button" disabled={!!busy} className={primary} onClick={() => edit()}><Plus size={18} aria-hidden="true" />Nueva referencia</button>} />
+    <PageHeader title="Catálogo de referencias" subtitle="Gestioná las referencias de bienes utilizadas para preparar propuestas de gestión de compra." actions={<div className="flex flex-wrap items-start gap-2"><CatalogPriceListExport products={productos} disabled={!!busy || !!editing || fetching || !!loadError} onBusyChange={setBulkBusy} /><button type="button" disabled={!!busy} className={primary} onClick={() => edit()}><Plus size={18} aria-hidden="true" />Nueva referencia</button></div>} />
     <p className="text-sm text-text-secondary">Referencias para gestión de compra mediante mandato. La disponibilidad se confirma durante la cotización.</p>
     <LoopServiceTariffsEditor />
     <CatalogBulkImport products={productos} onSaved={onRefresh} onBusyChange={setBulkBusy} editingOpen={!!editing} disabled={!!busy || !!editing || fetching || !!loadError} />
