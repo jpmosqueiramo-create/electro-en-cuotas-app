@@ -19,7 +19,7 @@ export function TransportAuthorizationMessage({draft,blocked=false}:{draft:Saved
  const quantity=draft?.productDetails?.quantity;
  const item=quantity&&quantity>1?`${quantity} unidades de ${product}`:product;
  const phone=clientMessagePhone(draft?.personalData.whatsapp??'');
- const message=`Hola, ${name}. Somos Cuenta Hogar. ¿Nos autorizás a trasladar ${item} hasta ${destination}?
+ const message=`Hola, ${name}. Somos Loop Gestión Integral S.R.L. (Cuenta Hogar). ¿Nos autorizás a trasladar ${item} hasta ${destination}?
 
 Si los datos son correctos, respondé a este mensaje: «Sí, autorizo el traslado al domicilio indicado».
 
