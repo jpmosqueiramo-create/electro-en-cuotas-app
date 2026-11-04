@@ -20,3 +20,11 @@ Se actualiza al guardar el borrador, revisar crédito, registrar eventos financi
 - TypeScript, ESLint de archivos modificados, build y manifiesto de renderizadores contractuales. El manifiesto legal conserva sus 38 archivos verificados.
 
 El escenario de navegador utiliza un paquete contractual sintético y datos exclusivos de Emulator; no verifica configuración productiva ni realiza cobros, firmas o entregas reales.
+
+## Corrección de bloqueos de emisión (fechas de aceptación)
+
+El servidor exige fechas reales de envío y aceptación: formato válido, hora de Argentina, sin futuro, envío posterior a la cotización y aceptación posterior o igual al envío. Registrar la conformidad no modifica esas fechas. El panel ahora muestra diagnósticos por campo y abre el apartado correspondiente. Su validación visual es orientativa; la validación del servidor y los modelos congelados no cambian.
+
+Después de registrar la conformidad con éxito, el compositor enfoca Emisión. Al guardar condiciones modificadas, avisa que falta la conformidad para esas condiciones. Emisión espera los requisitos de la revisión actual y distingue entre cambios sin guardar, consulta de requisitos y emisión en curso. Incluye una actualización explícita de requisitos sin mutaciones.
+
+Verificación adicional: `testContractIssuanceGuidance.ts` cubre fechas, Argentina, orden y navegación. `testContractIssuanceGuidanceBrowser.ts` utiliza el paquete LOOP instalado con datos sintéticos en Auth/Firestore/Storage Emulators: reproduce fechas futuras, registra conformidad por UI, verifica el bloqueo, navega a las fechas, corrige y guarda, comprueba invalidación de la conformidad anterior, registra nueva conformidad y emite sin recarga. Verifica un solo comando/número CH, ausencia de conexiones Firebase externas y pantallas de 1280/390 px sin desborde.

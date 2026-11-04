@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {proposalAcceptanceIssues,issuanceCorrectionTarget} from '../src/lib/contractIssuanceGuidance';
+const quote='2026-10-30T18:24:19.678Z',now=Date.parse('2026-11-04T14:00:00Z');
+const valid={acceptanceChannel:'WHATSAPP',proposalSentAt:'2026-11-04T10:30',clientAcceptedAt:'2026-11-04T10:45'};
+assert.deepEqual(proposalAcceptanceIssues(valid,quote,now),[]);
+const future=proposalAcceptanceIssues({...valid,proposalSentAt:'2026-11-04T12:30',clientAcceptedAt:'2026-11-04T12:30'},quote,now);
+assert.equal(future.length,2);assert(future.every(i=>i.message.includes('futuro')&&i.message.includes('Argentina')));
+assert.equal(proposalAcceptanceIssues({...valid,clientAcceptedAt:'2026-11-04T10:00'},quote,now)[0].field,'clientAcceptedAt');
+assert(proposalAcceptanceIssues({...valid,proposalSentAt:'2026-10-29T10:00'},quote,now).some(i=>i.message.includes('cotización')));
+assert.equal(proposalAcceptanceIssues({acceptanceChannel:'',proposalSentAt:'',clientAcceptedAt:''},quote,now).length,3);
+assert(proposalAcceptanceIssues({...valid,proposalSentAt:'2026-02-30T10:00'},quote,now).some(i=>i.message.includes('válidas')));
+assert.deepEqual(proposalAcceptanceIssues({...valid,clientAcceptedAt:'2026-11-04T11:00'},quote,now),[],'Argentina time, exact now allowed');
+assert.deepEqual(proposalAcceptanceIssues(null,quote,now),[],'legacy non-Loop path unchanged');
+assert.equal(issuanceCorrectionTarget('Revisá las fechas reales de envío y aceptación de la propuesta.'),'acceptance');
+assert.equal(issuanceCorrectionTarget('Indicá el canal de aceptación del cliente.'),'acceptance');
+assert.equal(issuanceCorrectionTarget('Revisá el vencimiento único y lugar de pago del pagaré.'),'editor');
+console.log('ISSUANCE_GUIDANCE_FUTURE_DATES_ARGENTINA_ORDER_QUOTE_MISSING_TARGETS=PASS');
