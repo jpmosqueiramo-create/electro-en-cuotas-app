@@ -383,6 +383,11 @@ export interface AlertAction {
 export function resolveAlertAction(alerta: AlertaAdminItem): AlertAction | null {
   const tipo = alerta.tipo || "";
 
+  if(tipo==='DATOS_CLIENTE_RECIBIDOS'){
+    if(alerta.schemaVersion!=='CLIENT_DATA_RECEIVED_ALERT_V1'||typeof alerta.budgetId!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(alerta.budgetId)||!Number.isSafeInteger(alerta.budgetVersion)||Number(alerta.budgetVersion)<1)return null;
+    return {label:'Revisar datos del cliente',href:`/admin/operaciones/${encodeURIComponent(alerta.budgetId)}/${alerta.budgetVersion}?section=client`,type:'other'};
+  }
+
   if(tipo==='COBRO_EFECTIVO_AFILIADO'||tipo==='PROMESA_PAGO_AFILIADO'){
     if(alerta.schemaVersion!=='AFFILIATE_COLLECTION_ALERT_V1'||typeof alerta.budgetId!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(alerta.budgetId)||!Number.isSafeInteger(alerta.budgetVersion)||Number(alerta.budgetVersion)<1)return null;
     return {label:tipo==='COBRO_EFECTIVO_AFILIADO'?'Ver cobro y recibo':'Ver operación',href:`/admin/operaciones/${encodeURIComponent(alerta.budgetId)}/${alerta.budgetVersion}?section=payments`,type:'other'};

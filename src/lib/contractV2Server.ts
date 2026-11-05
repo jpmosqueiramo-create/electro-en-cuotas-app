@@ -11,7 +11,7 @@ import type { BudgetV2 } from './budgetV2';
 import { PERSONAL_ADDRESS_VERSION } from './contractAddress';
 import { paymentAddressHashOrNull, recordedPaymentAddressIsCurrent, type PaymentAddressConformity } from './contractPaymentAddress';
 import { createHash,randomBytes,timingSafeEqual } from 'node:crypto';
-import type { Firestore, DocumentData } from 'firebase-admin/firestore';
+import { FieldValue, type Firestore, type DocumentData } from 'firebase-admin/firestore';
 import { validateBudgetV2 } from './budgetV2';
 import { privateBudgetReferenceId } from './budgetV2Persistence';
 import type { BudgetAcceptanceV2 } from './budgetAcceptanceV2';
@@ -215,8 +215,19 @@ export async function publicContractData(db:Firestore,requestId:string,token:str
     const p=submissionPayload(authorization.payload,version,r.dataScope==='PERSONAL_EMPLOYMENT_ONLY'),dg=authorization.authorized?digest({data:p,dataAuthorizationVersion:DATA_AUTHORIZATION_VERSION}):digest(p);
     if(r.status==='SUBMITTED'){if(r.submissionDigest===dg)return {received:true};reject(unavailable);}
     if(r.status!=='ACTIVE'||d.activeClientDataRequestId!==requestId)reject(unavailable);
+    const budget=(await tx.get(refs.budget)).data() as BudgetV2|undefined;
+    if(!budget||budget.id!==d.budgetId||budget.version!==d.budgetVersion)reject(unavailable);
+    const clientName=String(budget.clienteSnapshot.nombre||'El cliente').slice(0,200);
     const s:ClientDataSubmissionV2={schemaVersion:'CLIENT_DATA_SUBMISSION_V2',...(version==='LEGACY_SIX'?{}:{personalDataVersion:version}),submissionId:requestId,requestId,contractDraftId:d.contractDraftId,submittedAt:new Date().toISOString(),...p,...(authorization.authorized?{dataAuthorization:{version:DATA_AUTHORIZATION_VERSION,text:DATA_AUTHORIZATION_TEXT,accepted:true,acceptedAt:new Date().toISOString(),source:'client-data-link'}}:{})};
     tx.create(refs.draft.collection('submissions').doc(requestId),s);tx.update(rr,{status:'SUBMITTED',submittedAt:s.submittedAt,submissionDigest:dg});
+    // Atomic with receipt: retries return above and never recreate or unread an existing alert.
+    tx.create(db.collection('alertas_admin').doc(`client_data_${requestId}`),{
+      schemaVersion:'CLIENT_DATA_RECEIVED_ALERT_V1',tipo:'DATOS_CLIENTE_RECIBIDOS',
+      mensaje:`${clientName} completó sus datos personales. Revisalos para continuar con la operación.`,
+      fechaCreacion:FieldValue.serverTimestamp(),leida:false,
+      budgetId:d.budgetId,budgetVersion:d.budgetVersion,
+      sourceCollection:budget.sourceCollection,solicitudId:budget.solicitudId,submissionId:requestId,
+    });
     // Deliberately no Draft update on receipt.
     return {received:true};
   });
