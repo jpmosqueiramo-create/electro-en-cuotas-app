@@ -182,3 +182,23 @@ export async function prepareClientActivationAtFirstPayment(db:Firestore,tx:Tran
   tx.create(ref.collection('events').doc('payment_'+commandId),{commandId,action:'ACTIVATE_AT_FIRST_PAYMENT',actor,uid:state.uid,at:now,revision:next.revision,expectedRevision:state.revision,invitationId:state.activeInvitationId});
  }};
 }
+
+/** Email activation is prepared by the server after verified mailbox proof.
+ * Uses the existing binding/index and leaves every financial/document record untouched.
+ */
+export async function prepareClientEmailAccess(db:Firestore,tx:Transaction,id:string,v:number,uid:string,email:string,commandId:string,verified:Map<string,VerifiedEvidence>){
+ const {state,ref,origin}=await context(db,tx,id,v);
+ await requirePrerequisites(db,tx,id,v,true,verified);
+ const u=await authUser(uid);if(!u.emailVerified||portalEmail(u.email)!==email)portalFail('Correo del cliente no verificado.');
+ if(state.state==='REVOKED'||state.uid&&state.uid!==uid)portalFail('El plan está revocado o vinculado a otra cuenta.');
+ if(state.state==='ACTIVE')return ()=>{};
+ const pending=state.activeInvitationId?invitationRef(db,state.activeInvitationId):null;
+ if(pending){const prior=(await tx.get(pending)).data();if(!prior||prior.state!=='PENDING'||prior.operationId!==state.operationId||prior.targetUid!==uid)portalFail('Invitación previa inconsistente.');}
+ const at=new Date().toISOString();
+ const next:ClientBindingV2={...state,uid,state:'ACTIVE',activeInvitationId:null,activatedAt:at,revision:state.revision+1};
+ return ()=>{
+  if(pending)tx.update(pending,{state:'REVOKED',revokedAt:at});
+  tx.set(ref,next);tx.set(clientIndex(db,uid).doc(origin.identity.operationId),{operationId:origin.identity.operationId,budgetId:id,version:v,uid});
+  tx.create(ref.collection('events').doc('email_'+commandId),{commandId,action:'ACTIVATE_BY_VERIFIED_EMAIL_INVITATION',actor:uid,uid,at,revision:next.revision,expectedRevision:state.revision,invitationId:null});
+ };
+}
