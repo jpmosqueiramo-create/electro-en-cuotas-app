@@ -19,4 +19,7 @@ const paged=renderBudgetPdfV2(many);assert(paged.getNumberOfPages()>1);
 writeFileSync('/tmp/budget-pdf-layout/multiple-plans.pdf',Buffer.from(paged.output('arraybuffer')));
 const broken=renderBudgetPdfV2({...dto,options:[{...dto.options[0],imagenUrls:['data:image/png;base64,invalid']}]});
 assert.equal(broken.getNumberOfPages(),1);writeFileSync('/tmp/budget-pdf-layout/broken.pdf',Buffer.from(broken.output('arraybuffer')));
+const longDescription={...dto,options:[{...dto.options[0],nombre:'Nombre de producto con muchas palabras para comprobar el salto de línea del título destacado sin superposición',descripcion:'Descripción extensa de prueba. '.repeat(100)+'DESCRIPCION_FINAL',planesOfrecidos:many.options[0].planesOfrecidos}]};
+const split=renderBudgetPdfV2(longDescription);assert(split.getNumberOfPages()>1);assert(split.output().includes('DESCRIPCION_FINAL'),'long descriptions survive page splits');
+writeFileSync('/tmp/budget-pdf-layout/long-description.pdf',Buffer.from(split.output('arraybuffer')));
 console.log('BUDGET_PDF_INLINE_THUMBNAILS_FALLBACK_ALL_PLANS_PAGINATION_PRIVACY_NO_REPRICING=PASS');
