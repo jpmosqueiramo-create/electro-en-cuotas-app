@@ -81,19 +81,19 @@ export function EnviosFaq() {
           >
             <button
               onClick={() => toggleFaq(idx)}
-              className="w-full p-5 text-left flex items-center justify-between gap-4 font-heading font-bold text-sm sm:text-base text-white cursor-pointer"
+              className="w-full p-5 text-left flex items-center justify-between gap-4 font-heading font-bold text-sm sm:text-base text-[var(--public-ink)] cursor-pointer"
             >
               <span className="flex items-center gap-3">
                 <HelpCircle className={`w-5 h-5 shrink-0 ${isOpen ? "text-[#FFD21A]" : "text-[#9CA3AF]"}`} />
                 <span>{faq.question}</span>
               </span>
-              <span className="text-[#FFD21A] shrink-0">
+              <span className="text-[var(--public-ink)] shrink-0">
                 {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
               </span>
             </button>
 
             {isOpen && (
-              <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-[#D1D5DB] font-sans leading-relaxed border-t border-[#222530]/60 pl-13">
+              <div className="px-5 pb-5 pt-1 text-[.875rem] sm:text-sm text-[var(--public-ink)] font-sans leading-relaxed border-t border-[var(--public-line)] pl-13">
                 {faq.answer}
               </div>
             )}

@@ -2,14 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { 
-  Calculator, 
-  MapPin, 
   Package, 
-  Truck, 
-  ArrowRight, 
   CheckCircle2, 
-  ShieldCheck, 
-  Sparkles, 
   RefreshCw,
   Building2,
   Tv,
@@ -36,15 +30,15 @@ function WhatsAppIcon({ className = "w-5 h-5" }: { className?: string }) {
 function getLoadIcon(id: string, name: string) {
   const lower = (id + " " + name).toLowerCase();
   if (lower.includes("electro") || lower.includes("heladera") || lower.includes("lavarropas")) {
-    return <Building2 className="w-5 h-5 text-[#111318]" />;
+    return <Building2 className="w-5 h-5 text-[var(--public-ink)]" />;
   }
   if (lower.includes("tv") || lower.includes("tecnologia") || lower.includes("tele")) {
-    return <Tv className="w-5 h-5 text-[#111318]" />;
+    return <Tv className="w-5 h-5 text-[var(--public-ink)]" />;
   }
   if (lower.includes("mueble") || lower.includes("sommier") || lower.includes("colch")) {
-    return <Layers className="w-5 h-5 text-[#111318]" />;
+    return <Layers className="w-5 h-5 text-[var(--public-ink)]" />;
   }
-  return <Package className="w-5 h-5 text-[#111318]" />;
+  return <Package className="w-5 h-5 text-[var(--public-ink)]" />;
 }
 
 export function EnviosCalculator() {
@@ -113,19 +107,19 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
 
   if (loading) {
     return (
-      <div className="bg-[#FFFFFF] border border-[#DCE1E6] rounded-3xl p-8 sm:p-12 shadow-sm text-center space-y-4 max-w-4xl mx-auto">
-        <RefreshCw className="w-8 h-8 animate-spin mx-auto text-[#111318]" />
-        <p className="text-sm font-semibold text-[#111318]">Cargando tarifas de Envíos Low Cost...</p>
+      <div className="bg-[var(--public-paper)] border border-[var(--public-line)] rounded-md p-8 sm:p-12 text-center space-y-4 max-w-4xl mx-auto">
+        <RefreshCw className="w-8 h-8 mx-auto text-[var(--public-ink)]" />
+        <p className="text-sm font-semibold text-[var(--public-ink)]">Cargando tarifas de Envíos Low Cost...</p>
       </div>
     );
   }
 
   if (!config) {
     return (
-      <div className="bg-[#FFFFFF] border border-[#DCE1E6] rounded-3xl p-8 sm:p-10 shadow-sm text-center space-y-4 max-w-2xl mx-auto">
+      <div className="bg-[var(--public-paper)] border border-[var(--public-line)] rounded-md p-8 sm:p-10 text-center space-y-4 max-w-2xl mx-auto">
         <AlertCircle className="w-10 h-10 text-[#56616E] mx-auto" />
-        <h3 className="text-lg font-bold text-[#111318]">No pudimos cargar las tarifas en este momento</h3>
-        <p className="text-xs sm:text-sm text-[#56616E]">
+        <h3 className="text-lg font-bold text-[var(--public-ink)]">No pudimos cargar las tarifas en este momento</h3>
+        <p className="text-[.875rem] sm:text-sm text-[#56616E]">
           Podés consultarnos directamente por WhatsApp y te ayudamos con la cotización de tu envío.
         </p>
         <div className="pt-2">
@@ -133,9 +127,9 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
             href={generateWhatsAppMessage()}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 bg-[#FFD21A] hover:bg-[#E8B900] text-[#111318] font-extrabold px-6 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all shadow-sm"
+            className="inline-flex items-center justify-center gap-2 bg-[var(--public-yellow)] hover:bg-[#E8B900] text-[var(--public-black)] font-semibold px-6 py-3.5 rounded-md text-[.875rem]"
           >
-            <WhatsAppIcon className="w-4.5 h-4.5 text-[#111318]" />
+            <WhatsAppIcon className="w-4.5 h-4.5 text-[var(--public-ink)]" />
             <span>CONSULTAR POR WHATSAPP</span>
           </a>
         </div>
@@ -144,10 +138,10 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
   }
 
   return (
-    <div className="bg-[#FFFFFF] border border-[#DCE1E6] rounded-3xl p-5 sm:p-8 lg:p-10 shadow-sm space-y-8 text-left">
+    <div className="bg-[var(--public-paper)] border border-[var(--public-line)] rounded-md p-5 sm:p-8 lg:p-10 space-y-8 text-left">
       
       {/* INDICADOR VISUAL DE PASOS */}
-      <div className="flex items-center justify-center gap-2 text-xs font-mono font-semibold text-[#56616E] bg-[#F4F6F8] border border-[#DCE1E6] py-2 px-4 rounded-xl max-w-md mx-auto">
+      <div className="flex items-center justify-center gap-2 text-[.875rem] font-semibold text-[#56616E] bg-[#F4F6F8] border border-[var(--public-line)] py-2 px-4 rounded-md max-w-md mx-auto">
         <span className={selectedDest ? "text-[#111318] font-bold" : ""}>1. Destino</span>
         <span className="text-[#DCE1E6]">→</span>
         <span className={selectedCat ? "text-[#111318] font-bold" : ""}>2. Tipo de carga</span>
@@ -163,16 +157,16 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
           {/* PASO 1. SELECCIÓN DE LOCALIDAD */}
           <div className="space-y-3">
             <div className="space-y-0.5">
-              <h3 className="text-base font-extrabold text-[#111318]">
+              <h3 className="text-base font-semibold text-[var(--public-ink)]">
                 1. ¿A qué localidad querés enviarlo?
               </h3>
-              <p className="text-xs text-[#56616E]">
+              <p className="text-[.875rem] text-[#56616E]">
                 Elegí el destino del recorrido.
               </p>
             </div>
 
             {activeDestinations.length === 0 ? (
-              <p className="text-xs text-[#56616E] italic">No hay localidades disponibles en este momento.</p>
+              <p className="text-[.875rem] text-[#56616E] italic">No hay localidades disponibles en este momento.</p>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {activeDestinations.map((d) => {
@@ -191,14 +185,14 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
                       }`}
                     >
                       <div className="flex items-center justify-between w-full">
-                        <span className="font-extrabold text-xs sm:text-sm leading-snug">
+                        <span className="font-semibold text-[.875rem] sm:text-sm leading-snug">
                           {isOtra ? "Otra localidad" : d.name}
                         </span>
                         {isSelected && (
-                          <CheckCircle2 className="w-4 h-4 text-[#111318] shrink-0 ml-1" />
+                          <CheckCircle2 className="w-4 h-4 text-[var(--public-ink)] shrink-0 ml-1" />
                         )}
                       </div>
-                      <span className="text-[11px] text-[#56616E] font-medium mt-1">
+                      <span className="text-[.875rem] text-[#56616E] font-medium mt-1">
                         {isOtra ? "Consultar cobertura" : (d.timeframe || "Recorrido previsto")}
                       </span>
                     </button>
@@ -211,16 +205,16 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
           {/* PASO 2. SELECCIÓN DE TIPO DE CARGA */}
           <div className="space-y-3">
             <div className="space-y-0.5">
-              <h3 className="text-base font-extrabold text-[#111318]">
+              <h3 className="text-base font-semibold text-[var(--public-ink)]">
                 2. ¿Qué necesitás traer?
               </h3>
-              <p className="text-xs text-[#56616E]">
+              <p className="text-[.875rem] text-[#56616E]">
                 Elegí la opción que más se parezca a tu compra.
               </p>
             </div>
 
             {activeLoadTypes.length === 0 ? (
-              <p className="text-xs text-[#56616E] italic">No hay tipos de carga disponibles en este momento.</p>
+              <p className="text-[.875rem] text-[#56616E] italic">No hay tipos de carga disponibles en este momento.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {activeLoadTypes.map((c) => {
@@ -238,21 +232,21 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
                           : "bg-[#FFFFFF] border-[#DCE1E6] hover:border-[#FFD21A] text-[#111318]"
                       }`}
                     >
-                      <div className="p-2 bg-[#F4F6F8] rounded-xl shrink-0 mt-0.5">
+                      <div className="p-2 bg-[#F4F6F8] rounded-md shrink-0 mt-0.5">
                         {icon}
                       </div>
                       <div className="flex-1 min-w-0 pr-5">
-                        <span className="block font-bold text-xs sm:text-sm text-[#111318] leading-tight">
+                        <span className="block font-bold text-[.875rem] sm:text-sm text-[var(--public-ink)] leading-tight">
                           {c.name}
                         </span>
                         {c.desc && (
-                          <span className="block text-[11px] text-[#56616E] mt-1 leading-snug">
+                          <span className="block text-[.875rem] text-[#56616E] mt-1 leading-snug">
                             {c.desc}
                           </span>
                         )}
                       </div>
                       {isSelected && (
-                        <CheckCircle2 className="w-4 h-4 text-[#111318] shrink-0 absolute top-4 right-4" />
+                        <CheckCircle2 className="w-4 h-4 text-[var(--public-ink)] shrink-0 absolute top-4 right-4" />
                       )}
                     </button>
                   );
@@ -262,12 +256,12 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
           </div>
 
           {/* PASO 3. CANTIDAD DE BULTOS (OCIONAL SEGÚN SELECCIÓN) */}
-          <div className="space-y-3 pt-2 border-t border-[#DCE1E6]">
+          <div className="space-y-3 pt-2 border-t border-[var(--public-line)]">
             <div className="flex justify-between items-center">
-              <h3 className="text-xs font-mono font-bold text-[#111318] uppercase tracking-wider">
+              <h3 className="text-[.875rem] font-bold text-[var(--public-ink)]">
                 ¿Cuántos bultos son?
               </h3>
-              <span className="text-xs font-mono font-bold text-[#111318] bg-[#F4F6F8] px-3 py-1 rounded-md border border-[#DCE1E6]">
+              <span className="text-[.875rem] font-bold text-[var(--public-ink)] bg-[#F4F6F8] px-3 py-1 rounded-md border border-[var(--public-line)]">
                 {bultos === 5 ? "5+" : bultos} {bultos === 1 ? "bulto" : "bultos"}
               </span>
             </div>
@@ -292,7 +286,7 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
 
           {/* DETALLES ADICIONALES OPCIONALES */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-mono font-bold text-[#56616E] uppercase">
+            <label className="block text-[.875rem] font-bold text-[#56616E]">
               Detalle o producto específico (opcional):
             </label>
             <input
@@ -300,30 +294,30 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
               placeholder="Ej: Smart TV 55 pulgadas comprada en Mercado Libre..."
-              className="w-full bg-[#F4F6F8] border border-[#DCE1E6] rounded-xl p-3 text-xs text-[#111318] placeholder-[#56616E] outline-none focus:border-[#FFD21A] transition font-medium"
+              className="w-full bg-[#F4F6F8] border border-[var(--public-line)] rounded-md p-3 text-[.875rem] text-[var(--public-ink)] placeholder:text-[var(--public-muted)] outline-none focus:border-[var(--public-line)] transition font-medium"
             />
           </div>
 
         </div>
 
         {/* COLUMNA DERECHA: RESUMEN Y RESULTADO DE ESTIMACIÓN (38-40%) */}
-        <div className="lg:col-span-5 bg-[#F4F6F8] border border-[#DCE1E6] rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-xs text-left">
+        <div className="lg:col-span-5 bg-[#F4F6F8] border border-[var(--public-line)] rounded-md p-6 flex flex-col justify-between space-y-6 text-left">
           
           <div className="space-y-5">
-            <div className="border-b border-[#DCE1E6] pb-3 space-y-1">
-              <h3 className="text-base font-extrabold text-[#111318]">
+            <div className="border-b border-[var(--public-line)] pb-3 space-y-1">
+              <h3 className="text-base font-semibold text-[var(--public-ink)]">
                 Resumen de tu envío
               </h3>
-              <p className="text-xs text-[#56616E]">
+              <p className="text-[.875rem] text-[#56616E]">
                 Revisá los datos antes de continuar.
               </p>
             </div>
 
             {/* SI TODAVÍA NO SELECCIONÓ AMBOS PARÁMETROS */}
             {!isSelectionComplete ? (
-              <div className="py-8 text-center space-y-3 bg-[#FFFFFF] border border-[#DCE1E6] rounded-xl p-6">
+              <div className="py-8 text-center space-y-3 bg-[var(--public-paper)] border border-[var(--public-line)] rounded-md p-6">
                 <HelpCircle className="w-8 h-8 text-[#56616E] mx-auto opacity-50" />
-                <p className="text-xs sm:text-sm font-semibold text-[#111318] leading-relaxed">
+                <p className="text-[.875rem] sm:text-sm font-semibold text-[var(--public-ink)] leading-relaxed">
                   Elegí una localidad y un tipo de carga para ver la estimación.
                 </p>
               </div>
@@ -331,50 +325,50 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
               <div className="space-y-4">
                 
                 {/* DETALLE DE FILAS EN LENGUAJE CLARO */}
-                <div className="space-y-2.5 text-xs text-[#111318]">
-                  <div className="flex justify-between py-2 border-b border-[#DCE1E6]">
+                <div className="space-y-2.5 text-[.875rem] text-[var(--public-ink)]">
+                  <div className="flex justify-between py-2 border-b border-[var(--public-line)]">
                     <span className="text-[#56616E]">Destino:</span>
-                    <strong className="font-extrabold">{currentDest ? currentDest.name : "-"}</strong>
+                    <strong className="font-semibold">{currentDest ? currentDest.name : "-"}</strong>
                   </div>
 
-                  <div className="flex justify-between py-2 border-b border-[#DCE1E6]">
+                  <div className="flex justify-between py-2 border-b border-[var(--public-line)]">
                     <span className="text-[#56616E]">Tipo de carga:</span>
-                    <strong className="font-extrabold">{currentLoad ? currentLoad.name : "-"}</strong>
+                    <strong className="font-semibold">{currentLoad ? currentLoad.name : "-"}</strong>
                   </div>
 
-                  <div className="flex justify-between py-2 border-b border-[#DCE1E6]">
+                  <div className="flex justify-between py-2 border-b border-[var(--public-line)]">
                     <span className="text-[#56616E]">Cantidad:</span>
-                    <strong className="font-mono font-bold">{bultos === 5 ? "5+" : bultos} bulto(s)</strong>
+                    <strong className="font-bold">{bultos === 5 ? "5+" : bultos} bulto(s)</strong>
                   </div>
 
-                  <div className="flex justify-between py-2 border-b border-[#DCE1E6]">
+                  <div className="flex justify-between py-2 border-b border-[var(--public-line)]">
                     <span className="text-[#56616E]">Punto de recepción en CABA:</span>
-                    <strong className="font-mono font-bold text-[#111318]">Caracas 1101</strong>
+                    <strong className="font-bold text-[var(--public-ink)]">Caracas 1101</strong>
                   </div>
                 </div>
 
                 {/* RESULTADO DE ESTIMACIÓN O COTIZACIÓN PERSONALIZADA */}
                 {evaluation.manualQuote || evaluation.price <= 0 ? (
-                  <div className="bg-[#FFFFFF] border border-[#FFD21A]/80 p-5 rounded-xl text-center space-y-2 shadow-xs">
-                    <span className="text-[10px] font-mono font-bold text-[#56616E] uppercase tracking-wider block">
+                  <div className="bg-[var(--public-paper)] border border-[var(--public-line)] p-5 rounded-md text-center space-y-2">
+                    <span className="text-[.875rem] font-bold text-[#56616E] block">
                       COTIZACIÓN ESPECIAL
                     </span>
-                    <p className="text-sm sm:text-base font-extrabold text-[#111318]">
+                    <p className="text-sm sm:text-base font-semibold text-[var(--public-ink)]">
                       Necesitamos cotizar este envío personalmente
                     </p>
-                    <p className="text-xs text-[#56616E] leading-relaxed">
+                    <p className="text-[.875rem] text-[#56616E] leading-relaxed">
                       Hay envíos que necesitan una revisión rápida para darte un valor correcto.
                     </p>
                   </div>
                 ) : (
-                  <div className="bg-[#FFFFFF] border border-[#DCE1E6] p-5 rounded-xl text-center space-y-1.5 shadow-xs">
-                    <span className="text-[10px] font-mono font-bold text-[#56616E] uppercase tracking-wider block">
+                  <div className="bg-[var(--public-paper)] border border-[var(--public-line)] p-5 rounded-md text-center space-y-1.5">
+                    <span className="text-[.875rem] font-bold text-[#56616E] block">
                       VALOR ESTIMADO
                     </span>
-                    <div className="text-3xl sm:text-4xl font-extrabold text-[#111318] font-mono">
+                    <div className="text-3xl sm:text-4xl font-semibold text-[var(--public-ink)]">
                       AR$ ${evaluation.price.toLocaleString("es-AR")}
                     </div>
-                    <p className="text-[11px] text-[#56616E] leading-tight">
+                    <p className="text-[.875rem] text-[#56616E] leading-tight">
                       Valor estimado para los datos seleccionados. La cotización final se confirma al revisar las características del bulto.
                     </p>
                   </div>
@@ -390,13 +384,13 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
               href={generateWhatsAppMessage()}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full inline-flex items-center justify-center gap-2.5 bg-[#FFD21A] hover:bg-[#E8B900] text-[#111318] font-extrabold px-6 h-[52px] sm:h-[56px] rounded-xl text-xs sm:text-sm uppercase tracking-wider transition-all shadow-md active:scale-98 cursor-pointer"
+              className="w-full inline-flex items-center justify-center gap-2.5 bg-[var(--public-yellow)] hover:bg-[#E8B900] text-[var(--public-black)] font-semibold px-6 h-[52px] sm:h-[56px] rounded-md text-[.875rem] sm:text-sm cursor-pointer"
             >
-              <WhatsAppIcon className="w-5 h-5 text-[#111318]" />
+              <WhatsAppIcon className="w-5 h-5 text-[var(--public-ink)]" />
               <span>CONTINUAR POR WHATSAPP</span>
             </a>
 
-            <p className="text-[11px] text-[#56616E] text-center font-medium">
+            <p className="text-[.875rem] text-[#56616E] text-center font-medium">
               Continuá por WhatsApp para confirmar los detalles del envío.
             </p>
           </div>

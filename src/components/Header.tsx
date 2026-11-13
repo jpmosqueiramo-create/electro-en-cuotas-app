@@ -1,122 +1,57 @@
 "use client";
-import { CuentaHogarLogo } from '@/components/CuentaHogarLogo';
 
+import { CuentaHogarLogo } from "@/components/CuentaHogarLogo";
+import { Menu, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, X, ArrowRight, UserCheck } from "lucide-react";
-import PublicLocationMarquee from "@/components/PublicLocationMarquee";
+import { useRef, useState } from "react";
+
+const links = [
+  ["/#modelo", "Cómo funciona"],
+  ["/servicio-de-compra", "Servicio de compra"],
+  ["/envios", "Envíos Low Cost"],
+  ["/nosotros", "Nosotros"],
+  ["/red-afiliados", "Red de afiliados"],
+] as const;
 
 export default function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const toggle = useRef<HTMLButtonElement>(null);
 
-  const getLinkStyle = (targetPath: string) => {
-    const isActive = pathname === targetPath || (targetPath === "/" && pathname === "/");
-    if (isActive) {
-      return "text-xs font-bold text-[#FFD21A] bg-[#1A1D26] border border-[#FFD21A]/30 rounded-xl px-3.5 py-2 flex items-center gap-1.5 transition-all";
-    }
-    return "text-xs font-bold text-[#9CA3AF] hover:text-[#FFD21A] hover:bg-[#1A1D26]/60 transition-all px-3 py-2 flex items-center gap-1.5 rounded-xl";
-  };
-
-  const getMobileLinkStyle = (targetPath: string) => {
-    const isActive = pathname === targetPath;
-    if (isActive) {
-      return "text-sm font-bold text-[#FFD21A] bg-[#1A1D26] px-4 py-3 rounded-xl border border-[#FFD21A]/30 flex items-center gap-2";
-    }
-    return "text-sm font-bold text-[#D1D5DB] hover:text-[#FFD21A] transition-colors flex items-center gap-2 px-3 py-2";
-  };
+  const navigation = (closeMenu?: () => void) => links.map(([href, label]) => (
+    <Link key={href} href={href} aria-current={pathname === href ? "page" : undefined} onClick={closeMenu}>
+      {label}
+    </Link>
+  ));
 
   return (
-    <header className="sticky top-0 z-50 bg-[#111318]/95 backdrop-blur-md border-b border-[#222530] text-white">
-      <PublicLocationMarquee />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-4">
-        
-        {/* BRANDING LOGO */}
-        <Link href="/" className="flex items-center gap-3 shrink-0">
-          <div className="p-1.5 bg-[#090A0D] border border-[#FFD21A]/40 rounded-xl shadow-md">
-            <CuentaHogarLogo className="h-12 sm:h-14" />
-          </div>
-          <div className="hidden sm:block text-left">
-            <span className="block text-[10px] font-mono font-bold tracking-widest text-[#FFD21A] uppercase">
-              GESTIÓN DE COMPRAS · LOGÍSTICA
-            </span>
-            <span className="block text-xs font-bold text-white tracking-tight">
-              CUENTA HOGAR
-            </span>
-          </div>
+    <header className="public-header" onKeyDown={(event) => {
+      if (event.key === "Escape" && open) {
+        setOpen(false);
+        toggle.current?.focus();
+      }
+    }}>
+      <div className="public-container public-nav">
+        <Link href="/" onClick={() => setOpen(false)}>
+          <CuentaHogarLogo className="h-12" />
         </Link>
-
-        {/* MENÚ DE NAVEGACIÓN DESKTOP */}
-        <nav className="hidden lg:flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
-          <Link href="/#modelo" className={getLinkStyle("/#modelo")}>Cómo Funciona</Link>
-          <Link href="/servicio-de-compra" className={getLinkStyle("/servicio-de-compra")}>Servicio de compra</Link>
-          <Link href="/envios" className={getLinkStyle("/envios")}>Envíos Low Cost</Link>
-          <Link href="/nosotros" className={getLinkStyle("/nosotros")}>Nosotros</Link>
-          <Link href="/red-afiliados" className={getLinkStyle("/red-afiliados")}>Red de Afiliados</Link>
-        </nav>
-
-        {/* ACCIONES DEL HEADER */}
-        <div className="flex items-center gap-2.5">
-          <Link 
-            href="/login-afiliado" 
-            className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-[#E5E7EB] hover:text-[#FFD21A] border border-[#2D323E] hover:border-[#FFD21A]/50 px-3.5 py-2 rounded-xl transition-all"
-          >
-            <UserCheck className="w-4 h-4 text-[#FFD21A]" />
-            <span>Afiliados</span>
-          </Link>
-
-          <Link 
-            href="/#contacto" 
-            className="inline-flex items-center gap-1.5 bg-[#FFD21A] hover:bg-[#FFE052] text-[#111318] text-xs font-extrabold uppercase tracking-wider px-3.5 sm:px-5 py-2.5 rounded-xl transition-all shadow-md shadow-[#FFD21A]/20 transform active:scale-95"
-          >
-            <span>Solicitar Compra</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-
-          {/* MOBILE HAMBURGER BUTTON */}
-          <button 
-            className="lg:hidden text-[#FFD21A] bg-[#161922] hover:bg-[#1A1D26] border border-[#FFD21A]/40 p-2 rounded-xl transition-all shrink-0 shadow-sm" 
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Abrir menú de navegación"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6 text-white" /> : <Menu className="w-6 h-6 text-[#FFD21A]" />}
+        <nav aria-label="Navegación principal" className="public-nav-links">{navigation()}<Link href="/login-afiliado" aria-label="Ingresar al panel de vendedores afiliados">Ingresar</Link></nav>
+        <div className="flex items-center gap-2">
+          <Link href="/#contacto" className="public-button" onClick={() => setOpen(false)}>Consultar</Link>
+          <button ref={toggle} type="button" className="public-menu-toggle" onClick={() => setOpen(!open)}
+            aria-expanded={open} aria-controls="public-mobile-navigation"
+            aria-label={open ? "Cerrar menú de navegación" : "Abrir menú de navegación"}>
+            {open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
           </button>
         </div>
-
       </div>
-
-      {/* MOBILE MENU DROPDOWN */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#161922] border-b border-[#222530] p-6 flex flex-col gap-3 shadow-2xl text-white">
-          <Link href="/#modelo" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/#modelo")}>
-            Cómo Funciona
-          </Link>
-          <Link href="/servicio-de-compra" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/servicio-de-compra")}>
-            Servicio de compra
-          </Link>
-          <Link href="/envios" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/envios")}>
-            Envíos Low Cost CABA
-          </Link>
-          <Link href="/nosotros" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/nosotros")}>
-            Nosotros
-          </Link>
-          <Link href="/red-afiliados" onClick={() => setMobileMenuOpen(false)} className={getMobileLinkStyle("/red-afiliados")}>
-            Red de Afiliados
-          </Link>
-
-          <div className="pt-3 border-t border-[#222530] flex flex-col gap-2.5">
-            <Link 
-              href="/login-afiliado" 
-              onClick={() => setMobileMenuOpen(false)} 
-              className="flex items-center justify-center gap-2 text-xs font-bold text-[#E5E7EB] border border-[#2D323E] px-4 py-3 rounded-xl"
-            >
-              <UserCheck className="w-4 h-4 text-[#FFD21A]" />
-              <span>Acceso Red de Afiliados</span>
-            </Link>
-          </div>
-        </div>
-      )}
+      <nav id="public-mobile-navigation" aria-label="Navegación móvil" hidden={!open}
+        className="public-container public-mobile-nav">
+        {navigation(() => setOpen(false))}
+        <Link href="/cliente" onClick={() => setOpen(false)}>Portal de clientes</Link>
+        <Link href="/login-afiliado" onClick={() => setOpen(false)}>Acceso de vendedores afiliados</Link>
+      </nav>
     </header>
   );
 }

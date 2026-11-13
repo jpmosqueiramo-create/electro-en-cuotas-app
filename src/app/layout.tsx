@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import "./public-site.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 
