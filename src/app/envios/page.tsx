@@ -590,13 +590,20 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
             <p className="public-copy">
               Cuenta Negocio es la unidad de Loop Gestión Integral S.R.L. dedicada a comercios y emprendimientos. Conocé sus servicios para recibir, organizar y trasladar al interior la mercadería que comprás a tus proveedores en Capital.
             </p>
+            <a
+              href="https://www.cuentanegocio.com.ar/"
+              className="public-button public-button-dark justify-self-start"
+            >
+              Recorrer los servicios de Cuenta Negocio
+            </a>
           </div>
-          <a
-            href="https://www.cuentanegocio.com.ar/"
-            className="public-button public-button-dark justify-self-start self-center"
-          >
-            Recorrer los servicios de Cuenta Negocio
-          </a>
+          <Image
+            src="/logo-cuenta-negocio.png"
+            alt="Logo de Cuenta Negocio"
+            width={224}
+            height={224}
+            className="h-auto w-40 justify-self-center self-center sm:w-56"
+          />
         </div>
       </section>
 
