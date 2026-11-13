@@ -250,17 +250,17 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
 
                     <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
                       idx === 0 || idx === 5
-                        ? 'bg-[#FFD21A]/10 text-[#FFD21A] border-[#FFD21A]/40'
-                        : 'bg-[#161922] text-[#9CA3AF] border-[#222530]'
+                        ? 'bg-[var(--public-yellow)] text-[var(--public-ink)] border-[#FFD21A]/40'
+                        : 'bg-[var(--public-warm)] text-[var(--public-muted)] border-[#222530]'
                     }`}>
                       {paso.badge}
                     </span>
                   </div>
 
                   {/* CUERPO DE LA TARJETA */}
-                  <div className={`bg-[#111318] border transition-all duration-200 rounded-2xl p-4 xl:p-5 flex-1 flex flex-col justify-between space-y-4 shadow-lg group-hover:border-[#FFD21A]/50 ${
+                  <div className={`bg-[var(--public-warm)] border transition-all duration-200 rounded-2xl p-4 xl:p-5 flex-1 flex flex-col justify-between space-y-4 shadow-lg group-hover:border-[#FFD21A]/50 ${
                     idx === 0 || idx === 5
-                      ? 'border-[#FFD21A]/40 bg-gradient-to-b from-[#111318] to-[#161922]'
+                      ? 'border-[#FFD21A]/40 '
                       : 'border-[#222530]'
                   }`}>
                     <div className="space-y-2">
@@ -277,7 +277,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
                     </div>
 
                     <div className="pt-3 border-t border-[var(--public-line)] flex items-center justify-between text-[.875rem]">
-                      <span className={idx === 0 || idx === 5 ? "text-[#FFD21A] font-bold" : "text-[#9CA3AF]"}>
+                      <span className={idx === 0 || idx === 5 ? "text-[var(--public-ink)] font-bold" : "text-[var(--public-muted)]"}>
                         {idx === 0 ? "PASO INICIAL" : idx === 5 ? "DESTINO FINAL" : `ETAPA 0${idx+1}`}
                       </span>
                       {idx < 5 ? (
@@ -351,9 +351,9 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
                   </div>
 
                   {/* TARJETA DEL PASO EN MOBILE/TABLET */}
-                  <div className={`bg-[#111318] border rounded-2xl p-4 sm:p-5 space-y-3 shadow-lg ${
+                  <div className={`bg-[var(--public-warm)] border rounded-2xl p-4 sm:p-5 space-y-3 shadow-lg ${
                     idx === 0 || idx === 5
-                      ? 'border-[#FFD21A]/40 bg-gradient-to-r from-[#111318] to-[#161922]'
+                      ? 'border-[#FFD21A]/40 '
                       : 'border-[#222530]'
                   }`}>
                     <div className="flex items-center justify-between gap-2 border-b border-[var(--public-line)] pb-2.5">
@@ -362,8 +362,8 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
                       </h4>
                       <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded border ${
                         idx === 0 || idx === 5
-                          ? 'bg-[#FFD21A]/10 text-[#FFD21A] border-[#FFD21A]/40'
-                          : 'bg-[#161922] text-[#9CA3AF] border-[#222530]'
+                          ? 'bg-[var(--public-yellow)] text-[var(--public-ink)] border-[#FFD21A]/40'
+                          : 'bg-[var(--public-warm)] text-[var(--public-muted)] border-[#222530]'
                       }`}>
                         {paso.badge}
                       </span>
@@ -378,7 +378,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
                     </p>
 
                     <div className="pt-2 border-t border-[var(--public-line)] flex items-center justify-between text-[.875rem] text-[var(--public-muted)]">
-                      <span className={idx === 0 || idx === 5 ? "text-[#FFD21A] font-bold" : ""}>
+                      <span className={idx === 0 || idx === 5 ? "text-[var(--public-ink)] font-bold" : ""}>
                         {idx === 0 ? "Paso 1 de 6 — Inicio CABA" : idx === 5 ? "Paso 6 de 6 — Entrega Final" : `Etapa ${idx+1} de 6`}
                       </span>
                       {idx < 5 ? (
@@ -745,7 +745,7 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
               <Truck className="w-4 h-4 text-[var(--public-ink)]" /> ESTIMÁ TU ENVÍO
             </div>
 
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-semibold tracking-tight leading-tight !text-white">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-semibold tracking-tight leading-tight text-[var(--public-ink)]">
               ¿Querés conocer el valor estimado?
             </h2>
 

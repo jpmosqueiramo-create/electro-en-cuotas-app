@@ -17,8 +17,6 @@ import {
   Filter,
   ChevronRight,
   ChevronLeft,
-  ChevronDown,
-  ChevronUp,
   ArrowRight,
   Truck,
   MapPin,
@@ -54,7 +52,6 @@ export default function PublicCatalog() {
   const [qfLocalidad, setQfLocalidad] = useState("");
   const [qfNecesidad, setQfNecesidad] = useState("");
   const [qfSubmitting, setQfSubmitting] = useState(false);
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const [qfError,setQfError]=useState("");
   const qfSender=useRef<ReturnType<typeof createPublicSolicitudSender>|null>(null);
@@ -375,7 +372,7 @@ export default function PublicCatalog() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Buscar por producto, marca o categoría..."
-                  className="w-full bg-[var(--public-warm)] border border-[var(--public-line)] focus:border-[var(--public-line)] text-[var(--public-ink)] placeholder:text-[var(--public-muted)] text-[.875rem] rounded-md pl-10 pr-4 py-3 outline-none font-medium"
+                  className="w-full bg-[var(--public-warm)] border border-[var(--public-control-border)] text-[var(--public-ink)] placeholder:text-[var(--public-muted)] text-[.875rem] rounded-md pl-10 pr-4 py-3 outline-none font-medium"
                 />
               </div>
 
@@ -384,7 +381,7 @@ export default function PublicCatalog() {
                 <select
                   value={selectedCuotas}
                   onChange={(e) => setSelectedCuotas(e.target.value === "all" ? "all" : Number(e.target.value))}
-                  className="w-full bg-[var(--public-warm)] border border-[var(--public-line)] focus:border-[var(--public-line)] text-[var(--public-ink)] text-[.875rem] rounded-md p-3 outline-none font-medium cursor-pointer"
+                  className="w-full bg-[var(--public-warm)] border border-[var(--public-control-border)] text-[var(--public-ink)] text-[.875rem] rounded-md p-3 outline-none font-medium cursor-pointer"
                 >
                   <option value="all">Todos los planes</option>
                   {Array.from({ length: 18 }, (_, index) => index + 1).map(cuotas => <option key={cuotas} value={cuotas}>Ver plan {cuotas} cuotas</option>)}
@@ -621,23 +618,19 @@ export default function PublicCatalog() {
             {[
               {
                 q: "¿Pedir una propuesta me obliga a avanzar?",
-                a: "No. Primero conocés la propuesta y las condiciones del plan de cuotas. Si decidís avanzar, recién entonces formalizamos la gestión mediante mandato.",
-                destacada: true
+                a: "No. Primero conocés la propuesta y las condiciones del plan de cuotas. Si decidís avanzar, recién entonces formalizamos la gestión mediante mandato."
               },
               {
                 q: "¿Cuándo empiezo a pagar las cuotas?",
-                a: "La primera cuota se abona cuando recibís el producto. En operaciones de mayor valor podemos solicitar previamente una seña, que se toma a cuenta del valor total del servicio.",
-                destacada: true
+                a: "La primera cuota se abona cuando recibís el producto. En operaciones de mayor valor podemos solicitar previamente una seña, que se toma a cuenta del valor total del servicio."
               },
               {
                 q: "¿Las cuotas son fijas?",
-                a: "Sí. Antes de avanzar te presentamos las condiciones de la operación y el plan de cuotas fijas para que puedas evaluarlo.",
-                destacada: true
+                a: "Sí. Antes de avanzar te presentamos las condiciones de la operación y el plan de cuotas fijas para que puedas evaluarlo."
               },
               {
                 q: "¿Cómo puedo pagar las cuotas?",
-                a: "Podés abonarlas mediante transferencia o efectivo.",
-                destacada: true
+                a: "Podés abonarlas mediante transferencia o efectivo."
               },
               {
                 q: "¿Qué pasa si el producto que elegí se queda sin stock?",
@@ -659,40 +652,12 @@ export default function PublicCatalog() {
                 q: "¿Pueden revisar el producto antes de traerlo al interior?",
                 a: "Sí. Si lo solicitás y coordinás previamente, podemos realizar una verificación visual para detectar posibles daños evidentes antes del traslado. Esta revisión no reemplaza una inspección técnica ni la garantía del producto."
               }
-            ].map((faq, idx) => {
-              const isOpen = openFaq === idx;
-              return (
-                <div
-                  key={idx}
-                  className={`border rounded-2xl transition-all duration-200 overflow-hidden ${
-                    isOpen
-                      ? "bg-[#161922] border-[#FFD21A]/40 shadow-md"
-                      : "bg-[#161922]/60 border-[#222530] hover:border-[#374151]"
-                  }`}
-                >
-                  <button
-                    onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="w-full p-5 text-left font-bold text-[var(--public-ink)] flex justify-between items-center gap-4 hover:bg-[var(--public-warm)] transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3">
-                      {faq.destacada && (
-                        <span className="w-2 h-2 rounded-md bg-[var(--public-yellow)] shrink-0" title="Pregunta frecuente destacada" />
-                      )}
-                      <span className="text-sm sm:text-base leading-snug">{faq.q}</span>
-                    </div>
-                    <span className="text-[var(--public-ink)] shrink-0">
-                      {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                    </span>
-                  </button>
-
-                  {isOpen && (
-                    <div className="px-6 pb-5 pt-1 text-[.875rem] sm:text-sm text-[var(--public-ink)] leading-relaxed border-t border-[var(--public-line)] pl-6 font-sans">
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            ].map((faq, idx) => (
+              <details key={faq.q} name="purchase-faq" open={idx === 0} className="public-details">
+                <summary>{faq.q}</summary>
+                <p>{faq.a}</p>
+              </details>
+            ))}
           </div>
 
         </div>
@@ -749,7 +714,7 @@ export default function PublicCatalog() {
                   value={locNombre}
                   onChange={e => setLocNombre(e.target.value)}
                   placeholder="Tu nombre"
-                  className="w-full bg-[var(--public-warm)] border border-[var(--public-line)] text-[var(--public-ink)] text-[.875rem] rounded-md p-3 outline-none focus:border-[var(--public-line)]"
+                  className="w-full bg-[var(--public-warm)] border border-[var(--public-control-border)] text-[var(--public-ink)] text-[.875rem] rounded-md p-3"
                 />
               </div>
 
@@ -761,7 +726,7 @@ export default function PublicCatalog() {
                   value={locCiudad}
                   onChange={e => setLocCiudad(e.target.value)}
                   placeholder="Ej. Pehuajó, Buenos Aires"
-                  className="w-full bg-[var(--public-warm)] border border-[var(--public-line)] text-[var(--public-ink)] text-[.875rem] rounded-md p-3 outline-none focus:border-[var(--public-line)]"
+                  className="w-full bg-[var(--public-warm)] border border-[var(--public-control-border)] text-[var(--public-ink)] text-[.875rem] rounded-md p-3"
                 />
               </div>
 
@@ -773,7 +738,7 @@ export default function PublicCatalog() {
                   value={locTel}
                   onChange={e => setLocTel(e.target.value)}
                   placeholder="Ej. 2396 456789"
-                  className="w-full bg-[var(--public-warm)] border border-[var(--public-line)] text-[var(--public-ink)] text-[.875rem] rounded-md p-3 outline-none focus:border-[var(--public-line)]"
+                  className="w-full bg-[var(--public-warm)] border border-[var(--public-control-border)] text-[var(--public-ink)] text-[.875rem] rounded-md p-3"
                 />
               </div>
 

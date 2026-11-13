@@ -1,8 +1,3 @@
-"use client";
-
-import { useState } from "react";
-import { ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
-
 type FaqItem = {
   question: string;
   answer: string;
@@ -60,46 +55,14 @@ const FAQS: FaqItem[] = [
 ];
 
 export function EnviosFaq() {
-  const [openIdx, setOpenIdx] = useState<number | null>(0);
-
-  const toggleFaq = (idx: number) => {
-    setOpenIdx(openIdx === idx ? null : idx);
-  };
-
   return (
-    <div className="space-y-3">
-      {FAQS.map((faq, idx) => {
-        const isOpen = openIdx === idx;
-        return (
-          <div
-            key={idx}
-            className={`border rounded-2xl transition-all duration-200 overflow-hidden ${
-              isOpen
-                ? "bg-[#161922] border-[#173E3B] shadow-md"
-                : "bg-[#161922]/60 border-[#222530] hover:border-[#374151]"
-            }`}
-          >
-            <button
-              onClick={() => toggleFaq(idx)}
-              className="w-full p-5 text-left flex items-center justify-between gap-4 font-heading font-bold text-sm sm:text-base text-[var(--public-ink)] cursor-pointer"
-            >
-              <span className="flex items-center gap-3">
-                <HelpCircle className={`w-5 h-5 shrink-0 ${isOpen ? "text-[#FFD21A]" : "text-[#9CA3AF]"}`} />
-                <span>{faq.question}</span>
-              </span>
-              <span className="text-[var(--public-ink)] shrink-0">
-                {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-              </span>
-            </button>
-
-            {isOpen && (
-              <div className="px-5 pb-5 pt-1 text-[.875rem] sm:text-sm text-[var(--public-ink)] font-sans leading-relaxed border-t border-[var(--public-line)] pl-13">
-                {faq.answer}
-              </div>
-            )}
-          </div>
-        );
-      })}
+    <div>
+      {FAQS.map((faq, idx) => (
+        <details key={faq.question} name="shipping-faq" open={idx === 0} className="public-details">
+          <summary>{faq.question}</summary>
+          <p>{faq.answer}</p>
+        </details>
+      ))}
     </div>
   );
 }

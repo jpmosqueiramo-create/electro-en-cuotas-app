@@ -143,9 +143,9 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
       {/* INDICADOR VISUAL DE PASOS */}
       <div className="flex items-center justify-center gap-2 text-[.875rem] font-semibold text-[#56616E] bg-[#F4F6F8] border border-[var(--public-line)] py-2 px-4 rounded-md max-w-md mx-auto">
         <span className={selectedDest ? "text-[#111318] font-bold" : ""}>1. Destino</span>
-        <span className="text-[#DCE1E6]">→</span>
+        <span className="text-[var(--public-muted)]">→</span>
         <span className={selectedCat ? "text-[#111318] font-bold" : ""}>2. Tipo de carga</span>
-        <span className="text-[#DCE1E6]">→</span>
+        <span className="text-[var(--public-muted)]">→</span>
         <span className={isSelectionComplete ? "text-[#111318] font-bold" : ""}>3. Estimación</span>
       </div>
 
@@ -180,8 +180,8 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
                       onClick={() => setSelectedDest(d.id)}
                       className={`p-3.5 rounded-2xl border text-left min-h-[74px] transition-all flex flex-col justify-between relative cursor-pointer ${
                         isSelected
-                          ? "bg-[#FFFDF5] border-2 border-[#FFD21A] text-[#111318] shadow-sm"
-                          : "bg-[#FFFFFF] border-[#DCE1E6] hover:border-[#FFD21A] text-[#111318]"
+                          ? "bg-[#FFFDF5] border-2 border-[var(--public-ink)] text-[#111318] shadow-sm"
+                          : "bg-[#FFFFFF] border-[var(--public-control-border)] hover:border-[var(--public-ink)] text-[#111318]"
                       }`}
                     >
                       <div className="flex items-center justify-between w-full">
@@ -228,8 +228,8 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
                       onClick={() => setSelectedCat(c.id)}
                       className={`p-4 rounded-2xl border text-left min-h-[76px] transition-all flex items-start gap-3.5 relative cursor-pointer ${
                         isSelected
-                          ? "bg-[#FFFDF5] border-2 border-[#FFD21A] text-[#111318] shadow-sm"
-                          : "bg-[#FFFFFF] border-[#DCE1E6] hover:border-[#FFD21A] text-[#111318]"
+                          ? "bg-[#FFFDF5] border-2 border-[var(--public-ink)] text-[#111318] shadow-sm"
+                          : "bg-[#FFFFFF] border-[var(--public-control-border)] hover:border-[var(--public-ink)] text-[#111318]"
                       }`}
                     >
                       <div className="p-2 bg-[#F4F6F8] rounded-md shrink-0 mt-0.5">
@@ -274,8 +274,8 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
                   onClick={() => setBultos(n)}
                   className={`flex-1 min-h-[44px] py-2.5 rounded-xl text-xs font-mono font-bold transition-all border cursor-pointer ${
                     bultos === n
-                      ? "bg-[#FFD21A] text-[#111318] border-[#FFD21A] font-extrabold shadow-xs"
-                      : "bg-[#FFFFFF] text-[#56616E] border-[#DCE1E6] hover:border-[#FFD21A] hover:text-[#111318]"
+                      ? "bg-[#FFD21A] text-[#111318] border-[var(--public-ink)] font-extrabold shadow-xs"
+                      : "bg-[#FFFFFF] text-[#56616E] border-[var(--public-control-border)] hover:border-[var(--public-ink)] hover:text-[#111318]"
                   }`}
                 >
                   {n === 5 ? "5+" : n}
@@ -294,7 +294,7 @@ ${observaciones ? `📝 *Detalle Adicional:* ${observaciones}
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
               placeholder="Ej: Smart TV 55 pulgadas comprada en Mercado Libre..."
-              className="w-full bg-[#F4F6F8] border border-[var(--public-line)] rounded-md p-3 text-[.875rem] text-[var(--public-ink)] placeholder:text-[var(--public-muted)] outline-none focus:border-[var(--public-line)] transition font-medium"
+              className="w-full bg-[#F4F6F8] border border-[var(--public-control-border)] rounded-md p-3 text-[.875rem] text-[var(--public-ink)] placeholder:text-[var(--public-muted)] outline-none focus:border-[var(--public-line)] transition font-medium"
             />
           </div>
 

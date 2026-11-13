@@ -14,6 +14,7 @@
   --public-ink: #20201e;
   --public-muted: #54534e;
   --public-line: #d9d7ce;
+  --public-control-border: #817e74;
   --public-footer: #101012;
   --public-font: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
   --public-section: clamp(54px, 7vw, 96px);
@@ -95,12 +96,13 @@
 .public-product img { width: 100%; height: 190px; object-fit: contain; }
 .public-product .public-button { margin-top: auto; }
 .public-details { border-top: 1px solid var(--public-line); padding-block: 12px; }
-.public-details summary { font-weight: 600; cursor: pointer; }
+.public-details summary { color: var(--public-ink); font-weight: 600; cursor: pointer; padding-block: 8px; }
+.public-details summary:hover { text-decoration: underline; text-underline-offset: 3px; }
 .public-details p { padding-top: 10px; white-space: pre-line; color: var(--public-muted); }
 .public-form { display: grid; gap: 18px; }
 .public-form label { display: grid; gap: 5px; font-size: .9375rem; font-weight: 600; }
 .public-form :is(input, textarea, select) {
-  width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid #8b8980;
+  width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid var(--public-control-border);
   border-radius: 5px; background: var(--public-paper); font-size: 1rem; font-weight: 400;
 }
 .public-form textarea { resize: vertical; }

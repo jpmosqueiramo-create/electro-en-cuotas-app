@@ -200,7 +200,7 @@ export default function RedAfiliadosPage() {
                   </div>
 
                   {/* TARJETA */}
-                  <div className={`w-full h-full bg-[#111318] border p-4.5 rounded-2xl flex flex-col items-center justify-between space-y-3 transition-all ${
+                  <div className={`w-full h-full bg-[var(--public-warm)] border p-4.5 rounded-2xl flex flex-col items-center justify-between space-y-3 transition-all ${
                     item.destacado
                       ? 'border-[#FFD21A]/80 shadow-lg shadow-[#FFD21A]/10'
                       : 'border-[#252A32] group-hover:border-[#FFD21A]/40'
@@ -264,7 +264,7 @@ export default function RedAfiliadosPage() {
               }
             ].map((item, idx) => {
               return (
-                <div key={idx} className={`p-4 sm:p-5 rounded-xl border bg-[#111318] flex items-start gap-4 ${
+                <div key={idx} className={`p-4 sm:p-5 rounded-xl border bg-[var(--public-warm)] flex items-start gap-4 ${
                   item.destacado ? 'border-[#FFD21A]' : 'border-[#252A32]'
                 }`}>
                   <div className={`w-9 h-9 rounded-full font-mono font-bold text-xs flex items-center justify-center border shrink-0 ${
