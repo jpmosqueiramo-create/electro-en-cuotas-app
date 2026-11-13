@@ -11,9 +11,6 @@ import {
   CheckCircle2,
   Navigation,
   Route,
-  Briefcase,
-  Layers,
-  Sparkles,
   HelpCircle,
   ArrowRight,
   ChevronRight,
@@ -586,104 +583,20 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
         </div>
       </section>
 
-      {/* 7. SECCIÓN COMERCIOS Y EMPRENDEDORES */}
-      <section className="public-section">
-        <div className="public-container space-y-12">
-
-          <div className="max-w-3xl space-y-4 text-left">
-            <div className="inline-flex items-center gap-2 bg-transparent border border-[var(--public-line)] text-[var(--public-ink)] px-3.5 py-1.5 rounded-md text-[.875rem] font-bold">
-              <Briefcase className="w-4 h-4 text-[var(--public-ink)]" /> PARA COMERCIOS Y EMPRENDEDORES
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-semibold text-[var(--public-ink)] leading-tight">
-              Cuenta Hogar, cerca de los negocios del interior
-            </h2>
-            <p className="text-base sm:text-lg text-[var(--public-ink)] font-bold leading-relaxed">
-              Comprá a distintos proveedores en Capital. Nosotros recibimos, organizamos y consolidamos tus compras en CABA para trasladarlas juntas a tu localidad.
+      <section id="cuenta-negocio" className="public-section public-warm">
+        <div className="public-container public-split">
+          <div className="public-stack">
+            <h2>Cuenta Negocio, para comercios y emprendimientos</h2>
+            <p className="public-copy">
+              Cuenta Negocio es la unidad de Loop Gestión Integral S.R.L. dedicada a comercios y emprendimientos. Conocé sus servicios para recibir, organizar y trasladar al interior la mercadería que comprás a tus proveedores en Capital.
             </p>
           </div>
-
-          {/* BLOQUE OFICIAL DE CUPOS LIMITADOS Y GRATUIDAD DE RECEPCIÓN / CONSOLIDACIÓN */}
-          <div className="bg-[var(--public-warm)] border-2 border-[var(--public-line)] rounded-md p-6 sm:p-8 space-y-4 relative overflow-hidden">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-[var(--public-line)] pb-6">
-              <div className="space-y-2 max-w-2xl">
-                <span className="inline-block bg-[var(--public-yellow)] text-[var(--public-black)] text-[.875rem] font-semibold px-3 py-1 rounded-md">
-                  BENEFICIO LOGÍSTICO ESPECIAL
-                </span>
-                <h3 className="text-2xl font-semibold text-[var(--public-ink)]">
-                  Recepción y consolidación sin cargo, con cupos limitados
-                </h3>
-                <p className="text-sm text-[var(--public-ink)] leading-relaxed">
-                  Si comprás mercadería de forma recurrente en CABA, podés utilizar nuestro centro de recepción para reunir compras de distintos proveedores sin costo adicional por recepción ni consolidación. Trabajaremos con una cantidad limitada de clientes recurrentes para mantener el espacio, la organización y la calidad del servicio.
-                </p>
-              </div>
-
-              <div className="bg-[var(--public-warm)] border border-[var(--public-line)] px-6 py-4 rounded-md text-center shrink-0 w-full md:w-auto">
-                <span className="block text-[.875rem] text-[var(--public-muted)] font-bold">Punto Logístico CABA</span>
-                <span className="block text-sm font-bold text-[var(--public-ink)] mt-0.5">Caracas 1101, Capital Federal</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2">
-              <div className="text-[.875rem] text-[var(--public-ink)] font-bold">
-                * Nota: La recepción, consolidación y custodia temporal de la mercadería no tienen costo adicional para clientes recurrentes. El traslado al interior se cotiza por bulto según sus características y el recorrido.
-              </div>
-              <a
-                href="https://wa.me/5491125659686?text=Hola%2C%20quiero%20conocer%20c%C3%B3mo%20funcionar%C3%A1%20%2AEnv%C3%ADos%20Low%20Cost%20de%20Cuenta%20Hogar%2A%20para%20mi%20negocio/emprendimiento%20a%20partir%20de%20noviembre.%0A%0ARealizo%20compras%20en%20CABA%20y%20me%20interesa%20poder%20recibirlas%20en%20un%20mismo%20punto%2C%20consolidarlas%20sin%20cargo%20y%20trasladarlas%20juntas%20hasta%20mi%20localidad.%0A%0A%F0%9F%93%8D%20Mi%20localidad%20es%3A%0A%0A%C2%BFMe%20cuentan%20c%C3%B3mo%20funcionar%C3%A1%20el%20servicio%20para%20mi%20negocio%3F"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-lowcost text-[.875rem] shrink-0"
-              >
-                <WhatsAppIcon className="w-4 h-4" />
-                QUIERO CONOCER EL SERVICIO PARA MI NEGOCIO
-              </a>
-            </div>
-          </div>
-
-          {/* GRID DE BENEFICIOS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-            <div className="bg-[var(--public-warm)] border border-[var(--public-line)] p-6 rounded-md space-y-3 hover:border-[var(--public-line)]">
-              <div className="w-10 h-10 bg-[var(--public-warm)] text-[var(--public-ink)] rounded-md flex items-center justify-center font-bold border border-[var(--public-line)]">
-                <MapPin className="w-5 h-5" />
-              </div>
-              <h4 className="text-base font-bold text-[var(--public-ink)]">Un solo punto de recepción</h4>
-              <p className="text-[.875rem] text-[var(--public-muted)] leading-relaxed">
-                Recepción sin cargo en Caracas 1101, CABA para las entregas de todos tus proveedores.
-              </p>
-            </div>
-
-            <div className="bg-[var(--public-warm)] border border-[var(--public-line)] p-6 rounded-md space-y-3 hover:border-[var(--public-line)]">
-              <div className="w-10 h-10 bg-[var(--public-warm)] text-[var(--public-ink)] rounded-md flex items-center justify-center font-bold border border-[var(--public-line)]">
-                <Layers className="w-5 h-5" />
-              </div>
-              <h4 className="text-base font-bold text-[var(--public-ink)]">Compras organizadas</h4>
-              <p className="text-[.875rem] text-[var(--public-muted)] leading-relaxed">
-                Identificamos y agrupamos la mercadería correspondiente a tu comercio.
-              </p>
-            </div>
-
-            <div className="bg-[var(--public-warm)] border border-[var(--public-line)] p-6 rounded-md space-y-3 hover:border-[var(--public-line)]">
-              <div className="w-10 h-10 bg-[var(--public-warm)] text-[var(--public-ink)] rounded-md flex items-center justify-center font-bold border border-[var(--public-line)]">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <h4 className="text-base font-bold text-[var(--public-ink)]">Consolidación sin cargo</h4>
-              <p className="text-[.875rem] text-[var(--public-muted)] leading-relaxed">
-                Reunimos compras de distintos proveedores sin costo extra antes de enviarlas.
-              </p>
-            </div>
-
-            <div className="bg-[var(--public-warm)] border border-[var(--public-line)] p-6 rounded-md space-y-3 hover:border-[var(--public-line)]">
-              <div className="w-10 h-10 bg-[var(--public-warm)] text-[var(--public-ink)] rounded-md flex items-center justify-center font-bold border border-[var(--public-line)]">
-                <Truck className="w-5 h-5" />
-              </div>
-              <h4 className="text-base font-bold text-[var(--public-ink)]">Entrega en tu comercio</h4>
-              <p className="text-[.875rem] text-[var(--public-muted)] leading-relaxed">
-                Traslado cotizado por bulto según sus características y el recorrido.
-              </p>
-            </div>
-
-          </div>
-
+          <a
+            href="https://www.cuentanegocio.com.ar/"
+            className="public-button public-button-dark justify-self-start self-center"
+          >
+            Recorrer los servicios de Cuenta Negocio
+          </a>
         </div>
       </section>
 
