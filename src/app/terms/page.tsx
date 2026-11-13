@@ -38,13 +38,10 @@ export default function TermsPage() {
           <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
             Términos y Condiciones Generales
           </h1>
-          <p className="text-xs sm:text-sm text-amber-400 font-mono">
-            BORRADOR PARA REVISIÓN JURÍDICA — NO APTO TODAVÍA PARA PUBLICACIÓN DEFINITIVA
-          </p>
 
           <div className="bg-[#161922] border border-[#222530] p-5 sm:p-6 rounded-2xl space-y-3 text-xs sm:text-sm text-zinc-300 leading-relaxed">
             <p>
-              Los presentes Términos y Condiciones Generales regulan la utilización de los servicios ofrecidos bajo la marca comercial <strong className="text-[#FFD21A]">Cuenta Hogar</strong>, operada por <strong className="text-white">LOOP GESTIÓN INTEGRAL S.R.L.</strong>, con domicilio en Caracas 1101, Ciudad Autónoma de Buenos Aires, República Argentina, CUIT <strong className="text-white">[PENDIENTE DE ASIGNACIÓN]</strong>.
+              Los presentes Términos y Condiciones Generales regulan la utilización de los servicios ofrecidos bajo la marca comercial <strong className="text-[#FFD21A]">Cuenta Hogar</strong>, operada por <strong className="text-white">LOOP GESTIÓN INTEGRAL S.R.L.</strong>, con domicilio en Caracas 1101, Ciudad Autónoma de Buenos Aires, República Argentina, CUIT <strong className="text-white">30-71962686-2</strong>.
             </p>
             <p>
               Canal oficial de atención actualmente informado: <strong className="text-[#FFD21A]">WhatsApp 11-2565-9686</strong>.
@@ -104,7 +101,7 @@ export default function TermsPage() {
               <span className="text-[#FFD21A] font-mono">1.</span> Identificación
             </h2>
             <p>
-              Los presentes Términos y Condiciones Generales regulan la utilización de los servicios ofrecidos bajo la marca comercial <strong className="text-[#FFD21A]">Cuenta Hogar</strong>, operada por <strong className="text-white">LOOP GESTIÓN INTEGRAL S.R.L.</strong>, con domicilio en <strong className="text-white">Caracas 1101, Ciudad Autónoma de Buenos Aires, República Argentina</strong>, CUIT <strong className="text-white">[PENDIENTE DE ASIGNACIÓN]</strong>, en adelante indistintamente “LOOP”, “Cuenta Hogar” o la “Empresa”.
+              Los presentes Términos y Condiciones Generales regulan la utilización de los servicios ofrecidos bajo la marca comercial <strong className="text-[#FFD21A]">Cuenta Hogar</strong>, operada por <strong className="text-white">LOOP GESTIÓN INTEGRAL S.R.L.</strong>, con domicilio en <strong className="text-white">Caracas 1101, Ciudad Autónoma de Buenos Aires, República Argentina</strong>, CUIT <strong className="text-white">30-71962686-2</strong>, en adelante indistintamente “LOOP”, “Cuenta Hogar” o la “Empresa”.
             </p>
             <p className="font-bold text-white pt-1">Canal de atención actualmente informado:</p>
             <p className="text-[#FFD21A] font-mono font-bold">WhatsApp: 11-2565-9686</p>
@@ -651,7 +648,7 @@ export default function TermsPage() {
             <div className="space-y-1 text-zinc-300">
               <p><strong className="text-white">Cuenta Hogar — LOOP GESTIÓN INTEGRAL S.R.L.</strong></p>
               <p>Domicilio: <span className="text-white">Caracas 1101, Ciudad Autónoma de Buenos Aires</span></p>
-              <p>CUIT: <span className="text-white">[PENDIENTE DE ASIGNACIÓN]</span></p>
+              <p>CUIT: <span className="text-white">30-71962686-2</span></p>
               <p>WhatsApp oficial: <span className="text-[#FFD21A]">11-2565-9686</span></p>
               <p>Correo electrónico: <span className="text-zinc-400">[PENDIENTE DE HABILITACIÓN]</span></p>
               <p>Sitio web: <span className="text-white">Cuenta Hogar</span></p>
@@ -683,7 +680,7 @@ export default function TermsPage() {
           <div className="space-y-1 text-zinc-300">
             <p className="font-bold">LOOP GESTIÓN INTEGRAL S.R.L.</p>
             <p>Nombre comercial: Cuenta Hogar</p>
-            <p>CUIT: [PENDIENTE DE ASIGNACIÓN] | Domicilio: Caracas 1101, CABA, Argentina</p>
+            <p>CUIT: 30-71962686-2 | Domicilio: Caracas 1101, CABA, Argentina</p>
           </div>
         </footer>
 
