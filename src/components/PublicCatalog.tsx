@@ -182,8 +182,8 @@ export default function PublicCatalog() {
           <div className="public-container public-split">
             <div className="public-stack">
               <p className="public-kicker">Servicio de compra</p>
-              <h1>Comprá en Capital con ayuda desde tu localidad.</h1>
-              <p className="public-copy">Contanos qué estás buscando. Te presentamos alternativas y un plan de cuotas fijas. Si decidís avanzar, gestionamos la compra por mandato y coordinamos la recepción y la entrega.</p>
+              <h1>Gestionamos tu compra en Capital desde tu localidad.</h1>
+              <p className="public-copy">Contanos qué estás buscando. Buscamos alternativas y te presentamos una propuesta con las condiciones de la operación. Si decidís avanzar, gestionamos la compra por mandato y coordinamos la recepción y la entrega.</p>
               <div className="public-actions">
                 <a className="public-button" href="#contacto">Quiero recibir una propuesta</a>
                 <a className="public-link" href="#como-funciona">Conocé cómo funciona</a>
@@ -224,8 +224,8 @@ export default function PublicCatalog() {
               },
               {
                 num: "03",
-                titulo: "Definimos el Plan de Cuotas Fijas",
-                desc: "Te enviamos una propuesta clara con el valor del plan en cuotas fijas ajustado a la operación."
+                titulo: "Te presentamos la propuesta",
+                desc: "Te enviamos las condiciones de la gestión y el importe de las cuotas fijas de esa operación."
               },
               {
                 num: "04",
@@ -268,7 +268,7 @@ export default function PublicCatalog() {
               TODO RESUELTO EN UNA SOLA GESTIÓN
             </span>
             <h2 className="text-3xl sm:text-4xl font-semibold text-[var(--public-ink)] tracking-tight">
-              Más opciones. Cuotas claras. Entrega en tu domicilio.
+              De la búsqueda a la entrega, en una sola gestión.
             </h2>
             <p className="text-sm sm:text-base text-[var(--public-ink)] font-sans leading-relaxed">
               Desde la búsqueda hasta la entrega, coordinamos cada etapa para que puedas resolver tu compra desde el interior sin viajar a Capital.
@@ -304,7 +304,7 @@ export default function PublicCatalog() {
               <div className="space-y-3.5">
                 <div className="flex items-center justify-between">
                   <span className="text-[.875rem] font-bold text-[var(--public-ink)] bg-[var(--public-warm)] border border-[var(--public-line)] px-2.5 py-1 rounded-md">
-                    02 · PLAN DE CUOTAS FIJAS
+                    02 · PROPUESTA DE COMPRA
                   </span>
                   <div className="w-9 h-9 bg-[var(--public-yellow)] text-[var(--public-black)] rounded-md flex items-center justify-center font-bold">
                     <CreditCard className="w-4.5 h-4.5" />
@@ -587,7 +587,7 @@ export default function PublicCatalog() {
         <div className="public-container public-split">
           <div className="public-stack">
             <h2>Contanos qué estás buscando.</h2>
-            <p className="public-copy">Te orientamos sin compromiso. Completá estos datos para consultar por WhatsApp sobre alternativas y planes de cuotas.</p>
+            <p className="public-copy">Te orientamos sin compromiso. Completá estos datos para consultar por WhatsApp sobre la compra que querés gestionar.</p>
           </div>
           <PublicConsultationForm
               name={{ value: qfNombre, onChange: setQfNombre }}

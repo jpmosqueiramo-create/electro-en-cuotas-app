@@ -107,10 +107,10 @@ export default function HomeTechCatalog() {
           <div className="public-container public-split">
             <div className="public-stack">
               <p className="public-kicker">Servicio de compra</p>
-              <h1>Lo que necesitás, con un plan de cuotas y todo resuelto.</h1>
+              <h1>Gestionamos tu compra en Capital y la llevamos a tu casa.</h1>
               <p className="public-copy">Contanos qué estás buscando. Buscamos alternativas, gestionamos la compra mediante mandato y coordinamos la recepción, el traslado y la entrega.</p>
               <div className="public-actions">
-                <a className="public-button" href="https://wa.me/5491125659686?text=Hola%2C%20estuve%20viendo%20la%20web%20de%20Cuenta%20Hogar%20y%20quiero%20recibir%20una%20propuesta.%0A%0ANecesito%20comprar%20un%20producto%20y%20quisiera%20conocer%20las%20alternativas%2C%20el%20plan%20de%20cuotas%20y%20la%20entrega%20en%20mi%20localidad.%0A%0A%F0%9F%93%8D%20Mi%20localidad%20es%3A%0A%F0%9F%9B%92%20Producto%20que%20busco%3A%0A%0A%C2%BFMe%20pueden%20orientar%3F" target="_blank" rel="noopener noreferrer">Quiero recibir una propuesta</a>
+                <a className="public-button" href="https://wa.me/5491125659686?text=Hola%2C%20estuve%20viendo%20la%20web%20de%20Cuenta%20Hogar%20y%20quiero%20recibir%20una%20propuesta.%0A%0ANecesito%20comprar%20un%20producto%20y%20quisiera%20conocer%20las%20alternativas%2C%20c%C3%B3mo%20gestionan%20la%20compra%20y%20la%20entrega%20en%20mi%20localidad.%0A%0A%F0%9F%93%8D%20Mi%20localidad%20es%3A%0A%F0%9F%9B%92%20Producto%20que%20busco%3A%0A%0A%C2%BFMe%20pueden%20orientar%3F" target="_blank" rel="noopener noreferrer">Quiero recibir una propuesta</a>
                 <a className="public-link" href="#modelo">Conocé cómo funciona</a>
               </div>
               <p className="public-note">Consulta sin compromiso por WhatsApp.</p>
@@ -118,7 +118,7 @@ export default function HomeTechCatalog() {
             <div className="public-stack">
               <Image className="public-photo" src="/entrega-ford-transit.jpg" alt="Vehículo de Cuenta Hogar en una entrega a domicilio" width={1024} height={576} sizes="(max-width: 767px) 100vw, 50vw" preload />
               <div className="public-benefits">
-                <p className="font-semibold">Plan de cuotas <span aria-hidden="true"> · </span> Buscamos alternativas <span aria-hidden="true"> · </span> Entrega en tu domicilio</p>
+                <p className="font-semibold">Búsqueda de alternativas · Compra por mandato · Entrega en tu domicilio</p>
                 <p className="public-note">Entrega dentro de las localidades de cobertura. Desde el 25 de noviembre ampliamos la capacidad para productos grandes y sumamos Envíos Low Cost.</p>
               </div>
             </div>
@@ -131,7 +131,7 @@ export default function HomeTechCatalog() {
             <div className="public-pair">
               <article className="public-stack">
                 <h3>Necesitás ayuda para gestionar una compra</h3>
-                <p className="public-copy">Si buscás más alternativas en Capital, te ayudamos a encontrarlas y te presentamos un plan de cuotas antes de que decidas. Si avanzás, gestionamos la compra por mandato y coordinamos la entrega.</p>
+                <p className="public-copy">Si buscás más alternativas en Capital, te ayudamos a encontrarlas y te presentamos las condiciones de la operación antes de que decidas. Si avanzás, gestionamos la compra por mandato y coordinamos la entrega.</p>
                 <a className="public-link" href="#contacto">Pedir una propuesta</a>
               </article>
               <article className="public-stack">
@@ -149,7 +149,7 @@ export default function HomeTechCatalog() {
             <ol className="public-rows" role="list">
               {[
                 ["Contanos qué necesitás", "Podés indicarnos el tipo de producto o compartir un modelo, enlace o presupuesto que ya hayas visto."],
-                ["Revisá la propuesta", "Buscamos alternativas y te presentamos las condiciones y el plan de cuotas para que puedas decidir."],
+                ["Revisá la propuesta", "Buscamos alternativas y te presentamos las condiciones de la operación, incluidas las cuotas, para que puedas decidir."],
                 ["Formalizamos la gestión", "Si decidís avanzar, gestionamos la adquisición mediante mandato."],
                 ["Coordinamos la entrega", "Organizamos la recepción y el traslado hasta tu domicilio dentro de las localidades de cobertura."],
               ].map(([title, description], index) => (
@@ -267,8 +267,8 @@ export default function HomeTechCatalog() {
               <label>Teléfono o WhatsApp<input type="tel" required value={locTel} onChange={event => setLocTel(event.target.value)} /></label>
               <label>¿Qué servicio te interesa?
                 <select value={locInteres} onChange={event => setLocInteres(event.target.value)}>
-                  <option>Ambos (Financiación y Envíos)</option>
-                  <option>Solo Financiación en Cuotas</option>
+                  <option value="Ambos (Financiación y Envíos)">Servicio de compra y envíos</option>
+                  <option value="Solo Financiación en Cuotas">Solo servicio de compra</option>
                   <option>Solo Envíos Low Cost desde CABA</option>
                 </select>
               </label>
