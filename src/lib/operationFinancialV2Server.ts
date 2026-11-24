@@ -1,4 +1,4 @@
-import {prepareAffiliateCollectionAlert} from './affiliateCollectionAlerts';
+import {prepareReportConfirmation,prepareTransferClaim,type ReportConfirmation} from './operationPaymentReportStore';
 import {resolveCashCustodian,prepareCashCustody,cashCustodyOptions} from './operationCashCustody';
 import {issuedPaymentProof} from './productionV2/issuedPaymentProof';
 import {prepareClientActivationAtFirstPayment} from './operationClientV2Server';
@@ -25,17 +25,17 @@ export type FinancialRole='ADMIN'|'AFFILIATE'|'CLIENT';
 export const financialRef=(db:Firestore,id:string,v:number)=>deliveryRef(db,id,v).parent.doc('financial');
 // No route writes this approval. Test fixtures explicitly attest synthetic documents only.
 export const financialApprovalRef=(db:Firestore,id:string,v:number)=>deliveryRef(db,id,v).parent.doc('financialApprovalFixture');
-async function context(db:Firestore,tx:Transaction,id:string,v:number,actor:CustodyActor,role:FinancialRole){
+export async function financialContext(db:Firestore,tx:Transaction,id:string,v:number,actor:CustodyActor,role:FinancialRole,allowPreparedClient=false){
  if(role==='ADMIN'&&!actor.admin||role!=='ADMIN'&&actor.admin)financialFail('Rol no autorizado.');
  const base=await custodyLoad(db,tx,id,v,{...actor,admin:role!=='AFFILIATE'});
- if(role==='CLIENT'){const binding=(await tx.get(clientBindingRef(db,id,v))).data();const u=await admin.auth().getUser(actor.uid).catch(()=>financialFail());if(u.disabled||!u.emailVerified||binding?.uid!==actor.uid||binding?.state!=='ACTIVE'||binding.operationId!==base.source.identity.operationId)financialFail('Servicio no disponible para esta cuenta.');}
+ if(role==='CLIENT'){const binding=(await tx.get(clientBindingRef(db,id,v))).data();const u=await admin.auth().getUser(actor.uid).catch(()=>financialFail());if(u.disabled||!u.emailVerified||binding?.uid!==actor.uid||!(binding?.state==='ACTIVE'||allowPreparedClient&&binding?.state==='PREPARED')||binding.operationId!==base.source.identity.operationId)financialFail('Servicio no disponible para esta cuenta.');}
  const ref=financialRef(db,id,v),saved=await tx.get(ref),state=saved.exists?saved.data() as FinancialState:null;
  if(state&&(state.schemaVersion!=='OPERATION_FINANCIAL_V2'||state.policy!==FINANCIAL_POLICY||!['EMULATOR_ONLY','PRODUCTION'].includes(state.executionMode)||state.operationId!==base.source.identity.operationId||!Number.isSafeInteger(state.revision)))financialFail();
  if(state?.activationBasis&&(state.activationBasis.policy!=='FIRST_PAYMENT_BEFORE_DELIVERY_V1'||!/^([a-f0-9]{64})$/.test(state.activationBasis.issuedManifestHash)||state.executionMode!=='PRODUCTION'||state.deliveryCommandId!==null))financialFail('Origen financiero inválido.');
  const runtime=await operationRuntime(db,tx,id,v);if(runtime)await productionReader(runtime,actor);if(state&&((state.executionMode==='PRODUCTION')!==!!runtime||state.executionMode==='PRODUCTION'&&(!state.approvalAuthorizationId||state.approvalFixtureId)))financialFail('Modo financiero incompatible.');
  return {...base,ref,financial:state,runtime};
 }
-async function activationProof(db:Firestore,tx:Transaction,id:string,v:number,base:Awaited<ReturnType<typeof context>>,verified?:Map<string,VerifiedEvidence>,firstPayment=false){
+async function activationProof(db:Firestore,tx:Transaction,id:string,v:number,base:Awaited<ReturnType<typeof financialContext>>,verified?:Map<string,VerifiedEvidence>,firstPayment=false){
  if(base.runtime&&(firstPayment||base.financial?.activationBasis?.policy==='FIRST_PAYMENT_BEFORE_DELIVERY_V1')){const proof=await issuedPaymentProof(base.runtime,tx,id,v,verified);if(base.financial?.activationBasis&&(base.financial.activationBasis.issuedManifestHash!==proof.manifest.hash||base.financial.deliveryCommandId!==null))financialFail('Origen de activación financiera inconsistente.');return proof;}
  if(firstPayment)financialFail('El primer pago anticipado requiere documentos productivos emitidos.');
  if(base.runtime)return productionDeliveryProof(base.runtime,tx,id,v,'FINANCE',true,verified);
@@ -53,9 +53,9 @@ async function activationProof(db:Firestore,tx:Transaction,id:string,v:number,ba
  return {snapshot:s,delivery:d,files};
 }
 function verifyProjection(s:FinancialState,snapshot:ContractSnapshotV2){if(s.snapshotHash!==snapshot.integrity.payloadHash||s.snapshotId!==snapshot.contractSnapshotId||s.contractNumber!==snapshot.contractNumber||s.capitalCents!==cents(snapshot.economicTerms.capitalAmount)||s.serviceCents!==cents(snapshot.economicTerms.serviceAmount)||s.totalCents!==cents(snapshot.economicTerms.contractTotal)||stable(s.installments)!==stable(snapshot.paymentSchedule.installments.map(i=>({number:i.installmentNumber,dueDate:i.dueDate,amountCents:cents(i.amount)}))))financialFail('Proyección diferente del snapshot original.');}
-function customerReceipt(p:FinancialPayment,s:FinancialState){return {receiptId:p.receiptId,paymentId:p.id,operationId:s.operationId,contractNumber:s.contractNumber,snapshotHash:s.snapshotHash,amountCents:p.amountCents,effectiveDate:p.effectiveDate,issuedAt:p.recordedAt,method:p.method,allocations:p.allocations,status:p.reversedAt?'REVERSADO':'ACREDITADO',reversedAt:p.reversedAt,executionMode:s.executionMode};}
+export function customerReceipt(p:FinancialPayment,s:FinancialState){return {receiptId:p.receiptId,paymentId:p.id,operationId:s.operationId,contractNumber:s.contractNumber,snapshotHash:s.snapshotHash,amountCents:p.amountCents,effectiveDate:p.effectiveDate,issuedAt:p.recordedAt,method:p.method,allocations:p.allocations,status:p.reversedAt?'REVERSADO':'ACREDITADO',reversedAt:p.reversedAt,executionMode:s.executionMode};}
 const HISTORY_PAGE_SIZE=50,LEGACY_HISTORY_LIMIT=500;
-function validatePayment(value:FinancialPayment,id:string,s:FinancialState){
+export function validatePayment(value:FinancialPayment,id:string,s:FinancialState){
  if(value.id!==id||!Number.isSafeInteger(value.amountCents)||value.amountCents<=0||!Array.isArray(value.allocations)||value.allocations.some(a=>!Number.isSafeInteger(a.amountCents)||a.amountCents<=0||!s.installments.some(i=>i.number===a.installmentNumber))||new Set(value.allocations.map(a=>a.installmentNumber)).size!==value.allocations.length||value.allocations.reduce((n,a)=>n+a.amountCents,0)!==value.amountCents||value.receiptId!==`receipt_${id}`)financialFail('Pago inconsistente.');return value;
 }
 async function paymentHistory(tx:Transaction,ref:ReturnType<typeof financialRef>,s:FinancialState,cursor?:string){
@@ -74,7 +74,7 @@ async function paymentHistory(tx:Transaction,ref:ReturnType<typeof financialRef>
 export async function readFinancialReceipt(db:Firestore,id:string,v:number,actor:CustodyActor,role:FinancialRole,receiptId:string){
  opaque(receiptId);if(!receiptId.startsWith('receipt_'))financialFail('Recibo inválido.');
  return db.runTransaction(async tx=>{
-  const c=await context(db,tx,id,v,actor,role),s=c.financial;if(!s)financialFail('Sin pagos acreditados.');
+  const c=await financialContext(db,tx,id,v,actor,role),s=c.financial;if(!s)financialFail('Sin pagos acreditados.');
   if(c.runtime)await frozenOperation(c.runtime,tx,id,v,'FINANCE',false);else requireFinancialEmulator();
   const snapshot=(await tx.get(db.collection('contractSnapshotsV2').doc(s.snapshotId))).data();validateContractSnapshot(snapshot);verifyProjection(s,snapshot);
   const paymentId=opaque(receiptId.slice(8)),p=(await tx.get(c.ref.collection('payments').doc(paymentId))).data();
@@ -89,22 +89,23 @@ function accountingSummary(s:FinancialState,payments:FinancialPayment[],asOf?:st
  return financialSummary(s,[{allocations:s.installments.map((i,n)=>({installmentNumber:i.number,amountCents:a.paidByInstallment[n]})),reversedAt:null}],asOf);
 }
 export async function readFinancial(db:Firestore,id:string,v:number,actor:CustodyActor,role:FinancialRole,cursor?:string){
- return db.runTransaction(async tx=>{const c=await context(db,tx,id,v,actor,role);let productionMutation=false,firstInstallmentCents:number|null=null;if(c.runtime&&role!=='CLIENT'){try{await productionWriter(c.runtime,actor);const proof=await activationProof(db,tx,id,v,c,undefined,!c.financial);firstInstallmentCents=cents(proof.snapshot.paymentSchedule.installments[0].amount);productionMutation=true;}catch{/* Preserve authorized reads while new commands are blocked. */}}const mutationEnabled=c.runtime?productionMutation:financialEnabled()&&role!=='CLIENT';const cashOptions=role!=='CLIENT'?await cashCustodyOptions(db,tx,c.state.assignment):undefined;if(!c.financial)return {active:false as const,...(cashOptions?{cashOptions}:{}),...(c.source.identity.operationId?{operationId:c.source.identity.operationId}:{}),executionMode:c.runtime?'PRODUCTION' as const:'EMULATOR_ONLY' as const,mutationEnabled,firstInstallmentCents,blockReason:productionMutation?'Podés registrar la primera cuota recibida. Se activa el cronograma emitido sin declarar firmas ni entrega.':'Primero emití el mandato y el pagaré y verificá la habilitación administrativa.'};
+ return db.runTransaction(async tx=>{const c=await financialContext(db,tx,id,v,actor,role);let productionMutation=false,firstInstallmentCents:number|null=null;if(c.runtime&&role!=='CLIENT'){try{await productionWriter(c.runtime,actor);const proof=await activationProof(db,tx,id,v,c,undefined,!c.financial);firstInstallmentCents=cents(proof.snapshot.paymentSchedule.installments[0].amount);productionMutation=true;}catch{/* Preserve authorized reads while new commands are blocked. */}}const mutationEnabled=role==='ADMIN'&&(c.runtime?productionMutation:financialEnabled());const cashOptions=role!=='CLIENT'?await cashCustodyOptions(db,tx,c.state.assignment):undefined;if(!c.financial)return {active:false as const,...(cashOptions?{cashOptions}:{}),...(c.source.identity.operationId?{operationId:c.source.identity.operationId}:{}),executionMode:c.runtime?'PRODUCTION' as const:'EMULATOR_ONLY' as const,mutationEnabled,firstInstallmentCents,blockReason:role==='AFFILIATE'?'Informá el pago. Administración debe confirmarlo antes de acreditar al cliente.':productionMutation?'Podés registrar la primera cuota recibida. Se activa el cronograma emitido sin declarar firmas ni entrega.':'Primero emití el mandato y el pagaré y verificá la habilitación administrativa.'};
  // Frozen hash is rechecked on every view; never project private reference or personal fields.
  if(c.runtime)await frozenOperation(c.runtime,tx,id,v,'FINANCE',false);else requireFinancialEmulator();const snapshot=(await tx.get(db.collection('contractSnapshotsV2').doc(c.financial.snapshotId))).data();validateContractSnapshot(snapshot);verifyProjection(c.financial,snapshot);
  const s=c.financial,page=await paymentHistory(tx,c.ref,s,cursor),payments=page.payments,asOfDate=argentinaBusinessDate(),summary=accountingSummary(s,payments,asOfDate);
  const binding=role==='ADMIN'?(await tx.get(clientBindingRef(db,id,v))).data():null;
  return {active:true as const,...(cashOptions?{cashOptions}:{}),...(role==='ADMIN'?{clientPortalStatus:binding?.state==='ACTIVE'?'ACTIVE':binding?.state==='REVOKED'?'REVOKED':'ACCOUNT_LINK_REQUIRED'}:{}),mutationEnabled,operationId:s.operationId,revision:s.revision,contractNumber:s.contractNumber,executionMode:s.executionMode,snapshotHash:s.snapshotHash,activatedAt:s.activatedAt,asOfDate,...summary,nextCursor:page.nextCursor,receipts:payments.map(p=>customerReceipt(p,s)),...(role==='ADMIN'?{capitalCents:s.capitalCents,serviceCents:s.serviceCents,history:payments}:{}),blockReason:c.runtime?'Importes del contrato emitido. Los recibos acreditan pagos; no sustituyen comprobantes fiscales.':'Demostración en Emulator. Cobranza productiva deshabilitada; revisión jurídica pendiente.'};});
 }
-export async function financialCommand(db:Firestore,id:string,v:number,input:unknown,actor:CustodyActor,role:'ADMIN'|'AFFILIATE'='ADMIN'){
- const runtime=await db.runTransaction(tx=>operationRuntime(db,tx,id,v));if(runtime)await productionWriter(runtime,actor);else requireFinancialEmulator();if(role==='ADMIN'&&!actor.admin||role==='AFFILIATE'&&actor.admin)financialFail('Rol de cobro no autorizado.');
- const c=parseFinancialCommand(input);if(role==='AFFILIATE'&&(!['CREDIT_PAYMENT','ACTIVATE_WITH_FIRST_PAYMENT'].includes(c.action)||c.data.method!=='EFECTIVO'||c.data.cashCustody!=='AFFILIATE'))financialFail('El vendedor afiliado sólo puede registrar efectivo bajo su custodia.');const ref=financialRef(db,id,v),receipt=ref.collection('commands').doc(c.commandId),digest=createHash('sha256').update(stable({c,actor:actor.uid})).digest('hex');
+export async function financialCommand(db:Firestore,id:string,v:number,input:unknown,actor:CustodyActor,role:'ADMIN'|'AFFILIATE'='ADMIN',reportConfirmation?:ReportConfirmation){
+ if(role==='AFFILIATE')financialFail('El vendedor afiliado debe informar el pago para confirmación de Administración.');
+ const runtime=await db.runTransaction(tx=>operationRuntime(db,tx,id,v));if(runtime)await productionWriter(runtime,actor);else requireFinancialEmulator();if(!actor.admin)financialFail('Rol de cobro no autorizado.');
+ const c=parseFinancialCommand(input);const ref=financialRef(db,id,v),receipt=ref.collection('commands').doc(c.commandId),digest=createHash('sha256').update(stable({c,actor:actor.uid,...(reportConfirmation?{reportConfirmation}:{})})).digest('hex');
  // Authorize and capture metadata first; no Storage I/O runs in either transaction.
- const files=await db.runTransaction(async tx=>{const base=await context(db,tx,id,v,actor,role),prior=await tx.get(receipt);if(prior.exists){if(prior.data()!.digest!==digest)financialFail('Conflicto de commandId.');return new Map<string,EvidenceMetadata>();}return (await activationProof(db,tx,id,v,base,undefined,c.action==='ACTIVATE_WITH_FIRST_PAYMENT')).files;});
+ const files=await db.runTransaction(async tx=>{const base=await financialContext(db,tx,id,v,actor,role),prior=await tx.get(receipt);if(prior.exists){if(prior.data()!.digest!==digest)financialFail('Conflicto de commandId.');return new Map<string,EvidenceMetadata>();}return (await activationProof(db,tx,id,v,base,undefined,c.action==='ACTIVATE_WITH_FIRST_PAYMENT')).files;});
  const verified=new Map<string,VerifiedEvidence>();
  if(files.size){const {getBudgetDocumentationBucket}=await import('./budgetDocumentationStorage');const bucket=await getBudgetDocumentationBucket();for(const [path,p] of files)verified.set(path,await verifyEvidenceObject(bucket,p));}
  return db.runTransaction(async tx=>{
- if(!runtime)requireFinancialEmulator();const base=await context(db,tx,id,v,actor,role),prior=await tx.get(receipt);if(c.operationId!==base.source.identity.operationId)financialFail('Operación incorrecta.');if(prior.exists){if(prior.data()!.digest!==digest)financialFail('Conflicto de commandId.');return {...prior.data()!.result,replay:true};}
+ if(!runtime)requireFinancialEmulator();const base=await financialContext(db,tx,id,v,actor,role),prior=await tx.get(receipt);if(c.operationId!==base.source.identity.operationId)financialFail('Operación incorrecta.');if(prior.exists){if(prior.data()!.digest!==digest)financialFail('Conflicto de commandId.');return {...prior.data()!.result,replay:true};}
  if((base.financial?.revision||0)!==c.expectedRevision)financialFail('Conflicto de revisión. Recargá.');
  const proof=await activationProof(db,tx,id,v,base,verified,c.action==='ACTIVATE_WITH_FIRST_PAYMENT'),now=new Date().toISOString(),data=c.data;
  let s=base.financial,created:FinancialPayment|null=null,reversed:FinancialPayment|null=null;
@@ -137,12 +138,15 @@ export async function financialCommand(db:Firestore,id:string,v:number,input:unk
   accountingSummary(s,[]);
  }
  if(!s)financialFail('Cobranza no activada.');
+ const reportWrite=reportConfirmation&&created?await prepareReportConfirmation(db,tx,{...reportConfirmation,budgetId:id,version:v,operationId:s.operationId,sourceCollection:base.source.identity.sourceCollection,solicitudId:base.source.identity.solicitudId,payment:created,assignment:base.state.assignment,actor:actor.uid,commandId:c.commandId,at:now}):()=>{};
+ if(reportConfirmation&&!created)financialFail('La confirmación requiere un pago nuevo.');
+ const transferWrite=await prepareTransferClaim(db,tx,{created,reversed,operationId:s.operationId,actor:actor.uid,at:now});
  const clientActivation=firstPayment?await prepareClientActivationAtFirstPayment(db,tx,id,v,actor.uid,c.commandId,now):null;
  const cashWrites=await prepareCashCustody(db,tx,{created,reversed,operationId:s.operationId,budgetId:id,version:v,actor:actor.uid,at:now});
- const commissionWrites=created||reversed?await preparePaymentCommissions(db,tx,{operationId:s.operationId,budgetId:id,version:v,assignment:base.state.assignment,clientName:proof.snapshot.personalData.fullName,productName:proof.snapshot.acceptedReference.nombre,payment:(created||reversed)!,reversal:!!reversed,actor:actor.uid,at:now,affiliateActor:role==='AFFILIATE'},runtime??undefined):()=>{};
- const alertWrite=role==='AFFILIATE'&&created?await prepareAffiliateCollectionAlert(db,tx,{identity:base.source.identity,assignment:base.state.assignment,actor:actor.uid,commandId:c.commandId,clientName:proof.snapshot.personalData.fullName,event:{kind:'PAYMENT',paymentId:created.id,amountCents:created.amountCents,effectiveDate:created.effectiveDate,contractNumber:s.contractNumber}}):()=>{};
+ const commissionWrites=created||reversed?await preparePaymentCommissions(db,tx,{operationId:s.operationId,budgetId:id,version:v,assignment:base.state.assignment,clientName:proof.snapshot.personalData.fullName,productName:proof.snapshot.acceptedReference.nombre,payment:(created||reversed)!,reversal:!!reversed,actor:actor.uid,at:now,affiliateActor:false},runtime??undefined):()=>{};
+
  const result={revision:s.revision,paymentId:created?.id||reversed?.id||null,replay:false,...(clientActivation?{clientPortal:clientActivation.status}:{})};
- clientActivation?.write();commissionWrites();cashWrites();alertWrite();tx.set(ref,s);if(created){tx.create(ref.collection('payments').doc(created.id),created);tx.create(ref.collection('receipts').doc(created.receiptId),customerReceipt(created,s));}if(reversed){tx.set(ref.collection('payments').doc(reversed.id),reversed);tx.set(ref.collection('receipts').doc(reversed.receiptId),customerReceipt(reversed,s));}
+ reportWrite();transferWrite();clientActivation?.write();commissionWrites();cashWrites();tx.set(ref,s);if(created){tx.create(ref.collection('payments').doc(created.id),created);tx.create(ref.collection('receipts').doc(created.receiptId),customerReceipt(created,s));}if(reversed){tx.set(ref.collection('payments').doc(reversed.id),reversed);tx.set(ref.collection('receipts').doc(reversed.receiptId),customerReceipt(reversed,s));}
  tx.create(receipt,{digest,result,actor:actor.uid,at:now});tx.create(ref.collection('events').doc(c.commandId),{commandId:c.commandId,operationId:c.operationId,action:c.action,expectedRevision:c.expectedRevision,revision:s.revision,actor:actor.uid,at:now,data,evidenceGenerations:Object.fromEntries([...verified].map(([path,p])=>[path,p.generation])),snapshotHash:s.snapshotHash});return result;
  });
 }

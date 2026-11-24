@@ -59,7 +59,7 @@ export async function clientBindingCommand(db:Firestore,id:string,v:number,input
   if(c.action==='LINK') {
    exact(d,['uid','reason']);const uid=String(d.uid),u=await authUser(uid);
    if(typeof d.reason!=='string'||!d.reason.trim()||d.reason.length>500)portalFail('Motivo requerido.');
-   if(state.uid===u.uid)portalFail('La cuenta ya está vinculada.');
+   if(state.uid===u.uid&&state.state!=='PREPARED')portalFail('La cuenta ya está vinculada.');
    if(state.state==='ACTIVE'||state.state==='REVOKED'||state.activeInvitationId)portalFail('No se reemplaza una cuenta activa ni con invitación pendiente. Revocá primero o revisá administrativamente.');
    state.uid=u.uid;
   }else if(c.action==='INVITE') {
@@ -82,7 +82,10 @@ export async function clientBindingCommand(db:Firestore,id:string,v:number,input
    revoked=(await tx.get(invitationRef(db,state.activeInvitationId!))).data() as ClientInvitationV2;
    if(revoked.state!=='PENDING')portalFail('Invitación no revocable.');state.activeInvitationId=null;
   }
+  const preparedIndex=c.action==='LINK'&&state.uid?clientIndex(db,state.uid).doc(origin.identity.operationId):null;
+  if(preparedIndex){const indexed=(await tx.get(preparedIndex)).data();if(indexed&&(indexed.operationId!==state.operationId||indexed.budgetId!==id||indexed.version!==v||indexed.uid!==state.uid))portalFail('Índice de cuenta inconsistente.');}
   state.revision++;const result={revision:state.revision,invitationId:nextInvitation?.invitationId||null,replay:false};
+  if(preparedIndex)tx.set(preparedIndex,{operationId:state.operationId,budgetId:id,version:v,uid:state.uid});
   if(revoked)tx.update(invitationRef(db,revoked.invitationId),{state:'REVOKED',revokedAt:now});
   if(nextInvitation)tx.create(invitationRef(db,nextInvitation.invitationId),nextInvitation);
   tx.set(ref,state);tx.create(receipt,{digest,result,actor,at:now});
@@ -146,7 +149,8 @@ async function clientService(db:Firestore,id:string,v:number,uid:string,omitRevo
  await authUser(uid);
  return db.runTransaction(async tx=>{
   const {origin,state}=await context(db,tx,id,v);
-  if(omitRevoked&&state.state==='REVOKED'&&state.uid===uid)return null;
+  if(omitRevoked&&(state.uid!==uid||state.state==='REVOKED'))return null;
+  if(state.state==='PREPARED'&&state.uid===uid&&omitRevoked){const budget=(await tx.get(contractRefs(db,id,v).budget)).data()!;return {budgetId:id,version:v,operationId:origin.identity.operationId,service:'Gestión de compra por mandato',product:origin.initial.productName,status:'Pendiente de primera acreditación',activatedAt:null,locality:budget.clienteSnapshot.localidad as string,financialInformationAvailable:false,pendingConfirmationOnly:true};}
   if(state.state!=='ACTIVE'||state.uid!==uid)portalFail('Servicio no disponible.');
   await requirePrerequisites(db,tx,id,v,false);
   const budget=(await tx.get(contractRefs(db,id,v).budget)).data()!;

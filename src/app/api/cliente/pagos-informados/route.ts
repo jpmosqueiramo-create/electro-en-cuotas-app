@@ -110,7 +110,14 @@ export async function GET(req: NextRequest) {
       .limit(201).get();
 
     const pagosInformados: Record<string, unknown>[] = [];
-    snap.docs.slice(0,200).forEach(d => {const v=d.data();pagosInformados.push({id:d.id,montoInformadoCentavos:v.montoInformadoCentavos,moneda:v.moneda,medioPago:v.medioPago,estadoValidacion:v.estadoValidacion,fechaCarga:v.fechaCarga});});
+    for(const d of snap.docs.slice(0,200)){
+      const v=d.data();let status=v.estadoValidacion;
+      if(status==='CONFIRMADO'){
+        const payment=typeof v.ledgerMovimientoIdConfirmed==='string'&&!v.ledgerMovimientoIdConfirmed.includes('/')?(await db.collection('ledger_movimientos').doc(v.ledgerMovimientoIdConfirmed).get()).data():null;
+        status=!payment||payment.solicitudId!==solicitudId||payment.tipo!=='PAGO'?'ACREDITACION_NO_VERIFICADA':payment.estado==='REVERSADO'?'REVERSADO':payment.estado==='ACTIVO'?'CONFIRMADO':'ACREDITACION_NO_VERIFICADA';
+      }
+      pagosInformados.push({id:d.id,montoInformadoCentavos:Number.isSafeInteger(v.montoInformadoCentavos)&&v.montoInformadoCentavos>0?v.montoInformadoCentavos:null,moneda:['ARS','USD'].includes(v.moneda)?v.moneda:'Moneda sin verificar',medioPago:v.medioPago,estadoValidacion:status,fechaCarga:v.fechaCarga});
+    }
 
     return NextResponse.json({ ok: true, pagosInformados,partial:snap.size>200 },{headers:contractHeaders});
 

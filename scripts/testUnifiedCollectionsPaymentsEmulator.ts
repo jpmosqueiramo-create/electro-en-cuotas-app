@@ -25,7 +25,7 @@ async function main() {
   assert.equal(await browser.evaluate("document.activeElement.textContent"),'Cerrar');
   await browser.evaluate('window.confirm=()=>true');await browser.change('dialog [aria-label="Referencia primera cuota"]','SYNTHETIC-FIRST');await browser.clickText('Confirmar primera cuota recibida');
   await browser.until(`${scope}?.textContent.includes('1.595.000')`,'first payment balance');
-  await browser.clickText('Registrar pago',scope);await browser.change('dialog [aria-label="Importe acreditado"]','72500');await browser.change('dialog [aria-label="Referencia de acreditación"]','SYNTHETIC-PARTIAL');
+  await browser.clickText('Registrar pago directo',scope);await browser.change('dialog [aria-label="Importe acreditado"]','72500');await browser.change('dialog [aria-label="Referencia de acreditación"]','SYNTHETIC-PARTIAL');
   assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('dialog input[name=amount]')).backgroundColor"),'rgb(255, 253, 252)');
   await browser.screenshot('collections-account-desktop.png');await browser.overflow('account desktop');
   // The real handler commits, then its response is lost; retry must reuse the same command/payment IDs.

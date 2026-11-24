@@ -1,4 +1,6 @@
 'use client';
+import { HistoricalPaymentReports } from './HistoricalPaymentReports';
+import { PendingPaymentReports } from './PendingPaymentReports';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Search, MessageCircle, RefreshCw, AlertCircle, CalendarDays, CheckCircle2, ArrowUpRight } from 'lucide-react';
@@ -53,6 +55,8 @@ function CollectionsSession() {
   const unknown = count('UNKNOWN');
   return <section data-testid="collections-dashboard" aria-busy={loading} className="min-w-0 space-y-5">
     <div className="flex flex-wrap items-center justify-between gap-3"><p className="max-w-2xl text-text-secondary">Encontrá a quién contactar y consultá cuotas, pagos y recibos desde su ficha.</p><button type="button" className="admin-control inline-flex min-h-11 items-center gap-2 rounded-xl border border-border-color bg-surface px-4 font-semibold text-brand-primary disabled:opacity-50" disabled={loading || !user} onClick={() => void refresh()}><RefreshCw size={18} aria-hidden="true" />Actualizar cobranzas</button></div>
+    <PendingPaymentReports/>
+    <HistoricalPaymentReports/>
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Resumen de cobranzas">
       {([{ filter: 'ALL', title: 'Operaciones', icon: Search }, { filter: 'OVERDUE', title: 'Con cuotas vencidas', icon: AlertCircle }, { filter: 'TODAY', title: 'Vencen hoy', icon: CalendarDays }, { filter: 'CURRENT', title: 'Al día', icon: CheckCircle2 }] as const).map(item => <button type="button" key={item.filter} aria-pressed={status === item.filter} onClick={() => setStatus(item.filter)} className={`admin-control min-w-0 rounded-2xl border p-4 text-left ${item.filter === 'ALL' ? 'border-brand-primary bg-brand-primary text-white' : tones[item.filter]} ${status === item.filter ? 'ring-2 ring-brand-primary ring-offset-2' : ''}`}><item.icon size={20} aria-hidden="true" /><span className="mt-2 block text-sm font-semibold">{item.title}</span><span className="block text-3xl font-bold tabular-nums">{rows ? count(item.filter) : '—'}</span>{item.filter === 'OVERDUE' && <span className="mt-1 block break-words text-xs">{rows ? money(overdue) : '—'} pendientes vencidos</span>}</button>)}
     </div>

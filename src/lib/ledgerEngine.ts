@@ -357,7 +357,8 @@ export async function registrarPagoDirectoAdmin(
 
     receptorEfectivoId?: string | null;
     fechaRecepcion?: string | null;
-  }
+  },
+  sharedTransaction?: admin.firestore.Transaction
 ): Promise<{ movimiento: LedgerMovimiento; imputaciones: LedgerImputacion[] }> {
   // Validar medios de pago
   if (params.medioPago !== 'TRANSFERENCIA' && params.medioPago !== 'EFECTIVO') {
@@ -372,18 +373,15 @@ export async function registrarPagoDirectoAdmin(
     if (!params.receptorEfectivoId || !params.receptorEfectivoId.trim()) {
       throw new Error('400:RECEPTOR_EFECTIVO_REQUERIDO: Se requiere especificar la persona que recibió el efectivo.');
     }
-    const recAuth = await validarReceptorEfectivoAutorizado(db, params.receptorEfectivoId);
-    if (!recAuth.esAutorizado) {
-      throw new Error('403:RECEPTOR_EFECTIVO_NO_AUTORIZADO: Los vendedores afiliados no autorizados no pueden recibir pagos en efectivo sin habilitación expresa de LOOP.');
-    }
+
   }
 
   const montoAplicable = params.montoAplicablePlanCentavos ?? params.montoRecibidoCentavos ?? 0;
-  if (montoAplicable <= 0) {
+  if (!Number.isSafeInteger(params.montoRecibidoCentavos) || params.montoRecibidoCentavos <= 0 || !Number.isSafeInteger(montoAplicable) || montoAplicable <= 0) {
     throw new Error('400:MONTO_INVALIDO: El importe a aplicar debe ser un número entero mayor a 0 centavos.');
   }
 
-  const resTx = await db.runTransaction(async (transaction) => {
+  const apply = async (transaction: admin.firestore.Transaction) => {
     // 1. Verificar idempotencia
     const idempRef = db.collection('idempotencia_ledger').doc(params.idempotencyKey);
     const idempSnap = await transaction.get(idempRef);
@@ -396,16 +394,19 @@ export async function registrarPagoDirectoAdmin(
       const movSnap = await transaction.get(db.collection('ledger_movimientos').doc(existingMovId));
       if (movSnap.exists) {
         const movData = movSnap.data() as LedgerMovimiento;
-        if (movData.montoRecibidoCentavos !== params.montoRecibidoCentavos || movData.solicitudId !== params.solicitudId) {
+        if (movData.montoRecibidoCentavos !== params.montoRecibidoCentavos || movData.solicitudId !== params.solicitudId || movData.medioPago !== params.medioPago || movData.monedaRecibida !== params.monedaRecibida || movData.fechaEfectiva !== params.fechaEfectiva || (movData.referenciaTransferencia || null) !== (params.referenciaTransferencia || null) || (movData.receptorEfectivoId || null) !== (params.receptorEfectivoId || null)) {
           throw new Error('409:IDEMPOTENCY_KEY_CONFLICT: La clave de idempotencia ya fue utilizada con un payload diferente.');
         }
-        const impSnap = await db.collection('ledger_imputaciones').where('movimientoId', '==', existingMovId).get();
+        const impSnap = await transaction.get(db.collection('ledger_imputaciones').where('movimientoId', '==', existingMovId));
         const imps: LedgerImputacion[] = [];
         impSnap.forEach(d => imps.push(d.data() as LedgerImputacion));
         return { movimiento: movData, imputaciones: imps };
       }
     }
 
+    // Read authorization in the same transaction, before any ledger writes.
+    const cashReceiver=params.medioPago==='EFECTIVO'?await validarReceptorEfectivoAutorizado(db,params.receptorEfectivoId!,transaction):null;
+    if(cashReceiver&&!cashReceiver.esAutorizado)throw new Error('403:RECEPTOR_EFECTIVO_NO_AUTORIZADO: Receptor de efectivo no habilitado.');
     // 2. Leer Solicitud
     const solRef = db.collection('solicitudes').doc(params.solicitudId);
     let solSnap = await transaction.get(solRef);
@@ -418,6 +419,7 @@ export async function registrarPagoDirectoAdmin(
     }
 
     const solData = solSnap.data() || {};
+    if(solData.operationId||solData.contractSnapshotV2)throw new Error('409:OPERACION_V2: Usá la cobranza del contrato vinculado; no se acredita desde el circuito histórico.');
     const targetMoneda = solData.monedaPlan || solData.moneda || solData.propuestaAceptadaSnapshot?.moneda || solData.propuestaAceptada?.moneda || 'ARS';
     let montoAplicable = params.montoAplicablePlanCentavos ?? params.montoRecibidoCentavos ?? 0;
     if (targetMoneda === 'USD' && params.monedaRecibida === 'ARS') {
@@ -561,7 +563,7 @@ export async function registrarPagoDirectoAdmin(
     transaction.set(db.collection('ledger_movimientos').doc(movimientoId), nuevoMovimiento);
 
     if (params.medioPago === "EFECTIVO" && params.receptorEfectivoId) {
-      const valRec = await validarReceptorEfectivoAutorizado(db, params.receptorEfectivoId);
+      const valRec = cashReceiver!;
       if (valRec.esAutorizado && valRec.vendedorAfiliadoId) {
         const movCustId = "cust_cobro_" + movimientoId;
         const custMov: LedgerCustodiaEfectivoMovimiento = {
@@ -582,7 +584,10 @@ export async function registrarPagoDirectoAdmin(
     transaction.set(idempRef, { movimientoId, timestamp: timestampIso, solicitudId: params.solicitudId, montoRecibidoCentavos: params.montoRecibidoCentavos });
 
     return { movimiento: nuevoMovimiento, imputaciones: nuevasImputaciones };
-  });
+  };
+  const resTx=sharedTransaction?await apply(sharedTransaction):await db.runTransaction(apply);
+  // Caller runs commission side effects only after its encompassing transaction commits.
+  if(sharedTransaction)return resTx;
 
   try {
     await procesarComisionPago(db, {
@@ -605,15 +610,17 @@ export async function validarPagoInformadoAdmin(
   db: admin.firestore.Firestore,
   params: {
     pagoInformadoId: string;
-    accion: 'CONFIRMAR' | 'RECHAZADO';
+    accion: 'CONFIRMAR' | 'RECHAZADO' | 'VINCULAR';
+    movimientoExistenteId?:string;
     observacionAdmin?: string;
     adminEmail?: string;
     reversadoPor?: string;
     idempotencyKey?: string;
     fechaAcreditacion?: string;
+    receptorEfectivoId?: string;
   }
 ): Promise<{ ok: boolean; estadoValidacion: EstadoValidacionPagoInformado; movimientoConfirmed?: LedgerMovimiento }> {
-  return await db.runTransaction(async (transaction) => {
+  const result=await db.runTransaction<{ok:boolean;estadoValidacion:EstadoValidacionPagoInformado;movimientoConfirmed?:LedgerMovimiento}>(async (transaction) => {
     const pagoInfRef = db.collection('pagos_informados').doc(params.pagoInformadoId);
     const pagoInfSnap = await transaction.get(pagoInfRef);
 
@@ -623,6 +630,12 @@ export async function validarPagoInformadoAdmin(
 
     const infoData = pagoInfSnap.data() as PagoInformado;
 
+    if((params.accion==='CONFIRMAR'||params.accion==='VINCULAR')&&infoData.estadoValidacion==='CONFIRMADO'&&infoData.ledgerMovimientoIdConfirmed){
+      const movement=(await transaction.get(db.collection('ledger_movimientos').doc(infoData.ledgerMovimientoIdConfirmed))).data() as LedgerMovimiento|undefined;
+      if(!movement||movement.estado!=='ACTIVO'||movement.solicitudId!==infoData.solicitudId||movement.montoRecibidoCentavos!==infoData.montoInformadoCentavos||(params.accion==='CONFIRMAR'&&(movement.fechaAcreditacion!==params.fechaAcreditacion||(movement.receptorEfectivoId||null)!==(params.receptorEfectivoId||null)))||(params.accion==='VINCULAR'&&movement.id!==params.movimientoExistenteId))throw new Error('409:CONFIRMACION_INCONSISTENTE: Revisá el pago confirmado.');
+      return {ok:true,estadoValidacion:'CONFIRMADO',movimientoConfirmed:movement};
+    }
+    if(params.accion==='RECHAZADO'&&infoData.estadoValidacion==='RECHAZADO'&&infoData.observacionAdmin===(params.observacionAdmin||'Rechazado por Administración'))return {ok:true,estadoValidacion:'RECHAZADO'};
     if (infoData.estadoValidacion !== 'PENDIENTE_VALIDACION' || infoData.ledgerMovimientoIdConfirmed) {
       throw new Error('409:PAGO_INFORMADO_YA_PROCESADO: El pago informado ya ha sido confirmado o rechazado previamente.');
     }
@@ -637,10 +650,25 @@ export async function validarPagoInformadoAdmin(
       return { ok: true, estadoValidacion: 'RECHAZADO' };
     }
 
+    if(params.accion==='VINCULAR'){
+      if(!params.movimientoExistenteId||! /^[A-Za-z0-9_-]{1,200}$/.test(params.movimientoExistenteId))throw new Error('400:PAGO_EXISTENTE_REQUERIDO: Elegí un pago acreditado.');
+      const existing=(await transaction.get(db.collection('ledger_movimientos').doc(params.movimientoExistenteId))).data() as LedgerMovimiento|undefined;
+      if(!existing||existing.tipo!=='PAGO'||existing.estado!=='ACTIVO'||existing.solicitudId!==infoData.solicitudId||existing.montoRecibidoCentavos!==infoData.montoInformadoCentavos||existing.monedaRecibida!==infoData.moneda||existing.medioPago!==infoData.medioPago)throw new Error('409:PAGO_EXISTENTE_INCOMPATIBLE: El pago debe pertenecer a la misma operación y tener igual importe, moneda y medio.');
+      transaction.update(pagoInfRef,{estadoValidacion:'CONFIRMADO',ledgerMovimientoIdConfirmed:existing.id,observacionAdmin:'Informe vinculado a un pago ya acreditado. No genera otro cobro.',fechaValidacion:new Date().toISOString(),validadoPor:(params.adminEmail||params.reversadoPor||'').trim()});
+      return {ok:true,estadoValidacion:'CONFIRMADO',movimientoConfirmed:existing};
+    }
+
     // CONFIRMAR -> Crear Pago Directo
-    if (!params.fechaAcreditacion || !params.fechaAcreditacion.trim()) {
+    if (typeof params.fechaAcreditacion!=='string' || !params.fechaAcreditacion.trim()) {
       throw new Error('400:FECHA_ACREDITACION_REQUERIDA: Se requiere ingresar la fecha de acreditación real.');
     }
+    const creditDate=new Date(params.fechaAcreditacion+'T12:00:00Z');
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(params.fechaAcreditacion)||!Number.isFinite(creditDate.getTime())||creditDate.toISOString().slice(0,10)!==params.fechaAcreditacion||params.fechaAcreditacion>new Date().toLocaleDateString('en-CA',{timeZone:'America/Argentina/Buenos_Aires'}))throw new Error('400:FECHA_ACREDITACION_INVALIDA: Revisá la fecha de acreditación.');
+    let source=await transaction.get(db.collection('solicitudes').doc(infoData.solicitudId));
+    if(!source.exists)source=await transaction.get(db.collection('propuestas').doc(infoData.solicitudId));
+    if(!source.exists)throw new Error('404:SOLICITUD_NO_ENCONTRADA: Revisá la operación histórica.');
+    const sourceData=source.data()!,planCurrency=sourceData.monedaPlan||sourceData.moneda||sourceData.propuestaAceptadaSnapshot?.moneda||sourceData.propuestaAceptada?.moneda||'ARS';
+    if(planCurrency!==infoData.moneda)throw new Error('409:CONCILIACION_MONEDA_REQUERIDA: Este cobro requiere revisar moneda y cotización desde el registro administrativo; después vinculá el movimiento acreditado.');
     const idempotencyKey = 'CONFIRM_PAGO_INFORMADO_' + params.pagoInformadoId;
 
     const resPago = await registrarPagoDirectoAdmin(db, {
@@ -655,8 +683,11 @@ export async function validarPagoInformadoAdmin(
       origenRegistro: 'CLIENTE_INFORMADO_CONFIRMADO',
       idempotencyKey,
       referenciaTransferencia: infoData.referenciaTransferencia || null,
-      comprobanteStoragePath: infoData.comprobanteStoragePath || null
-    });
+      comprobanteStoragePath: infoData.comprobanteStoragePath || null,
+      fechaAcreditacion: params.fechaAcreditacion,
+      receptorEfectivoId: params.receptorEfectivoId || null,
+      fechaRecepcion: infoData.medioPago==='EFECTIVO'?params.fechaAcreditacion:null
+    },transaction);
 
     transaction.update(pagoInfRef, {
       estadoValidacion: 'CONFIRMADO',
@@ -668,6 +699,8 @@ export async function validarPagoInformadoAdmin(
 
     return { ok: true, estadoValidacion: 'CONFIRMADO', movimientoConfirmed: resPago.movimiento };
   });
+  if(result.movimientoConfirmed){try{await procesarComisionPago(db,{solicitudId:result.movimientoConfirmed.solicitudId,ledgerPagoMovimientoId:result.movimientoConfirmed.id,registradoPor:(params.adminEmail||params.reversadoPor||'').trim(),ledgerMovimiento:result.movimientoConfirmed});}catch{/* Existing idempotent commission reconciliation remains independent. */}}
+  return result;
 }
 
 /**

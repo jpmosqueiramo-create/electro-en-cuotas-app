@@ -29,11 +29,11 @@ export async function testAffiliateFollowupBrowser() {
   await browser.click('[data-testid=affiliate-followup-card] summary');await browser.until("document.querySelectorAll('[data-testid=affiliate-v2-operation]').length===1",'account details');await browser.overflow('expanded followup 320');
   await browser.until("!!document.querySelector('[data-testid=financial-v2]')",'financial detail');
   assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('[data-testid=affiliate-v2-operation]')).backgroundColor"),'rgb(247, 243, 236)');
-  await browser.until("[...document.querySelectorAll('[data-testid=financial-v2] button')].some(button=>button.textContent==='Registrar cobro en efectivo'&&!button.disabled)",'financial data ready for cash form');
-  await browser.clickText('Registrar cobro en efectivo');await browser.until("!!document.querySelector('[data-testid=payment-form]')",'cash form preserved');await browser.overflow('cash form 320');
-  assert.equal(await browser.evaluate("document.querySelector('[data-testid=payment-form] input[type=date]').getBoundingClientRect().width>=180"),true,'date field must remain readable at 320px');
-  await browser.evaluate("document.querySelector('[data-testid=payment-form]').scrollIntoView({block:'center'})");await browser.screenshot('affiliate-refresh-cash-320.png');
-  await browser.clickText('Cerrar carga de pago');
+  await browser.until("[...document.querySelectorAll('[data-testid=financial-v2] button')].some(button=>button.textContent==='Informar un pago'&&!button.disabled)",'financial data ready for cash form');
+  await browser.clickText('Informar un pago');await browser.until("!!document.querySelector('[data-testid=report-payment-form]')",'cash form preserved');await browser.overflow('cash form 320');
+  assert.equal(await browser.evaluate("document.querySelector('[data-testid=report-payment-form] input[type=date]').getBoundingClientRect().width>=180"),true,'date field must remain readable at 320px');
+  await browser.evaluate("document.querySelector('[data-testid=report-payment-form]').scrollIntoView({block:'center'})");await browser.screenshot('affiliate-refresh-cash-320.png');
+  await browser.clickText('Cerrar formulario');
   await browser.click('nav a[href=\"#comisiones\"]');await browser.until("document.querySelector('nav a[href=\"#comisiones\"]').getAttribute('aria-current')==='location'",'commission navigation');
   await browser.until("document.querySelector('[data-testid=affiliate-commissions]').textContent.includes('Pendiente disponible:')",'commission cards');await browser.until("getComputedStyle(document.querySelector('nav a[aria-current=location]')).backgroundColor==='rgb(23, 62, 59)'",'selected nav style');await browser.overflow('commission cards 320');await browser.screenshot('affiliate-refresh-commissions-320.png');
   await browser.click('nav a[href=\"#catalogo-afiliado\"]');await browser.until("!!document.querySelector('[data-affiliate-reference=portal-visual]')",'catalog product');await browser.overflow('catalog 320');await browser.screenshot('affiliate-refresh-catalog-320.png');
