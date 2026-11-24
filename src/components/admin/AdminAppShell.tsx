@@ -42,7 +42,7 @@ export function AdminAppShell({ children }: { children: ReactNode }) {
             <div className="flex flex-wrap items-center gap-2 border-t border-border-color pt-3 md:border-0 md:pt-0">
               <span className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border-color bg-background-main px-3 text-xs font-semibold text-brand-primary"><span aria-hidden="true" className="size-2 rounded-full bg-success" />Sesión activa</span>
               <AdminAlertsLink />
-              <a href="/nosotros#contacto" className="admin-control inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold"><CircleHelp aria-hidden="true" className="size-4" />Ayuda</a>
+              <Link href="/#contacto" className="admin-control inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold"><CircleHelp aria-hidden="true" className="size-4" />Ayuda</Link>
               <button type="button" onClick={handleLogout} disabled={leaving} className="admin-control inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border-color px-3 text-xs font-semibold text-[#B42318] disabled:opacity-60"><LogOut aria-hidden="true" className="size-4" />{leaving ? "Saliendo…" : "Salir"}</button>
             </div>
           </header>
