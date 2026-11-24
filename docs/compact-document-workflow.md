@@ -58,3 +58,32 @@ existencia de firebase.json ni utiliza credenciales productivas.
 
 La comprobación visual se realiza con la sesión demo y los emuladores, en
 escritorio, móvil y tablet. Las pruebas guardan exclusivamente datos sintéticos.
+
+## Retoma sobre la versión publicada 3c3a765
+
+La aceptación muestra una continuación principal hacia Datos y documentos. Los
+planes y la fecha de aceptación se conservan en un desplegable; registrar la
+aceptación ya no abre otra grilla de archivos automáticamente en el presupuesto.
+La consulta opcional de archivos desde esa vista sigue disponible.
+
+Los envíos pendientes aparecen primero, con fecha argentina y cantidad de
+campos diferentes. Los envíos anteriores quedan juntos en un historial plegado;
+se mantiene la comparación y la aplicación explícita de cada envío. No se añaden
+campos ni se altera qué datos reemplaza el comando existente.
+
+Los paneles de datos, revisión documental y contrato permanecen montados al
+pasar también a Logística y Cuotas y pagos. Las observaciones en preparación y
+los campos editados se conservan durante la navegación interna. Para evitar que
+un guardado pise otro borrador local, editar datos personales bloquea temporalmente
+los laborales y el editor contractual; una edición contractual pendiente bloquea
+la aplicación de envíos y la edición manual de datos. Cada grupo conserva su botón
+de guardado existente. No hay guardados automáticos.
+
+La guía no consulta emisión hasta que exista ficha. Ese paso se muestra pendiente
+con su requisito previo, sin inventar una respuesta de emisión ni mostrar un error
+por una consulta que todavía no corresponde. El estado `idle` pertenece sólo a la
+presentación de lecturas; no es un estado persistido ni una autorización.
+
+Cerrar o recargar la página puede descartar una edición local sin guardar. La
+conservación comprobada corresponde a cambiar de etapa dentro de la ficha, no a
+cerrar la pestaña ni a recuperar borradores después de un reinicio.

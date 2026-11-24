@@ -6,23 +6,24 @@ import type {ContractDraftV2} from '@/lib/contractV2';
 import {operationProgress,validProgressFact,type ProgressFacts,type ProgressState} from '@/lib/operationProgress';
 import type {ContractSectionTarget} from './contractSectionNavigation';
 import {operationStatusLabel} from '@/lib/operationWorkspaceV2';
-const initialFacts=():ProgressFacts=>({credit:{status:'loading'},production:{status:'loading'},delivery:{status:'loading'},financial:{status:'loading'},fulfillment:{status:'loading'}});
+const initialFacts=(hasDraft:boolean):ProgressFacts=>({credit:{status:'loading'},production:{status:hasDraft?'loading':'idle'},delivery:{status:'loading'},financial:{status:'loading'},fulfillment:{status:'loading'}});
 const labels:Record<ProgressState,string>={READY:'Completo',PENDING:'Pendiente',BLOCKED:'Requiere revisión',UNKNOWN:'Sin verificar',OPTIONAL:'Opcional'};
 const button='admin-control inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border-color bg-surface px-3 py-2 text-sm font-semibold text-brand-primary disabled:opacity-50';
 export function OperationProgressGuide({budgetId,version,draft,pendingSubmissions,conformity,unsaved,dirtyTarget='editor',refreshKey,retired=false,onNavigate}:{budgetId:string;version:number;draft:ContractDraftV2|null;pendingSubmissions:boolean;conformity:{required:boolean;confirmed:boolean;paymentAddressConfirmed?:boolean}|null;unsaved:boolean;dirtyTarget?:ContractSectionTarget;refreshKey:number;retired?:boolean;onNavigate:(target:ContractSectionTarget)=>void}){
- const {user}=useAuth(),[facts,setFacts]=useState<ProgressFacts>(initialFacts),[attempt,setAttempt]=useState(0),[updated,setUpdated]=useState('');
+ const hasDraft=!!draft;
+ const {user}=useAuth(),[facts,setFacts]=useState<ProgressFacts>(()=>initialFacts(hasDraft)),[attempt,setAttempt]=useState(0),[updated,setUpdated]=useState('');
  const refresh=useCallback(()=>setAttempt(value=>value+1),[]);
  useEffect(()=>{
   if(!user||retired)return;
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),15000);
   let live=true;
-  setFacts(initialFacts());setUpdated('');
+  setFacts(initialFacts(hasDraft));setUpdated('');
   async function read(){
    try{
     const token=await user!.getIdToken();
     const base=`/api/admin/presupuestos-v2/${encodeURIComponent(budgetId)}/versions/${version}`;
-    const paths={credit:'credit-review',production:'production',delivery:'delivery',financial:'financial',fulfillment:'fulfillment'} as const;
+    const paths={credit:'credit-review',...(hasDraft?{production:'production'}:{}),delivery:'delivery',financial:'financial',fulfillment:'fulfillment'} as const;
     await Promise.all(Object.entries(paths).map(async([key,path])=>{
      try{const response=await fetch(`${base}/${path}`,{headers:{Authorization:`Bearer ${token}`},cache:'no-store',signal:controller.signal});if(!response.ok)throw Error();const value=await response.json();if(!validProgressFact(key,value))throw Error();if(live)setFacts(old=>({...old,[key]:{status:'ready',value}}));}
      catch{if(live)setFacts(old=>({...old,[key]:{status:'error'}}));}
@@ -32,7 +33,7 @@ export function OperationProgressGuide({budgetId,version,draft,pendingSubmission
    finally{clearTimeout(timer);}
   }
   void read();return()=>{live=false;clearTimeout(timer);controller.abort();};
- },[user,budgetId,version,draft?.revision,refreshKey,attempt,retired]);
+ },[user,budgetId,version,hasDraft,draft?.revision,refreshKey,attempt,retired]);
  useEffect(()=>{
   const eventRefresh=(event:Event)=>{const detail=(event as CustomEvent<{budgetId?:string;version?:number}>).detail;if(detail?.budgetId&& (detail.budgetId!==budgetId||detail.version!==version))return;refresh();};
   const focus=()=>{if(!document.hidden)refresh();};

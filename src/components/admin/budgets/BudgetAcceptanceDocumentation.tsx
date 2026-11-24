@@ -47,7 +47,7 @@ export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false,
     const key = JSON.stringify(payload);
     if (command.current?.key !== key) command.current = { key, id: crypto.randomUUID() };
     const data = await (await request('acceptance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, commandId: command.current.id }) })).json();
-    setAcceptance(data.acceptance); setOpen(false); await reloadDocumentation(); setManage(true);
+    setAcceptance(data.acceptance); setOpen(false); await reloadDocumentation(); setManage(false);
   }
   async function upload(type: DocumentType, file: File) {
     if (!ALLOWED_MIME_TYPES.includes(file.type as typeof ALLOWED_MIME_TYPES[number]) || file.size > MAX_ATTACHMENT_SIZE_BYTES) throw new Error('Usá JPEG, PNG, WEBP o PDF de hasta 10 MiB.');
@@ -91,12 +91,12 @@ export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false,
       <button className={button} onClick={() => setOpen(false)}>Cancelar aceptación</button>
     </fieldset>}
     {!documentationOnly && acceptance && <div data-testid="acceptance-registered" className="space-y-2">
-      <h4 className="font-semibold">ACEPTACIÓN REGISTRADA</h4><p>Opción aceptada: {acceptance.optionSnapshot.referenceSnapshot.nombre}</p>
-      <p>Planes originalmente ofrecidos:</p><ul>{acceptance.optionSnapshot.referenceSnapshot.planesOfrecidos.map(p => <li key={p.cuotas}>{p.cuotas} cuotas estimadas de {money(p.cuotaEstimada)}</li>)}</ul>
+      <h4 className="font-semibold">Aceptación registrada</h4><p className="break-words">{acceptance.optionSnapshot.referenceSnapshot.nombre}</p>
+      <Link className="btn-primary admin-control inline-flex min-h-11 items-center whitespace-normal" href={`/admin/operaciones/${encodeURIComponent(budget.id)}/${budget.version}?section=documents`}>Continuar con datos y documentos</Link>
+      <details className="rounded-xl border border-border-color p-3"><summary className="min-h-11 cursor-pointer font-semibold">Ver propuesta aceptada</summary><div className="space-y-2 pt-2"><p>Planes originalmente ofrecidos:</p><ul>{acceptance.optionSnapshot.referenceSnapshot.planesOfrecidos.map(p => <li key={p.cuotas}>{p.cuotas} cuotas estimadas de {money(p.cuotaEstimada)}</li>)}</ul>
       <p>{acceptance.preferredPlanCuotas === null ? 'Sin preferencia definida' : `Plan preferido: ${acceptance.preferredPlanCuotas} cuotas — ${money(acceptance.preferredPlanAmountSnapshot!)}`}</p>
-      <Link className={`${button} inline-flex items-center`} href={`/admin/operaciones/${encodeURIComponent(budget.id)}/${budget.version}`}>Abrir ficha de operación</Link>
-      <p>Fecha: {new Date(acceptance.acceptedAt).toLocaleString('es-AR')}</p><p>Etapa actual: DOCUMENTACIÓN</p>
-      <button className={button} disabled={busy} onClick={() => void act(async () => { await reloadDocumentation(); setManage(!manage); })}>Gestionar documentación</button>
+      <p>Fecha: {new Date(acceptance.acceptedAt).toLocaleString('es-AR', {timeZone:'America/Argentina/Buenos_Aires'})}</p></div></details>
+      <button className={button} disabled={busy} onClick={() => void act(async () => { await reloadDocumentation(); setManage(!manage); })}>{manage?'Ocultar archivos de esta vista':'Consultar archivos desde el presupuesto'}</button>
     </div>}
     {manage && documentation && <div data-testid="documentation-panel" className="space-y-4">
       {!renderReview&&<h4 className="font-heading text-lg font-bold">Documentación privada</h4>}<p className="text-sm text-text-secondary">{compact?'Abrí un documento para cargarlo o revisarlo.':renderReview?'Cargá y consultá cada archivo desde su tarjeta.':documentationOnly?'La carpeta verificada puede reutilizar archivos anteriores.':'La carga conserva el expediente histórico.'} JPEG, PNG, WEBP o PDF · hasta 10 MiB por archivo.</p>
