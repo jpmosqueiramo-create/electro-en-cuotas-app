@@ -24,6 +24,19 @@ export type AdminSolicitudListItem = {
   estadoEntrega: string | null; propuestas: AdminProposal[]; documentos: AdminDocument[];
   actividad: { label: string; fecha: StoredDate }[];
 };
+/** HTTP projection only. Stored Firestore values keep their original types. */
+export function toAdminSolicitudHttpPayload(item: AdminSolicitudListItem): AdminSolicitudListItem {
+  const date = (value: StoredDate | null): string | null => {
+    const millis = storedDateMillis(value);
+    return millis === null ? null : new Date(millis).toISOString();
+  };
+  return {
+    ...item,
+    fechaCreacion: date(item.fechaCreacion),
+    propuestas: item.propuestas.map(proposal => ({ ...proposal, fecha: date(proposal.fecha) })),
+    actividad: item.actividad.map(event => ({ ...event, fecha: date(event.fecha)! })),
+  };
+}
 const object = (value: unknown): Record<string, unknown> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 const text = (...values: unknown[]): string | null => {
   for (const value of values) if (typeof value === "string" && value.trim()) return value;
