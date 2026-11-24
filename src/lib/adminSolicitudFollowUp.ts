@@ -2,7 +2,7 @@
 export const followUpLabels = { OPEN: 'Sin revisar', REVIEWING: 'En revisión', WAITING: 'Esperando respuesta', CLOSED: 'Seguimiento cerrado' } as const;
 export type FollowUpState = keyof typeof followUpLabels;
 export const followUpTransitions: Record<FollowUpState, readonly FollowUpState[]> = {
-  OPEN: ['REVIEWING'], REVIEWING: ['WAITING', 'CLOSED'], WAITING: ['REVIEWING', 'CLOSED'], CLOSED: ['REVIEWING'],
+  OPEN: ['REVIEWING', 'WAITING', 'CLOSED'], REVIEWING: ['WAITING', 'CLOSED'], WAITING: ['REVIEWING', 'CLOSED'], CLOSED: ['REVIEWING'],
 };
 export type FollowUpCommand = {
   commandId: string; expectedRevision: number; action: 'ADD_NOTE' | 'CHANGE_STATE';

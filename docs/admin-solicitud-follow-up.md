@@ -3,8 +3,9 @@
 ## Alcance y carga de datos
 
 Una nota y un botón. Cambiar el seguimiento es opcional y usa la misma nota como
-motivo; fecha y autor provienen del servidor. Estados: sin revisar → en revisión
-→ esperando respuesta o cerrado. Se puede retomar desde esperando respuesta o
+motivo; fecha y autor provienen del servidor. Desde sin revisar se puede pasar
+directamente a en revisión, esperando respuesta o cerrado, sin cargas intermedias.
+Se puede retomar desde esperando respuesta o
 cerrado hacia en revisión. Agregar una nota no cambia el estado.
 
 Este seguimiento no sustituye el estado operativo ni acredita aprobación,
