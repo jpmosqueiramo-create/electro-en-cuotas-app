@@ -2,13 +2,14 @@
 import Link from 'next/link';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
+import { DocumentSlot } from './DocumentSlot';
 import type { BudgetV2 } from '@/lib/budgetV2';
 import { ALLOWED_MIME_TYPES, DOCUMENT_LABELS, DOCUMENT_TYPES, MAX_ATTACHMENT_SIZE_BYTES, type BudgetAcceptanceV2, type BudgetDocumentationCaseV2, type DocumentType } from '@/lib/budgetAcceptanceV2';
 
 const button = 'min-h-11 rounded-xl border border-border-color bg-surface px-4 py-2 text-sm font-semibold text-brand-primary disabled:opacity-40';
 const input = 'min-h-11 w-full min-w-0 rounded-xl border border-border-color bg-surface px-3 py-2';
 const money = (n: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
-export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false,onChanged,renderReview,reviewStatuses }: { budget: BudgetV2; documentationOnly?:boolean;onChanged?:()=>Promise<void>;renderReview?:(type:DocumentType)=>ReactNode;reviewStatuses?:Partial<Record<DocumentType,string>> }) {
+export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false,onChanged,renderReview,reviewStatuses,compact=false,refreshKey=0,disabled=false }: { budget: BudgetV2; documentationOnly?:boolean;onChanged?:()=>Promise<void>;renderReview?:(type:DocumentType)=>ReactNode;reviewStatuses?:Partial<Record<DocumentType,string>>;compact?:boolean;refreshKey?:number;disabled?:boolean }) {
   const { user } = useAuth();
   const [acceptance, setAcceptance] = useState<BudgetAcceptanceV2 | null>(null);
   const [documentation, setDocumentation] = useState<BudgetDocumentationCaseV2 | null>(null);
@@ -29,10 +30,11 @@ export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false,
     return response;
   }, [base, user]);
   useEffect(() => {
+    if (documentationOnly) return;
     let current = true;
     void request('acceptance').then(r => r.json()).then(data => { if (current) { setAcceptance(data.acceptance); setLoaded(true); } }).catch(() => { if (current) setError('No se pudo consultar la aceptación.'); });
     return () => { current = false; };
-  }, [request]);
+  }, [request,documentationOnly]);
   async function act(work: () => Promise<void>) {
     if (flight.current) return;
     flight.current = true; setBusy(true); setError('');setNotice('');
@@ -55,7 +57,7 @@ export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false,
     const form = new FormData(); form.append('commandId', id); form.append('file', file);
     await request(`documentation/${type}/attachments`, { method: 'POST', body: form }); await reloadDocumentation(); uploadCommands.current.delete(key);setNotice(`${DOCUMENT_LABELS[type]}: archivo cargado.`);
   }
-  useEffect(()=>{if(!documentationOnly)return;let active=true;void request('documentation').then(r=>r.json()).then(data=>{if(active){setDocumentation(data.documentation);setManage(true);}}).catch(()=>{if(active)setError('No se pudo consultar la documentación.');});return()=>{active=false;};},[documentationOnly,request]);
+  useEffect(()=>{if(!documentationOnly)return;let active=true;void request('documentation').then(r=>r.json()).then(data=>{if(active){setDocumentation(data.documentation);setManage(true);setError('');}}).catch(()=>{if(active)setError('No se pudo actualizar la lista de archivos. Reintentá con «Actualizar documentos».');});return()=>{active=false;};},[documentationOnly,request,refreshKey]);
   const option = budget.options.find(o => o.optionId === selected);
   return <section data-testid="budget-acceptance" className={renderReview?"min-w-0 space-y-4":"min-w-0 space-y-4 rounded-xl border border-border-color p-4"}>
     {!renderReview&&<h3 className="font-heading text-lg font-bold">{documentationOnly?'Archivos de esta operación':'Aceptación y documentación'}</h3>}
@@ -97,10 +99,9 @@ export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false,
       <button className={button} disabled={busy} onClick={() => void act(async () => { await reloadDocumentation(); setManage(!manage); })}>Gestionar documentación</button>
     </div>}
     {manage && documentation && <div data-testid="documentation-panel" className="space-y-4">
-      {!renderReview&&<h4 className="font-heading text-lg font-bold">Documentación privada</h4>}<p className="text-sm text-text-secondary">{renderReview?'Cargá y consultá cada archivo desde su tarjeta.':documentationOnly?'La carpeta verificada puede reutilizar archivos anteriores.':'La carga conserva el expediente histórico.'} JPEG, PNG, WEBP o PDF · hasta 10 MiB por archivo.</p>
-      <div className="grid min-w-0 gap-4 lg:grid-cols-2">{DOCUMENT_TYPES.map(type => { const slot = documentation.slots[type]; return <article key={type} data-document-type={type} className="min-w-0 space-y-3 rounded-xl border border-border-color p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2"><h5 className="font-semibold">{DOCUMENT_LABELS[type]}</h5><span className="text-xs font-semibold text-text-secondary">{type==='PAYSLIP'?'Ingresos · opcional':'Identidad y domicilio'}</span></div>
-        <p data-slot-status className="text-sm font-semibold">{(slot.attachments.length||reviewStatuses?.[type]==='Verificado y vigente'?reviewStatuses?.[type]:undefined)??({SIN_CARGAR:'Sin archivo',CARGADO:'Archivo cargado',OBSERVADO:'Requiere actualización'}[slot.status]??slot.status.replaceAll('_',' '))}</p>
+      {!renderReview&&<h4 className="font-heading text-lg font-bold">Documentación privada</h4>}<p className="text-sm text-text-secondary">{compact?'Abrí un documento para cargarlo o revisarlo.':renderReview?'Cargá y consultá cada archivo desde su tarjeta.':documentationOnly?'La carpeta verificada puede reutilizar archivos anteriores.':'La carga conserva el expediente histórico.'} JPEG, PNG, WEBP o PDF · hasta 10 MiB por archivo.</p>
+      <div className={compact?'min-w-0 space-y-2':'grid min-w-0 gap-4 lg:grid-cols-2'}>{DOCUMENT_TYPES.map(type => { const slot = documentation.slots[type]; const status=reviewStatuses?.[type]??({SIN_CARGAR:'Sin archivo',CARGADO:'Archivo cargado',OBSERVADO:'Requiere actualización'}[slot.status]??slot.status.replaceAll('_',' ')); return <DocumentSlot key={type} type={type} title={DOCUMENT_LABELS[type]} status={status} count={slot.attachments.length} folderReference={!slot.attachments.length&&!!reviewStatuses?.[type]} compact={compact} initiallyOpen={type===DOCUMENT_TYPES.find(t=>t!=='PAYSLIP'&&reviewStatuses?.[t]!=='Verificado y vigente')}>
+        <fieldset disabled={busy||disabled} className="min-w-0 space-y-3">
         {slot.observation && <p className="whitespace-pre-wrap break-words text-sm">Observación: {slot.observation}</p>}
         <label className="block space-y-2"><span className="text-sm">Agregar archivo</span><input aria-label={`Agregar archivo ${DOCUMENT_LABELS[type]}`} className={`${input} text-sm file:mr-2 file:rounded-lg file:border-0 file:bg-background-main file:px-3 file:py-2 file:text-brand-primary`} type="file" accept={ALLOWED_MIME_TYPES.join(',')} disabled={busy} onChange={e => { const file = e.target.files?.[0]; e.currentTarget.value = ''; if (file) void act(() => upload(type, file)); }} /></label>
         {slot.attachments.map(a => <div key={a.attachmentId} className="min-w-0 space-y-2 border-t border-border-color pt-3"><p className="break-all text-sm">{a.originalName}</p><div className="flex flex-wrap gap-2">
@@ -115,7 +116,8 @@ export function BudgetAcceptanceDocumentation({ budget, documentationOnly=false,
           <button className={button} disabled={busy || !notes[type]?.trim()} onClick={() => void act(async () => { await request(`documentation/${type}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ observation: notes[type] }) }); await reloadDocumentation(); })}>Marcar observado</button>
         </div>}
         {renderReview&&<fieldset disabled={busy} className="min-w-0">{renderReview(type)}</fieldset>}
-      </article>; })}</div>
+        </fieldset>
+      </DocumentSlot>; })}</div>
     </div>}
   </section>;
 }

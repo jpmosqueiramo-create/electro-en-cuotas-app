@@ -1,0 +1,42 @@
+import './helpers/requireSafeEmulatorEnvironment';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { admin } from '../src/lib/firebaseAdmin';
+import { compactIntakeFixtures } from './testCompactIntakeEmulator';
+import { loadDocumentation } from '../src/lib/budgetAcceptanceV2Server';
+import { readCreditReview } from '../src/lib/creditReviewV2Server';
+import { documentationBucketName, uploadBudgetDocument, downloadBudgetDocument, deleteBudgetDocument } from '../src/lib/budgetDocumentationStorage';
+
+async function tests() {
+  assert.equal(process.env.FIREBASE_STORAGE_EMULATOR_HOST, '127.0.0.1:9199');
+  assert.equal(process.env.STORAGE_EMULATOR_HOST, 'http://127.0.0.1:9199');
+  assert.equal(documentationBucketName(), 'demo-cuenta-hogar.appspot.com');
+  const db = admin.firestore(), bucket = admin.storage().bucket(documentationBucketName()), f = await compactIntakeFixtures();
+  const before = await db.getAll(f.ready.r.budget, f.ready.r.acceptance, f.ready.r.draft);
+  const bytes = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1EAAAAASUVORK5CYII=','base64');
+  const input = { commandId: randomUUID(), originalName: 'documento-sintetico.png', mimeType: 'image/png' };
+  const attachment = await uploadBudgetDocument(db, bucket, f.readyId, 1, 'DNI_BACK', input, bytes, 'synthetic-admin');
+  const replay = await uploadBudgetDocument(db, bucket, f.readyId, 1, 'DNI_BACK', input, bytes, 'synthetic-admin');
+  assert.equal(replay.attachmentId, attachment.attachmentId);
+  const documentation = (await loadDocumentation(db, f.readyId, 1)).documentation;
+  assert.equal(documentation.slots.DNI_BACK.attachments.length, 1);
+  assert.equal(documentation.events.filter(e => e.type === 'UPLOADED' && e.documentType === 'DNI_BACK').length, 1);
+  assert.notEqual((await readCreditReview(db, f.readyId, 1)).documents.find(d => d.type === 'DNI_BACK')!.status, 'VERIFIED', 'Upload never verifies a document');
+  assert.equal((await readCreditReview(db, f.readyId, 1)).approved, false);
+  assert.deepEqual((await downloadBudgetDocument(db, bucket, f.readyId, 1, 'DNI_BACK', attachment.attachmentId)).bytes, bytes);
+  await assert.rejects(downloadBudgetDocument(db, bucket, f.emptyId, 1, 'DNI_BACK', attachment.attachmentId));
+  await assert.rejects(uploadBudgetDocument(db, bucket, f.readyId, 1, 'DNI_BACK', { ...input, commandId: randomUUID(), mimeType: 'text/html' }, Buffer.from('<html>'), 'synthetic-admin'));
+  const privateRead = await fetch(`http://127.0.0.1:9199/v0/b/${documentationBucketName()}/o/${encodeURIComponent(attachment.storagePath)}?alt=media`);
+  assert.equal(privateRead.status, 403);
+  const deletion = { commandId: randomUUID() };
+  await deleteBudgetDocument(db, bucket, f.readyId, 1, 'DNI_BACK', attachment.attachmentId, deletion, 'synthetic-admin');
+  await deleteBudgetDocument(db, bucket, f.readyId, 1, 'DNI_BACK', attachment.attachmentId, deletion, 'synthetic-admin');
+  const afterDelete = (await loadDocumentation(db, f.readyId, 1)).documentation;
+  assert.equal(afterDelete.slots.DNI_BACK.attachments.length, 0);
+  assert.equal(afterDelete.events.filter(e => e.type === 'DELETED' && e.documentType === 'DNI_BACK').length, 1);
+  assert.equal((await bucket.file(attachment.storagePath).exists())[0], false);
+  const after = await db.getAll(f.ready.r.budget, f.ready.r.acceptance, f.ready.r.draft);
+  before.forEach((saved, index) => { assert.deepEqual(saved.data(), after[index].data()); assert.ok(saved.updateTime!.isEqual(after[index].updateTime!)); });
+  console.log('COMPACT_STORAGE_EMULATOR = PASS; UPLOAD_DOWNLOAD_DELETE_REPLAYS=PASS; WRONG_CASE_REJECTED=PASS; UNSUPPORTED_FILE_REJECTED=PASS; PRIVATE_FILES=PASS; NO_AUTOMATIC_APPROVAL=PASS; ORIGINAL_SNAPSHOTS_AND_AMOUNTS_UNCHANGED=PASS');
+}
+void tests().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => admin.app().delete());
