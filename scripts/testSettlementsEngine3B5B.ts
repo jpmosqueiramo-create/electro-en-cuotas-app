@@ -1,4 +1,5 @@
 import "./helpers/requireSafeEmulatorEnvironment";
+import {randomUUID} from "node:crypto";
 import { admin } from "../src/lib/firebaseAdmin";
 import { registrarPagoDirectoAdmin, validarReceptorEfectivoAutorizado } from "../src/lib/ledgerEngine";
 import {
@@ -55,6 +56,8 @@ async function testClientBrowserWriteDenied(collectionName: string, docId: strin
   return res.status === 403;
 }
 
+const suiteId=randomUUID();
+const testId=(value:string)=>value+"_"+suiteId;
 async function runTests3B5B() {
   console.log("=== FIREBASE FIRESTORE & AUTH EMULATOR SUITE 3B.5B (GATE FINAL MÍNIMO 3B.5B) ===");
   let passed = 0;
@@ -74,13 +77,13 @@ async function runTests3B5B() {
   const db = admin.firestore();
 
   // Setup Vendedores & Receptores
-  const v1Id = "vend_3b5b_1";
-  const v1Email = "vend1@cuentahogar.com";
-  const v1AuthUid = "uid_vend_1";
+  const v1Id = testId("vend_3b5b_1");
+  const v1Email = `vend1-${suiteId}@example.test`;
+  const v1AuthUid = testId("uid_vend_1");
 
-  const v2Id = "vend_3b5b_2";
-  const v2Email = "vend2@cuentahogar.com";
-  const v2AuthUid = "uid_vend_2";
+  const v2Id = testId("vend_3b5b_2");
+  const v2Email = `vend2-${suiteId}@example.test`;
+  const v2AuthUid = testId("uid_vend_2");
 
   // Setup Documentos Vendedor
   await db.collection("vendedores").doc(v1Id).set({
@@ -100,7 +103,7 @@ async function runTests3B5B() {
   });
 
   // Setup Receptor Autorizado para Vendedor 1
-  await db.collection("receptores_efectivo_autorizados").doc("rec_vendedor_1").set({
+  await db.collection("receptores_efectivo_autorizados").doc(testId("rec_vendedor_1")).set({
     nombre: "Caja Vendedor 1",
     tipoReceptor: "VENDEDOR_AFILIADO",
     vendedorAfiliadoId: v1Id,
@@ -108,7 +111,7 @@ async function runTests3B5B() {
   });
 
   // Setup Receptor sin vinculo para prueba 409
-  await db.collection("receptores_efectivo_autorizados").doc("rec_sin_vinculo").set({
+  await db.collection("receptores_efectivo_autorizados").doc(testId("rec_sin_vinculo")).set({
     nombre: "Receptor Incompleto",
     tipoReceptor: "VENDEDOR_AFILIADO",
     activo: true
@@ -125,7 +128,7 @@ async function runTests3B5B() {
   });
 
   // Setup Operación 1 (400.000 centavos)
-  const solId1 = "sol_3b5b_op1";
+  const solId1 = testId("sol_3b5b_op1");
   const mockSnapshot4Cuotas = {
     pricingSchemaVersion: "CANONICAL_V1",
     moneda: "ARS",
@@ -177,22 +180,22 @@ async function runTests3B5B() {
       vendedorAfiliadoEmail: v1Email,
       montoSolicitadoCentavos: 100.5 as unknown as number,
       creadoPorAdminUid: "admin_test",
-      idempotencyKey: "borrador_invalid_monto"
+      idempotencyKey: testId("borrador_invalid_monto")
     });
   } catch (err: unknown) { errNaN = (err as Error).message || ""; }
   assert(errNaN.includes("400:MONTO_LIQUIDACION_INVALIDO"), "7. crearBorradorLiquidacion rechaza monto decimal con 400:MONTO_LIQUIDACION_INVALIDO.");
 
   // Single Source para receptores de efectivo y vinculo obligatorio
-  const valRecOk = await validarReceptorEfectivoAutorizado(db, "rec_vendedor_1");
+  const valRecOk = await validarReceptorEfectivoAutorizado(db, testId("rec_vendedor_1"));
   assert(Boolean(valRecOk.esAutorizado) && valRecOk.vendedorAfiliadoId === v1Id, "8. Receptor autorizado retorna esAutorizado=true y vendedorAfiliadoId vinculada.");
 
   let errVinculo = "";
   try {
-    await validarReceptorEfectivoAutorizado(db, "rec_sin_vinculo");
+    await validarReceptorEfectivoAutorizado(db, testId("rec_sin_vinculo"));
   } catch (err: unknown) { errVinculo = (err as Error).message || ""; }
   assert(errVinculo.includes("409:RECEPTOR_VENDEDOR_SIN_VINCULO"), "9. Receptor sin vendedorAfiliadoId lanza 409:RECEPTOR_VENDEDOR_SIN_VINCULO.");
 
-  const valRecInexistente = await validarReceptorEfectivoAutorizado(db, "rec_inexistente");
+  const valRecInexistente = await validarReceptorEfectivoAutorizado(db, testId("rec_inexistente"));
   assert(!valRecInexistente.esAutorizado, "10. Receptor inexistente retorna esAutorizado=false.");
 
   // --- SECCIÓN 2: MOVIMIENTOS Y CUENTA CORRIENTE ---
@@ -205,7 +208,7 @@ async function runTests3B5B() {
     fechaEfectiva: "2026-02-15",
     registradoPor: "admin_test",
     origenRegistro: "ADMIN",
-    idempotencyKey: "pago_3b5b_1"
+    idempotencyKey: testId("pago_3b5b_1")
   });
 
   const cc1 = await obtenerCuentaCorrienteVendedor(db, v1Id);
@@ -216,8 +219,8 @@ async function runTests3B5B() {
   assert(aggCom.saldoComisionesCentavos === 10000, "12. Agregador obtenerSaldoComisionesVendedor reporta saldoComisionesCentavos === 10.000.");
 
   // Reversa de comisión
-  await db.collection("ledger_movimientos").doc("mov_rev_ledger_1").set({
-    id: "mov_rev_ledger_1",
+  await db.collection("ledger_movimientos").doc(testId("mov_rev_ledger_1")).set({
+    id: testId("mov_rev_ledger_1"),
     solicitudId: solId1,
     tipo: "REVERSA",
     movimientoOriginalId: resPago1.movimiento.id,
@@ -243,7 +246,7 @@ async function runTests3B5B() {
     montoComisionCentavos: -3000,
     motivo: "Descuento por cargo administrativo",
     adminUid: "admin_test",
-    idempotencyKey: "ajuste_neg_1"
+    idempotencyKey: testId("ajuste_neg_1")
   });
 
   const cc3 = await obtenerCuentaCorrienteVendedor(db, v1Id);
@@ -256,7 +259,7 @@ async function runTests3B5B() {
     montoComisionCentavos: 10000,
     motivo: "Crédito extraordinario",
     adminUid: "admin_test",
-    idempotencyKey: "ajuste_pos_1"
+    idempotencyKey: testId("ajuste_pos_1")
   });
 
   const cc4 = await obtenerCuentaCorrienteVendedor(db, v1Id);
@@ -272,7 +275,7 @@ async function runTests3B5B() {
     vendedorAfiliadoEmail: v1Email,
     montoSolicitadoCentavos: 4000,
     creadoPorAdminUid: "admin_test",
-    idempotencyKey: "borrador_1"
+    idempotencyKey: testId("borrador_1")
   });
 
   assert(borrador1.id.startsWith("borrador_"), "17. Borrador generado usa ID determinista con prefijo borrador_.");
@@ -284,7 +287,7 @@ async function runTests3B5B() {
       liquidacionId: borrador1.id,
       motivoAnulacion: "Intento invalido",
       adminUid: "admin_test",
-      idempotencyKey: "anular_borrador_invalid"
+      idempotencyKey: testId("anular_borrador_invalid")
     });
   } catch (err: unknown) { errAnularBorrador = (err as Error).message || ""; }
   assert(errAnularBorrador.includes("400:TRANSICION_ESTADO_INVALIDA"), "18. anularLiquidacion rechaza estado BORRADOR con 400:TRANSICION_ESTADO_INVALIDA.");
@@ -295,7 +298,7 @@ async function runTests3B5B() {
   const conf1 = await confirmarLiquidacion(db, {
     liquidacionId: borrador1.id,
     adminUid: "admin_test",
-    idempotencyKey: "confirm_1"
+    idempotencyKey: testId("confirm_1")
   });
 
   const dispPostConfirmar = await obtenerSaldoDisponibleLiquidacion(db, v1Id);
@@ -309,7 +312,7 @@ async function runTests3B5B() {
     liquidacionId: conf1.id,
     motivoAnulacion: "Error en cálculo de período",
     adminUid: "admin_test",
-    idempotencyKey: "anular_1"
+    idempotencyKey: testId("anular_1")
   });
 
   const dispPostAnular = await obtenerSaldoDisponibleLiquidacion(db, v1Id);
@@ -321,13 +324,13 @@ async function runTests3B5B() {
     vendedorAfiliadoEmail: v1Email,
     montoSolicitadoCentavos: 5000,
     creadoPorAdminUid: "admin_test",
-    idempotencyKey: "borrador_2"
+    idempotencyKey: testId("borrador_2")
   });
 
   const conf2 = await confirmarLiquidacion(db, {
     liquidacionId: borrador2.id,
     adminUid: "admin_test",
-    idempotencyKey: "confirm_2"
+    idempotencyKey: testId("confirm_2")
   });
 
   // Pago con componente inválido (formaPago desconocida)
@@ -337,7 +340,7 @@ async function runTests3B5B() {
       liquidacionId: conf2.id,
       componentesPago: [{ formaPago: "BITCOIN" as unknown as "TRANSFERENCIA", montoCentavos: 5000 }],
       adminUid: "admin_test",
-      idempotencyKey: "pagar_invalid_forma"
+      idempotencyKey: testId("pagar_invalid_forma")
     });
   } catch (err: unknown) { errFormaInv = (err as Error).message || ""; }
   assert(errFormaInv.includes("400:COMPONENTE_PAGO_INVALIDO"), "23. pagarLiquidacion rechaza formaPago no permitida con 400:COMPONENTE_PAGO_INVALIDO.");
@@ -346,7 +349,7 @@ async function runTests3B5B() {
     liquidacionId: conf2.id,
     componentesPago: [{ formaPago: "TRANSFERENCIA", montoCentavos: 5000, referenciaBancaria: "TX-999" }],
     adminUid: "admin_test",
-    idempotencyKey: "pagar_2"
+    idempotencyKey: testId("pagar_2")
   });
 
   const ccPostPago = await obtenerCuentaCorrienteVendedor(db, v1Id);
@@ -363,7 +366,7 @@ async function runTests3B5B() {
       liquidacionId: conf2.id,
       motivoAnulacion: "Prueba anular pagada",
       adminUid: "admin_test",
-      idempotencyKey: "anular_pagada_invalid"
+      idempotencyKey: testId("anular_pagada_invalid")
     });
   } catch (err: unknown) { errAnularPagada = (err as Error).message || ""; }
   assert(errAnularPagada.includes("400:TRANSICION_ESTADO_INVALIDA"), "26. anularLiquidacion rechaza liquidación PAGADA con 400:TRANSICION_ESTADO_INVALIDA.");
@@ -375,14 +378,14 @@ async function runTests3B5B() {
       vendedorAfiliadoEmail: v1Email,
       montoSolicitadoCentavos: 1000,
       creadoPorAdminUid: "admin_test",
-      idempotencyKey: "borrador_conc_same_key"
+      idempotencyKey: testId("borrador_conc_same_key")
     }),
     crearBorradorLiquidacion(db, {
       vendedorAfiliadoId: v1Id,
       vendedorAfiliadoEmail: v1Email,
       montoSolicitadoCentavos: 1000,
       creadoPorAdminUid: "admin_test",
-      idempotencyKey: "borrador_conc_same_key"
+      idempotencyKey: testId("borrador_conc_same_key")
     })
   ]);
 
@@ -397,12 +400,12 @@ async function runTests3B5B() {
     montoRecibidoCentavos: 50000,
     monedaRecibida: "ARS",
     medioPago: "EFECTIVO",
-    receptorEfectivoId: "rec_vendedor_1",
+    receptorEfectivoId: testId("rec_vendedor_1"),
     fechaRecepcion: "2026-02-20",
     fechaEfectiva: "2026-02-20",
     registradoPor: "admin_test",
     origenRegistro: "ADMIN",
-    idempotencyKey: "pago_efectivo_v1_1"
+    idempotencyKey: testId("pago_efectivo_v1_1")
   });
 
   const custodia1 = await obtenerLedgerCustodiaEfectivo(db, v1Id);
@@ -417,7 +420,7 @@ async function runTests3B5B() {
       montoRendidoCentavos: 60000,
       metodoEntrega: "EFECTIVO_EN_MANO",
       adminUid: "admin_test",
-      idempotencyKey: "rend_exceso"
+      idempotencyKey: testId("rend_exceso")
     });
   } catch (err: unknown) { errExcesoRendicion = (err as Error).message || ""; }
   assert(errExcesoRendicion.includes("400:EXCESO_RENDICION_EFECTIVO"), "29. Rendición por 60.000 sobre custodia de 50.000 falla con 400:EXCESO_RENDICION_EFECTIVO.");
@@ -429,7 +432,7 @@ async function runTests3B5B() {
     montoRendidoCentavos: 20000,
     metodoEntrega: "EFECTIVO_EN_MANO",
     adminUid: "admin_test",
-    idempotencyKey: "rend_parcial_1"
+    idempotencyKey: testId("rend_parcial_1")
   });
 
   const custodia2 = await obtenerLedgerCustodiaEfectivo(db, v1Id);
@@ -442,7 +445,7 @@ async function runTests3B5B() {
     montoComisionCentavos: 30000,
     motivo: "Bono para compensación",
     adminUid: "admin_test",
-    idempotencyKey: "ajuste_bono_conc"
+    idempotencyKey: testId("ajuste_bono_conc")
   });
 
   const borradorConcComp = await crearBorradorLiquidacion(db, {
@@ -450,13 +453,13 @@ async function runTests3B5B() {
     vendedorAfiliadoEmail: v1Email,
     montoSolicitadoCentavos: 30000,
     creadoPorAdminUid: "admin_test",
-    idempotencyKey: "borrador_conc_comp"
+    idempotencyKey: testId("borrador_conc_comp")
   });
 
   const confConcComp = await confirmarLiquidacion(db, {
     liquidacionId: borradorConcComp.id,
     adminUid: "admin_test",
-    idempotencyKey: "conf_conc_comp"
+    idempotencyKey: testId("conf_conc_comp")
   });
 
   const [resRendConc, resCompConc] = await Promise.allSettled([
@@ -466,13 +469,13 @@ async function runTests3B5B() {
       montoRendidoCentavos: 30000,
       metodoEntrega: "EFECTIVO_DEPOSITO",
       adminUid: "admin_test",
-      idempotencyKey: "rend_conc_race"
+      idempotencyKey: testId("rend_conc_race")
     }),
     pagarLiquidacion(db, {
       liquidacionId: confConcComp.id,
       componentesPago: [{ formaPago: "COMPENSACION_EFECTIVO_EN_PODER", montoCentavos: 30000 }],
       adminUid: "admin_test",
-      idempotencyKey: "pagar_conc_race"
+      idempotencyKey: testId("pagar_conc_race")
     })
   ]);
 
@@ -489,7 +492,7 @@ async function runTests3B5B() {
       montoCentavos: 10000,
       motivo: "Fondo de caja para devoluciones",
       adminUid: "admin_test",
-      idempotencyKey: "ajuste_fondo_dev"
+      idempotencyKey: testId("ajuste_fondo_dev")
     });
   }
 
@@ -499,7 +502,7 @@ async function runTests3B5B() {
     montoCentavos: 5000,
     motivo: "Devolución parcial",
     adminUid: "admin_test",
-    idempotencyKey: "dev_fisica_1"
+    idempotencyKey: testId("dev_fisica_1")
   });
 
   const custodiaPostDev = await obtenerLedgerCustodiaEfectivo(db, v1Id);
@@ -512,7 +515,7 @@ async function runTests3B5B() {
       montoCentavos: 20000,
       motivo: "Exceso dev",
       adminUid: "admin_test",
-      idempotencyKey: "dev_exceso"
+      idempotencyKey: testId("dev_exceso")
     });
   } catch (err: unknown) { errExcesoDev = (err as Error).message || ""; }
   assert(errExcesoDev.includes("400:EXCESO_DEVOLUCION_EFECTIVO"), "34. Exceso de devolución sobre custodia disponible falla con 400:EXCESO_DEVOLUCION_EFECTIVO.");
@@ -524,7 +527,7 @@ async function runTests3B5B() {
     montoComisionCentavos: 15000,
     motivo: "Bono inc",
     adminUid: "admin_test",
-    idempotencyKey: "ajuste_bono_inc"
+    idempotencyKey: testId("ajuste_bono_inc")
   });
 
   const borradorInc = await crearBorradorLiquidacion(db, {
@@ -532,13 +535,13 @@ async function runTests3B5B() {
     vendedorAfiliadoEmail: v1Email,
     montoSolicitadoCentavos: 10000,
     creadoPorAdminUid: "admin_test",
-    idempotencyKey: "borrador_inc_sec6"
+    idempotencyKey: testId("borrador_inc_sec6")
   });
 
   const confInc = await confirmarLiquidacion(db, {
     liquidacionId: borradorInc.id,
     adminUid: "admin_test",
-    idempotencyKey: "conf_inc_sec6"
+    idempotencyKey: testId("conf_inc_sec6")
   });
 
   await registrarAjusteAdministrativoComisiones(db, {
@@ -547,7 +550,7 @@ async function runTests3B5B() {
     montoComisionCentavos: -60000,
     motivo: "Penalización masiva sobrevenida",
     adminUid: "admin_test",
-    idempotencyKey: "ajuste_penaliz_over_s6"
+    idempotencyKey: testId("ajuste_penaliz_over_s6")
   });
 
   const evalInc = await evaluarIncidenciasLiquidacion(db, confInc.id);
@@ -559,7 +562,7 @@ async function runTests3B5B() {
       liquidacionId: confInc.id,
       componentesPago: [{ formaPago: "TRANSFERENCIA", montoCentavos: 10000 }],
       adminUid: "admin_test",
-      idempotencyKey: "pagar_inc_sec6"
+      idempotencyKey: testId("pagar_inc_sec6")
     });
   } catch (err: unknown) { errPagoInc = (err as Error).message || ""; }
   assert(errPagoInc.includes("409:LIQUIDACION_CON_INCIDENCIAS"), "36. Liquidación con incidencia no puede ser pagada y falla with 409:LIQUIDACION_CON_INCIDENCIAS.");
@@ -568,7 +571,7 @@ async function runTests3B5B() {
     liquidacionId: confInc.id,
     motivoAnulacion: "Anular por incidencia",
     adminUid: "admin_test",
-    idempotencyKey: "anular_inc_ok"
+    idempotencyKey: testId("anular_inc_ok")
   });
 
   // --- SECCIÓN 7: VENDEDOR PANEL & AUTH EMULATOR (INTEGRACIÓN REAL CON ID TOKENS) ---
@@ -657,7 +660,7 @@ async function runTests3B5B() {
     montoComisionCentavos: 100000,
     motivo: "Bono para test retry compensacion",
     adminUid: "admin_test",
-    idempotencyKey: "ajuste_bono_retry_test"
+    idempotencyKey: testId("ajuste_bono_retry_test")
   });
 
   const borradorRetryComp = await crearBorradorLiquidacion(db, {
@@ -665,13 +668,13 @@ async function runTests3B5B() {
     vendedorAfiliadoEmail: v1Email,
     montoSolicitadoCentavos: 4000,
     creadoPorAdminUid: "admin_test",
-    idempotencyKey: "borrador_retry_comp_test"
+    idempotencyKey: testId("borrador_retry_comp_test")
   });
 
   const confRetryComp = await confirmarLiquidacion(db, {
     liquidacionId: borradorRetryComp.id,
     adminUid: "admin_test",
-    idempotencyKey: "conf_retry_comp_test"
+    idempotencyKey: testId("conf_retry_comp_test")
   });
 
   // Ejecutar primera vez
@@ -679,7 +682,7 @@ async function runTests3B5B() {
     liquidacionId: confRetryComp.id,
     componentesPago: [{ formaPago: "COMPENSACION_EFECTIVO_EN_PODER", montoCentavos: 4000 }],
     adminUid: "admin_test",
-    idempotencyKey: "pagar_retry_comp_same_key"
+    idempotencyKey: testId("pagar_retry_comp_same_key")
   });
 
   const ccPostPagComp1 = await obtenerCuentaCorrienteVendedor(db, v1Id);
@@ -690,7 +693,7 @@ async function runTests3B5B() {
     liquidacionId: confRetryComp.id,
     componentesPago: [{ formaPago: "COMPENSACION_EFECTIVO_EN_PODER", montoCentavos: 4000 }],
     adminUid: "admin_test",
-    idempotencyKey: "pagar_retry_comp_same_key"
+    idempotencyKey: testId("pagar_retry_comp_same_key")
   });
 
   const ccPostPagComp2 = await obtenerCuentaCorrienteVendedor(db, v1Id);
@@ -698,11 +701,11 @@ async function runTests3B5B() {
 
   // Consulta directa a Firestore para verificar cardinalidad exacta
   const snapLedgerCom = await db.collection("ledger_comisiones_movimientos")
-    .where("idempotencyKey", "==", "pagar_retry_comp_same_key_ledger")
+    .where("idempotencyKey", "==", testId("pagar_retry_comp_same_key")+"_ledger")
     .get();
 
   const snapLedgerCust = await db.collection("ledger_custodia_efectivo")
-    .where("idempotencyKey", "==", "pagar_retry_comp_same_key_custodia")
+    .where("idempotencyKey", "==", testId("pagar_retry_comp_same_key")+"_custodia")
     .get();
 
   assert(pagComp1.estado === "PAGADA" && pagComp2.estado === "PAGADA", "55. Retry de pagarLiquidacion retorna estado PAGADA canónico.");
@@ -720,7 +723,7 @@ async function runTests3B5B() {
     montoRendidoCentavos: 1000,
     metodoEntrega: "EFECTIVO_EN_MANO",
     adminUid: "admin_test",
-    idempotencyKey: "rend_retry_idemp"
+    idempotencyKey: testId("rend_retry_idemp")
   });
   const rend2 = await registrarRendicionEfectivo(db, {
     vendedorAfiliadoId: v1Id,
@@ -728,7 +731,7 @@ async function runTests3B5B() {
     montoRendidoCentavos: 1000,
     metodoEntrega: "EFECTIVO_EN_MANO",
     adminUid: "admin_test",
-    idempotencyKey: "rend_retry_idemp"
+    idempotencyKey: testId("rend_retry_idemp")
   });
   assert(rend1.id === rend2.id, "60. Retry de registrarRendicionEfectivo retorna exactamente el mismo objeto de rendición.");
 
@@ -737,14 +740,14 @@ async function runTests3B5B() {
     montoCentavos: 5000,
     motivo: "Ajuste idempotencia test",
     adminUid: "admin_test",
-    idempotencyKey: "ajuste_cust_retry"
+    idempotencyKey: testId("ajuste_cust_retry")
   });
   const aj2 = await registrarAjusteCustodiaEfectivo(db, {
     vendedorAfiliadoId: v1Id,
     montoCentavos: 5000,
     motivo: "Ajuste idempotencia test",
     adminUid: "admin_test",
-    idempotencyKey: "ajuste_cust_retry"
+    idempotencyKey: testId("ajuste_cust_retry")
   });
   assert(aj1.id === aj2.id, "61. Retry de registrarAjusteCustodiaEfectivo retorna exactamente el mismo documento de ajuste.");
 
@@ -753,14 +756,14 @@ async function runTests3B5B() {
     montoCentavos: 1000,
     motivo: "Devolucion retry",
     adminUid: "admin_test",
-    idempotencyKey: "dev_retry_key"
+    idempotencyKey: testId("dev_retry_key")
   });
   const dev2 = await registrarDevolucionFisicaCliente(db, {
     vendedorAfiliadoId: v1Id,
     montoCentavos: 1000,
     motivo: "Devolucion retry",
     adminUid: "admin_test",
-    idempotencyKey: "dev_retry_key"
+    idempotencyKey: testId("dev_retry_key")
   });
   assert(dev1.id === dev2.id, "62. Retry de registrarDevolucionFisicaCliente retorna exactamente el mismo documento de devolución.");
 
@@ -770,7 +773,7 @@ async function runTests3B5B() {
     montoComisionCentavos: 1000,
     motivo: "Ajuste CC retry",
     adminUid: "admin_test",
-    idempotencyKey: "ajuste_cc_retry"
+    idempotencyKey: testId("ajuste_cc_retry")
   });
   const ajCC2 = await registrarAjusteAdministrativoComisiones(db, {
     vendedorAfiliadoId: v1Id,
@@ -778,7 +781,7 @@ async function runTests3B5B() {
     montoComisionCentavos: 1000,
     motivo: "Ajuste CC retry",
     adminUid: "admin_test",
-    idempotencyKey: "ajuste_cc_retry"
+    idempotencyKey: testId("ajuste_cc_retry")
   });
   assert(ajCC1.id === ajCC2.id, "63. Retry de registrarAjusteAdministrativoComisiones retorna exactamente el mismo documento de ajuste CC.");
 

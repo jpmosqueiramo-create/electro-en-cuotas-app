@@ -19,7 +19,9 @@ import { readPaymentReports, submitPaymentReport, decidePaymentReport, pendingPa
 import { paymentReportRef, reportDigest, bankReferenceKey } from '../src/lib/operationPaymentReportStore';
 import { paymentAmountCents } from '../src/lib/operationPaymentReports';
 import { clientBindingCommand, readClientBinding, listClientServices, clientBindingRef } from '../src/lib/operationClientV2Server';
-import { obtenerLedgerCustodiaEfectivo, registrarRendicionEfectivo } from '../src/lib/settlementsEngine';
+import { withAdminCommissionAccess } from '../src/lib/affiliateCommissionAccess';
+import { affiliateSettlementCommand } from '../src/lib/affiliateSettlementAdmin';
+import { obtenerLedgerCustodiaEfectivo, registrarRendicionEfectivo, listRemittanceCollections, previewSelectedCashRemittance } from '../src/lib/settlementsEngine';
 import { paymentReportsHandler, paymentReportsQueue } from '../src/lib/operationPaymentReportsHttp';
 import { resolveAlertAction } from '../src/lib/budgetAlertRouting';
 import { startProductionBrowserServer } from './helpers/productionAdapterBrowserServer';
@@ -114,6 +116,14 @@ async function main(){
  const unknown=await admin.auth().createUser({email:`unknown-${randomUUID()}@example.test`,emailVerified:true});await assert.rejects(readPaymentReports(db,f.id,1,{uid:unknown.uid,admin:false},'CLIENT'));
  await clientBindingRef(db,f.id,1).update({state:'REVOKED'});await assert.rejects(readPaymentReports(db,f.id,1,client,'CLIENT'));await clientBindingRef(db,f.id,1).update({state:'ACTIVE'});
  await db.collection('vendedores').doc(f.affiliateId).update({activo:false});await assert.rejects(submitPaymentReport(db,f.id,1,payload(),seller,'AFFILIATE'));await db.collection('vendedores').doc(f.affiliateId).update({activo:true});
+ // The same net-remittance path verifies real V2 commission snapshots and leaves customer payments intact.
+ const extraCash=await submitPaymentReport(db,f.id,1,payload(10000,'EFECTIVO'),seller,'AFFILIATE');
+ await decidePaymentReport(db,f.id,1,{action:'CONFIRM',reportId:extraCash.reportId,expectedRevision:1,commandId:randomUUID(),financialRevision:(await financialRef(db,f.id,1).get()).data()!.revision,reference:'V2-CASH-FOR-NET-REMIT'},root);
+ const pendingCash=await withAdminCommissionAccess(db,actor,false,()=>listRemittanceCollections(db,f.affiliateId));assert.equal(pendingCash.collections.length,1);
+ const remittanceQuote=await withAdminCommissionAccess(db,actor,false,()=>previewSelectedCashRemittance(db,f.affiliateId,{collectionIds:[pendingCash.collections[0].id],deductCommission:true}));assert.equal(remittanceQuote.grossCents,10000);assert.equal(remittanceQuote.commissionRetainedCents,1000);assert.equal(remittanceQuote.receivedCents,9000);
+ const unchangedFinancial=(await financialRef(db,f.id,1).get()).data();
+ await affiliateSettlementCommand(db,f.affiliateId,actor,{action:'REMIT_REVIEWED',commandId:randomUUID(),data:{collectionIds:remittanceQuote.collectionIds,deductCommission:true,previewHash:remittanceQuote.hash,method:'TRANSFERENCIA',reference:'RENDITION-V2-NET-SYNTHETIC',notes:''}});
+ assert.deepEqual((await financialRef(db,f.id,1).get()).data(),unchangedFinancial);assert.equal((await obtenerLedgerCustodiaEfectivo(db,f.affiliateId)).efectivoPendienteRendicionCentavos,0);
  // Bounded pagination must neither omit nor duplicate reports as the operation grows.
  const suffixForPage=randomUUID();
  const template=(await paymentReportRef(db,rid).get()).data()!,ids=Array.from({length:52},(_,i)=>'report_page_'+suffixForPage+'_'+i);

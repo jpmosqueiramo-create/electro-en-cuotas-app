@@ -1,6 +1,17 @@
+import {stable} from './contractV2';
+import {operationRef} from './operationV2';
+import type {RemittancePreview,CashCollectionOption,RemittanceSelection,RemittanceCashAllocation} from './affiliateRemittance';
+import {createHash} from 'node:crypto';
 import { validateCommissionSource } from './affiliateCommissionAccess';
 import { admin } from "./firebaseAdmin";
 import { LedgerComisionMovimiento } from "./commissionsEngine";
+
+type SettlementAliases={montoTotalLiquidadoCentavos?:number;adminUid?:string;confirmadoPorAdminUid?:string;anuladoPorAdminUid?:string;pagadoPorAdminUid?:string;registradoPorAdminUid?:string;adminEmail?:string};
+/** Retains both historical invocation forms; typed raw functions remain the validation boundary. */
+function settlementInvocation<P>(first:unknown,second?:unknown,third?:admin.firestore.Transaction){
+ const isDb=typeof (first as {collection?:unknown}|null)?.collection==='function';
+ return {db:isDb?first as admin.firestore.Firestore:admin.firestore(),params:(isDb?second:first) as P,transaction:(isDb?third:second) as admin.firestore.Transaction|undefined};
+}
 
 export type EstadoLiquidacionComision = "BORRADOR" | "CONFIRMADA" | "PAGADA" | "ANULADA";
 export type TipoComponentePago = "TRANSFERENCIA" | "COMPENSACION_EFECTIVO_EN_PODER" | "EFECTIVO_EN_MANO";
@@ -95,6 +106,13 @@ export interface RendicionEfectivo {
   ledgerCustodiaMovimientoId: string;
   idempotencyKey: string;
   createdAt: string;
+  schemaVersion?:'REMITTANCE_COMMISSION_OFFSET_V1';
+  montoCobrosRendidosCentavos?:number;
+  comisionRetenidaCentavos?:number;
+  liquidacionComisionId?:string|null;
+  revisionPreviaHash?:string;
+  cobrosIncluidos?:RemittanceCashAllocation[];
+  cashAllocationPolicy?:'EXPLICIT_SELECTION_WITH_LEGACY_FIFO_V1';
 }
 
 export interface ResumenCuentaCorrienteVendedor {
@@ -311,15 +329,9 @@ export async function construirFifoFuentesComision(
 /**
  * 1. Crear Borrador de Liquidación (BORRADOR)
  */
-export async function crearBorradorLiquidacion(
-  dbOrParams: any,
-  paramsOrTx?: any,
-  transactionParam?: any
-): Promise<any> {
-  const db = typeof dbOrParams?.collection === "function" ? dbOrParams : admin.firestore();
-  const params = typeof dbOrParams?.collection === "function" ? paramsOrTx : dbOrParams;
-  const transaction = typeof dbOrParams?.collection === "function" ? transactionParam : paramsOrTx;
-  return _raw_crearBorradorLiquidacion(db, params, transaction);
+export async function crearBorradorLiquidacion(dbOrParams:unknown,paramsOrTx?:unknown,transactionParam?:admin.firestore.Transaction):Promise<Awaited<ReturnType<typeof _raw_crearBorradorLiquidacion>>>{
+ const call=settlementInvocation<Parameters<typeof _raw_crearBorradorLiquidacion>[1]>(dbOrParams,paramsOrTx,transactionParam);
+ return _raw_crearBorradorLiquidacion(call.db,call.params,call.transaction);
 }
 
 async function _raw_crearBorradorLiquidacion(
@@ -339,7 +351,7 @@ async function _raw_crearBorradorLiquidacion(
   if (!params.vendedorAfiliadoId || !params.vendedorAfiliadoId.trim()) {
     throw new Error("400:VENDEDOR_ID_REQUERIDO: Se requiere identificador de vendedor.");
   }
-  const montoSolicitado = params.montoSolicitadoCentavos ?? (params as any).montoTotalLiquidadoCentavos;
+  const montoSolicitado = params.montoSolicitadoCentavos ?? (params as SettlementAliases).montoTotalLiquidadoCentavos;
   if (typeof montoSolicitado !== "number" || !Number.isInteger(montoSolicitado) || montoSolicitado <= 0) {
     throw new Error("400:MONTO_LIQUIDACION_INVALIDO: El monto solicitado debe ser un entero en centavos mayor a cero.");
   }
@@ -384,7 +396,7 @@ async function _raw_crearBorradorLiquidacion(
     cantidadItems: cantidadItemsProyectados,
     periodoDesde: params.periodoDesde || null,
     periodoHasta: params.periodoHasta || null,
-    creadoPorAdminUid: params.creadoPorAdminUid || (params as any).adminUid || "admin_system",
+    creadoPorAdminUid: params.creadoPorAdminUid || (params as SettlementAliases).adminUid || "admin_system",
     idempotencyKey: ikClean,
     createdAt: now,
     updatedAt: now
@@ -394,18 +406,63 @@ async function _raw_crearBorradorLiquidacion(
   return payload;
 }
 
+async function prepareSettlementItems(db:admin.firestore.Firestore,transaction:admin.firestore.Transaction,liq:LiquidacionComision,fuentes:{fuente:LedgerComisionMovimiento;remanenteDisponibleCentavos:number}[],now:string):Promise<LiquidacionComisionItem[]>{
+  let remanentePorAsignar = liq.montoTotalLiquidadoCentavos;
+  const itemsGenerados: LiquidacionComisionItem[] = [];
+
+  for (const f of fuentes) {
+    if (remanentePorAsignar <= 0) break;
+
+    const asignado = Math.min(remanentePorAsignar, f.remanenteDisponibleCentavos);
+    remanentePorAsignar -= asignado;
+
+    const itemId='item_'+createHash('sha256').update(JSON.stringify([liq.id,f.fuente.id])).digest('hex');
+
+    // Intentar obtener metadatos de la solicitud si existen
+    let clienteNombre: string | null = f.fuente.clienteNombre || null;
+    let productoResumen: string | null = f.fuente.productoResumen || null;
+    if (f.fuente.solicitudId && !clienteNombre && !productoResumen) {
+      const solRef = db.collection("solicitudes").doc(f.fuente.solicitudId);
+      const solSnap = await transaction.get(solRef);
+      if (solSnap.exists) {
+        const solData = solSnap.data() || {};
+        clienteNombre = solData.clienteNombre || solData.datosPersonales?.nombreCompleto || null;
+        productoResumen = solData.productoNombre || solData.productoResumen || null;
+      }
+    }
+
+    const itemPayload: LiquidacionComisionItem = {
+      id: itemId,
+      liquidacionId: liq.id,
+      vendedorAfiliadoId: liq.vendedorAfiliadoId,
+      movimientoFuenteId: f.fuente.id,
+      tipoMovimientoFuente: f.fuente.tipo,
+      montoFuenteCentavos: f.fuente.montoComisionCentavos,
+      montoAsignadoCentavos: asignado,
+      ordenFifoCreatedAt: f.fuente.createdAt,
+      ordenFifoId: f.fuente.id,
+      solicitudId: f.fuente.solicitudId || null,
+      clienteNombre,
+      productoResumen,
+      cuotaNumero: f.fuente.cuotaNumero || null,
+      baseComisionableCentavos: f.fuente.baseComisionableCentavos || null,
+      fechaCobroOriginal: f.fuente.createdAt,
+      createdAt: now
+    };
+
+    itemsGenerados.push(itemPayload);
+  }
+
+  if(remanentePorAsignar>0)throw Error('400:COBERTURA_FIFO_INSUFICIENTE: No hay comisiones disponibles para cubrir el importe.');
+  return itemsGenerados;
+}
+
 /**
  * 2. Confirmación Atómica de Liquidación (BORRADOR -> CONFIRMADA)
  */
-export async function confirmarLiquidacion(
-  dbOrParams: any,
-  paramsOrTx?: any,
-  transactionParam?: any
-): Promise<any> {
-  const db = typeof dbOrParams?.collection === "function" ? dbOrParams : admin.firestore();
-  const params = typeof dbOrParams?.collection === "function" ? paramsOrTx : dbOrParams;
-  const transaction = typeof dbOrParams?.collection === "function" ? transactionParam : paramsOrTx;
-  return _raw_confirmarLiquidacion(db, params, transaction);
+export async function confirmarLiquidacion(dbOrParams:unknown,paramsOrTx?:unknown,transactionParam?:admin.firestore.Transaction):Promise<Awaited<ReturnType<typeof _raw_confirmarLiquidacion>>>{
+ const call=settlementInvocation<Parameters<typeof _raw_confirmarLiquidacion>[1]>(dbOrParams,paramsOrTx,transactionParam);
+ return _raw_confirmarLiquidacion(call.db,call.params,call.transaction);
 }
 
 async function _raw_confirmarLiquidacion(
@@ -424,7 +481,7 @@ async function _raw_confirmarLiquidacion(
   }
 
   const liqId = params.liquidacionId.trim();
-  const adminUid = (params.adminUid || (params as any).confirmadoPorAdminUid || "admin_system").trim();
+  const adminUid = (params.adminUid || (params as SettlementAliases).confirmadoPorAdminUid || "admin_system").trim();
   const liqRef = db.collection("liquidaciones_comision").doc(liqId);
   const liqSnap = await transaction.get(liqRef);
 
@@ -452,61 +509,8 @@ async function _raw_confirmarLiquidacion(
   // Recalcular FIFO y crear items definitivos atómicamente
   const fuentes = await construirFifoFuentesComision(db, liq.vendedorAfiliadoId, transaction);
 
-  let remanentePorAsignar = liq.montoTotalLiquidadoCentavos;
-  const itemsGenerados: LiquidacionComisionItem[] = [];
-  const now = new Date().toISOString();
-
-  for (const f of fuentes) {
-    if (remanentePorAsignar <= 0) break;
-
-    const asignado = Math.min(remanentePorAsignar, f.remanenteDisponibleCentavos);
-    remanentePorAsignar -= asignado;
-
-    const itemId = "item_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
-
-    // Intentar obtener metadatos de la solicitud si existen
-    let clienteNombre: string | null = null;
-    let productoResumen: string | null = null;
-    if (f.fuente.solicitudId) {
-      const solRef = db.collection("solicitudes").doc(f.fuente.solicitudId);
-      const solSnap = await transaction.get(solRef);
-      if (solSnap.exists) {
-        const solData = solSnap.data() || {};
-        clienteNombre = solData.clienteNombre || solData.datosPersonales?.nombreCompleto || null;
-        productoResumen = solData.productoNombre || solData.productoResumen || null;
-      }
-    }
-
-    const itemPayload: LiquidacionComisionItem = {
-      id: itemId,
-      liquidacionId: liqId,
-      vendedorAfiliadoId: liq.vendedorAfiliadoId,
-      movimientoFuenteId: f.fuente.id,
-      tipoMovimientoFuente: f.fuente.tipo,
-      montoFuenteCentavos: f.fuente.montoComisionCentavos,
-      montoAsignadoCentavos: asignado,
-      ordenFifoCreatedAt: f.fuente.createdAt,
-      ordenFifoId: f.fuente.id,
-      solicitudId: f.fuente.solicitudId || null,
-      clienteNombre,
-      productoResumen,
-      cuotaNumero: null,
-      baseComisionableCentavos: f.fuente.baseComisionableCentavos || null,
-      fechaCobroOriginal: f.fuente.createdAt,
-      createdAt: now
-    };
-
-    itemsGenerados.push(itemPayload);
-  }
-
-  for (const itemPayload of itemsGenerados) {
-    const itemDocRef = liqRef.collection("items").doc(itemPayload.id);
-    transaction.set(itemDocRef, itemPayload);
-  }
-
-  if (remanentePorAsignar > 0) {
-    throw new Error(`400:COBERTURA_FIFO_INSUFICIENTE: No se pudo cubrir el monto total de la liquidación con las fuentes disponibles. Faltaron ${remanentePorAsignar} centavos.`);
-  }
+  const now=new Date().toISOString(),itemsGenerados=await prepareSettlementItems(db,transaction,liq,fuentes,now);
+  for(const item of itemsGenerados)transaction.set(liqRef.collection('items').doc(item.id),item);
 
   const updatedPayload: Partial<LiquidacionComision> = {
     estado: "CONFIRMADA",
@@ -593,15 +597,9 @@ export async function evaluarIncidenciasLiquidacion(
 /**
  * 4. Anulación de Liquidación (CONFIRMADA -> ANULADA)
  */
-export async function anularLiquidacion(
-  dbOrParams: any,
-  paramsOrTx?: any,
-  transactionParam?: any
-): Promise<any> {
-  const db = typeof dbOrParams?.collection === "function" ? dbOrParams : admin.firestore();
-  const params = typeof dbOrParams?.collection === "function" ? paramsOrTx : dbOrParams;
-  const transaction = typeof dbOrParams?.collection === "function" ? transactionParam : paramsOrTx;
-  return _raw_anularLiquidacion(db, params, transaction);
+export async function anularLiquidacion(dbOrParams:unknown,paramsOrTx?:unknown,transactionParam?:admin.firestore.Transaction):Promise<Awaited<ReturnType<typeof _raw_anularLiquidacion>>>{
+ const call=settlementInvocation<Parameters<typeof _raw_anularLiquidacion>[1]>(dbOrParams,paramsOrTx,transactionParam);
+ return _raw_anularLiquidacion(call.db,call.params,call.transaction);
 }
 
 async function _raw_anularLiquidacion(
@@ -625,7 +623,7 @@ async function _raw_anularLiquidacion(
   }
 
   const liqId = params.liquidacionId.trim();
-  const adminUid = (params.adminUid || (params as any).anuladoPorAdminUid || "admin_system").trim();
+  const adminUid = (params.adminUid || (params as SettlementAliases).anuladoPorAdminUid || "admin_system").trim();
   const liqRef = db.collection("liquidaciones_comision").doc(liqId);
   const liqSnap = await transaction.get(liqRef);
 
@@ -660,15 +658,9 @@ async function _raw_anularLiquidacion(
 /**
  * 5. Pago de Liquidación (CONFIRMADA -> PAGADA)
  */
-export async function pagarLiquidacion(
-  dbOrParams: any,
-  paramsOrTx?: any,
-  transactionParam?: any
-): Promise<any> {
-  const db = typeof dbOrParams?.collection === "function" ? dbOrParams : admin.firestore();
-  const params = typeof dbOrParams?.collection === "function" ? paramsOrTx : dbOrParams;
-  const transaction = typeof dbOrParams?.collection === "function" ? transactionParam : paramsOrTx;
-  return _raw_pagarLiquidacion(db, params, transaction);
+export async function pagarLiquidacion(dbOrParams:unknown,paramsOrTx?:unknown,transactionParam?:admin.firestore.Transaction):Promise<Awaited<ReturnType<typeof _raw_pagarLiquidacion>>>{
+ const call=settlementInvocation<Parameters<typeof _raw_pagarLiquidacion>[1]>(dbOrParams,paramsOrTx,transactionParam);
+ return _raw_pagarLiquidacion(call.db,call.params,call.transaction);
 }
 
 async function _raw_pagarLiquidacion(
@@ -701,7 +693,7 @@ async function _raw_pagarLiquidacion(
   }
 
   const liqId = params.liquidacionId.trim();
-  const adminUid = (params.adminUid || (params as any).pagadoPorAdminUid || "admin_system").trim();
+  const adminUid = (params.adminUid || (params as SettlementAliases).pagadoPorAdminUid || "admin_system").trim();
   const ikClean = (params.idempotencyKey || ("pago_" + liqId)).trim();
   const liqRef = db.collection("liquidaciones_comision").doc(liqId);
   const liqSnap = await transaction.get(liqRef);
@@ -758,8 +750,13 @@ async function _raw_pagarLiquidacion(
 
   const now = new Date().toISOString();
 
+  return writePaidSettlement(db,transaction,liq,{...params,adminUid,idempotencyKey:ikClean,recordedBy:params.adminUid||(params as SettlementAliases).registradoPorAdminUid||(params as SettlementAliases).adminEmail||"admin_system"},montoCompensacion,tipoPagoConsolidado,now);
+}
+
+function writePaidSettlement(db:admin.firestore.Firestore,transaction:admin.firestore.Transaction,liq:LiquidacionComision,params:{componentesPago:ComponentePagoLiquidacion[];adminUid:string;idempotencyKey:string;recordedBy?:string},montoCompensacion:number,tipoPagoConsolidado:TipoPagoConsolidado,now:string,remittanceId?:string){
+  const liqId=liq.id,liqRef=db.collection('liquidaciones_comision').doc(liqId),adminUid=params.adminUid.trim(),ikClean=params.idempotencyKey;
   // 1. Emitir movimiento PAGO_LIQUIDACION en ledger_comisiones_movimientos
-  const movComisionId = "mov_com_pago_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+  const movComisionId=remittanceId?'remit_comm_'+remittanceId:'mov_com_pago_'+Date.now()+'_'+Math.random().toString(36).substring(2,7);
   const movComisionPayload: LedgerComisionMovimiento = {
     id: movComisionId,
     solicitudId: "",
@@ -772,15 +769,15 @@ async function _raw_pagarLiquidacion(
     baseComisionableCentavos: liq.montoTotalLiquidadoCentavos,
     commissionSchemaVersion: "COMMISSION_V1",
     idempotencyKey: ikClean + "_ledger",
-    registradoPor: params.adminUid || (params as any).registradoPorAdminUid || (params as any).adminEmail || "admin_system",
+    registradoPor: params.recordedBy??params.adminUid,
     motivo: `Pago de liquidación ${liqId}`,
     createdAt: now
   };
-  transaction.set(db.collection("ledger_comisiones_movimientos").doc(movComisionId), movComisionPayload);
+  if(remittanceId)transaction.create(db.collection("ledger_comisiones_movimientos").doc(movComisionId),{...movComisionPayload,rendicionId:remittanceId});else transaction.set(db.collection("ledger_comisiones_movimientos").doc(movComisionId),movComisionPayload);
 
   // 2. Si hubo compensación, emitir movimiento COMPENSACION_COMISION en ledger_custodia_efectivo
   if (montoCompensacion > 0) {
-    const movCustodiaId = "mov_cust_comp_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+    const movCustodiaId=remittanceId?'remit_offset_'+remittanceId:'mov_cust_comp_'+Date.now()+'_'+Math.random().toString(36).substring(2,7);
     const movCustodiaPayload: LedgerCustodiaEfectivoMovimiento = {
       id: movCustodiaId,
       vendedorAfiliadoId: liq.vendedorAfiliadoId,
@@ -793,7 +790,7 @@ async function _raw_pagarLiquidacion(
       idempotencyKey: ikClean + "_custodia",
       createdAt: now
     };
-    transaction.set(db.collection("ledger_custodia_efectivo").doc(movCustodiaId), movCustodiaPayload);
+    if(remittanceId)transaction.create(db.collection("ledger_custodia_efectivo").doc(movCustodiaId),{...movCustodiaPayload,rendicionId:remittanceId});else transaction.set(db.collection("ledger_custodia_efectivo").doc(movCustodiaId),movCustodiaPayload);
   }
 
   // 3. Actualizar liquidación a PAGADA
@@ -806,7 +803,7 @@ async function _raw_pagarLiquidacion(
     updatedAt: now
   };
 
-  transaction.update(liqRef, updatePayload);
+  if(remittanceId)transaction.create(liqRef,{...liq,...updatePayload,rendicionId:remittanceId});else transaction.update(liqRef,updatePayload);
 
   return { ...liq, ...updatePayload };
 }
@@ -814,15 +811,9 @@ async function _raw_pagarLiquidacion(
 /**
  * 6. Ajuste Administrativo de Comisiones (ledger_comisiones_movimientos)
  */
-export async function registrarAjusteAdministrativoComisiones(
-  dbOrParams: any,
-  paramsOrTx?: any,
-  transactionParam?: any
-): Promise<any> {
-  const db = typeof dbOrParams?.collection === "function" ? dbOrParams : admin.firestore();
-  const params = typeof dbOrParams?.collection === "function" ? paramsOrTx : dbOrParams;
-  const transaction = typeof dbOrParams?.collection === "function" ? transactionParam : paramsOrTx;
-  return _raw_registrarAjusteAdministrativoComisiones(db, params, transaction);
+export async function registrarAjusteAdministrativoComisiones(dbOrParams:unknown,paramsOrTx?:unknown,transactionParam?:admin.firestore.Transaction):Promise<Awaited<ReturnType<typeof _raw_registrarAjusteAdministrativoComisiones>>>{
+ const call=settlementInvocation<Parameters<typeof _raw_registrarAjusteAdministrativoComisiones>[1]>(dbOrParams,paramsOrTx,transactionParam);
+ return _raw_registrarAjusteAdministrativoComisiones(call.db,call.params,call.transaction);
 }
 
 async function _raw_registrarAjusteAdministrativoComisiones(
@@ -883,7 +874,7 @@ async function _raw_registrarAjusteAdministrativoComisiones(
     baseComisionableCentavos: Math.abs(params.montoComisionCentavos),
     commissionSchemaVersion: "COMMISSION_V1",
     idempotencyKey: ikClean,
-    registradoPor: params.adminUid || (params as any).registradoPorAdminUid || (params as any).adminEmail || "admin_system",
+    registradoPor: params.adminUid || (params as SettlementAliases).registradoPorAdminUid || (params as SettlementAliases).adminEmail || "admin_system",
     motivo: params.motivo.trim(),
     createdAt: now
   };
@@ -895,15 +886,9 @@ async function _raw_registrarAjusteAdministrativoComisiones(
 /**
  * 7. Rendición de Efectivo de Vendedor (rendiciones_efectivo & ledger_custodia_efectivo)
  */
-export async function registrarRendicionEfectivo(
-  dbOrParams: any,
-  paramsOrTx?: any,
-  transactionParam?: any
-): Promise<any> {
-  const db = typeof dbOrParams?.collection === "function" ? dbOrParams : admin.firestore();
-  const params = typeof dbOrParams?.collection === "function" ? paramsOrTx : dbOrParams;
-  const transaction = typeof dbOrParams?.collection === "function" ? transactionParam : paramsOrTx;
-  return _raw_registrarRendicionEfectivo(db, params, transaction);
+export async function registrarRendicionEfectivo(dbOrParams:unknown,paramsOrTx?:unknown,transactionParam?:admin.firestore.Transaction):Promise<Awaited<ReturnType<typeof _raw_registrarRendicionEfectivo>>>{
+ const call=settlementInvocation<Parameters<typeof _raw_registrarRendicionEfectivo>[1]>(dbOrParams,paramsOrTx,transactionParam);
+ return _raw_registrarRendicionEfectivo(call.db,call.params,call.transaction);
 }
 
 async function _raw_registrarRendicionEfectivo(
@@ -929,7 +914,7 @@ async function _raw_registrarRendicionEfectivo(
   if (!params.vendedorAfiliadoId || !params.vendedorAfiliadoId.trim()) {
     throw new Error("400:VENDEDOR_ID_REQUERIDO: Se requiere identificador de vendedor.");
   }
-  if (typeof params.montoRendidoCentavos !== "number" || params.montoRendidoCentavos <= 0) {
+  if (!Number.isSafeInteger(params.montoRendidoCentavos) || params.montoRendidoCentavos <= 0) {
     throw new Error("400:MONTO_RENDICION_INVALIDO: El monto de rendición debe ser mayor a cero.");
   }
   if (!params.idempotencyKey || !params.idempotencyKey.trim()) {
@@ -953,29 +938,34 @@ async function _raw_registrarRendicionEfectivo(
     throw new Error(`400:EXCESO_RENDICION_EFECTIVO: El monto de rendición (${params.montoRendidoCentavos} centavos) supera el efectivo pendiente bajo custodia (${custodia.efectivoPendienteRendicionCentavos} centavos).`);
   }
 
-  const now = new Date().toISOString();
-  const rendicionId = "rend_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
-  const movCustodiaId = "mov_cust_rend_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+  return writeCashRemittance(db,transaction,{...params,vendedorAfiliadoId:vIdClean,idempotencyKey:ikClean},new Date().toISOString());
+}
+
+type CashRemittanceInput={vendedorAfiliadoId:string;vendedorAfiliadoEmail:string;montoRendidoCentavos:number;metodoEntrega:string;observaciones?:string|null;comprobanteReferencia?:string|null;adminUid:string;idempotencyKey:string};
+/** Shared cash writer; the caller has completed balance/commission reads. */
+function writeCashRemittance(db:admin.firestore.Firestore,transaction:admin.firestore.Transaction,params:CashRemittanceInput,now:string,stableId?:string):RendicionEfectivo{
+  const rendicionId=stableId??'rend_'+Date.now()+'_'+Math.random().toString(36).substring(2,7);
+  const movCustodiaId=stableId?'remit_cash_'+stableId:'mov_cust_rend_'+Date.now()+'_'+Math.random().toString(36).substring(2,7);
 
   // Movement in ledger_custodia_efectivo
   const movCustodiaPayload: LedgerCustodiaEfectivoMovimiento = {
     id: movCustodiaId,
-    vendedorAfiliadoId: vIdClean,
+    vendedorAfiliadoId: params.vendedorAfiliadoId,
     tipo: "RENDICION_EFECTIVO",
     montoCentavos: -params.montoRendidoCentavos, // Convenio: negativo reduce custodia
     moneda: "ARS",
     rendicionId,
     motivo: `Rendición de efectivo ${rendicionId}`,
     registradoPorUid: params.adminUid,
-    idempotencyKey: ikClean + "_custodia",
+    idempotencyKey: params.idempotencyKey + "_custodia",
     createdAt: now
   };
-  transaction.set(db.collection("ledger_custodia_efectivo").doc(movCustodiaId), movCustodiaPayload);
+  if(stableId)transaction.create(db.collection("ledger_custodia_efectivo").doc(movCustodiaId),movCustodiaPayload);else transaction.set(db.collection("ledger_custodia_efectivo").doc(movCustodiaId),movCustodiaPayload);
 
   // Document in rendiciones_efectivo
   const rendicionPayload: RendicionEfectivo = {
     id: rendicionId,
-    vendedorAfiliadoId: vIdClean,
+    vendedorAfiliadoId: params.vendedorAfiliadoId,
     vendedorAfiliadoEmail: params.vendedorAfiliadoEmail.trim().toLowerCase(),
     montoRendidoCentavos: params.montoRendidoCentavos,
     metodoEntrega: params.metodoEntrega,
@@ -983,26 +973,96 @@ async function _raw_registrarRendicionEfectivo(
     comprobanteReferencia: params.comprobanteReferencia || null,
     confirmadoPorAdminUid: params.adminUid,
     ledgerCustodiaMovimientoId: movCustodiaId,
-    idempotencyKey: ikClean,
+    idempotencyKey: params.idempotencyKey,
     createdAt: now
   };
-  transaction.set(db.collection("rendiciones_efectivo").doc(rendicionId), rendicionPayload);
+  if(!stableId)transaction.set(db.collection("rendiciones_efectivo").doc(rendicionId),rendicionPayload);
 
   return rendicionPayload;
+}
+
+type CommissionSource={fuente:LedgerComisionMovimiento;remanenteDisponibleCentavos:number};
+/** Explicit new selections take precedence; older unallocated debits consume the remaining cash pool FIFO. */
+async function readRemittanceContext(db:admin.firestore.Firestore,tx:admin.firestore.Transaction,vendorId:string){
+ const cash=await obtenerLedgerCustodiaEfectivo(db,vendorId,tx),account=await obtenerCuentaCorrienteVendedor(db,vendorId,tx),available=await obtenerSaldoDisponibleLiquidacion(db,vendorId,tx),allSources=await construirFifoFuentesComision(db,vendorId,tx);
+ if(cash.movimientos.some(m=>!Number.isSafeInteger(m.montoCentavos)||m.moneda!=='ARS'||typeof m.id!=='string'||typeof m.createdAt!=='string'||!Number.isFinite(Date.parse(m.createdAt)))||!Number.isSafeInteger(cash.efectivoPendienteRendicionCentavos)||cash.efectivoPendienteRendicionCentavos<0||!Number.isSafeInteger(available)||available<0||allSources.some(s=>!Number.isSafeInteger(s.remanenteDisponibleCentavos)||s.remanenteDisponibleCentavos<=0||s.fuente.moneda!=='ARS'))throw Error('409:CUENTA_INCONSISTENTE: Revisá el libro de efectivo y comisiones antes de rendir.');
+ const positive=cash.movimientos.filter(m=>m.montoCentavos>0),remaining=new Map(positive.map(m=>[m.id,m.montoCentavos])),negative=cash.movimientos.filter(m=>m.montoCentavos<0),groups=new Set<string>();
+ const priorSelections:RemittanceCashAllocation[][]=[];
+ for(const rId of new Set(negative.flatMap(m=>m.rendicionId?[m.rendicionId]:[]))){
+  const r=(await tx.get(db.collection('rendiciones_efectivo').doc(rId))).data() as RendicionEfectivo|undefined;
+  if(!r?.cobrosIncluidos)continue;
+  if(!Array.isArray(r.cobrosIncluidos)||r.cashAllocationPolicy!==undefined&&r.cashAllocationPolicy!=='EXPLICIT_SELECTION_WITH_LEGACY_FIFO_V1')throw Error('409:RENDICION_ORIGEN_INCONSISTENTE');
+  const debits=negative.filter(m=>m.rendicionId===rId),total=debits.reduce((sum,m)=>sum-m.montoCentavos,0),allocated=r.cobrosIncluidos.reduce((sum,a)=>sum+a.grossCents,0);
+  if(r.vendedorAfiliadoId!==vendorId||r.schemaVersion!=='REMITTANCE_COMMISSION_OFFSET_V1'||!Number.isSafeInteger(total)||total!==r.montoCobrosRendidosCentavos||allocated!==total||r.cobrosIncluidos.reduce((sum,a)=>sum+a.commissionCents,0)!==r.comisionRetenidaCentavos||r.montoRendidoCentavos+(r.comisionRetenidaCentavos??0)!==total||new Set(r.cobrosIncluidos.map(a=>a.cashMovementId)).size!==r.cobrosIncluidos.length)throw Error('409:RENDICION_ORIGEN_INCONSISTENTE: Revisá las rendiciones anteriores.');
+  for(const a of r.cobrosIncluidos){const before=remaining.get(a.cashMovementId);if(!Number.isSafeInteger(a.grossCents)||a.grossCents<=0||!Number.isSafeInteger(a.commissionCents)||a.commissionCents<0||a.commissionCents>a.grossCents||before===undefined||before<a.grossCents||a.paymentId!==(positive.find(m=>m.id===a.cashMovementId)?.ledgerMovimientoRelacionadoId??null))throw Error('409:COBRO_RENDIDO_INCONSISTENTE: Revisá el detalle de efectivo.');remaining.set(a.cashMovementId,before-a.grossCents);}
+  groups.add(rId);priorSelections.push(r.cobrosIncluidos);
+ }
+ let oldDebits=negative.filter(m=>!m.rendicionId||!groups.has(m.rendicionId)).reduce((sum,m)=>sum-m.montoCentavos,0);
+ if(!Number.isSafeInteger(oldDebits))throw Error('409:CUSTODIA_INCONSISTENTE');
+ for(const m of positive){const n=Math.min(oldDebits,remaining.get(m.id)!);remaining.set(m.id,remaining.get(m.id)!-n);oldDebits-=n;}
+ if(oldDebits||[...remaining.values()].reduce((sum,n)=>sum+n,0)!==cash.efectivoPendienteRendicionCentavos)throw Error('409:CUSTODIA_SIN_COBERTURA: Revisá el saldo de efectivo.');
+ const sourcesByCollection=new Map<string,CommissionSource[]>(),options:CashCollectionOption[]=[],availableBySource=new Map(allSources.map(s=>[s.fuente.id,s.remanenteDisponibleCentavos]));
+ for(const m of positive){
+  const pending=remaining.get(m.id)!;if(!pending)continue;
+  const raw=m as LedgerCustodiaEfectivoMovimiento&{budgetId?:string;budgetVersion?:number;operationId?:string};let payment:Record<string,unknown>|undefined;
+  if(m.ledgerMovimientoRelacionadoId&&raw.budgetId&&Number.isSafeInteger(raw.budgetVersion)){const ref=operationRef(db,raw.budgetId,raw.budgetVersion!).parent.doc('financial'),financial=(await tx.get(ref)).data();payment=(await tx.get(ref.collection('payments').doc(m.ledgerMovimientoRelacionadoId))).data();if(payment&&(!financial||financial.operationId!==raw.operationId||m.solicitudId!==raw.operationId||payment.id!==m.ledgerMovimientoRelacionadoId||payment.amountCents!==m.montoCentavos||payment.method!=='EFECTIVO'||payment.reversedAt||!(payment.cashCustody as {affiliateId?:string}|undefined)?.affiliateId|| (payment.cashCustody as {affiliateId?:string}).affiliateId!==vendorId))payment=undefined;}
+  else if(m.ledgerMovimientoRelacionadoId){payment=(await tx.get(db.collection('ledger_movimientos').doc(m.ledgerMovimientoRelacionadoId))).data();if(payment&&(payment.tipo!=='PAGO'||payment.solicitudId!==m.solicitudId||payment.montoRecibidoCentavos!==m.montoCentavos||payment.medioPago!=='EFECTIVO'||payment.estado!=='ACTIVO'||payment.monedaRecibida!=='ARS'||payment.monedaPlan&&payment.monedaPlan!=='ARS'))payment=undefined;}
+  const duplicate=positive.filter(p=>p.ledgerMovimientoRelacionadoId&&p.ledgerMovimientoRelacionadoId===m.ledgerMovimientoRelacionadoId&&p.solicitudId===m.solicitudId).length>1;
+  const accrued=account.movimientos.filter(c=>c.tipo==='DEVENGAMIENTO_PAGO'&&c.ledgerPagoMovimientoId===m.ledgerMovimientoRelacionadoId&&c.solicitudId===m.solicitudId);
+  const verified=m.tipo==='COBRO_EFECTIVO_VENDEDOR'&&!!payment&&!duplicate&&accrued.length>0&&accrued.reduce((sum,c)=>sum+c.baseComisionableCentavos,0)===m.montoCentavos&&accrued.every(c=>Number.isSafeInteger(c.baseComisionableCentavos)&&c.baseComisionableCentavos>0&&c.montoComisionCentavos<=c.baseComisionableCentavos&&c.porcentajeAplicadoBasisPoints>=0&&c.porcentajeAplicadoBasisPoints<=10000);
+  if(accrued.some(c=>!Number.isSafeInteger(c.montoComisionCentavos)||c.montoComisionCentavos<0||!Number.isSafeInteger(c.porcentajeAplicadoBasisPoints)||c.moneda!=='ARS'))throw Error('409:COMISION_ORIGEN_INCONSISTENTE');
+  let linkedClient='';if(verified&&!raw.budgetId&&m.solicitudId){const source=(await tx.get(db.collection('solicitudes').doc(m.solicitudId))).data();linkedClient=String(source?.nombreCompleto||source?.clienteNombre||source?.nombre||'');}
+  const sources=verified?accrued.flatMap(c=>{const eligible=Math.min(availableBySource.get(c.id)??0,c.montoComisionCentavos-Number(BigInt(c.montoComisionCentavos)*BigInt(m.montoCentavos-pending)/BigInt(m.montoCentavos)));return eligible>0?[{fuente:c,remanenteDisponibleCentavos:eligible}]:[];}):[];
+  sourcesByCollection.set(m.id,sources);
+  options.push({id:m.id,client:accrued.find(c=>c.clienteNombre)?.clienteNombre||linkedClient||'Cobro de cuota',date:typeof payment?.effectiveDate==='string'?payment.effectiveDate:typeof payment?.fechaEfectiva==='string'?payment.fechaEfectiva:m.createdAt,reference:String(payment?.reference||payment?.referenciaTransferencia||'Sin referencia'),originalCents:m.montoCentavos,remainingCents:pending,commissionCents:sources.reduce((sum,s)=>sum+s.remanenteDisponibleCentavos,0),percentages:[...new Set(accrued.map(c=>c.porcentajeAplicadoBasisPoints/100))],netEnabled:verified,warning:!verified?'El origen de este efectivo requiere revisión para descontar comisión.':!sources.length?'Este cobro no tiene comisión disponible: puede estar pagada, reservada o pendiente de conciliación.':null});
+ }
+ return {cash,available,allSources,sourcesByCollection,options,priorSelections};
+}
+export async function listRemittanceCollections(db:admin.firestore.Firestore,vendorId:string,cursor?:string){
+ return db.runTransaction(async tx=>{const c=await readRemittanceContext(db,tx,vendorId),ordered=c.options.toSorted((a,b)=>a.id<b.id?-1:a.id>b.id?1:0),rows=cursor?ordered.filter(r=>r.id>cursor):ordered;return {collections:rows.slice(0,50),nextCursor:rows.length>50?rows[49].id:null,cashBalanceCents:c.cash.efectivoPendienteRendicionCentavos,availableCommissionCents:c.available};});
+}
+async function prepareSelectedRemittance(db:admin.firestore.Firestore,tx:admin.firestore.Transaction,vendorId:string,input:RemittanceSelection){
+ if(!Array.isArray(input.collectionIds)||!input.collectionIds.length||input.collectionIds.length>25||input.collectionIds.some(id=>typeof id!=='string'||!/^[A-Za-z0-9_-]{1,200}$/.test(id))||new Set(input.collectionIds).size!==input.collectionIds.length||typeof input.deductCommission!=='boolean')throw Error('400:SELECCION_REQUERIDA: Elegí hasta 25 cobros distintos para esta rendición.');
+ const c=await readRemittanceContext(db,tx,vendorId),selected=c.options.filter(r=>input.collectionIds.includes(r.id));
+ if(selected.length!==input.collectionIds.length)throw Error('409:COBRO_DESACTUALIZADO: Un cobro ya fue rendido o cambió. Actualizá la lista.');
+ if(input.deductCommission&&selected.some(r=>!r.netEnabled))throw Error('409:COMISION_NO_VERIFICADA: Revisá el origen de los cobros seleccionados. No se estima un porcentaje.');
+ const sources=input.deductCommission?selected.flatMap(r=>c.sourcesByCollection.get(r.id)!).toSorted((a,b)=>a.fuente.createdAt.localeCompare(b.fuente.createdAt)||a.fuente.id.localeCompare(b.fuente.id)):[];
+ if(new Set(sources.map(s=>s.fuente.id)).size!==sources.length||sources.length>400)throw Error('409:COMISION_SIN_COBERTURA: Dividí la selección o revisá las fuentes de comisión.');
+ const grossCents=selected.reduce((sum,r)=>sum+r.remainingCents,0),commissionRetainedCents=sources.reduce((sum,s)=>sum+s.remanenteDisponibleCentavos,0),receivedCents=grossCents-commissionRetainedCents;
+ if(!Number.isSafeInteger(grossCents)||!Number.isSafeInteger(commissionRetainedCents)||receivedCents<=0||grossCents>c.cash.efectivoPendienteRendicionCentavos)throw Error('409:IMPORTES_INCONSISTENTES: Revisá los cobros incluidos.');
+ if(input.deductCommission&&(commissionRetainedCents<=0||commissionRetainedCents>c.available))throw Error('409:COMISION_NO_DISPONIBLE: La comisión está pagada, reservada o afectada por recuperos. Revisá la cuenta antes de descontarla.');
+ const summary={schemaVersion:'REMITTANCE_PREVIEW_V1' as const,collectionIds:[...input.collectionIds].sort(),deductCommission:input.deductCommission,receivedCents,commissionRetainedCents,grossCents,cashBalanceCents:c.cash.efectivoPendienteRendicionCentavos,availableCommissionCents:c.available,commissionSources:sources.map(s=>({id:s.fuente.id,amountCents:s.remanenteDisponibleCentavos,percentage:s.fuente.porcentajeAplicadoBasisPoints/100,client:s.fuente.clienteNombre||'Cobro de cuota',installment:s.fuente.cuotaNumero??null}))};
+ const hash=createHash('sha256').update(stable({vendorId,summary,cash:c.cash.movimientos.map(m=>({id:m.id,amount:m.montoCentavos,type:m.tipo})),prior:c.priorSelections,sources:c.allSources.map(s=>({id:s.fuente.id,remaining:s.remanenteDisponibleCentavos,amount:s.fuente.montoComisionCentavos,percentage:s.fuente.porcentajeAplicadoBasisPoints}))})).digest('hex');
+ const allocations:RemittanceCashAllocation[]=selected.map(r=>({cashMovementId:r.id,paymentId:c.cash.movimientos.find(m=>m.id===r.id)!.ledgerMovimientoRelacionadoId??null,grossCents:r.remainingCents,commissionCents:input.deductCommission?r.commissionCents:0}));
+ return {preview:{...summary,hash} satisfies RemittancePreview,sources,allocations};
+}
+export async function previewSelectedCashRemittance(db:admin.firestore.Firestore,vendorId:string,input:RemittanceSelection):Promise<RemittancePreview>{return db.runTransaction(async tx=>(await prepareSelectedRemittance(db,tx,vendorId,input)).preview);}
+
+/** The receipt, commission payment, source items and BOTH cash reductions commit together. */
+export async function confirmReviewedCashRemittance(db:admin.firestore.Firestore,tx:admin.firestore.Transaction,params:Omit<CashRemittanceInput,'montoRendidoCentavos'>&RemittanceSelection&{previewHash:string}){
+ const {preview,sources,allocations}=await prepareSelectedRemittance(db,tx,params.vendedorAfiliadoId,params);
+ if(typeof params.previewHash!=='string'||params.previewHash!==preview.hash)throw Error('409:RENDICION_DESACTUALIZADA: La cuenta cambió. Actualizá y revisá los importes antes de confirmar.');
+ const key=createHash('sha256').update(stable([params.vendedorAfiliadoId,params.idempotencyKey])).digest('hex'),id='rend_'+key,liqId='offset_'+key,now=new Date().toISOString();
+ if((await tx.get(db.collection('rendiciones_efectivo').doc(id))).exists||(await tx.get(db.collection('liquidaciones_comision').doc(liqId))).exists)throw Error('409:RENDICION_EXISTENTE: Reintentá el mismo comando para consultar el resultado.');
+ const liq:LiquidacionComision={id:liqId,vendedorAfiliadoId:params.vendedorAfiliadoId,vendedorAfiliadoEmail:params.vendedorAfiliadoEmail,estado:'CONFIRMADA',montoTotalLiquidadoCentavos:preview.commissionRetainedCents,cantidadItems:sources.length,creadoPorAdminUid:params.adminUid,confirmadoPorAdminUid:params.adminUid,fechaConfirmacion:now,idempotencyKey:params.idempotencyKey,createdAt:now,updatedAt:now};
+ const items=preview.commissionRetainedCents>0?await prepareSettlementItems(db,tx,liq,sources,now):[];
+ // Nothing below this point reads documents. No intermediate draft or reserved commission survives an abort.
+ const received=writeCashRemittance(db,tx,{...params,montoRendidoCentavos:preview.receivedCents},now,id);
+ if(preview.commissionRetainedCents>0){
+  writePaidSettlement(db,tx,liq,{adminUid:params.adminUid,idempotencyKey:params.idempotencyKey,componentesPago:[{formaPago:'COMPENSACION_EFECTIVO_EN_PODER',montoCentavos:preview.commissionRetainedCents,referenciaBancaria:params.comprobanteReferencia||null,notas:'Comisión retenida al rendir cobros'}]},preview.commissionRetainedCents,'COMPENSACION_EFECTIVO_EN_PODER',now,id);
+  for(const item of items)tx.create(db.collection('liquidaciones_comision').doc(liqId).collection('items').doc(item.id),item);
+ }
+ const result:RendicionEfectivo={...received,schemaVersion:'REMITTANCE_COMMISSION_OFFSET_V1',montoCobrosRendidosCentavos:preview.grossCents,comisionRetenidaCentavos:preview.commissionRetainedCents,liquidacionComisionId:preview.commissionRetainedCents>0?liqId:null,revisionPreviaHash:preview.hash,cobrosIncluidos:allocations,cashAllocationPolicy:'EXPLICIT_SELECTION_WITH_LEGACY_FIFO_V1'};
+ tx.create(db.collection('rendiciones_efectivo').doc(id),result);
+ return result;
 }
 
 /**
  * 8. Devolución Física a Cliente (ledger_custodia_efectivo)
  */
-export async function registrarDevolucionFisicaCliente(
-  dbOrParams: any,
-  paramsOrTx?: any,
-  transactionParam?: any
-): Promise<any> {
-  const db = typeof dbOrParams?.collection === "function" ? dbOrParams : admin.firestore();
-  const params = typeof dbOrParams?.collection === "function" ? paramsOrTx : dbOrParams;
-  const transaction = typeof dbOrParams?.collection === "function" ? transactionParam : paramsOrTx;
-  return _raw_registrarDevolucionFisicaCliente(db, params, transaction);
+export async function registrarDevolucionFisicaCliente(dbOrParams:unknown,paramsOrTx?:unknown,transactionParam?:admin.firestore.Transaction):Promise<Awaited<ReturnType<typeof _raw_registrarDevolucionFisicaCliente>>>{
+ const call=settlementInvocation<Parameters<typeof _raw_registrarDevolucionFisicaCliente>[1]>(dbOrParams,paramsOrTx,transactionParam);
+ return _raw_registrarDevolucionFisicaCliente(call.db,call.params,call.transaction);
 }
 
 async function _raw_registrarDevolucionFisicaCliente(
@@ -1076,15 +1136,9 @@ async function _raw_registrarDevolucionFisicaCliente(
 /**
  * 9. Ajuste Excepcional de Custodia de Efectivo (ledger_custodia_efectivo)
  */
-export async function registrarAjusteCustodiaEfectivo(
-  dbOrParams: any,
-  paramsOrTx?: any,
-  transactionParam?: any
-): Promise<any> {
-  const db = typeof dbOrParams?.collection === "function" ? dbOrParams : admin.firestore();
-  const params = typeof dbOrParams?.collection === "function" ? paramsOrTx : dbOrParams;
-  const transaction = typeof dbOrParams?.collection === "function" ? transactionParam : paramsOrTx;
-  return _raw_registrarAjusteCustodiaEfectivo(db, params, transaction);
+export async function registrarAjusteCustodiaEfectivo(dbOrParams:unknown,paramsOrTx?:unknown,transactionParam?:admin.firestore.Transaction):Promise<Awaited<ReturnType<typeof _raw_registrarAjusteCustodiaEfectivo>>>{
+ const call=settlementInvocation<Parameters<typeof _raw_registrarAjusteCustodiaEfectivo>[1]>(dbOrParams,paramsOrTx,transactionParam);
+ return _raw_registrarAjusteCustodiaEfectivo(call.db,call.params,call.transaction);
 }
 
 async function _raw_registrarAjusteCustodiaEfectivo(
@@ -1161,7 +1215,7 @@ async function _raw_registrarAjusteCustodiaEfectivo(
 export async function resolverVendedorPorAuthUid(
   db: admin.firestore.Firestore,
   authUid: string
-): Promise<{ vendedorId: string; vendedorDoc: any } | null> {
+): Promise<{ vendedorId: string; vendedorDoc: admin.firestore.DocumentData } | null> {
   if (!authUid || !authUid.trim()) return null;
 
   const snap = await db.collection("vendedores")
