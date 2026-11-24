@@ -1,4 +1,5 @@
 import {requestWorkflows} from './adminWorkflowServer';
+import {readFollowUpSummaries} from './adminSolicitudFollowUpServer';
 import {administrativeStatuses} from './adminRecordRemovalServer';
 import {FieldPath,type Firestore} from 'firebase-admin/firestore';
 import {isAdminSolicitudSource,mapSolicitudCuentaToAdminReadModel,mapSolicitudToAdminReadModel,toAdminSolicitudHttpPayload,type AdminSolicitudListItem} from './adminSolicitudesReadModel';
@@ -11,10 +12,11 @@ export async function readAdminRequestPage(db:Firestore,source:string,cursor:str
  const result=await query.get(),docs=result.docs.slice(0,ADMIN_REQUEST_PAGE_SIZE),map=source==='solicitudes'?mapSolicitudToAdminReadModel:mapSolicitudCuentaToAdminReadModel;
  const states=await administrativeStatuses(db,docs.map(doc=>({kind:'REQUEST',source,id:doc.id})));
  const workflows=await requestWorkflows(db,source,docs.map(d=>d.id));
+ const followUps=await readFollowUpSummaries(db,source,docs.map(d=>d.id));
  const items:AdminSolicitudListItem[]=docs.map(doc=>{
   const item=toAdminSolicitudHttpPayload(map(doc.id,doc.data()));
   // Only the wire projection uses ISO dates; persisted Timestamps remain untouched.
-  return {...item,workflow:workflows[doc.id]??[],tipoPresentacion:workflows[doc.id]?.length?'Solicitud':item.tipoPresentacion,administrativeState:states[doc.id]??null};
+  return {...item,followUp:followUps[doc.id],workflow:workflows[doc.id]??[],tipoPresentacion:workflows[doc.id]?.length?'Solicitud':item.tipoPresentacion,administrativeState:states[doc.id]??null};
  });
  return {items,nextCursor:result.size>ADMIN_REQUEST_PAGE_SIZE?docs.at(-1)!.id:null};
 }

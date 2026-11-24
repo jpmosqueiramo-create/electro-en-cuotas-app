@@ -1,5 +1,6 @@
 import {matchesWorkflow,workflowLabels,type AdminWorkflow} from './adminWorkflow';
 import type {AdminRecordStatus} from './adminRecordRemoval';
+import type {FollowUpSummary} from './adminSolicitudFollowUp';
 import { publicSolicitudOrigin } from "./publicSolicitud";
 /** Proyección explícita de lectura. No importa Firebase ni ejecuta efectos. */
 export const ADMIN_SOLICITUD_SOURCES = ["solicitudes", "solicitudes_cuenta"] as const;
@@ -12,6 +13,7 @@ export type AdminProposal = {
   itemCount: number | null; items: { producto: string | null; cuotas: number | null; valorCuota: number | null; contado: number | null }[];
 };
 export type AdminSolicitudListItem = {
+  followUp?: FollowUpSummary;
   workflow?:AdminWorkflow[];
   administrativeState?:AdminRecordStatus|null;
   sourceCollection: AdminSolicitudSource; documentId: string; recordKey: string;
