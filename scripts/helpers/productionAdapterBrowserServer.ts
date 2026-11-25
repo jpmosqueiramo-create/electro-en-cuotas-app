@@ -1,7 +1,7 @@
 import './requireSafeEmulatorEnvironment';
 import assert from 'node:assert/strict';
 import { createServer, request as proxyRequest } from 'node:http';
-import { connect } from 'node:net';
+import { connect, type Socket } from 'node:net';
 import { readdirSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -69,10 +69,12 @@ export async function startProductionBrowserServer(runtime: ProductionRuntime) {
             res.end('Local test harness failed');
         }
     });
+    const connections = new Set<Socket>();
+    server.on('connection', socket => { connections.add(socket); socket.once('close', () => connections.delete(socket)); });
     // Preserve Next's development websocket; otherwise HMR can repeatedly reload Auth.
     server.on('upgrade', (req, socket, head) => { const upstream = connect(3001, 'localhost', () => { upstream.write(`${req.method} ${req.url} HTTP/${req.httpVersion}\r\n` + Object.entries(req.headers).map(([k, v]) => `${k}: ${v}`).join('\r\n') + '\r\n\r\n'); if (head.length)
         upstream.write(head); socket.pipe(upstream).pipe(socket); }); upstream.on('error', () => socket.destroy()); socket.on('error', () => upstream.destroy()); socket.on('close', () => upstream.destroy()); });
-    const stop = async () => { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); next.kill('SIGTERM'); if (next.exitCode === null && next.signalCode === null)
+    const stop = async () => { next.kill('SIGTERM'); for(const socket of connections)socket.destroy(); server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); if (next.exitCode === null && next.signalCode === null)
         await new Promise<void>(resolve => next.once('close', () => resolve())); };
     try {
         await new Promise<void>((resolve, reject) => { server.once('error', reject); server.listen(3000, 'localhost', () => resolve()); });
