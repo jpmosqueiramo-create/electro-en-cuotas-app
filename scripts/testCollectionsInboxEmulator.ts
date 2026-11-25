@@ -1,0 +1,102 @@
+import './helpers/requireSafeEmulatorEnvironment';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
+import { NextRequest } from 'next/server';
+import { admin } from '../src/lib/firebaseAdmin';
+import { approvedFinalPackages } from '../src/lib/productionV2/catalog';
+import { productionRuntimeForEmulator } from '../src/lib/productionV2/runtime';
+import { productionReadyFixture } from './helpers/productionAdapterFixtures';
+import { productionPaths } from '../src/lib/productionV2/freeze';
+import { contractCommand } from '../src/lib/contractV2Server';
+import { prepareClientProposal } from '../src/lib/clientProposalServer';
+import { readLoopTariffs, saveLoopTariffs } from '../src/lib/loopServiceTariffsServer';
+import { loopReferenceTariffs } from '../src/lib/loopServiceTariffs';
+import { issueContractEditor } from '../src/lib/productionV2/simpleIssuance';
+import { argentinaBusinessDate } from '../src/lib/productionV2/businessDate';
+import { getBudgetDocumentationBucket } from '../src/lib/budgetDocumentationStorage';
+import { financialRef, financialCommand } from '../src/lib/operationFinancialV2Server';
+import { submitPaymentReport, decidePaymentReport } from '../src/lib/operationPaymentReportsServer';
+import { affiliateSettlementCommand } from '../src/lib/affiliateSettlementAdmin';
+import { withAdminCommissionAccess } from '../src/lib/affiliateCommissionAccess';
+import { listRemittanceCollections, previewSelectedCashRemittance } from '../src/lib/settlementsEngine';
+import { loadCollectionsInbox, collectionInboxCases } from '../src/lib/collectionsInbox';
+import { GET as budgetsGet } from '../src/app/api/admin/presupuestos-v2/route';
+import { GET as contractGet } from '../src/app/api/admin/presupuestos-v2/[budgetId]/versions/[version]/contract/route';
+import { GET as financialGet } from '../src/app/api/admin/presupuestos-v2/[budgetId]/versions/[version]/financial/route';
+import { GET as reportsGet } from '../src/app/api/admin/payment-reports/route';
+import { GET as vendorsGet } from '../src/app/api/admin/vendedores/route';
+import { p1Token } from './testPortalP1Emulator';
+import { startProductionBrowserServer } from './helpers/productionAdapterBrowserServer';
+
+async function main() {
+  assert.equal(process.env.STORAGE_EMULATOR_HOST, 'http://127.0.0.1:9199');
+  const db = admin.firestore(), password = 'Emulator-only-123', email = process.env.NEXT_PUBLIC_ADMIN_EMAIL!;
+  const actor = (await admin.auth().createUser({ email, password, emailVerified: true })).uid;
+  const root = { uid: actor, admin: true }, runtime = productionRuntimeForEmulator(db, admin.auth(), [approvedFinalPackages[0]], [actor]);
+  const bucket = await getBudgetDocumentationBucket();
+  await db.doc(productionPaths.counter).create({ schemaVersion: 'CONTRACT_NUMBER_COUNTER_V1', policyId: 'CONTRACT_NUMBERING_V1', executionMode: 'PRODUCTION', active: true, lastAllocatedSequence: '0', initializationAuthorizationReference: 'SYNTHETIC_ONLY' });
+  await saveLoopTariffs(db, loopReferenceTariffs, (await readLoopTariffs(db)).revision, actor);
+  const f = await productionReadyFixture(actor, true, true);
+  const command = async (action: string, extra: Record<string, unknown> = {}) => contractCommand(db, f.id, 1, { action, commandId: randomUUID(), expectedRevision: (await f.r.draft.get()).data()!.revision, ...extra }, actor);
+  await command('RETURN_TO_DRAFT', { reason: 'Bandeja sintética de cobranzas' });
+  const d = (await f.r.draft.get()).data()!, today = argentinaBusinessDate(), firstDue = argentinaBusinessDate(new Date(Date.now() - 100 * 86400000));
+  await command('SAVE_CONTRACT_EDITOR', { personalData: d.personalData, employmentData: d.employmentData, productDetails: d.productDetails, contractPlanCuotas: 12, firstInstallmentDueDate: firstDue, preferredMonthlyDueDay: 9, issuePlace: 'Localidad sintética', loopServices: { category: 'C', tariffRevision: (await readLoopTariffs(db)).revision, otherServicesCents: 0, cftAnnualPercent: null, cftBasis: '', supplierTaxId: '20123456786', notePaymentPlace: 'Domicilio sintético', noteDueDate: '2027-11-09', acceptanceChannel: 'WHATSAPP', proposalSentAt: today + 'T09:00', clientAcceptedAt: today + 'T09:10' } });
+  const proposal = await prepareClientProposal(db, f.id, 1, { commandId: randomUUID(), expectedRevision: (await f.r.draft.get()).data()!.revision }, actor);
+  await command('RECORD_CLIENT_CONFORMITY', { proposalCommandId: proposal.commandId, evidence: 'Conformidad sintética sin cliente real' });
+  const issued = await issueContractEditor(runtime, bucket, f.id, 1, { commandId: randomUUID(), expectedRevision: (await f.r.draft.get()).data()!.revision, confirmed: true }, actor);
+  const snapshot = (await db.collection(productionPaths.snapshots).doc(issued.snapshotId).get()).data()!;
+  const firstCents = Math.round(snapshot.paymentSchedule.installments[0].amount * 100), seller = { uid: f.uid, admin: false };
+  const token = await p1Token({ uid: actor }), sellerToken = await p1Token({ uid: f.uid });
+  const context = { params: Promise.resolve({ budgetId: f.id, version: '1' }) };
+  const read = async (url: string, authToken = token) => {
+    const request = new NextRequest('http://localhost' + url, { headers: { Authorization: `Bearer ${authToken}` } });
+    const response = url.startsWith('/api/admin/payment-reports') ? await reportsGet(request) : url === '/api/admin/vendedores' ? await vendorsGet(request) : url === '/api/admin/presupuestos-v2' ? await budgetsGet(request) : url.endsWith('/contract') ? await contractGet(request, context) : await financialGet(request, context);
+    if (!response.ok) throw Error('READ_STATUS_' + response.status);
+    return response.json();
+  };
+  const load = () => loadCollectionsInbox(read);
+  const report = async (amountCents: number, method: 'EFECTIVO' | 'TRANSFERENCIA') => submitPaymentReport(db, f.id, 1, { commandId: randomUUID(), operationId: f.identity.operationId, amountCents, method, effectiveDate: today, reference: 'SYNTHETIC-' + randomUUID(), cashRecipient: method === 'EFECTIVO' ? 'AFFILIATE' : null }, seller, 'AFFILIATE');
+  const first = await report(firstCents, 'EFECTIVO');
+  const beforeCredit = await load();
+  assert.equal(beforeCredit.reports?.length, 1); assert.equal(beforeCredit.vendors?.find(v => v.id === f.affiliateId)?.cashCents, 0);
+  assert.equal(collectionInboxCases(beforeCredit).length, 1, 'First installment remains pending before activation.');
+  await decidePaymentReport(db, f.id, 1, { action: 'CONFIRM', commandId: randomUUID(), reportId: first.reportId, expectedRevision: 1, financialRevision: 0, reference: 'SYNTHETIC-FIRST' }, root);
+  await report(10001, 'TRANSFERENCIA'); await report(5001, 'EFECTIVO');
+  const state = (await financialRef(db, f.id, 1).get()).data()!;
+  const data = await load(), cases = collectionInboxCases(data), operation = cases.find(c => c.kind === 'OPERATION');
+  assert(data.collections && data.reports && data.vendors); assert.equal(data.reports.length, 2);
+  assert.equal(cases.length, 2); assert(operation?.kind === 'OPERATION');
+  assert(operation.overdueCount >= 2); assert.equal(operation.reports.length, 2);
+  assert.equal(data.vendors.find(v => v.id === f.affiliateId)?.cashCents, firstCents);
+  assert.deepEqual((await financialRef(db, f.id, 1).get()).data(), state, 'The entire inbox is read-only.');
+  for (const url of ['/api/admin/presupuestos-v2', '/api/admin/payment-reports', '/api/admin/vendedores']) await assert.rejects(read(url, sellerToken), /READ_STATUS_403/);
+
+  const selection = await withAdminCommissionAccess(db, actor, false, async () => {
+    const collections = await listRemittanceCollections(db, f.affiliateId);
+    return previewSelectedCashRemittance(db, f.affiliateId, { collectionIds: collections.collections.map(c => c.id), deductCommission: true });
+  });
+  await affiliateSettlementCommand(db, f.affiliateId, actor, { action: 'REMIT_REVIEWED', commandId: randomUUID(), data: { collectionIds: selection.collectionIds, deductCommission: true, previewHash: selection.hash, method: 'TRANSFERENCIA', reference: 'RENDICION-SINTETICA', notes: '' } });
+  const afterRemittance = await load();
+  assert.equal(afterRemittance.vendors?.find(v => v.id === f.affiliateId)?.cashCents, 0);
+  assert.equal(collectionInboxCases(afterRemittance).filter(c => c.kind === 'CASH').length, 0);
+  assert.equal(afterRemittance.reports?.length, 2);
+  assert.deepEqual((await financialRef(db, f.id, 1).get()).data(), state, 'Net remittance cannot charge or credit the customer again.');
+
+  await financialCommand(db, f.id, 1, { action: 'CREDIT_PAYMENT', operationId: f.identity.operationId, expectedRevision: state.revision, commandId: randomUUID(), data: { paymentId: randomUUID(), amountCents: 10001, method: 'TRANSFERENCIA', reference: 'DIRECTO-SINTETICO', effectiveDate: today } }, root, 'ADMIN');
+  const afterPayment = await load(), reduced = collectionInboxCases(afterPayment).find(c => c.kind === 'OPERATION');
+  assert(reduced?.kind === 'OPERATION'); assert.equal(reduced.overdueCents, operation.overdueCents - 10001);
+  assert.equal(reduced.reports.length, 2, 'No automatic matching or double credit from a pending report.');
+  console.log('COLLECTIONS_INBOX_REAL_ADMIN_ROUTES_FIRST_PAYMENT_OVERDUE_PENDING_CASH_NET_REMITTANCE_NO_DOUBLE_CREDIT_RBAC_READ_ONLY = PASS');
+  if (process.env.COLLECTIONS_INBOX_BROWSER === '1') {
+    const current = (await financialRef(db, f.id, 1).get()).data()!;
+    await financialCommand(db, f.id, 1, { action: 'CREDIT_PAYMENT', operationId: f.identity.operationId, expectedRevision: current.revision, commandId: randomUUID(), data: { paymentId: randomUUID(), amountCents: 20001, method: 'EFECTIVO', cashCustody: 'AFFILIATE', reference: 'EFECTIVO-SINTETICO', effectiveDate: today } }, root, 'ADMIN');
+    writeFileSync('/tmp/cobranzas-browser-fixture.json', JSON.stringify({ email, password, budgetId: f.id, vendorId: f.affiliateId, databaseId: process.env.LIFECYCLE_DATABASE_ID }));
+    const server = await startProductionBrowserServer(runtime);
+    console.log('COLLECTIONS_INBOX_BROWSER_READY localhost:3000');
+    await new Promise<void>(done => { process.once('SIGINT', done); process.once('SIGTERM', done); });
+    await server.stop();
+    writeFileSync('/tmp/cobranzas-browser-calls.json', JSON.stringify(server.calls, null, 2));
+  }
+}
+main().then(() => admin.app().delete()).catch(error => { console.error(error); process.exitCode = 1; });

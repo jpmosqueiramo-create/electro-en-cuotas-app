@@ -11,10 +11,12 @@ export const affiliateButton='admin-control min-h-11 rounded-xl border border-bo
 const money=(n:number)=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(n/100);
 const date=(s:string)=>new Date(s).toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires',dateStyle:'short',timeStyle:'short'});
 const labels:Record<string,string>={BORRADOR:'Por confirmar',CONFIRMADA:'Reservado para pagar',PAGADA:'Pagado',ANULADA:'Cancelado'};
-export function AffiliateCommissionWorkspace({selectedId='',onSelect}:{selectedId?:string;onSelect?:(id:string)=>void}){const {user}=useAuth();return <CommissionSession key={user?.uid??'anonymous'} selectedId={selectedId} onSelect={onSelect}/>;}
-function CommissionSession({selectedId,onSelect}:{selectedId:string;onSelect?:(id:string)=>void}){
+type WorkspaceProps={selectedId?:string;onSelect?:(id:string)=>void;initialTab?:'OPERATIONS'|'CASH';onBusyChange?:(busy:boolean)=>void};
+export function AffiliateCommissionWorkspace({selectedId='',onSelect,initialTab='OPERATIONS',onBusyChange}:WorkspaceProps){const {user}=useAuth();return <CommissionSession key={user?.uid??'anonymous'} selectedId={selectedId} onSelect={onSelect} initialTab={initialTab} onBusyChange={onBusyChange}/>;}
+function CommissionSession({selectedId='',onSelect,initialTab='OPERATIONS',onBusyChange}:WorkspaceProps){
  const {user}=useAuth(),requests=useRef(0),flight=useRef(false),pending=useRef<{body:string;url:string;action:string;vendorId:string}|null>(null);
- const [vendors,setVendors]=useState<Vendor[]>([]),[local,setLocal]=useState(''),[view,setView]=useState<View|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[loading,setLoading]=useState(false),[busy,setBusy]=useState(false),[uncertain,setUncertain]=useState(false),[cashVersion,setCashVersion]=useState(0),[tab,setTab]=useState('OPERATIONS');
+ const [vendors,setVendors]=useState<Vendor[]>([]),[local,setLocal]=useState(selectedId),[view,setView]=useState<View|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[loading,setLoading]=useState(false),[busy,setBusy]=useState(false),[uncertain,setUncertain]=useState(false),[cashVersion,setCashVersion]=useState(0),[tab,setTab]=useState<string>(initialTab);
+ useEffect(()=>{onBusyChange?.(busy||uncertain);return()=>onBusyChange?.(false);},[busy,uncertain,onBusyChange]);
  const selected=onSelect?selectedId:local;
  const selectedRef=useRef(selected);selectedRef.current=selected;
  const headers=useCallback(async()=>({Authorization:`Bearer ${await user!.getIdToken()}`,'Content-Type':'application/json'}),[user]);

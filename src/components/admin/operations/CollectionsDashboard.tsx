@@ -1,6 +1,8 @@
 'use client';
 import { HistoricalPaymentReports } from './HistoricalPaymentReports';
-import { PendingPaymentReports } from './PendingPaymentReports';
+import { CollectionsInbox } from './CollectionsInbox';
+import { AffiliateCommissionWorkspace } from '@/components/admin/AffiliateCommissionWorkspace';
+import { loadCollectionsInbox, type CollectionsInboxData } from '@/lib/collectionsInbox';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Search, MessageCircle, RefreshCw, AlertCircle, CalendarDays, CheckCircle2, ArrowUpRight } from 'lucide-react';
@@ -8,7 +10,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { OperationFinancialWorkspace } from '@/components/operations/OperationFinancialWorkspace';
 import { OperationContactPanel } from '@/components/operations/OperationContactPanel';
 import { argentinaBusinessDate } from '@/lib/productionV2/businessDate';
-import { collectionLabels, collectionStatus, matchesCollectionFilter, loadCollections, installmentWhatsApp, overdueBalance, selectCollections, type CollectionFilter, type CollectionRow } from '@/lib/collectionsOverview';
+import { collectionLabels, collectionStatus, matchesCollectionFilter, installmentWhatsApp, overdueBalance, selectCollections, type CollectionFilter, type CollectionRow } from '@/lib/collectionsOverview';
 const money = (cents: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 2 }).format(cents / 100);
 const date = (value: string | null) => value ? value.split('-').reverse().join('/') : 'Sin registrar';
 const input = 'admin-control min-h-11 w-full min-w-0 rounded-xl border border-border-color bg-surface px-3 py-2 text-text-primary';
@@ -23,21 +25,24 @@ function CollectionsSession() {
   const [query, setQuery] = useState(''), [status, setStatus] = useState<CollectionFilter>('ALL'), [from, setFrom] = useState(''), [to, setTo] = useState(''), [sort, setSort] = useState('DUE');
   const [today, setToday] = useState('');
   const [selected, setSelected] = useState<CollectionRow | null>(null);
+  const [inbox, setInbox] = useState<CollectionsInboxData | null>(null);
+  const [vendor, setVendor] = useState<string | null>(null);
+  const [portfolioOpen, setPortfolioOpen] = useState(false);
   const sequence = useRef(0), abort = useRef<AbortController | null>(null);
   const refresh = useCallback(async () => {
     if (!user) return;
     const current = ++sequence.current;
     abort.current?.abort(); const controller = new AbortController(); abort.current = controller;
-    setLoading(true); setError(false); setToday(argentinaBusinessDate());
+    setLoading(true); setError(false); setRows(null); setInbox(null); setToday(argentinaBusinessDate());
     try {
       const token = await user.getIdToken();
-      const next = await loadCollections(async url => {
-        const response = await fetch(url, { cache: 'no-store', signal: controller.signal, headers: { Authorization: `Bearer ${token}` } });
+      const next = await loadCollectionsInbox(async url => {
+        const response = await fetch(url, { cache: 'no-store', signal: AbortSignal.any([controller.signal, AbortSignal.timeout(25000)]), headers: { Authorization: `Bearer ${token}` } });
         if (!response.ok) throw Error('READ_FAILED');
         return response.json();
       });
-      if (current === sequence.current && !controller.signal.aborted) setRows(next);
-    } catch { if (current === sequence.current && !controller.signal.aborted) { setError(true); setRows(null); } }
+      if (current === sequence.current && !controller.signal.aborted) { setRows(next.collections); setInbox(next); }
+    } catch { if (current === sequence.current && !controller.signal.aborted) { setError(true); setRows(null); setInbox({ collections: null, reports: null, vendors: null }); } }
     finally { if (current === sequence.current && !controller.signal.aborted) setLoading(false); }
   }, [user]);
   const invalidate = useCallback(() => { ++sequence.current; abort.current?.abort(); }, []);
@@ -45,8 +50,8 @@ function CollectionsSession() {
     const visibleRefresh = () => { if (!document.hidden) void refresh(); };
     void refresh(); const timer = window.setInterval(visibleRefresh, 60000);
     window.addEventListener('focus', visibleRefresh); window.addEventListener('online', visibleRefresh);
-    window.addEventListener('operation-financial-updated', visibleRefresh); document.addEventListener('visibilitychange', visibleRefresh);
-    return () => { invalidate(); clearInterval(timer); window.removeEventListener('focus', visibleRefresh); window.removeEventListener('online', visibleRefresh); window.removeEventListener('operation-financial-updated', visibleRefresh); document.removeEventListener('visibilitychange', visibleRefresh); };
+    window.addEventListener('affiliate-account-updated', visibleRefresh); window.addEventListener('affiliate-registry-updated', visibleRefresh); window.addEventListener('operation-financial-updated', visibleRefresh); document.addEventListener('visibilitychange', visibleRefresh);
+    return () => { invalidate(); clearInterval(timer); window.removeEventListener('focus', visibleRefresh); window.removeEventListener('online', visibleRefresh); window.removeEventListener('affiliate-account-updated', visibleRefresh); window.removeEventListener('affiliate-registry-updated', visibleRefresh); window.removeEventListener('operation-financial-updated', visibleRefresh); document.removeEventListener('visibilitychange', visibleRefresh); };
   }, [refresh, invalidate]);
   const invalidRange = !!from && !!to && from > to;
   const visible = invalidRange ? [] : selectCollections(rows ?? [], { query, status, from, to, sort }, today);
@@ -55,8 +60,8 @@ function CollectionsSession() {
   const unknown = count('UNKNOWN');
   return <section data-testid="collections-dashboard" aria-busy={loading} className="min-w-0 space-y-5">
     <div className="flex flex-wrap items-center justify-between gap-3"><p className="max-w-2xl text-text-secondary">Encontrá a quién contactar y consultá cuotas, pagos y recibos desde su ficha.</p><button type="button" className="admin-control inline-flex min-h-11 items-center gap-2 rounded-xl border border-border-color bg-surface px-4 font-semibold text-brand-primary disabled:opacity-50" disabled={loading || !user} onClick={() => void refresh()}><RefreshCw size={18} aria-hidden="true" />Actualizar cobranzas</button></div>
-    <PendingPaymentReports/>
-    <HistoricalPaymentReports/>
+    <CollectionsInbox data={inbox} loading={loading} onManage={setSelected} onRemittance={setVendor} />
+    <details onToggle={e => setPortfolioOpen(e.currentTarget.open)} className="min-w-0 space-y-4 rounded-2xl border border-border-color p-4 sm:p-5"><summary className="cursor-pointer py-2 text-lg font-bold text-brand-primary">Consultar todas las operaciones y próximos vencimientos</summary>{portfolioOpen && <div className="mt-4 space-y-5">
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Resumen de cobranzas">
       {([{ filter: 'ALL', title: 'Operaciones', icon: Search }, { filter: 'OVERDUE', title: 'Con cuotas vencidas', icon: AlertCircle }, { filter: 'TODAY', title: 'Vencen hoy', icon: CalendarDays }, { filter: 'CURRENT', title: 'Al día', icon: CheckCircle2 }] as const).map(item => <button type="button" key={item.filter} aria-pressed={status === item.filter} onClick={() => setStatus(item.filter)} className={`admin-control min-w-0 rounded-2xl border p-4 text-left ${item.filter === 'ALL' ? 'border-brand-primary bg-brand-primary text-white' : tones[item.filter]} ${status === item.filter ? 'ring-2 ring-brand-primary ring-offset-2' : ''}`}><item.icon size={20} aria-hidden="true" /><span className="mt-2 block text-sm font-semibold">{item.title}</span><span className="block text-3xl font-bold tabular-nums">{rows ? count(item.filter) : '—'}</span>{item.filter === 'OVERDUE' && <span className="mt-1 block break-words text-xs">{rows ? money(overdue) : '—'} pendientes vencidos</span>}</button>)}
     </div>
@@ -77,18 +82,22 @@ function CollectionsSession() {
     {!!unknown && <p role="alert" className="rounded-xl border border-orange-200 bg-orange-50 p-4 text-orange-950">Hay {unknown} operaciones sin verificar. Sus saldos no se cuentan como cero ni como al día. Actualizá la consulta antes de contactar.</p>}
     {rows && <p role="status" className="text-sm text-text-secondary">{visible.length} de {rows.length} operaciones · Rojo: vencidas · Ámbar: vencen hoy · Verde: al día o canceladas.</p>}
     {rows && !visible.length && <div className="rounded-2xl border border-dashed border-border-color p-8 text-center"><h2 className="font-semibold">{rows.length ? 'No hay coincidencias con estos filtros' : 'Todavía no hay operaciones aceptadas'}</h2><p className="mt-1 text-text-secondary">{rows.length ? 'Probá otro nombre, estado o rango de fechas.' : 'Las operaciones aparecerán aquí cuando se acepte un presupuesto.'}</p></div>}
-    <div className="grid min-w-0 gap-4 lg:grid-cols-2">{visible.map(row => <CollectionCard key={row.key} row={row} today={today} onManage={()=>setSelected(row)} />)}</div>
+    <div className="grid min-w-0 gap-4 lg:grid-cols-2">{visible.map(row => <CollectionCard key={row.key} row={row} today={today} pendingReports={inbox?.reports ? inbox.reports.filter(r => r.operationId === row.operationId && r.budgetId === row.budgetId && r.version === row.version).length : null} onManage={()=>setSelected(row)} />)}</div>
+    </div>}</details>
+    <HistoricalPaymentReports/>
+    {vendor && <CollectionRemittance key={vendor} vendorId={vendor} onClose={() => setVendor(null)} />}
     {selected && <CollectionAccount row={selected} onClose={()=>setSelected(null)} />}
   </section>;
 }
-function CollectionCard({ row, today, onManage }: { row: CollectionRow; today: string; onManage:()=>void }) {
-  const state = collectionStatus(row, today), f = row.financial, whatsapp = installmentWhatsApp(row, today);
+function CollectionCard({ row, today, pendingReports, onManage }: { row: CollectionRow; today: string; pendingReports: number | null; onManage:()=>void }) {
+  const state = collectionStatus(row, today), f = row.financial, whatsapp = pendingReports === 0 ? installmentWhatsApp(row, today) : null;
   return <article data-testid="collection-row" className="min-w-0 space-y-4 rounded-2xl border border-border-color bg-surface p-4 sm:p-5">
     <div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><h2 className="break-words text-lg font-bold text-brand-primary">{row.name}</h2><p className="break-words text-sm text-text-secondary">{row.product}</p></div><span className={`rounded-full border px-3 py-1 text-xs font-bold ${tones[state]}`}>{collectionLabels[state]}</span></div>
     <p className="text-sm">Fecha de venta: <strong>{date(row.saleDate)}</strong>{f?.active && <span className="ml-2 break-words">· {f.contractNumber}</span>}</p>
     {f?.active ? <><dl className="grid grid-cols-2 gap-4"><div><dt className="text-sm text-text-secondary">Saldo pendiente</dt><dd className="break-words text-xl font-bold tabular-nums">{money(f.balanceCents)}</dd></div><div><dt className="text-sm text-text-secondary">Importe vencido</dt><dd className={`break-words text-xl font-bold tabular-nums ${f.overdueCount ? 'text-red-800' : 'text-text-primary'}`}>{money(overdueBalance(row))}</dd></div><div><dt className="text-sm text-text-secondary">Cuotas pagadas / total</dt><dd className="font-semibold">{f.paidInstallmentCount} / {f.installments.length}</dd></div><div><dt className="text-sm text-text-secondary">Cuotas vencidas</dt><dd className="font-semibold">{f.overdueCount}</dd></div></dl><p className="rounded-xl bg-background-main p-3 text-sm">{f.nextDueDate ? <>Próxima cuota pendiente: <strong>{date(f.nextDueDate)} · {money(f.nextDueAmountCents)}</strong></> : 'Sin cuotas pendientes.'}</p></> : <p className="text-sm text-text-secondary">{f ? 'El plan de cuotas todavía no está activo. Consultá la primera cuota desde la ficha.' : 'No se pudo verificar el estado de esta operación.'}</p>}
     <button type="button" className="btn-primary admin-control min-h-11 w-full whitespace-normal text-center" onClick={onManage}>Gestionar cobranza<ArrowUpRight size={18} aria-hidden="true" /></button>
-    {whatsapp ? <div><a className="admin-control inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-emerald-700 bg-emerald-50 px-3 py-2 text-center font-semibold text-emerald-900" href={whatsapp} target="_blank" rel="noopener noreferrer"><MessageCircle size={18} aria-hidden="true" />Recordar cuota por WhatsApp</a><p className="mt-1 text-xs text-text-secondary">Abre un mensaje para revisar y enviar. No se envía automáticamente.</p></div> : (state === 'OVERDUE' || state === 'TODAY') && <p className="text-sm text-text-secondary">Revisá el WhatsApp del cliente, con código de país, para abrir el recordatorio.</p>}
+    {pendingReports !== 0 && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950">{pendingReports === null ? 'Pagos informados sin verificar. Revisá la ficha antes de contactar.' : `Hay ${pendingReports} avisos de pago por revisar antes de contactar al cliente.`}</p>}
+    {whatsapp ? <div><a className="admin-control inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-emerald-700 bg-emerald-50 px-3 py-2 text-center font-semibold text-emerald-900" href={whatsapp} target="_blank" rel="noopener noreferrer"><MessageCircle size={18} aria-hidden="true" />Recordar cuota por WhatsApp</a><p className="mt-1 text-xs text-text-secondary">Abre un mensaje para revisar y enviar. No se envía automáticamente.</p></div> : pendingReports === 0 && (state === 'OVERDUE' || state === 'TODAY') && <p className="text-sm text-text-secondary">Revisá el WhatsApp del cliente, con código de país, para abrir el recordatorio.</p>}
     <OperationContactPanel budgetId={row.budgetId} version={row.version} role="ADMIN" />
   </article>;
 }
@@ -96,9 +105,19 @@ function CollectionCard({ row, today, onManage }: { row: CollectionRow; today: s
 function CollectionAccount({row,onClose}:{row:CollectionRow;onClose:()=>void}) {
   const dialog=useRef<HTMLDialogElement>(null);
   const [busy,setBusy]=useState(false);
-  useEffect(()=>{const element=dialog.current;const opener=document.activeElement; element?.showModal();return ()=>{element?.close();if(opener instanceof HTMLElement&&opener.isConnected)opener.focus();};},[]);
+  useEffect(()=>{const element=dialog.current;const opener=document.activeElement; element?.showModal();return ()=>{element?.close();if(opener instanceof HTMLElement&&opener.isConnected&&opener!==document.body&&!element?.contains(opener))opener.focus();else document.getElementById('collections-inbox-title')?.focus();};},[]);
   return <dialog ref={dialog} onCancel={e=>{e.preventDefault();if(!busy)onClose();}} aria-labelledby="collection-account-title" className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%_-_1rem)] max-w-4xl overflow-y-auto rounded-2xl border border-border-color bg-background-main p-0 text-text-primary shadow-2xl backdrop:bg-black/50">
     <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-border-color bg-surface p-4"><div className="min-w-0"><h2 id="collection-account-title" className="break-words text-xl font-bold text-brand-primary">Cobranza de {row.name}</h2><p className="break-words text-sm">{row.product}</p></div><button autoFocus type="button" disabled={busy} className={input+' !w-auto font-semibold'} onClick={onClose}>Cerrar</button></div>
     <div className="space-y-4 p-3 sm:p-5"><OperationFinancialWorkspace budgetId={row.budgetId} version={row.version} operationId={row.operationId} compact onBusyChange={setBusy}/><OperationContactPanel budgetId={row.budgetId} version={row.version} role="ADMIN"/><Link className="admin-control inline-flex min-h-11 items-center gap-2 font-semibold text-brand-primary underline" href={`/admin/operaciones/${encodeURIComponent(row.budgetId)}/${row.version}?section=logistics`}>Ver ficha y logística<ArrowUpRight size={18} aria-hidden="true"/></Link></div>
+  </dialog>;
+}
+
+function CollectionRemittance({ vendorId, onClose }: { vendorId: string; onClose: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { const element = dialog.current, opener = document.activeElement; element?.showModal(); return () => { element?.close(); if (opener instanceof HTMLElement && opener.isConnected && opener !== document.body && !element?.contains(opener)) opener.focus();else document.getElementById('collections-inbox-title')?.focus(); }; }, []);
+  return <dialog ref={dialog} onCancel={e => { e.preventDefault(); if (!busy) onClose(); }} aria-labelledby="collection-remittance-title" className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%_-_1rem)] max-w-5xl overflow-y-auto rounded-2xl border border-border-color bg-background-main p-0 text-text-primary shadow-2xl backdrop:bg-black/50">
+    <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-border-color bg-surface p-4"><h2 id="collection-remittance-title" className="text-xl font-bold text-brand-primary">Revisar rendición del vendedor afiliado</h2><button autoFocus type="button" disabled={busy} className={input + ' !w-auto font-semibold'} onClick={onClose}>Cerrar</button></div>
+    <div className="p-3 sm:p-5"><AffiliateCommissionWorkspace selectedId={vendorId} initialTab="CASH" onBusyChange={setBusy} /></div>
   </dialog>;
 }
