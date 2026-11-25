@@ -13,11 +13,12 @@ import Link from "next/link";
 import { fetchPublicCatalogReference } from "@/lib/publicCatalogClient";
 import { selectPublishedPlan } from "@/lib/publicCatalogContract";
 import type { CatalogReferencePublic } from "@/lib/catalogReference";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import type { Timestamp } from 'firebase/firestore';
 import { 
   Package, CreditCard, Calendar, CheckCircle2, Clock, AlertTriangle, 
-  UserCheck, ShieldCheck, LogOut, ShoppingBag, Edit3, Link2, Upload, 
-  ChevronRight, Phone, MapPin, FileText, Sparkles, Filter, Truck, FileCheck
+  LogOut, ShoppingBag, Edit3,
+  ChevronRight, FileText, Sparkles, Truck
 } from "lucide-react";
 
 type Solicitud = {
@@ -27,16 +28,22 @@ type Solicitud = {
   canReportPayment?:boolean;
   estado: "PENDIENTE" | "APROBADO" | "RECHAZADO" | "REQUIERE_INFO";
   mensajeAdmin?: string;
-  fechaCreacion: any;
+  fechaCreacion: Timestamp | null;
   productoDeseado: string;
   planElegido?: string;
   montoCuota?: number;
-  planPagos?: any[];
+  planPagos?: {numero:number;estado:string;vencimiento:string;montoOriginal:number;notaAcumulacion?:string;comprobanteUrl?:string}[];
   estadoEntrega?: string;
   montoAbonado?: number;
   metodoPago?: string;
   estadoRendicion?: string;
-  datosPersonales?: any;
+  datosPersonales?: {nombreCompleto?:string;numeroDni?:string;telefono?:string;direccion?:string;localidad?:string};
+  nombreCompleto?:string;
+  clienteNombre?:string;
+  dni?:string;
+  whatsapp?:string;
+  direccion?:string;
+  localidad?:string;
   numeroDni?: string;
   cuil?: string;
   nroContrato?: string;
@@ -49,7 +56,7 @@ function ClientePortal() {
     try {
       const dStr = str.includes("T") ? str : str + "T12:00:00";
       return new Date(dStr).toLocaleDateString("es-AR");
-    } catch (e) {
+    } catch {
       return str;
     }
   };
@@ -59,9 +66,6 @@ function ClientePortal() {
 
   const [historyError,setHistoryError]=useState("");
   const [solicitudes, setSolicitudes] = useState<Solicitud[]>([]);
-  const [tieneUnlinked, setTieneUnlinked] = useState(false);
-  const [dniVincular, setDniVincular] = useState("");
-  const [vinculando, setVinculando] = useState(false);
   const [cargandoDatos, setCargandoDatos] = useState(true);
   const [subiendo] = useState(false);
   const [correoEnviado, setCorreoEnviado] = useState(false);
@@ -75,7 +79,6 @@ function ClientePortal() {
   const [telefono, setTelefono] = useState("");
   const [direccion, setDireccion] = useState("");
   const [localidad, setLocalidad] = useState("");
-  const [email, setEmail] = useState("");
   
   // Archivos Formulario Nueva Solicitud
   const [producto, setProducto] = useState("");
@@ -140,20 +143,17 @@ function ClientePortal() {
     }
   }, [user, loading, router]);
 
-  const fetchSolicitudes = async () => {if(!user)return;try{const r=await fetch('/api/cliente/historial',{cache:'no-store',headers:{Authorization:'Bearer '+await user.getIdToken()}});const data=await r.json();if(!r.ok)throw Error(data.error);setSolicitudes(restoreLegacyDates(data.solicitudes));setHistoryError(data.warnings.join(' '));setTieneUnlinked(false);if(data.solicitudes.length)setMostrarFormulario(false);}catch(e){setHistoryError(e instanceof Error?e.message:'No se pudo consultar el historial.');}finally{setCargandoDatos(false);}};
+  const fetchSolicitudes = useCallback(async () => {if(!user)return;try{const r=await fetch('/api/cliente/historial',{cache:'no-store',headers:{Authorization:'Bearer '+await user.getIdToken()}});const data=await r.json() as {solicitudes:(Omit<Solicitud,'fechaCreacion'>&{fechaCreacion:string|null})[];warnings:string[];error?:string};if(!r.ok)throw Error(data.error);setSolicitudes(restoreLegacyDates(data.solicitudes));setHistoryError(data.warnings.join(' '));if(data.solicitudes.length)setMostrarFormulario(false);}catch(e){setHistoryError(e instanceof Error?e.message:'No se pudo consultar el historial.');}finally{setCargandoDatos(false);}},[user]);
 
   useEffect(() => {
     if (user) {
-      fetchSolicitudes();
-      if (user.email && !email) {
-        setEmail(user.email);
-      }
+      void fetchSolicitudes();
     }
-  }, [user]);
+  }, [user, fetchSolicitudes]);
 
   const datosClienteGlobal = useMemo(() => {
     if (solicitudes.length === 0) return { nombre: "", dni: "", tel: "", dir: "", loc: "" };
-    const s0 = solicitudes[0] as any;
+    const s0 = solicitudes[0];
     const d = s0.datosPersonales || {};
     return {
       nombre: d.nombreCompleto || s0.nombreCompleto || s0.clienteNombre || "Cliente",
@@ -224,8 +224,8 @@ function ClientePortal() {
         await sendEmailVerification(auth.currentUser);
         setCorreoEnviado(true);
       }
-    } catch (error: any) {
-      if(error.code === "auth/too-many-requests") {
+    } catch (error: unknown) {
+      if(error && typeof error === 'object' && 'code' in error && error.code === "auth/too-many-requests") {
         alert("Ya enviamos un correo recientemente. Por favor espera unos minutos y revisa la carpeta SPAM.");
       } else {
         alert("Error al intentar enviar el correo. Intenta de nuevo.");
@@ -327,6 +327,9 @@ function ClientePortal() {
         </header>
 
         <ClientServicesV2 key={user.uid}/>
+        <Link href="/solicitar" className="inline-flex min-h-11 items-center rounded-xl bg-[#FFD21A] px-4 py-2 text-sm font-bold text-[#111318]">Solicitar una compra</Link>
+        {historyError && <p role="alert">{historyError}</p>}
+        {solicitudes.length > 0 && <section aria-label="Operaciones anteriores" data-testid="client-legacy-history" className="space-y-6">
         <p className="text-sm text-zinc-400">Resumen del circuito anterior. No incluye los servicios V2 ni informa sus cuotas, recibos o saldos.</p>
         {/* Bloques de Resumen Ejecutivo (4 Tarjetas) */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -514,7 +517,7 @@ function ClientePortal() {
           </div>
         )}
 
-        <p data-testid="legacy-read-only" className="text-sm text-zinc-400">{legacyBlockedMessage}</p>{historyError&&<p role="alert">{historyError}</p>}
+        <p data-testid="legacy-read-only" className="text-sm text-zinc-400">{legacyBlockedMessage}</p>
         {/* Barra de Filtros y CTA Principal */}
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 bg-[#1B2027] p-4 rounded-2xl border border-[#252A32] shadow-md">
           <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 custom-scrollbar">
@@ -695,14 +698,14 @@ function ClientePortal() {
                             📊 Estado de Cuenta PDF
                           </button>
                           <span className="text-[10px] text-zinc-400 font-mono font-bold">
-                            {sol.planPagos.filter((c:any) => c.estado === "PAGADO").length} de {sol.planPagos.length} pagadas
+                            {sol.planPagos.filter(c => c.estado === "PAGADO").length} de {sol.planPagos.length} pagadas
                           </span>
                         </div>
                       </div>
 
                       <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
-                        {sol.planPagos.map((cuota: any, idx: number) => {
-                          const isEligibleToPay = !sol.planPagos!.slice(0, idx).some((c:any) => c.estado === "PENDIENTE");
+                        {sol.planPagos.map((cuota, idx) => {
+                          const isEligibleToPay = !sol.planPagos!.slice(0, idx).some(c => c.estado === "PENDIENTE");
                           const isVencida = cuota.estado !== "PAGADO" && new Date(cuota.vencimiento) < new Date();
 
                           return (
@@ -773,6 +776,7 @@ function ClientePortal() {
           </div>
         )}
 
+        </section>}
       </div>
 
       <style dangerouslySetInnerHTML={{__html: `

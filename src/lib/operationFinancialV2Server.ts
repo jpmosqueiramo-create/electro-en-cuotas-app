@@ -1,4 +1,5 @@
 import {prepareReportConfirmation,prepareTransferClaim,type ReportConfirmation} from './operationPaymentReportStore';
+import {runFirestoreTransaction} from './firestoreTransaction';
 import {resolveCashCustodian,prepareCashCustody,cashCustodyOptions} from './operationCashCustody';
 import {issuedPaymentProof} from './productionV2/issuedPaymentProof';
 import {prepareClientActivationAtFirstPayment} from './operationClientV2Server';
@@ -73,7 +74,7 @@ async function paymentHistory(tx:Transaction,ref:ReturnType<typeof financialRef>
 /** One authorized, persisted receipt; never calculated by the browser. */
 export async function readFinancialReceipt(db:Firestore,id:string,v:number,actor:CustodyActor,role:FinancialRole,receiptId:string){
  opaque(receiptId);if(!receiptId.startsWith('receipt_'))financialFail('Recibo inválido.');
- return db.runTransaction(async tx=>{
+ return runFirestoreTransaction(db,async tx=>{
   const c=await financialContext(db,tx,id,v,actor,role),s=c.financial;if(!s)financialFail('Sin pagos acreditados.');
   if(c.runtime)await frozenOperation(c.runtime,tx,id,v,'FINANCE',false);else requireFinancialEmulator();
   const snapshot=(await tx.get(db.collection('contractSnapshotsV2').doc(s.snapshotId))).data();validateContractSnapshot(snapshot);verifyProjection(s,snapshot);
@@ -89,7 +90,7 @@ function accountingSummary(s:FinancialState,payments:FinancialPayment[],asOf?:st
  return financialSummary(s,[{allocations:s.installments.map((i,n)=>({installmentNumber:i.number,amountCents:a.paidByInstallment[n]})),reversedAt:null}],asOf);
 }
 export async function readFinancial(db:Firestore,id:string,v:number,actor:CustodyActor,role:FinancialRole,cursor?:string){
- return db.runTransaction(async tx=>{const c=await financialContext(db,tx,id,v,actor,role);let productionMutation=false,firstInstallmentCents:number|null=null;if(c.runtime&&role!=='CLIENT'){try{await productionWriter(c.runtime,actor);const proof=await activationProof(db,tx,id,v,c,undefined,!c.financial);firstInstallmentCents=cents(proof.snapshot.paymentSchedule.installments[0].amount);productionMutation=true;}catch{/* Preserve authorized reads while new commands are blocked. */}}const mutationEnabled=role==='ADMIN'&&(c.runtime?productionMutation:financialEnabled());const cashOptions=role!=='CLIENT'?await cashCustodyOptions(db,tx,c.state.assignment):undefined;if(!c.financial)return {active:false as const,...(cashOptions?{cashOptions}:{}),...(c.source.identity.operationId?{operationId:c.source.identity.operationId}:{}),executionMode:c.runtime?'PRODUCTION' as const:'EMULATOR_ONLY' as const,mutationEnabled,firstInstallmentCents,blockReason:role==='AFFILIATE'?'Informá el pago. Administración debe confirmarlo antes de acreditar al cliente.':productionMutation?'Podés registrar la primera cuota recibida. Se activa el cronograma emitido sin declarar firmas ni entrega.':'Primero emití el mandato y el pagaré y verificá la habilitación administrativa.'};
+ return runFirestoreTransaction(db,async tx=>{const c=await financialContext(db,tx,id,v,actor,role);let productionMutation=false,firstInstallmentCents:number|null=null;if(c.runtime&&role!=='CLIENT'){try{await productionWriter(c.runtime,actor);const proof=await activationProof(db,tx,id,v,c,undefined,!c.financial);firstInstallmentCents=cents(proof.snapshot.paymentSchedule.installments[0].amount);productionMutation=true;}catch{/* Preserve authorized reads while new commands are blocked. */}}const mutationEnabled=role==='ADMIN'&&(c.runtime?productionMutation:financialEnabled());const cashOptions=role!=='CLIENT'?await cashCustodyOptions(db,tx,c.state.assignment):undefined;if(!c.financial)return {active:false as const,...(cashOptions?{cashOptions}:{}),...(c.source.identity.operationId?{operationId:c.source.identity.operationId}:{}),executionMode:c.runtime?'PRODUCTION' as const:'EMULATOR_ONLY' as const,mutationEnabled,firstInstallmentCents,blockReason:role==='AFFILIATE'?'Informá el pago. Administración debe confirmarlo antes de acreditar al cliente.':productionMutation?'Podés registrar la primera cuota recibida. Se activa el cronograma emitido sin declarar firmas ni entrega.':'Primero emití el mandato y el pagaré y verificá la habilitación administrativa.'};
  // Frozen hash is rechecked on every view; never project private reference or personal fields.
  if(c.runtime)await frozenOperation(c.runtime,tx,id,v,'FINANCE',false);else requireFinancialEmulator();const snapshot=(await tx.get(db.collection('contractSnapshotsV2').doc(c.financial.snapshotId))).data();validateContractSnapshot(snapshot);verifyProjection(c.financial,snapshot);
  const s=c.financial,page=await paymentHistory(tx,c.ref,s,cursor),payments=page.payments,asOfDate=argentinaBusinessDate(),summary=accountingSummary(s,payments,asOfDate);
@@ -98,13 +99,13 @@ export async function readFinancial(db:Firestore,id:string,v:number,actor:Custod
 }
 export async function financialCommand(db:Firestore,id:string,v:number,input:unknown,actor:CustodyActor,role:'ADMIN'|'AFFILIATE'='ADMIN',reportConfirmation?:ReportConfirmation){
  if(role==='AFFILIATE')financialFail('El vendedor afiliado debe informar el pago para confirmación de Administración.');
- const runtime=await db.runTransaction(tx=>operationRuntime(db,tx,id,v));if(runtime)await productionWriter(runtime,actor);else requireFinancialEmulator();if(!actor.admin)financialFail('Rol de cobro no autorizado.');
+ const runtime=await runFirestoreTransaction(db,tx=>operationRuntime(db,tx,id,v));if(runtime)await productionWriter(runtime,actor);else requireFinancialEmulator();if(!actor.admin)financialFail('Rol de cobro no autorizado.');
  const c=parseFinancialCommand(input);const ref=financialRef(db,id,v),receipt=ref.collection('commands').doc(c.commandId),digest=createHash('sha256').update(stable({c,actor:actor.uid,...(reportConfirmation?{reportConfirmation}:{})})).digest('hex');
  // Authorize and capture metadata first; no Storage I/O runs in either transaction.
- const files=await db.runTransaction(async tx=>{const base=await financialContext(db,tx,id,v,actor,role),prior=await tx.get(receipt);if(prior.exists){if(prior.data()!.digest!==digest)financialFail('Conflicto de commandId.');return new Map<string,EvidenceMetadata>();}return (await activationProof(db,tx,id,v,base,undefined,c.action==='ACTIVATE_WITH_FIRST_PAYMENT')).files;});
+ const files=await runFirestoreTransaction(db,async tx=>{const base=await financialContext(db,tx,id,v,actor,role),prior=await tx.get(receipt);if(prior.exists){if(prior.data()!.digest!==digest)financialFail('Conflicto de commandId.');return new Map<string,EvidenceMetadata>();}return (await activationProof(db,tx,id,v,base,undefined,c.action==='ACTIVATE_WITH_FIRST_PAYMENT')).files;});
  const verified=new Map<string,VerifiedEvidence>();
  if(files.size){const {getBudgetDocumentationBucket}=await import('./budgetDocumentationStorage');const bucket=await getBudgetDocumentationBucket();for(const [path,p] of files)verified.set(path,await verifyEvidenceObject(bucket,p));}
- return db.runTransaction(async tx=>{
+ return runFirestoreTransaction(db,async tx=>{
  if(!runtime)requireFinancialEmulator();const base=await financialContext(db,tx,id,v,actor,role),prior=await tx.get(receipt);if(c.operationId!==base.source.identity.operationId)financialFail('Operación incorrecta.');if(prior.exists){if(prior.data()!.digest!==digest)financialFail('Conflicto de commandId.');return {...prior.data()!.result,replay:true};}
  if((base.financial?.revision||0)!==c.expectedRevision)financialFail('Conflicto de revisión. Recargá.');
  const proof=await activationProof(db,tx,id,v,base,verified,c.action==='ACTIVATE_WITH_FIRST_PAYMENT'),now=new Date().toISOString(),data=c.data;

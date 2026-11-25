@@ -25,6 +25,9 @@ import { obtenerLedgerCustodiaEfectivo, registrarRendicionEfectivo, listRemittan
 import { paymentReportsHandler, paymentReportsQueue } from '../src/lib/operationPaymentReportsHttp';
 import { resolveAlertAction } from '../src/lib/budgetAlertRouting';
 import { startProductionBrowserServer } from './helpers/productionAdapterBrowserServer';
+import type { Transaction, ReadWriteTransactionOptions, ReadOnlyTransactionOptions } from 'firebase-admin/firestore';
+import { p1Token } from './testPortalP1Emulator';
+import { financialHandler } from '../src/lib/operationFinancialV2Http';
 
 async function main(){
  assert.equal(process.env.FIREBASE_STORAGE_EMULATOR_HOST,'127.0.0.1:9199');
@@ -132,6 +135,49 @@ async function main(){
  assert.equal(new Set(seen).size,seen.length);assert(ids.every(id=>seen.includes(id)));const cleanup=db.batch();for(const id of ids)cleanup.delete(paymentReportRef(db,id));await cleanup.commit();
  const queue=await pendingPaymentReports(db);assert(Array.isArray(queue.reports));
  const claim=(await db.collection('presupuestos_v2').doc('_financial_transfer_ids_v1').collection('contracts').doc(bankReferenceKey(bank)).get()).data()!;assert.equal(claim.state,'ACTIVE');
+ // Reproduce the exact closed-read failure at the second budget read. A fresh
+ // transaction must recover without a report/alert, payment or cash duplication.
+ const recovery=await fixture(),recoverySeller={uid:recovery.uid,admin:false};
+ const recoveryBody={...payload(recovery.firstCents),operationId:recovery.identity.operationId};
+ const originalRun=db.runTransaction;let starts=0,budgetReads=0,failed=false;
+ function faultReads(permanent=false){
+  db.runTransaction=async function<T>(update:(tx:Transaction)=>Promise<T>,options?:ReadWriteTransactionOptions|ReadOnlyTransactionOptions){
+   starts++;
+   return (originalRun.bind(db) as typeof db.runTransaction)<T>(tx=>update(new Proxy(tx,{get(target,key){const value=Reflect.get(target,key);if(key==='get')return (...args:unknown[])=>{
+    if((args[0] as {path?:string}).path===recovery.r.budget.path&&(permanent||++budgetReads===2)){
+     failed=true;return Promise.reject(Object.assign(Error('3 INVALID_ARGUMENT: Transaction is invalid or closed.'),{code:3,details:'Transaction is invalid or closed.'}));
+    }
+    return Reflect.apply(value,target,args);
+   };return typeof value==='function'?value.bind(target):value;}})),options);
+  };
+ }
+ let recoveredReport:Awaited<ReturnType<typeof submitPaymentReport>>;
+ faultReads();try{recoveredReport=await submitPaymentReport(db,recovery.id,1,recoveryBody,recoverySeller,'AFFILIATE');}finally{db.runTransaction=originalRun;}
+ assert(failed);assert.equal(starts,2);assert.equal(recoveredReport!.replayed,false);
+ assert.equal((await submitPaymentReport(db,recovery.id,1,recoveryBody,recoverySeller,'AFFILIATE')).replayed,true);
+ assert(!(await financialRef(db,recovery.id,1).get()).exists);
+ const adminToken=await p1Token({uid:actor}),sellerToken=await p1Token({uid:recovery.uid});
+ const post=(body:unknown,role:'ADMIN'|'AFFILIATE'='ADMIN')=>paymentReportsHandler(new Request('http://localhost/test',{method:'POST',headers:{Authorization:`Bearer ${role==='ADMIN'?adminToken:sellerToken}`,'Content-Type':'application/json'},body:JSON.stringify(body)}),recovery.id,'1',role);
+ starts=0;faultReads(true);
+ try{
+  const response=await post({...recoveryBody,commandId:randomUUID()},'AFFILIATE');assert.equal(response.status,503);assert(!JSON.stringify(await response.json()).includes('INVALID_ARGUMENT'));assert.equal(starts,3);
+  const financialResponse=await financialHandler(new Request('http://localhost/test',{headers:{Authorization:`Bearer ${adminToken}`}}),recovery.id,'1','ADMIN');assert.equal(financialResponse.status,503);
+ }finally{db.runTransaction=originalRun;}
+ assert.equal((await paymentReportRef(db,recoveredReport!.reportId).parent.where('operationId','==',recovery.identity.operationId).get()).size,1);
+ const recoveryDecision={action:'CONFIRM',reportId:recoveredReport!.reportId,expectedRevision:1,commandId:randomUUID(),financialRevision:0,reference:recoveryBody.reference};
+ let lose=true;
+ db.runTransaction=async function<T>(update:(tx:Transaction)=>Promise<T>,options?:ReadWriteTransactionOptions|ReadOnlyTransactionOptions){
+  const result=await (originalRun.bind(db) as typeof db.runTransaction)<T>(update,options);
+  if(lose&&(await financialRef(db,recovery.id,1).get()).exists){lose=false;throw Object.assign(Error('SYNTHETIC_RESPONSE_LOST_AFTER_PAYMENT_COMMIT'),{code:14});}
+  return result;
+ };
+ try{assert.equal((await post(recoveryDecision)).status,503);}finally{db.runTransaction=originalRun;}
+ assert.equal(lose,false);assert.equal((await post(recoveryDecision)).status,200);
+ const recoveryAccount=await readFinancial(db,recovery.id,1,root,'ADMIN');assert(recoveryAccount.active);assert.equal(recoveryAccount.paidCents,recovery.firstCents);
+ assert.equal((await financialRef(db,recovery.id,1).collection('payments').get()).size,1);assert.equal((await financialRef(db,recovery.id,1).collection('receipts').get()).size,1);
+ assert.equal((await obtenerLedgerCustodiaEfectivo(db,recovery.affiliateId)).efectivoPendienteRendicionCentavos,recovery.firstCents);
+ const recoveryCommissions=await db.collection('ledger_comisiones_movimientos').where('operationId','==',recovery.identity.operationId).get();assert.equal(recoveryCommissions.docs.reduce((sum,d)=>sum+d.data().montoComisionCentavos,0),Math.floor(recovery.firstCents/10));
+ console.log('CLOSED_READ_RECOVERED_EXHAUSTED_503_AND_LOST_COMMIT_RESPONSE_SAME_COMMAND_SINGLE_PAYMENT_RECEIPT_COMMISSION_CASH = PASS');
  console.log('PAYMENT_REPORTS_THREE_PANELS_PENDING_CONFIRM_CASH_REMITTANCE_TRANSFER_LINK_RETRY_RACE_ROLLBACK_CENTS_ACCESS = PASS');
  if(process.env.PAYMENT_REPORTS_BROWSER==='1'){
   // Leave a pending report for manual browser QA using the real local route handlers.

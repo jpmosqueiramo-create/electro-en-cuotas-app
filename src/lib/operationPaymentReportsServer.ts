@@ -1,4 +1,5 @@
 import { FieldPath, FieldValue, type Firestore } from 'firebase-admin/firestore';
+import { runFirestoreTransaction } from './firestoreTransaction';
 import { exact, opaque, stable, calendarDate } from './contractV2';
 import { argentinaBusinessDate } from './productionV2/businessDate';
 import { financialFail, type FinancialPayment } from './operationFinancialV2';
@@ -18,7 +19,7 @@ export async function submitPaymentReport(db: Firestore, id: string, v: number, 
   const c=exact(input,['commandId','operationId','amountCents','method','effectiveDate','reference','cashRecipient']);opaque(c.commandId);calendarDate(c.effectiveDate);
   if (!Number.isSafeInteger(c.amountCents)||Number(c.amountCents)<=0||!['TRANSFERENCIA','EFECTIVO'].includes(String(c.method))||String(c.effectiveDate)>argentinaBusinessDate()|| (c.method==='TRANSFERENCIA'?c.cashRecipient!==null:!['ADMIN','AFFILIATE'].includes(String(c.cashRecipient)))||role==='AFFILIATE'&&c.method==='EFECTIVO'&&c.cashRecipient!=='AFFILIATE') financialFail('Revisá importe, fecha, medio de pago y receptor del efectivo.');
   const reference=text(c.reference),digest=reportDigest({actor:actor.uid,role,id,v,...c,reference});
-  return db.runTransaction(async tx=>{
+  return runFirestoreTransaction(db,async tx=>{
     const context=await financialContext(db,tx,id,v,actor,role,true),identity=context.source.identity;
     if(c.operationId!==identity.operationId)financialFail('Operación incorrecta.');
     const rid='report_'+reportDigest([identity.operationId,actor.uid,c.commandId]),ref=paymentReportRef(db,rid),saved=await tx.get(ref);
@@ -39,7 +40,7 @@ export async function submitPaymentReport(db: Firestore, id: string, v: number, 
 }
 export async function readPaymentReports(db: Firestore,id:string,v:number,actor:CustodyActor,role:FinancialRole,before?:string) {
   if(before)opaque(before);
-  const result=await db.runTransaction(async tx=>{
+  const result=await runFirestoreTransaction(db,async tx=>{
     const c=await financialContext(db,tx,id,v,actor,role,true),op=c.source.identity.operationId;
     let q=paymentReportRef(db,'_query').parent.where('operationId','==',op).orderBy(FieldPath.documentId()).limit(pageSize+1);if(before)q=q.startAfter(before);
     const saved=await tx.get(q),rows=saved.docs.slice(0,pageSize).map(d=>storedPaymentReport(d.data(),d.id));
@@ -70,7 +71,7 @@ export async function decidePaymentReport(db:Firestore,id:string,v:number,input:
     return financialCommand(db,id,v,{commandId:'report_confirm_'+reportDigest([c.commandId,c.reportId]),operationId:r.operationId,expectedRevision:c.financialRevision,action:c.financialRevision===0?'ACTIVATE_WITH_FIRST_PAYMENT':'CREDIT_PAYMENT',data:{paymentId:'reported_'+r.id,amountCents:r.amountCents,effectiveDate:r.effectiveDate,method:r.method,reference:text(c.reference),...(r.method==='EFECTIVO'?{cashCustody:r.cashRecipient}:{})}},actor,'ADMIN',{reportId:r.id,expectedReportRevision:Number(c.expectedRevision)});
   }
   const note=text(c.note,500),digest=reportDigest({actor:actor.uid,id,v,c,note});
-  return db.runTransaction(async tx=>{
+  return runFirestoreTransaction(db,async tx=>{
     const context=await financialContext(db,tx,id,v,actor,'ADMIN'),ref=paymentReportRef(db,String(c.reportId)),event=ref.collection('events').doc(String(c.commandId)),previous=await tx.get(event);
     if(previous.exists){if(previous.data()!.digest!==digest)financialFail('Conflicto de referencia de decisión.');return {replayed:true};}
     const row=await tx.get(ref);if(!row.exists)financialFail('Informe no encontrado.');const r=storedPaymentReport(row.data(),row.id);
