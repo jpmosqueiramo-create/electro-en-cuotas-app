@@ -42,7 +42,7 @@ function ContactSession({ budgetId, version, role }: { budgetId: string; version
     try {
       const response = await fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, commandId: pending.current.id }) });
       if (!response.ok) throw Error();
-      pending.current = null; form.reset(); setMessage('Contacto guardado. La promesa no modifica cuotas ni acredita pagos.'); await reload();
+      pending.current = null; form.reset(); setMessage('Contacto guardado. La promesa no modifica cuotas ni acredita pagos.'); window.dispatchEvent(new CustomEvent('operation-contact-updated', { detail: { budgetId, version } })); await reload();
     } catch { setError('No se confirmó el contacto. Verificá tu acceso y reintentá; se conserva el identificador para evitar duplicados.'); }
     finally { flight.current = false; setBusy(false); }
   }

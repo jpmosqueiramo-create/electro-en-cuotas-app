@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { AlertCircle, ArrowUpRight, Banknote, ClipboardCheck, Search } from 'lucide-react';
 import { collectionInboxCases, selectInboxCases, type CollectionsInboxData, type InboxFilter } from '@/lib/collectionsInbox';
 import type { CollectionRow } from '@/lib/collectionsOverview';
+import { argentinaBusinessDate } from '@/lib/productionV2/businessDate';
+import { CollectionFollowupSummary } from './CollectionFollowupSummary';
 
 const money = (cents: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(cents / 100);
 const date = (value: string) => value.slice(0, 10).split('-').reverse().join('/');
@@ -20,7 +22,8 @@ export function CollectionsInbox({ data, loading, onManage, onRemittance }: { da
   const cash = cases.filter(c => c.kind === 'CASH');
   const unknownCollections = data?.collections?.filter(r => !r.financial).length ?? 0;
   const unknownVendors = data?.vendors?.filter(v => v.cashCents === null).length ?? 0;
-  const partial = !!data && (data.collections === null || data.reports === null || data.vendors === null || unknownCollections > 0 || unknownVendors > 0);
+  const unknownFollowups = data?.collections?.filter(r => !data.followups?.[r.key]).length ?? 0;
+  const partial = !!data && (data.collections === null || data.reports === null || data.vendors === null || unknownCollections > 0 || unknownVendors > 0 || unknownFollowups > 0);
   const summaries = [
     { id: 'OVERDUE', title: 'Cuotas vencidas', count: data?.collections ? overdue.reduce((n, c) => n + (c.kind === 'OPERATION' ? c.overdueCount : 0), 0) : null, amount: data?.collections ? sum(overdue.map(c => c.kind === 'OPERATION' ? c.overdueCents : 0)) : null, partial: unknownCollections > 0, hint: `${overdue.length} ${overdue.length === 1 ? 'operación' : 'operaciones'} · saldo vencido`, icon: AlertCircle },
     { id: 'REPORTS', title: 'Pagos por confirmar', count: data?.reports?.length ?? null, amount: data?.reports ? sum(data.reports.map(r => r.amountCents)) : null, partial: false, hint: 'Avisos aún sin acreditar', icon: ClipboardCheck },
@@ -44,10 +47,12 @@ export function CollectionsInbox({ data, loading, onManage, onRemittance }: { da
       {data.reports === null && <p role="alert" className="rounded-xl bg-amber-50 p-3 text-amber-950">No se pudieron consultar todos los pagos por confirmar. Revisá el pago informado de cada caso antes de registrar otro cobro o contactar al cliente.</p>}
       {data.vendors === null && <p role="alert" className="rounded-xl bg-red-50 p-3 text-red-900">No se pudieron consultar las rendiciones de los vendedores afiliados.</p>}
       {(unknownCollections > 0 || unknownVendors > 0) && <p role="alert" className="rounded-xl bg-amber-50 p-3 text-amber-950">Consulta parcial: {unknownCollections} operaciones y {unknownVendors} cuentas de vendedores afiliados sin verificar. Sus saldos no se consideran cero. Actualizá para reintentar.</p>}
+      {unknownFollowups > 0 && <p role="alert" className="rounded-xl bg-amber-50 p-3 text-amber-950">Hay {unknownFollowups} historiales de contacto sin verificar. Sus promesas y próximos pasos requieren actualizar la consulta.</p>}
     </div>}
     <div className="flex min-w-0 flex-wrap items-end gap-3">
       <button type="button" className={button} aria-pressed={filter === 'ALL'} onClick={() => choose('ALL')}>Todos los pendientes</button>
-      <label className="min-w-0 flex-1 space-y-1"><span className="flex items-center gap-2 text-sm font-semibold"><Search size={16} aria-hidden="true" />Buscar en los pendientes</span><input className="admin-control min-h-11 w-full min-w-0 rounded-xl border border-border-color bg-surface px-3 text-text-primary" type="search" aria-label="Buscar en los pendientes" placeholder="Cliente, contrato o vendedor afiliado" value={query} onChange={e => { setQuery(e.target.value); setLimit(20); }} /></label>
+      <button type="button" className={button} aria-pressed={filter === 'FOLLOWUP'} onClick={() => choose('FOLLOWUP')}>Seguimiento de clientes</button>
+      <label className="min-w-0 basis-full space-y-1 sm:basis-auto sm:flex-1"><span className="flex items-center gap-2 text-sm font-semibold"><Search size={16} aria-hidden="true" />Buscar en los pendientes</span><input className="admin-control min-h-11 w-full min-w-0 rounded-xl border border-border-color bg-surface px-3 text-text-primary" type="search" aria-label="Buscar en los pendientes" placeholder="Cliente, contrato o vendedor afiliado" value={query} onChange={e => { setQuery(e.target.value); setLimit(20); }} /></label>
     </div>
     {loading && <p role="status">Consultando los tres pendientes…</p>}
     {data && <p role="status" className="text-sm text-text-secondary">{visible.length} {visible.length === 1 ? 'caso' : 'casos'}{filter !== 'ALL' || query ? ' con estos filtros' : ' para revisar'}{partial ? ' · Consulta incompleta.' : '.'}{filter !== 'CASH' && data.reports && data.reports.length > 0 ? ' Primero, revisá los avisos de pago.' : ''}</p>}
@@ -57,15 +62,17 @@ export function CollectionsInbox({ data, loading, onManage, onRemittance }: { da
         <span className="inline-block rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-950">Rendición pendiente{item.vendor.active ? '' : ' · Vendedor afiliado inactivo'}</span>
         <h3 className="break-words text-lg font-bold text-brand-primary">{item.name}</h3>
         <p className="text-sm text-text-secondary">Efectivo pendiente de entrega</p><p className="break-words text-2xl font-bold tabular-nums">{money(item.vendor.cashCents!)}</p>
+        <p className="text-sm"><strong>Próximo paso:</strong> revisar los cobros incluidos y confirmar la entrega recibida en la rendición.</p>
         <button type="button" className={button + ' w-full'} onClick={() => onRemittance(item.vendor.id)}>Revisar rendición<ArrowUpRight size={18} aria-hidden="true" /></button>
       </article> : <article key={item.key} data-testid="collections-operation-case" className="min-w-0 space-y-3 rounded-2xl border border-border-color bg-surface p-4">
-        <div className="flex flex-wrap gap-2">{item.reports.length > 0 && <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-950">{item.reports.length} {item.reports.length === 1 ? 'pago por confirmar' : 'pagos por confirmar'}</span>}{item.overdueCount > 0 && <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-900">{item.overdueCount} {item.overdueCount === 1 ? 'cuota vencida' : 'cuotas vencidas'}</span>}</div>
+        <div className="flex flex-wrap gap-2">{!item.reports.length && !item.overdueCount && <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-950">Seguimiento con fecha registrada</span>}{item.reports.length > 0 && <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-950">{item.reports.length} {item.reports.length === 1 ? 'pago por confirmar' : 'pagos por confirmar'}</span>}{item.overdueCount > 0 && <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-900">{item.overdueCount} {item.overdueCount === 1 ? 'cuota vencida' : 'cuotas vencidas'}</span>}</div>
         <h3 className="break-words text-lg font-bold text-brand-primary">{item.name}</h3>
         {item.row?.financial?.active && <p className="break-words text-sm text-text-secondary">{item.row.financial.contractNumber}</p>}
         {item.overdueCount > 0 && <p className="text-sm">Saldo vencido: <strong className="break-words text-lg tabular-nums text-red-800">{money(item.overdueCents)}</strong><span className="block text-text-secondary">Primer vencimiento: {date(item.oldestDue!)}</span></p>}
         {item.reports.length > 0 && <div className="space-y-2 rounded-xl bg-amber-50 p-3 text-amber-950"><p className="text-sm font-semibold">Revisá estos avisos antes de reclamar o cargar otro pago.</p>{item.reports.map(r => <p className="break-words text-sm" key={r.id}><strong className="tabular-nums">{money(r.amountCents)}</strong> · {r.method === 'EFECTIVO' ? 'Efectivo' : 'Transferencia'} · {date(r.effectiveDate)}<span className="block">Informó: {r.reportedBy === 'AFFILIATE' ? 'vendedor afiliado' : 'cliente'} · Pendiente de acreditación</span></p>)}</div>}
         {data?.reports === null && <p className="text-sm text-amber-950">Pagos informados sin verificar.</p>}
-        {item.row ? <button type="button" className={button + ' w-full'} onClick={() => onManage(item.row!)}>{item.reports.length ? 'Revisar pago informado' : 'Gestionar cuota vencida'}<ArrowUpRight size={18} aria-hidden="true" /></button> : <Link className={button + ' w-full'} href={`/admin/operaciones/${encodeURIComponent(item.budgetId)}/${item.version}?section=payments`}>Revisar pago informado<ArrowUpRight size={18} aria-hidden="true" /></Link>}
+        <CollectionFollowupSummary history={item.row ? data?.followups?.[item.row.key] : null} row={item.row} reports={data?.reports === null ? null : item.reports.length} overdueCount={item.overdueCount} today={argentinaBusinessDate()} />
+        {item.row ? <button type="button" className={button + ' w-full'} onClick={() => onManage(item.row!)}>{item.reports.length ? 'Revisar pago informado' : item.overdueCount ? 'Gestionar cuota vencida' : 'Ver seguimiento del caso'}<ArrowUpRight size={18} aria-hidden="true" /></button> : <Link className={button + ' w-full'} href={`/admin/operaciones/${encodeURIComponent(item.budgetId)}/${item.version}?section=payments`}>Revisar pago informado<ArrowUpRight size={18} aria-hidden="true" /></Link>}
       </article>)}
     </div>
     {visible.length > limit && <button type="button" className={button} onClick={() => setLimit(n => n + 20)}>Ver más casos · {visible.length - limit} restantes</button>}

@@ -2,14 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Pencil, Eye, Package, ArrowUpRight } from "lucide-react";
-import { addDoc, collection, deleteDoc, doc, getDoc, updateDoc } from "firebase/firestore";
+import { deleteDoc, doc, getDocFromServer, updateDoc } from "firebase/firestore";
 import { useAuth } from "@/components/AuthProvider";
 import { PageHeader } from "@/components/PageHeader";
 import { db } from "@/lib/firebase";
 import { referenceConfiguratorReducer } from "@/lib/referenceConfigurator";
-import { ReferenceConfigurator, Field, Section } from "../references/ReferenceConfigurator";
+import { ReferenceConfigurator, Field } from "../references/ReferenceConfigurator";
 import { buildCatalogReferencePrivatePatch, catalogPublicationLabel, createCatalogReferenceDraft, type CatalogPublicationPreview, type CatalogReferenceDraft } from "@/lib/catalogReferenceEditor";
 import { uploadCatalogReferenceImage } from "@/lib/catalogReferenceImages";
+import { CatalogQuickEntry } from './CatalogQuickEntry';
+import { nextCatalogEntry } from '@/lib/catalogQuickEntry';
+import { CatalogCreateConflict, prepareCatalogCreate, saveCatalogCreate, type CatalogCreateAttempt } from '@/lib/catalogReferenceCreate';
 import { CatalogReferencePreview, money } from "./CatalogReferencePreview";
 import { CatalogDialog, ConfirmDialog } from "./CatalogDialog";
 import { LoopServiceTariffsEditor } from "./LoopServiceTariffsEditor";
@@ -41,6 +44,11 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
   const [editing, setEditing] = useState<{ id: string | null; original: CatalogReferenceOriginal | null } | null>(null);
   const [draft, setDraft] = useState(createCatalogReferenceDraft);
   const [dirty, setDirty] = useState(false);
+  const [simpleEditor, setSimpleEditor] = useState(true);
+  const [creationUncertain, setCreationUncertain] = useState(false);
+  const saveFlight = useRef(false);
+  const pendingCreation = useRef<{ attempt: CatalogCreateAttempt; draft: CatalogReferenceDraft; continueAnother: boolean } | null>(null);
+  const suppliers = useMemo(() => [...new Set(productos.map(p => typeof p.proveedor === 'string' ? p.proveedor.trim() : '').filter(Boolean))].sort((a,b) => a.localeCompare(b,'es')), [productos]);
   const [editorBusy, setBusy] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
   const busy = editorBusy || (bulkBusy ? "bulk" : "");
@@ -103,44 +111,71 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
 
   function change(patch: Partial<CatalogReferenceDraft>) { setDraft(value => referenceConfiguratorReducer(value, { type: "patch", patch })); setDirty(true); }
   function edit(product?: Producto) {
+    if (creationUncertain) { setError('Reintentá el guardado pendiente para verificar su resultado antes de abrir otro producto.'); return; }
     if (dirty && !window.confirm("Hay cambios sin guardar. ¿Querés descartarlos?")) return;
+    setSimpleEditor(true); pendingCreation.current = null;
     setEditing({ id: product?.id ?? null, original: product ?? null });
     setDraft(createCatalogReferenceDraft(product)); setDirty(false); setFiles([]); setExternalUrl(""); setError(""); setMessage("");
     requestAnimationFrame(() => document.getElementById("reference-editor")?.scrollIntoView({ block: "start" }));
   }
   function closeEditor() {
+    if (creationUncertain) { setError('Reintentá el mismo guardado antes de cerrar para conservar la identidad del producto.'); return; }
     if (dirty && !window.confirm("Hay cambios sin guardar. ¿Querés descartarlos?")) return;
     setEditing(null); setDirty(false); setFiles([]);
   }
-  async function save(event: React.FormEvent) {
+  async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!editing || busy) return;
-    setError(""); setMessage(""); setBusy("save");
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    await persist(submitter instanceof HTMLButtonElement && submitter.value === 'another');
+  }
+  async function persist(continueAnother = false) {
+    if (!editing || editorBusy || bulkBusy || saveFlight.current) return;
+    saveFlight.current = true; setError(''); setMessage(''); setBusy('save');
     try {
-      const urls = [...draft.imagenUrls];
-      if (externalUrl.trim() && !urls.includes(externalUrl.trim())) urls.push(externalUrl.trim());
-      if (urls.length + files.length > 4) throw new Error("Usá hasta 4 imágenes por referencia.");
-      // Validar antes de iniciar uploads o escrituras.
-      buildCatalogReferencePrivatePatch({ ...draft, imagenUrls: urls }, editing.original ?? {});
-      const uploaded: string[] = [];
-      for (const file of files) uploaded.push(await uploadCatalogReferenceImage(file));
-      const nextDraft = { ...draft, imagenUrls: [...urls, ...uploaded] };
-      const patch = buildCatalogReferencePrivatePatch(nextDraft, editing.original ?? {});
-      let id = editing.id;
-      if (id) await updateDoc(doc(db, "productos", id), patch);
-      else {
-        const created = await addDoc(collection(db, "productos"), { ...patch, activo: false, publicado: false, fechaCreacion: new Date() });
-        id = created.id;
-        // Conservar identidad confirmada aunque falle la lectura posterior al alta.
-        setEditing({ id, original: { ...patch, id } });
+      let nextDraft: CatalogReferenceDraft, id: string;
+      if (pendingCreation.current) {
+        const pending = pendingCreation.current;
+        nextDraft = pending.draft; continueAnother = pending.continueAnother;
+        id = await saveCatalogCreate(db, pending.attempt);
+      } else {
+        const urls = [...draft.imagenUrls];
+        if (externalUrl.trim() && !urls.includes(externalUrl.trim())) urls.push(externalUrl.trim());
+        if (urls.length + files.length > 4) throw new Error('Usá hasta 4 imágenes por referencia.');
+        buildCatalogReferencePrivatePatch({ ...draft, imagenUrls: urls }, editing.original ?? {});
+        const uploaded: string[] = [];
+        for (const file of files) uploaded.push(await uploadCatalogReferenceImage(file));
+        nextDraft = { ...draft, imagenUrls: [...urls, ...uploaded] };
+        const patch = buildCatalogReferencePrivatePatch(nextDraft, editing.original ?? {});
+        if (editing.id) { id = editing.id; await updateDoc(doc(db, 'productos', id), patch); }
+        else {
+          const attempt = prepareCatalogCreate(db, patch);
+          pendingCreation.current = { attempt, draft: nextDraft, continueAnother };
+          id = await saveCatalogCreate(db, attempt);
+        }
       }
-      const saved = await getDoc(doc(db, "productos", id));
+      // Identity is confirmed before the subsequent read; never allocate another ID on a read failure.
+      pendingCreation.current = null; setCreationUncertain(false);
+      setEditing({ id, original: { ...buildCatalogReferencePrivatePatch(nextDraft, editing.original ?? {}), id } });
+      setDraft(nextDraft); setDirty(false); setFiles([]); setExternalUrl('');
+      const saved = await getDocFromServer(doc(db, 'productos', id));
+      if (!saved.exists()) throw Error('No se pudo verificar la ficha guardada. Actualizá antes de continuar.');
       const original: CatalogReferenceOriginal = { ...saved.data(), id };
-      setEditing({ id, original }); setDraft(createCatalogReferenceDraft(original)); setDirty(false); setFiles([]); setExternalUrl("");
-      setMessage("Cambios guardados. La publicación se realiza por separado.");
+      if (continueAnother) {
+        setEditing({ id: null, original: null }); setDraft(nextCatalogEntry(nextDraft)); setSimpleEditor(true);
+        setMessage('Producto guardado. Completá nombre y costo del siguiente; conservamos proveedor, categoría y planes.');
+        requestAnimationFrame(() => document.querySelector<HTMLInputElement>('#reference-editor input')?.focus());
+      } else { setEditing({ id, original }); setDraft(createCatalogReferenceDraft(original)); setMessage('Cambios guardados. Previsualizá la ficha si querés publicarla.'); }
       await onRefresh();
-    } catch (failure) { setError(failure instanceof Error ? failure.message : "No pudimos guardar la referencia."); }
-    finally { setBusy(""); }
+    } catch (failure) {
+      if (failure instanceof CatalogCreateConflict) {
+        pendingCreation.current = null;
+        setEditing({ id: failure.id, original: { ...failure.current, id: failure.id } });
+        setDraft(createCatalogReferenceDraft(failure.current)); setDirty(false); setFiles([]); setExternalUrl('');
+      }
+      setCreationUncertain(!!pendingCreation.current);
+      if (pendingCreation.current) requestAnimationFrame(() => document.getElementById('reference-editor')?.scrollIntoView({ block: 'start' }));
+      setError(failure instanceof Error ? failure.message : 'No pudimos guardar la referencia.');
+    } finally { saveFlight.current = false; setBusy(''); }
   }
   async function openPreview(id: string) {
     if (dirty && editing?.id === id) { setError("Guardá los cambios privados antes de previsualizar su publicación."); return; }
@@ -198,7 +233,7 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
   const visible = visibleRows.map(row=>row.product);
   const selectableVisible = visible.filter(canDelete).slice(0,100);
   return <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-6 sm:px-7 sm:py-8">
-    <PageHeader title="Catálogo de referencias" subtitle="Gestioná las referencias de bienes utilizadas para preparar propuestas de gestión de compra." actions={<div className="flex flex-wrap items-start gap-2"><CatalogPriceListExport products={productos} disabled={!!busy || !!editing || fetching || !!loadError} onBusyChange={setBulkBusy} /><button type="button" disabled={!!busy} className={primary} onClick={() => edit()}><Plus size={18} aria-hidden="true" />Nueva referencia</button></div>} />
+    <PageHeader title="Catálogo de referencias" subtitle="Gestioná las referencias de bienes utilizadas para preparar propuestas de gestión de compra." actions={<div className="flex flex-wrap items-start gap-2"><CatalogPriceListExport products={productos} disabled={!!busy || !!editing || fetching || !!loadError} onBusyChange={setBulkBusy} /><button type="button" disabled={!!busy || creationUncertain} className={primary} onClick={() => edit()}><Plus size={18} aria-hidden="true" />Agregar producto</button></div>} />
     <p className="text-sm text-text-secondary">Referencias para gestión de compra mediante mandato. La disponibilidad se confirma durante la cotización.</p>
     <LoopServiceTariffsEditor />
     <CatalogBulkImport products={productos} onSaved={onRefresh} onBusyChange={setBulkBusy} editingOpen={!!editing} disabled={!!busy || !!editing || fetching || !!loadError} />
@@ -206,9 +241,11 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
     {message && <p role="status" className="rounded-xl border border-border-color bg-surface p-4 text-sm text-brand-primary">{message}</p>}
     <div className={editing ? "grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(260px,1fr)]" : "min-w-0"}>
       {editing && <form id="reference-editor" data-testid="reference-editor" onSubmit={save} className="min-w-0 space-y-4 scroll-mt-5">
-        <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Editor de referencia</p><h2 className="mt-1 font-heading text-xl font-bold text-brand-primary">{editing.id ? "Editar referencia" : "Nueva referencia"}</h2></div><button type="button" disabled={!!busy} onClick={closeEditor} className={secondary}>Cerrar editor</button></div>
-        <fieldset disabled={!!busy} className="min-w-0 space-y-4 disabled:opacity-70">
-          <ReferenceConfigurator draft={draft} onChange={change} legacyCode={editing.original?.codigoProducto}
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Editor de referencia</p><h2 className="mt-1 font-heading text-xl font-bold text-brand-primary">{editing.id ? "Editar referencia" : "Nueva referencia"}</h2></div><button type="button" disabled={!!busy || creationUncertain} onClick={closeEditor} className={secondary}>Cerrar editor</button></div>
+        <div className="flex flex-wrap gap-2"><button type="button" className={secondary} aria-pressed={simpleEditor} disabled={!!busy || creationUncertain} onClick={() => setSimpleEditor(true)}>Carga simple</button><button type="button" className={secondary} aria-pressed={!simpleEditor} disabled={!!busy || creationUncertain} onClick={() => setSimpleEditor(false)}>Edición completa</button></div>
+        {creationUncertain && <div role="alert" className="space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950"><p>El guardado no tuvo una respuesta definitiva. Reintentá el mismo envío para consultar su resultado sin crear otro producto.</p><button type="button" className={secondary} disabled={!!busy} onClick={() => void persist()}>Reintentar el mismo guardado</button></div>}
+        <fieldset disabled={!!busy || creationUncertain} className="min-w-0 space-y-4 disabled:opacity-70">
+          {simpleEditor ? <CatalogQuickEntry suppliers={suppliers} onAdvanced={() => setSimpleEditor(false)} draft={draft} onChange={change} externalUrl={externalUrl} files={files} onAddUrl={addUrl} onExternalUrlChange={value => { setExternalUrl(value); setDirty(true); }} onRemoveFile={index => { setFiles(values => values.filter((_, i) => i !== index)); setDirty(true); }} onAddFiles={selected => { const pendingUrl = externalUrl.trim() && !draft.imagenUrls.includes(externalUrl.trim()) ? 1 : 0; if (draft.imagenUrls.length + files.length + selected.length + pendingUrl > 4) setError("Usá hasta 4 imágenes por referencia."); else { setFiles(previous => [...previous, ...selected]); setDirty(true); } }} /> : <ReferenceConfigurator draft={draft} onChange={change} legacyCode={editing.original?.codigoProducto}
             externalUrl={externalUrl} files={files} onAddUrl={addUrl}
             onExternalUrlChange={value => { setExternalUrl(value); setDirty(true); }}
             onRemoveFile={index => { setFiles(values => values.filter((_, i) => i !== index)); setDirty(true); }}
@@ -216,11 +253,12 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
               const pendingUrl = externalUrl.trim() && !draft.imagenUrls.includes(externalUrl.trim()) ? 1 : 0;
               if (draft.imagenUrls.length + files.length + selected.length + pendingUrl > 4) setError("Usá hasta 4 imágenes por referencia.");
               else { setFiles(previous => [...previous, ...selected]); setDirty(true); }
-            }} />
-          <Section number="06" title="Publicación"><p className="text-sm font-semibold text-brand-primary">{dirty ? "Cambios locales sin guardar" : editing.id ? catalogPublicationLabel(statuses[editing.id]) : "Borrador / No publicada"}</p>
-            <p className="mt-2 text-sm text-text-secondary">Guardar actualiza únicamente la ficha privada. Previsualizá el contenido guardado antes de publicarlo.</p>
-            <div className="mt-4 flex flex-wrap gap-3"><button type="submit" className={primary}>{busy === "save" ? "Guardando…" : editing.id ? "Guardar cambios" : "Guardar referencia"}</button><button type="button" className={secondary} disabled={!editing.id || dirty} onClick={() => editing.id && void openPreview(editing.id)}><Eye size={16} aria-hidden="true" />{publicationPreviewLabel(editing.id ? statuses[editing.id] : undefined)}</button></div>
-          </Section>
+            }} />}
+          <div className="z-10 rounded-2xl lg:sticky lg:bottom-3 border border-border-color bg-surface p-4 shadow-lg" data-testid="catalog-save-bar"><p className="text-sm font-semibold text-brand-primary">{dirty ? "Cambios locales sin guardar" : editing.id ? catalogPublicationLabel(statuses[editing.id]) : "Borrador / No publicada"}</p>
+            <p className="mt-2 text-xs text-text-secondary">Guardar conserva la ficha privada. La publicación requiere revisar la vista previa.</p>
+            <div className="mt-4 flex flex-wrap gap-3"><button type="submit" value="save" className={primary}>{busy === "save" ? "Guardando…" : editing.id ? "Guardar cambios" : "Guardar referencia"}</button><button type="submit" value="another" className={secondary}>Guardar y cargar otro</button><button type="button" className={secondary} disabled={!editing.id || dirty} onClick={() => editing.id && void openPreview(editing.id)}><Eye size={16} aria-hidden="true" />{publicationPreviewLabel(editing.id ? statuses[editing.id] : undefined)}</button></div>
+            <p className="mt-2 text-xs text-text-secondary">Guardar y cargar otro conserva proveedor, categoría y planes; vacía nombre, costo, códigos y fotos.</p>
+          </div>
         </fieldset>
       </form>}
       <section className="min-w-0 space-y-4" aria-label="Listado de referencias">
@@ -255,8 +293,8 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
             </div>
             <div className={`col-start-2 grid min-w-0 grid-cols-2 gap-3 ${editing?'':'lg:contents'}`}><dl className="min-w-0 text-sm"><dt className="text-xs text-text-secondary">Costo producto · Admin</dt><dd data-catalog-cost className="mt-1 break-words font-semibold tabular-nums">{row.cost===null?'Sin configurar':money(row.cost)}</dd><dt className="mt-2 text-xs text-text-secondary">Proveedor</dt><dd className="break-words text-xs">{saved.proveedor||'Sin registrar'}</dd></dl>
             <div className="min-w-0 text-sm"><p className="text-xs text-text-secondary">Cuota estimada × 12</p><p data-catalog-installment12 className="mt-1 break-words font-bold tabular-nums text-brand-primary">{row.installment12===null?'No disponible':money(row.installment12)}</p>{row.installment12===null&&<p className="mt-1 text-xs text-text-secondary">{saved.planesActivos[12]?'Revisá costo y factor':'Plan no habilitado'}</p>}</div></div>
-            <div className={`col-start-2 min-w-0 ${editing?'':'lg:col-start-auto'}`}><div className="flex flex-wrap gap-2"><button type="button" className={secondary} disabled={!!busy} onClick={()=>edit(product)}><Pencil size={15} aria-hidden="true"/>Editar</button><button type="button" className={secondary} disabled={!!busy} onClick={()=>void openPreview(product.id)}><Eye size={15} aria-hidden="true"/>{publicationPreviewLabel(state)}</button>
-              {state?.hasPublicProjection&&<button type="button" className={secondary} disabled={!!busy} onClick={()=>setConfirm({kind:'unpublish',product})}>Despublicar</button>}
+            <div className={`col-start-2 min-w-0 ${editing?'':'lg:col-start-auto'}`}><div className="flex flex-wrap gap-2"><button type="button" className={secondary} disabled={!!busy || creationUncertain} onClick={()=>edit(product)}><Pencil size={15} aria-hidden="true"/>Editar</button><button type="button" className={secondary} disabled={!!busy || creationUncertain} onClick={()=>void openPreview(product.id)}><Eye size={15} aria-hidden="true"/>{publicationPreviewLabel(state)}</button>
+              {state?.hasPublicProjection&&<button type="button" className={secondary} disabled={!!busy || creationUncertain} onClick={()=>setConfirm({kind:'unpublish',product})}>Despublicar</button>}
               <button type="button" className={secondary} onClick={()=>onStock(product)}>Stock / unidades</button><button type="button" className="min-h-11 px-2 text-sm text-[#B42318] disabled:opacity-40" disabled={!!busy||!state||state.hasPublicProjection} onClick={()=>setConfirm({kind:'delete',product})}>Eliminar</button>
             </div>{state?.hasPublicProjection&&<p className="mt-2 text-xs text-text-secondary">Despublicá antes de eliminar o seleccionar.</p>}</div>
           </article>;
@@ -265,12 +303,12 @@ export function CatalogReferenceWorkspace({ productos, fetching, loadError, onRe
     </div>
     {busy === "preview" && <p role="status" className="text-sm text-text-secondary">Preparando vista previa…</p>}
     {preview && <CatalogDialog title="Vista previa de publicación" onClose={closePreview}>
-      {preview.dto ? <><p className="mb-4 text-sm font-semibold text-brand-primary">{preview.hasPublicProjection && !preview.hasUnpublishedChanges ? "Publicación actual" : "Lista para publicar"}</p><CatalogReferencePreview reference={preview.dto} />{(!preview.hasPublicProjection || preview.hasUnpublishedChanges) && <button type="button" disabled={!!busy} className={`${primary} mt-5 w-full`} onClick={() => void publish()}><ArrowUpRight size={18} aria-hidden="true" />{busy === "publish" ? "Publicando…" : preview.hasPublicProjection ? "Publicar cambios" : "Publicar"}</button>}</> : <div><p className="font-semibold">No válida para publicar</p><ul className="mt-3 list-inside list-disc space-y-2 text-sm text-text-secondary">{preview.validation.errors.map(value => <li key={value}>{value}</li>)}</ul></div>}
+      {preview.dto ? <><p className="mb-4 text-sm font-semibold text-brand-primary">{preview.hasPublicProjection && !preview.hasUnpublishedChanges ? "Publicación actual" : "Lista para publicar"}</p><CatalogReferencePreview reference={preview.dto} />{(!preview.hasPublicProjection || preview.hasUnpublishedChanges) && <button type="button" disabled={!!busy || creationUncertain} className={`${primary} mt-5 w-full`} onClick={() => void publish()}><ArrowUpRight size={18} aria-hidden="true" />{busy === "publish" ? "Publicando…" : preview.hasPublicProjection ? "Publicar cambios" : "Publicar"}</button>}</> : <div><p className="font-semibold">No válida para publicar</p><ul className="mt-3 list-inside list-disc space-y-2 text-sm text-text-secondary">{preview.validation.errors.map(value => <li key={value}>{value}</li>)}</ul></div>}
     </CatalogDialog>}
     {deletePreview && <CatalogDialog title={`Eliminar ${deletePreview.rows.length} productos`} onClose={closeDelete}>
       <p className="text-sm text-text-secondary">Se eliminarán permanentemente estas fichas del catálogo. Se verificó que no estén publicadas y que no tengan unidades registradas. Los presupuestos, las operaciones anteriores y los archivos de imágenes se conservan.</p>
       <ul className="my-4 max-h-64 space-y-2 overflow-y-auto rounded-xl bg-background-main p-3 text-sm">{deletePreview.rows.map(row=><li key={row.id} className="break-words"><strong>{row.name}</strong></li>)}</ul>
-      <div className="flex flex-wrap justify-end gap-3"><button type="button" className={secondary} disabled={!!busy} onClick={closeDelete}>Cancelar</button><button type="button" className="min-h-11 rounded-xl bg-red-700 px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={!!busy} onClick={()=>void deleteSelected(true)}>{busy==='deleteBulk'?'Eliminando…':'Confirmar eliminación'}</button></div>
+      <div className="flex flex-wrap justify-end gap-3"><button type="button" className={secondary} disabled={!!busy || creationUncertain} onClick={closeDelete}>Cancelar</button><button type="button" className="min-h-11 rounded-xl bg-red-700 px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={!!busy || creationUncertain} onClick={()=>void deleteSelected(true)}>{busy==='deleteBulk'?'Eliminando…':'Confirmar eliminación'}</button></div>
     </CatalogDialog>}
     {confirm && <ConfirmDialog title={confirm.kind === "unpublish" ? "Despublicar referencia" : "Eliminar referencia"} message={confirm.kind === "unpublish" ? "Se retirará la proyección pública. La ficha privada y sus unidades se conservan." : "La ficha privada se eliminará permanentemente, incluido su registro de unidades. Esta acción legacy no elimina archivos de Storage ni otras operaciones."} onClose={closeConfirm} onConfirm={() => void confirmAction()} busy={!!busy} />}
   </div>;

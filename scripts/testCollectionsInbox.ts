@@ -50,7 +50,7 @@ async function main() {
   assert.deepEqual(partial.collections, []); assert.equal(partial.reports, null, 'No partial report total after page two fails.');
   assert.equal(partial.vendors?.[0].cashCents, 15001); assert.equal(partial.vendors?.[1].cashCents, null);
   const unavailable = await loadCollectionsInbox(async () => { throw Error('UNAVAILABLE'); });
-  assert.deepEqual(unavailable, { collections: null, reports: null, vendors: null });
+  assert.deepEqual(unavailable, { collections: null, reports: null, vendors: null, followups: {} });
   const render = (value: CollectionsInboxData) => renderToStaticMarkup(createElement(CollectionsInbox, { data: value, loading: false, onManage: () => {}, onRemittance: () => {} }));
   const html = render(data);
   assert.equal((html.match(/data-testid="collections-operation-case"/g) ?? []).length, 1);

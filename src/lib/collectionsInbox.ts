@@ -1,5 +1,6 @@
 import { loadCollections, normalizedSearch, overdueBalance, type CollectionRow } from './collectionsOverview';
 import type { PaymentReportPublic } from './operationPaymentReports';
+import { hasScheduledFollowup, loadCollectionFollowups, type CollectionContactHistory } from './collectionsFollowup';
 
 export interface CollectionVendor {
   id: string; name: string; active: boolean; cashCents: number | null;
@@ -8,8 +9,9 @@ export interface CollectionsInboxData {
   collections: CollectionRow[] | null;
   reports: PaymentReportPublic[] | null;
   vendors: CollectionVendor[] | null;
+  followups?: Record<string, CollectionContactHistory | null>;
 }
-export type InboxFilter = 'ALL' | 'OVERDUE' | 'REPORTS' | 'CASH';
+export type InboxFilter = 'ALL' | 'OVERDUE' | 'REPORTS' | 'CASH' | 'FOLLOWUP';
 export interface CollectionCase {
   kind: 'OPERATION'; key: string; name: string; row: CollectionRow | null;
   budgetId: string; version: number; reports: PaymentReportPublic[];
@@ -50,13 +52,15 @@ async function loadVendors(read: (url: string) => Promise<unknown>): Promise<Col
   });
 }
 
-/** Existing admin-only GET routes; no new collection, writes, fields or financial calculations. */
+/** Existing admin-only GET routes; no new collection, writes, stored fields or financial calculations. */
 export async function loadCollectionsInbox(read: (url: string) => Promise<unknown>): Promise<CollectionsInboxData> {
   const [collections, reports, vendors] = await Promise.allSettled([loadCollections(read), loadPendingCollectionReports(read), loadVendors(read)]);
+  const followups = collections.status === 'fulfilled' ? await loadCollectionFollowups(collections.value, read) : {};
   return {
     collections: collections.status === 'fulfilled' ? collections.value : null,
     reports: reports.status === 'fulfilled' ? reports.value : null,
     vendors: vendors.status === 'fulfilled' ? vendors.value : null,
+    followups,
   };
 }
 
@@ -66,8 +70,8 @@ export function collectionInboxCases(data: CollectionsInboxData): InboxCase[] {
   const identity = (budgetId: string, version: number, operationId: string) => JSON.stringify([budgetId, version, operationId]);
   for (const row of data.collections ?? []) {
     const overdue = row.financial?.active ? row.financial.installments.filter(i => i.overdue && i.balanceCents > 0) : [];
-    if (!overdue.length) continue;
-    cases.set(identity(row.budgetId, row.version, row.operationId ?? row.key), { kind: 'OPERATION', key: row.key, name: row.name, row, budgetId: row.budgetId, version: row.version, reports: [], overdueCents: overdueBalance(row), overdueCount: overdue.length, oldestDue: overdue.map(i => i.dueDate).sort()[0] });
+    if (!overdue.length && !hasScheduledFollowup(row, data.followups?.[row.key])) continue;
+    cases.set(identity(row.budgetId, row.version, row.operationId ?? row.key), { kind: 'OPERATION', key: row.key, name: row.name, row, budgetId: row.budgetId, version: row.version, reports: [], overdueCents: overdueBalance(row), overdueCount: overdue.length, oldestDue: overdue.map(i => i.dueDate).sort()[0] ?? null });
   }
   for (const report of data.reports ?? []) {
     const key = identity(report.budgetId, report.version, report.operationId);
@@ -79,7 +83,8 @@ export function collectionInboxCases(data: CollectionsInboxData): InboxCase[] {
     }
     item.reports.push(report);
   }
-  const operations = [...cases.values()].sort((a, b) => Number(b.reports.length > 0) - Number(a.reports.length > 0) || (a.oldestDue ?? a.reports[0]?.createdAt ?? '').localeCompare(b.oldestDue ?? b.reports[0]?.createdAt ?? '') || a.key.localeCompare(b.key));
+  const due = (item: CollectionCase) => { const history = item.row ? data.followups?.[item.row.key] : null; return item.oldestDue ?? history?.records[0]?.nextContactDate ?? history?.latestPromise?.promisedDate ?? item.reports[0]?.createdAt ?? '9999'; };
+  const operations = [...cases.values()].sort((a, b) => Number(b.reports.length > 0) - Number(a.reports.length > 0) || due(a).localeCompare(due(b)) || a.key.localeCompare(b.key));
   const cash: InboxCase[] = (data.vendors ?? []).filter(v => v.cashCents !== null && v.cashCents > 0).sort((a, b) => a.name.localeCompare(b.name, 'es')).map(vendor => ({ kind: 'CASH', key: 'cash:' + vendor.id, name: vendor.name, vendor }));
   return [...operations, ...cash];
 }
@@ -87,7 +92,7 @@ export function collectionInboxCases(data: CollectionsInboxData): InboxCase[] {
 export function selectInboxCases(cases: InboxCase[], filter: InboxFilter, query: string) {
   const tokens = normalizedSearch(query).split(/\s+/).filter(Boolean);
   return cases.filter(item => {
-    if (filter === 'CASH' && item.kind !== 'CASH' || filter === 'OVERDUE' && (item.kind !== 'OPERATION' || !item.overdueCount) || filter === 'REPORTS' && (item.kind !== 'OPERATION' || !item.reports.length)) return false;
+    if (filter === 'CASH' && item.kind !== 'CASH' || filter === 'OVERDUE' && (item.kind !== 'OPERATION' || !item.overdueCount) || filter === 'REPORTS' && (item.kind !== 'OPERATION' || !item.reports.length) || filter === 'FOLLOWUP' && item.kind !== 'OPERATION') return false;
     const text = normalizedSearch(`${item.name} ${item.kind === 'OPERATION' && item.row?.financial?.active ? item.row.financial.contractNumber : ''}`);
     return tokens.every(t => text.includes(t));
   });

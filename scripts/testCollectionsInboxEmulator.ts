@@ -25,6 +25,9 @@ import { GET as budgetsGet } from '../src/app/api/admin/presupuestos-v2/route';
 import { GET as contractGet } from '../src/app/api/admin/presupuestos-v2/[budgetId]/versions/[version]/contract/route';
 import { GET as financialGet } from '../src/app/api/admin/presupuestos-v2/[budgetId]/versions/[version]/financial/route';
 import { GET as reportsGet } from '../src/app/api/admin/payment-reports/route';
+import { GET as contactsGet } from '../src/app/api/admin/presupuestos-v2/[budgetId]/versions/[version]/gestiones/route';
+import { affiliateEngagement } from '../src/lib/affiliateEngagementV2';
+import { custodyRef } from '../src/lib/operationCustodyV2Server';
 import { GET as vendorsGet } from '../src/app/api/admin/vendedores/route';
 import { p1Token } from './testPortalP1Emulator';
 import { startProductionBrowserServer } from './helpers/productionAdapterBrowserServer';
@@ -41,7 +44,9 @@ async function main() {
   const command = async (action: string, extra: Record<string, unknown> = {}) => contractCommand(db, f.id, 1, { action, commandId: randomUUID(), expectedRevision: (await f.r.draft.get()).data()!.revision, ...extra }, actor);
   await command('RETURN_TO_DRAFT', { reason: 'Bandeja sintética de cobranzas' });
   const d = (await f.r.draft.get()).data()!, today = argentinaBusinessDate(), firstDue = argentinaBusinessDate(new Date(Date.now() - 100 * 86400000));
-  await command('SAVE_CONTRACT_EDITOR', { personalData: d.personalData, employmentData: d.employmentData, productDetails: d.productDetails, contractPlanCuotas: 12, firstInstallmentDueDate: firstDue, preferredMonthlyDueDay: 9, issuePlace: 'Localidad sintética', loopServices: { category: 'C', tariffRevision: (await readLoopTariffs(db)).revision, otherServicesCents: 0, cftAnnualPercent: null, cftBasis: '', supplierTaxId: '20123456786', notePaymentPlace: 'Domicilio sintético', noteDueDate: '2027-11-09', acceptanceChannel: 'WHATSAPP', proposalSentAt: today + 'T09:00', clientAcceptedAt: today + 'T09:10' } });
+  const proposalTime = new Date(Date.now() - 3 * 60 * 60000 - 120000).toISOString().slice(0, 16);
+  const acceptanceTime = new Date(Date.now() - 3 * 60 * 60000 - 60000).toISOString().slice(0, 16);
+  await command('SAVE_CONTRACT_EDITOR', { personalData: d.personalData, employmentData: d.employmentData, productDetails: d.productDetails, contractPlanCuotas: 12, firstInstallmentDueDate: firstDue, preferredMonthlyDueDay: 9, issuePlace: 'Localidad sintética', loopServices: { category: 'C', tariffRevision: (await readLoopTariffs(db)).revision, otherServicesCents: 0, cftAnnualPercent: null, cftBasis: '', supplierTaxId: '20123456786', notePaymentPlace: 'Domicilio sintético', noteDueDate: argentinaBusinessDate(new Date(Date.now() + 2 * 366 * 86400000)), acceptanceChannel: 'WHATSAPP', proposalSentAt: proposalTime, clientAcceptedAt: acceptanceTime } });
   const proposal = await prepareClientProposal(db, f.id, 1, { commandId: randomUUID(), expectedRevision: (await f.r.draft.get()).data()!.revision }, actor);
   await command('RECORD_CLIENT_CONFORMITY', { proposalCommandId: proposal.commandId, evidence: 'Conformidad sintética sin cliente real' });
   const issued = await issueContractEditor(runtime, bucket, f.id, 1, { commandId: randomUUID(), expectedRevision: (await f.r.draft.get()).data()!.revision, confirmed: true }, actor);
@@ -51,7 +56,7 @@ async function main() {
   const context = { params: Promise.resolve({ budgetId: f.id, version: '1' }) };
   const read = async (url: string, authToken = token) => {
     const request = new NextRequest('http://localhost' + url, { headers: { Authorization: `Bearer ${authToken}` } });
-    const response = url.startsWith('/api/admin/payment-reports') ? await reportsGet(request) : url === '/api/admin/vendedores' ? await vendorsGet(request) : url === '/api/admin/presupuestos-v2' ? await budgetsGet(request) : url.endsWith('/contract') ? await contractGet(request, context) : await financialGet(request, context);
+    const response = url.startsWith('/api/admin/payment-reports') ? await reportsGet(request) : url === '/api/admin/vendedores' ? await vendorsGet(request) : url === '/api/admin/presupuestos-v2' ? await budgetsGet(request) : url.endsWith('/gestiones') ? await contactsGet(request, context) : url.endsWith('/contract') ? await contractGet(request, context) : await financialGet(request, context);
     if (!response.ok) throw Error('READ_STATUS_' + response.status);
     return response.json();
   };
@@ -63,8 +68,12 @@ async function main() {
   assert.equal(collectionInboxCases(beforeCredit).length, 1, 'First installment remains pending before activation.');
   await decidePaymentReport(db, f.id, 1, { action: 'CONFIRM', commandId: randomUUID(), reportId: first.reportId, expectedRevision: 1, financialRevision: 0, reference: 'SYNTHETIC-FIRST' }, root);
   await report(10001, 'TRANSFERENCIA'); await report(5001, 'EFECTIVO');
+  const savedPromise = await affiliateEngagement(db, f.id, 1, root, { commandId: randomUUID(), kind: 'PROMISE', note: 'Promesa sintética de seguimiento', promisedDate: today, nextContactDate: today });
+  await affiliateEngagement(db, f.id, 1, seller, { commandId: randomUUID(), kind: 'CONTACT', note: 'Último contacto del vendedor afiliado' });
   const state = (await financialRef(db, f.id, 1).get()).data()!;
   const data = await load(), cases = collectionInboxCases(data), operation = cases.find(c => c.kind === 'OPERATION');
+  assert.equal(data.followups?.[f.id + ':1']?.records[0].note, 'Último contacto del vendedor afiliado');
+  assert.equal(data.followups?.[f.id + ':1']?.latestPromise?.promisedDate, today);
   assert(data.collections && data.reports && data.vendors); assert.equal(data.reports.length, 2);
   assert.equal(cases.length, 2); assert(operation?.kind === 'OPERATION');
   assert(operation.overdueCount >= 2); assert.equal(operation.reports.length, 2);
@@ -87,6 +96,17 @@ async function main() {
   const afterPayment = await load(), reduced = collectionInboxCases(afterPayment).find(c => c.kind === 'OPERATION');
   assert(reduced?.kind === 'OPERATION'); assert.equal(reduced.overdueCents, operation.overdueCents - 10001);
   assert.equal(reduced.reports.length, 2, 'No automatic matching or double credit from a pending report.');
+  const events = custodyRef(db, f.id, 1).collection('engagements');
+  assert(savedPromise.id);
+  await events.doc(savedPromise.id).update({ at: new Date(Date.now() - 86400000).toISOString() });
+  const contacts = db.batch(), at = Date.now() - 1000;
+  for (let n = 0; n < 31; n++) contacts.create(events.doc('extra-' + randomUUID()), { operationId: f.identity.operationId, kind: 'CONTACT', note: 'Contacto histórico sintético ' + n, promisedDate: null, nextContactDate: null, actor, at: new Date(at + n).toISOString(), digest: 'SYNTHETIC' });
+  await contacts.commit();
+  const olderPromise = await affiliateEngagement(db, f.id, 1, root);
+  assert('records' in olderPromise && olderPromise.historyTruncated && olderPromise.records?.length === 30);
+  assert(olderPromise.records.every(r => r.kind === 'CONTACT'));
+  assert.equal(olderPromise.latestPromise?.promisedDate, today, 'An older promise cannot disappear behind the 30-contact window.');
+  await affiliateEngagement(db, f.id, 1, root, { commandId: randomUUID(), kind: 'CONTACT', note: 'Último contacto: revisar la transferencia informada', nextContactDate: today });
   console.log('COLLECTIONS_INBOX_REAL_ADMIN_ROUTES_FIRST_PAYMENT_OVERDUE_PENDING_CASH_NET_REMITTANCE_NO_DOUBLE_CREDIT_RBAC_READ_ONLY = PASS');
   if (process.env.COLLECTIONS_INBOX_BROWSER === '1') {
     const current = (await financialRef(db, f.id, 1).get()).data()!;
