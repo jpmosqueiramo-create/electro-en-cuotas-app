@@ -65,7 +65,7 @@ export async function test() {
         await assert.rejects(db.runTransaction(tx=>approvedPackage(runtime,tx,p.id,fake.id)),/APPROVAL_REQUIRED/);
         const tampered=packageApprovalRef(db,randomUUID());await tampered.create({...stored.data()!,reason:'Alterado'});
         await assert.rejects(db.runTransaction(tx=>approvedPackage(runtime,tx,p.id,tampered.id)),/INTEGRITY/);
-        const outsider=(await admin.auth().createUser({email:'owner-outsider@example.test',emailVerified:true})).uid;
+        const outsider=(await admin.auth().createUser({email:`owner-outsider-${randomUUID()}@example.test`,emailVerified:true})).uid;
         await assert.rejects(recordFinalPackageApproval(runtime,{...approval,commandId:randomUUID()},outsider),/NOT_AUTHORIZED/);
         pass('OWNER_ONLY_APPROVAL_NO_PROFESSIONAL_REPLAY_NEXT_DAY_CONCURRENT_ROLE_TAMPER_AND_NO_UPGRADE');
     }
@@ -264,10 +264,11 @@ export async function test() {
     assert.equal(act.filter(x => !x.replay).length, 1);
     await assert.rejects(financialCommand(db, id, v, await input('ACTIVATE', {}), f.root));
     pass('UNIQUE_FINANCIAL_ACTIVATION');
-    const client = (await admin.auth().createUser({ email: 'production-adapter-client@example.test', password: 'Emulator-only-123', emailVerified: true })).uid;
+    const clientEmail = `production-adapter-client-${randomUUID()}@example.test`;
+    const client = (await admin.auth().createUser({ email: clientEmail, password: 'Emulator-only-123', emailVerified: true })).uid;
     const bind = async (action: string, data: Record<string, unknown>) => clientBindingCommand(db, id, v, { action, data, commandId: randomUUID(), operationId: f.identity.operationId, expectedRevision: (await readClientBinding(db, id, v, actor)).state.revision }, actor);
     await bind('LINK', { uid: client, reason: 'Vínculo sintético explícito' });
-    const token = randomBytes(32).toString('base64url'), invite = await bind('INVITE', { email: 'production-adapter-client@example.test', token });
+    const token = randomBytes(32).toString('base64url'), invite = await bind('INVITE', { email: clientEmail, token });
     // Both domain proof and the existing HTTP route must reject unauthorized callers.
     const {assertClientInvitationHttpAccess}=await import('../src/lib/operationClientV2Server');
     await assert.rejects(assertClientInvitationHttpAccess(db,invite.invitationId!,token));
@@ -366,7 +367,9 @@ export async function test() {
     assert.equal(pv.balanceCents, 169000000);
     assert.equal(pv.installments[0].status, 'PARCIAL');
     assert.equal(pv.installments[0].balanceCents, 9500000);
-    const rest = await input('CREDIT_PAYMENT', { ...payment.data, paymentId: randomUUID(), amountCents: 9500000 });
+    // A second transfer needs its own bank reference; duplicate references are
+    // deliberately rejected by the three-panel payment reconciliation policy.
+    const rest = await input('CREDIT_PAYMENT', { ...payment.data, paymentId: randomUUID(), amountCents: 9500000, reference: 'SYNTHETIC-COMPLEMENT-' + randomUUID() });
     await financialCommand(db, id, v, rest, f.root);
     const rv = await readFinancial(db, id, v, f.root, 'ADMIN');
     assert(rv.active);

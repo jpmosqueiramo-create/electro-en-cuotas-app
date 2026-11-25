@@ -226,8 +226,9 @@ async function main() {
   console.log('DOCUMENT_DELETE_COMMAND_CONFLICT_TEST = PASS; DELETE_CAN_TARGET_FOREIGN_OBJECT = NO');
   console.log('P4_DOCUMENT_STORAGE_EMULATOR = PASS');
 
-  const email='jpmosqueiramo@gmail.com',password='emulator-fixture-password';
-  try{await admin.auth().createUser({email,password});}catch(e){if((e as {code?:string}).code!=='auth/email-already-exists')throw e;const u=await admin.auth().getUserByEmail(email);await admin.auth().updateUser(u.uid,{password});}
+  const email=process.env.NEXT_PUBLIC_ADMIN_EMAIL!,password='emulator-fixture-password';
+  assert.ok(email,'Explicit synthetic admin email required');
+  try{await admin.auth().createUser({email,password,emailVerified:true});}catch(e){if((e as {code?:string}).code!=='auth/email-already-exists')throw e;const u=await admin.auth().getUserByEmail(email);await admin.auth().updateUser(u.uid,{password,emailVerified:true});}
   const login=await fetch('http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo-key',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,returnSecureToken:true})});
   assert.equal(login.status,200);const token=(await login.json()).idToken as string;
   async function api(operation:string[],method:string,body?:unknown,authorized=true,id=prefix,version='1'){

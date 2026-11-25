@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { NextRequest } from 'next/server';
 import { admin } from '../src/lib/firebaseAdmin';
+import { DATA_AUTHORIZATION_VERSION } from '../src/lib/clientFlowMessages';
 import { contractEconomics,contractSchedule } from '../src/lib/contractV2';
 import { fixture,addressPayload } from './testContractV2';
 import { persistPublicSolicitud } from '../src/lib/publicSolicitudService';
@@ -23,7 +24,7 @@ export async function createCreditCase(id='credit-'+randomUUID(),dni='12345678')
  await acceptBudgetV2(db,{budgetId:id,version:1,acceptedOptionId:'option-1',preferredPlanCuotas:12,commandId:'accept'},'synthetic-admin');
  let d=(await contractCommand(db,id,1,{action:'OPEN_OR_CREATE',commandId:'open'},'synthetic-admin')).draft;
  const req=await contractCommand(db,id,1,{action:'CREATE_CLIENT_DATA_REQUEST',commandId:'request',expectedRevision:d.revision},'synthetic-admin');d=req.draft;
- const body={personalData:{...addressPayload.personalData,dni},employmentData:addressPayload.employmentData};
+ const body={personalData:{...addressPayload.personalData,dni},employmentData:addressPayload.employmentData,dataAuthorization:{version:DATA_AUTHORIZATION_VERSION,accepted:true}};
  await publicContractData(db,req.requestId!,req.secret!,body);d=(await contractCommand(db,id,1,{action:'APPLY_CLIENT_SUBMISSION',submissionId:req.requestId,commandId:'apply',expectedRevision:d.revision},'synthetic-admin')).draft;
  return {id,b,r,d,source};
 }
