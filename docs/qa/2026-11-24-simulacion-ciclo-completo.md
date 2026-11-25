@@ -22,8 +22,10 @@ conciliaron **33 puntos del recorrido y 30 cuotas**. Cada punto comparó cliente
 vendedor afiliado y Administración, pagos activos, imputaciones, recibos y el
 cronograma guardado. Ambos casos conservaron el snapshot contractual.
 
-**21 suites terminaron con código 0** en sus ejecuciones finales. Tres suites
-históricas no se consideran aprobadas; sus límites se detallan más abajo. No se
+**20 suites terminaron con código 0** en la verificación final. La suite actual
+de informes de pago había pasado, pero volvió a fallar de forma intermitente
+en la matriz ejecutada desde el commit `ba10fe0`: no se marca PASS final. Tres suites
+históricas tampoco se consideran aprobadas; sus límites se detallan más abajo. No se
 contaron como fallos del producto las correcciones del nuevo guion durante su
 preparación, ni se ocultaron los errores de las suites existentes.
 
@@ -100,7 +102,7 @@ operatoria ni agregar datos para completar.
 | Suite / control | Resultado final |
 | --- | --- |
 | testFullLifecycleEmulator | PASS, 12 y 18 cuotas; 33 puntos |
-| testPaymentReportsThreePanelsEmulator | PASS |
+| testPaymentReportsThreePanelsEmulator | Intermitente: PASS previo, última ejecución detenida por `Transaction is invalid or closed` |
 | testNetRemittanceEmulator | PASS |
 | testProductionAdapterEmulator | PASS, 30 grupos |
 | testBudgetV2Emulator, testBudgetAcceptanceV2Emulator | PASS |
@@ -132,8 +134,9 @@ Límites conservados, sin marcar PASS:
   existe en este SHA. El runner usa las suites existentes BudgetReference y
   BudgetV2, sin inventar una aprobación de la suite ausente.
 - Hubo errores intermitentes del emulador `Transaction is invalid or closed`
-  en intentos de PaymentReports/ProductionAdapter. Se conservan logs; las
-  ejecuciones finales aisladas pasaron. La causa intermitente no quedó aislada
+  en intentos de PaymentReports/ProductionAdapter. Se conservan logs. En la
+  matriz final de `ba10fe0`, ProductionAdapter terminó sus 30 grupos y
+  PaymentReports volvió a interrumpirse. La causa intermitente no quedó aislada
   con certeza, por lo que no se presenta como resuelta ni como fallo demostrado
   de producción.
 - Las bases nombradas implícitas del emulador tienen Rules abiertas. Por eso
@@ -148,6 +151,8 @@ Límites conservados, sin marcar PASS:
 No se probaron bancos reales, dinero real, correo/WhatsApp enviado, caída total
 de infraestructura, concurrencia ilimitada, migración productiva ni cada
 combinación posible de estados. Una cobertura finita no demuestra infalibilidad.
+La matriz actual terminó con código 1 por la intermitencia de PaymentReports;
+el recorrido completo de 12 y 18 cuotas volvió a pasar desde ese mismo commit.
 
 ## Reproducción y evidencia
 
