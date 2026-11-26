@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { EnviosCalculator } from "@/components/EnviosCalculator";
 import { EnviosFaq } from "@/components/EnviosFaq";
 import { 
   Truck, 
@@ -45,6 +44,8 @@ function WhatsAppIcon({ className = "w-5 h-5" }: { className?: string }) {
     </svg>
   );
 }
+
+const quoteUrl = "https://cuenta-negocio.vercel.app/cotizar";
 
 export default function EnviosPage() {
   const whatsappTextDefault = `Hola, quiero conocer el servicio de Envíos Low Cost de Cuenta Hogar que estará disponible desde noviembre.
@@ -231,18 +232,28 @@ Suelo comprar productos en CABA y me interesa saber cómo podría recibirlos en 
             </h2>
             
             <p className="text-sm sm:text-base text-[#56616E] leading-relaxed max-w-xl mx-auto">
-              Seleccioná tu localidad y el tipo de carga para obtener una estimación. Si necesitás ayuda, después podés continuar la consulta por WhatsApp.
+              Ingresá los datos de tu envío para consultar el precio estimado.
             </p>
 
-            <div className="pt-1">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFFDF5] border border-[#FFD21A]/60 text-[#111318] text-xs font-semibold shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-[#FFD21A] animate-pulse"></span>
-                <span>Disponible desde el 25 de noviembre de 2026 · Ya estamos recibiendo consultas</span>
-              </div>
-            </div>
           </div>
 
-          <EnviosCalculator />
+          <iframe
+            src={`${quoteUrl}?embed=1`}
+            title="Cotizador de envíos de Cuenta Negocio"
+            loading="lazy"
+            className="block h-[80vh] min-h-[560px] w-full rounded-lg border border-[#DCE1E6] bg-white"
+          />
+
+          <p className="text-center text-sm">
+            <a
+              href={quoteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold underline underline-offset-4"
+            >
+              Abrir el cotizador en otra pestaña
+            </a>
+          </p>
 
         </div>
       </section>
