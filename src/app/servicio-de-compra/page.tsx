@@ -1,3 +1,4 @@
+import "../public-site.css";
 import { Metadata } from "next";
 import PublicCatalog from "@/components/PublicCatalog";
 
